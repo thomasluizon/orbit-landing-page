@@ -1,0 +1,447 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+---
+
+<Layout>
+  <!-- Header -->
+  <header id="site-header" class="header-blur fixed top-0 left-0 right-0 z-50 border-b border-transparent">
+    <nav class="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2.5">
+        <img src="/logo.png" alt="Orbit" class="w-8 h-8 rounded-lg" />
+        <span class="text-xl font-bold text-text-primary">Orbit</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <!-- Language Switcher -->
+        <button
+          id="lang-toggle"
+          class="text-sm text-text-secondary hover:text-text-primary transition-colors px-3 py-1.5 rounded-xl border border-border hover:border-text-muted"
+          aria-label="Switch language"
+        >
+          <span id="lang-label">EN</span>
+        </button>
+        <a
+          href={appUrl}
+          class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-5 py-2 rounded-3xl text-sm transition-colors"
+          data-i18n="header.cta"
+        >
+          Go to Orbit
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-gradient relative min-h-screen flex items-center pt-16">
+      <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+
+      <div class="max-w-6xl mx-auto px-5 sm:px-8 w-full">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div class="fade-in-section text-center lg:text-left">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              <span data-i18n="hero.title1">Build Better Habits,</span>
+              <span class="gradient-text" data-i18n="hero.title2">One Day at a Time</span>
+            </h1>
+            <p class="mt-6 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-xl mx-auto lg:mx-0" data-i18n="hero.subtitle">
+              Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
+            </p>
+            <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <a
+                href={appUrl}
+                class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-3xl text-base transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <span data-i18n="hero.cta">Get Started</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </a>
+              <div class="tooltip-trigger inline-flex">
+                <a
+                  href="#"
+                  class="border border-border hover:border-text-muted text-text-secondary font-semibold px-8 py-3.5 rounded-3xl text-base transition-colors inline-flex items-center justify-center gap-2.5 cursor-default opacity-70"
+                  onclick="return false;"
+                >
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/>
+                  </svg>
+                  <span data-i18n="hero.android">Download for Android</span>
+                </a>
+                <span class="tooltip-text" data-i18n="hero.comingSoon">Coming Soon</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone Mockup -->
+          <div class="fade-in-section flex justify-center lg:justify-end">
+            <div class="relative">
+              <div class="phone-glow p-[2px] rounded-[2.5rem] shadow-2xl shadow-primary/20">
+                <div class="bg-background rounded-[2.4rem] p-3 w-[280px] sm:w-[300px]">
+                  <div class="bg-background rounded-t-[2rem] flex justify-center pt-2 pb-3">
+                    <div class="w-24 h-5 bg-surface rounded-full"></div>
+                  </div>
+                  <div class="bg-surface rounded-2xl p-4 space-y-3 min-h-[440px]">
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="text-sm font-bold text-text-primary" data-i18n="mockup.today">Today</div>
+                      <div class="text-xs text-text-muted">March 18</div>
+                    </div>
+                    <div class="bg-background rounded-xl p-3 border border-primary/20">
+                      <div class="flex items-center gap-2 mb-2">
+                        <div class="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]">&#10024;</div>
+                        <span class="text-xs font-semibold text-primary" data-i18n="mockup.aiSummary">AI Summary</span>
+                      </div>
+                      <p class="text-[10px] text-text-secondary leading-relaxed" data-i18n="mockup.summaryText">Great progress! You've completed 4 of 6 habits today. Your reading streak is on fire.</p>
+                    </div>
+                    <div class="space-y-2">
+                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 text-sm">&#10003;</div>
+                        <div class="flex-1">
+                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit1">Morning Run</div>
+                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit1sub">30 min - Daily</div>
+                        </div>
+                        <div class="text-[10px] text-green-400 font-medium" data-i18n="mockup.streak1">12 days</div>
+                      </div>
+                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 text-sm">&#10003;</div>
+                        <div class="flex-1">
+                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit2">Read 20 Pages</div>
+                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit2sub">20 pages - Daily</div>
+                        </div>
+                        <div class="text-[10px] text-green-400 font-medium" data-i18n="mockup.streak2">24 days</div>
+                      </div>
+                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-sm">&#9711;</div>
+                        <div class="flex-1">
+                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit3">Meditate</div>
+                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit3sub">10 min - Daily</div>
+                        </div>
+                      </div>
+                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-sm">&#9711;</div>
+                        <div class="flex-1">
+                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit4">Study Portuguese</div>
+                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit4sub">30 min - Weekdays</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex justify-around pt-3 pb-1">
+                    <div class="w-6 h-6 rounded-full bg-primary/30"></div>
+                    <div class="w-6 h-6 rounded-full bg-surface"></div>
+                    <div class="w-6 h-6 rounded-full bg-surface"></div>
+                    <div class="w-6 h-6 rounded-full bg-surface"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 sm:py-32">
+      <div class="max-w-6xl mx-auto px-5 sm:px-8">
+        <div class="fade-in-section text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+            <span data-i18n="features.title1">Everything you need to build</span>
+            <span class="gradient-text" data-i18n="features.title2">lasting habits</span>
+          </h2>
+          <p class="mt-4 text-text-secondary text-lg max-w-2xl mx-auto" data-i18n="features.subtitle">
+            Simple yet powerful tools designed to help you stick to your routines and see real progress.
+          </p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl mb-5">&#128197;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.scheduling.title">Smart Scheduling</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
+          </div>
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-2xl mb-5">&#128293;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.streaks.title">Streak Tracking</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.streaks.desc">Watch your streaks grow. Visual progress that keeps you motivated day after day.</p>
+          </div>
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-2xl mb-5">&#129302;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.ai.title">AI Insights</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.ai.desc">Get personalized daily summaries and routine analysis powered by AI.</p>
+          </div>
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-2xl mb-5">&#127793;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.subhabits.title">Sub-Habits</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.subhabits.desc">Break big habits into smaller steps. Complete sub-tasks to build momentum.</p>
+          </div>
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center text-2xl mb-5">&#128200;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.calendar.title">Calendar View</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
+          </div>
+          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-2xl mb-5">&#127760;</div>
+            <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.language.title">Multi-Language</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Platforms Section -->
+    <section id="platforms" class="py-24 sm:py-32 border-t border-border">
+      <div class="max-w-6xl mx-auto px-5 sm:px-8">
+        <div class="fade-in-section text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+            <span data-i18n="platforms.title1">Available</span>
+            <span class="gradient-text" data-i18n="platforms.title2">everywhere</span>
+            <span data-i18n="platforms.title3">you are</span>
+          </h2>
+          <p class="mt-4 text-text-secondary text-lg" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div class="fade-in-section platform-card bg-surface border border-border rounded-3xl p-8 flex flex-col">
+            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl mb-6">&#128421;</div>
+            <h3 class="text-xl font-bold text-text-primary mb-2" data-i18n="platforms.web.title">Web App</h3>
+            <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
+            <a href={appUrl} class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-6 py-3 rounded-3xl text-sm transition-colors inline-flex items-center justify-center gap-2 w-full">
+              <span data-i18n="platforms.web.cta">Open Web App</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+            </a>
+          </div>
+          <div class="fade-in-section platform-card bg-surface border border-border rounded-3xl p-8 flex flex-col">
+            <div class="flex items-start justify-between mb-6">
+              <div class="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-3xl">&#128241;</div>
+              <span class="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
+            </div>
+            <h3 class="text-xl font-bold text-text-primary mb-2">Android</h3>
+            <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
+            <button disabled class="bg-surface border border-border text-text-muted font-semibold px-6 py-3 rounded-3xl text-sm inline-flex items-center justify-center gap-2.5 w-full cursor-not-allowed">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/></svg>
+              Google Play
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-24 sm:py-32 relative overflow-hidden">
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl"></div>
+      </div>
+      <div class="fade-in-section relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+          <span data-i18n="cta.title1">Ready to build</span>
+          <span class="gradient-text" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span>
+        </h2>
+        <p class="mt-5 text-text-secondary text-lg sm:text-xl max-w-xl mx-auto" data-i18n="cta.subtitle">Join Orbit today and start tracking your progress.</p>
+        <div class="mt-10">
+          <a href={appUrl} class="btn-glow bg-primary hover:bg-primary-hover text-white font-bold px-10 py-4 rounded-3xl text-lg transition-colors inline-flex items-center justify-center gap-2">
+            <span data-i18n="cta.button">Get Started Free</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-border py-10">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <img src="/logo.png" alt="Orbit" class="w-6 h-6 rounded-md" />
+        <span class="text-sm font-semibold text-text-primary">Orbit</span>
+      </div>
+      <p class="text-text-muted text-sm" data-i18n="footer.text">Built with care &middot; &copy; 2026</p>
+    </div>
+  </footer>
+</Layout>
+
+<script>
+  // --- i18n ---
+  const translations: Record<string, Record<string, string>> = {
+    en: {
+      "header.cta": "Go to Orbit",
+      "hero.title1": "Build Better Habits,",
+      "hero.title2": "One Day at a Time",
+      "hero.subtitle": "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.",
+      "hero.cta": "Get Started",
+      "hero.android": "Download for Android",
+      "hero.comingSoon": "Coming Soon",
+      "mockup.today": "Today",
+      "mockup.aiSummary": "AI Summary",
+      "mockup.summaryText": "Great progress! You've completed 4 of 6 habits today. Your reading streak is on fire.",
+      "mockup.habit1": "Morning Run",
+      "mockup.habit1sub": "30 min - Daily",
+      "mockup.streak1": "12 days",
+      "mockup.habit2": "Read 20 Pages",
+      "mockup.habit2sub": "20 pages - Daily",
+      "mockup.streak2": "24 days",
+      "mockup.habit3": "Meditate",
+      "mockup.habit3sub": "10 min - Daily",
+      "mockup.habit4": "Study Portuguese",
+      "mockup.habit4sub": "30 min - Weekdays",
+      "features.title1": "Everything you need to build",
+      "features.title2": "lasting habits",
+      "features.subtitle": "Simple yet powerful tools designed to help you stick to your routines and see real progress.",
+      "features.scheduling.title": "Smart Scheduling",
+      "features.scheduling.desc": "Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.",
+      "features.streaks.title": "Streak Tracking",
+      "features.streaks.desc": "Watch your streaks grow. Visual progress that keeps you motivated day after day.",
+      "features.ai.title": "AI Insights",
+      "features.ai.desc": "Get personalized daily summaries and routine analysis powered by AI.",
+      "features.subhabits.title": "Sub-Habits",
+      "features.subhabits.desc": "Break big habits into smaller steps. Complete sub-tasks to build momentum.",
+      "features.calendar.title": "Calendar View",
+      "features.calendar.desc": "See your entire month at a glance with a heatmap of your habit completions.",
+      "features.language.title": "Multi-Language",
+      "features.language.desc": "Available in English and Portuguese. More languages coming soon.",
+      "platforms.title1": "Available",
+      "platforms.title2": "everywhere",
+      "platforms.title3": "you are",
+      "platforms.subtitle": "Access your habits from any device, anytime.",
+      "platforms.web.title": "Web App",
+      "platforms.web.desc": "Access Orbit from any browser. Your habits sync across all your devices.",
+      "platforms.web.cta": "Open Web App",
+      "platforms.android.desc": "Take Orbit with you. Track habits on the go with our native Android app.",
+      "cta.title1": "Ready to build",
+      "cta.title2": "better habits",
+      "cta.title3": "?",
+      "cta.subtitle": "Join Orbit today and start tracking your progress.",
+      "cta.button": "Get Started Free",
+      "footer.text": "Built with care · © 2026"
+    },
+    "pt-BR": {
+      "header.cta": "Ir para o Orbit",
+      "hero.title1": "Construa Hábitos Melhores,",
+      "hero.title2": "Um Dia de Cada Vez",
+      "hero.subtitle": "Acompanhe seus hábitos diários, construa sequências e receba insights de IA para manter suas metas em dia.",
+      "hero.cta": "Começar",
+      "hero.android": "Baixar para Android",
+      "hero.comingSoon": "Em Breve",
+      "mockup.today": "Hoje",
+      "mockup.aiSummary": "Resumo IA",
+      "mockup.summaryText": "Ótimo progresso! Você completou 4 de 6 hábitos hoje. Sua sequência de leitura está incrível.",
+      "mockup.habit1": "Corrida Matinal",
+      "mockup.habit1sub": "30 min - Diário",
+      "mockup.streak1": "12 dias",
+      "mockup.habit2": "Ler 20 Páginas",
+      "mockup.habit2sub": "20 páginas - Diário",
+      "mockup.streak2": "24 dias",
+      "mockup.habit3": "Meditar",
+      "mockup.habit3sub": "10 min - Diário",
+      "mockup.habit4": "Estudar Inglês",
+      "mockup.habit4sub": "30 min - Dias úteis",
+      "features.title1": "Tudo que você precisa para construir",
+      "features.title2": "hábitos duradouros",
+      "features.subtitle": "Ferramentas simples e poderosas para ajudar você a manter suas rotinas e ver progresso real.",
+      "features.scheduling.title": "Agendamento Inteligente",
+      "features.scheduling.desc": "Defina frequências diárias, semanais ou personalizadas. O Orbit calcula exatamente quando cada hábito é devido.",
+      "features.streaks.title": "Rastreamento de Sequências",
+      "features.streaks.desc": "Veja suas sequências crescerem. Progresso visual que mantém você motivado dia após dia.",
+      "features.ai.title": "Insights de IA",
+      "features.ai.desc": "Receba resumos diários personalizados e análise de rotina com inteligência artificial.",
+      "features.subhabits.title": "Sub-Hábitos",
+      "features.subhabits.desc": "Divida grandes hábitos em passos menores. Complete sub-tarefas para ganhar impulso.",
+      "features.calendar.title": "Visão de Calendário",
+      "features.calendar.desc": "Veja o mês inteiro de uma só vez com um mapa de calor das suas conclusões.",
+      "features.language.title": "Multi-Idioma",
+      "features.language.desc": "Disponível em inglês e português. Mais idiomas em breve.",
+      "platforms.title1": "Disponível em",
+      "platforms.title2": "todo lugar",
+      "platforms.title3": "que você estiver",
+      "platforms.subtitle": "Acesse seus hábitos de qualquer dispositivo, a qualquer hora.",
+      "platforms.web.title": "Aplicativo Web",
+      "platforms.web.desc": "Acesse o Orbit de qualquer navegador. Seus hábitos sincronizam em todos os dispositivos.",
+      "platforms.web.cta": "Abrir Web App",
+      "platforms.android.desc": "Leve o Orbit com você. Acompanhe hábitos em movimento com nosso app Android nativo.",
+      "cta.title1": "Pronto para construir",
+      "cta.title2": "hábitos melhores",
+      "cta.title3": "?",
+      "cta.subtitle": "Entre no Orbit hoje e comece a acompanhar seu progresso.",
+      "cta.button": "Começar Grátis",
+      "footer.text": "Feito com carinho · © 2026"
+    }
+  };
+
+  const COOKIE_KEY = "orbit_lang";
+
+  function getLang(): string {
+    // 1. Cookie
+    const cookie = document.cookie.split("; ").find(c => c.startsWith(COOKIE_KEY + "="));
+    if (cookie) return cookie.split("=")[1];
+    // 2. Browser language
+    const browserLang = navigator.language || "";
+    if (browserLang.startsWith("pt")) return "pt-BR";
+    return "en";
+  }
+
+  function setLangCookie(lang: string) {
+    document.cookie = `${COOKIE_KEY}=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+  }
+
+  function applyTranslations(lang: string) {
+    const t = translations[lang] || translations["en"];
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const key = el.getAttribute("data-i18n")!;
+      if (t[key]) {
+        if (key === "footer.text") {
+          el.innerHTML = t[key];
+        } else {
+          el.textContent = t[key];
+        }
+      }
+    });
+    // Update lang toggle label
+    const label = document.getElementById("lang-label");
+    if (label) label.textContent = lang === "pt-BR" ? "PT" : "EN";
+    // Update html lang
+    document.documentElement.lang = lang === "pt-BR" ? "pt-BR" : "en";
+  }
+
+  // Init
+  let currentLang = getLang();
+  setLangCookie(currentLang);
+  applyTranslations(currentLang);
+
+  // Toggle button
+  document.getElementById("lang-toggle")?.addEventListener("click", () => {
+    currentLang = currentLang === "en" ? "pt-BR" : "en";
+    setLangCookie(currentLang);
+    applyTranslations(currentLang);
+  });
+
+  // --- Scroll animations ---
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+        }
+      });
+    },
+    { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+  );
+  document.querySelectorAll(".fade-in-section").forEach((el) => observer.observe(el));
+
+  // Header blur on scroll
+  const header = document.getElementById("site-header");
+  if (header) {
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 20) {
+        header.classList.add("scrolled");
+        header.style.borderColor = "var(--color-border)";
+      } else {
+        header.classList.remove("scrolled");
+        header.style.borderColor = "transparent";
+      }
+    }, { passive: true });
+  }
+</script>
