@@ -32,6 +32,47 @@ Single-page static site:
 - `src/layouts/Layout.astro` - Base HTML layout with meta tags
 - `src/styles/global.css` - Tailwind theme config + custom properties
 
+## Git Workflow
+
+Branch protection is enforced on `main`. No direct pushes, no force pushes, no branch deletion.
+
+### Branching Convention
+
+- `feature/xxx` -- new features
+- `fix/xxx` -- bugfixes
+- `chore/xxx` -- maintenance, config, docs
+
+### Merge Strategy
+
+- **Squash merge only** -- keeps `main` history linear and clean
+- Squash commit uses PR title + PR body
+- Head branches auto-delete after merge
+
+### Workflow
+
+```bash
+# 1. Create branch from main
+git checkout main && git pull
+git checkout -b feature/my-change
+
+# 2. Work and commit
+git add <files> && git commit -m "description"
+
+# 3. Push and create PR
+git push -u origin feature/my-change
+gh pr create --fill
+
+# 4. Merge via squash
+gh pr merge --squash
+```
+
+### Rules
+
+- Never push directly to `main` -- always go through a PR
+- Never force push to `main`
+- Keep PRs focused: one feature or fix per PR
+- Branch names should be descriptive: `feature/add-tags-to-habits`, `fix/login-redirect`
+
 ## Links
 
 - **App:** https://app.useorbit.org
