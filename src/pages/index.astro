@@ -76,61 +76,156 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <!-- Phone Mockup -->
           <div class="fade-in-section flex justify-center lg:justify-end">
             <div class="relative">
-              <div class="phone-glow p-[2px] rounded-[2.5rem] shadow-2xl shadow-primary/20">
-                <div class="bg-background rounded-[2.4rem] p-3 w-[280px] sm:w-[300px]">
-                  <div class="bg-background rounded-t-[2rem] flex justify-center pt-2 pb-3">
-                    <div class="w-24 h-5 bg-surface rounded-full"></div>
-                  </div>
-                  <div class="bg-surface rounded-2xl p-4 space-y-3 min-h-[440px]">
-                    <div class="flex items-center justify-between mb-4">
-                      <div class="text-sm font-bold text-text-primary" data-i18n="mockup.today">Today</div>
-                      <div class="text-xs text-text-muted">March 18</div>
+              <div class="phone-glow p-[2px] rounded-[3rem] shadow-2xl shadow-primary/20">
+                <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
+                  <div class="app-screen-scaler">
+                    <div class="app-screen">
+                      <!-- Status Bar -->
+                      <div class="app-statusbar">
+                        <span>9:41</span>
+                        <div class="app-statusbar-right">
+                          <div class="app-signal"><span></span><span></span><span></span><span></span></div>
+                          <span style="font-size:11px">5G</span>
+                          <div class="app-battery"><div class="app-battery-fill"></div></div>
+                        </div>
+                      </div>
+
+                      <!-- Header -->
+                      <div class="app-hdr">
+                        <div class="app-hdr-left">
+                          <img class="app-hdr-logo" src="/logo.png" alt="Orbit">
+                          <span class="app-hdr-title">Orbit</span>
+                        </div>
+                        <div class="app-hdr-bell">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        </div>
+                      </div>
+
+                      <!-- Tabs -->
+                      <div class="app-tabs">
+                        <div class="app-tab active" data-i18n="mockup.today">Today</div>
+                        <div class="app-tab" data-i18n="mockup.allHabits">All Habits</div>
+                      </div>
+
+                      <!-- Date Nav -->
+                      <div class="app-datenav">
+                        <div class="app-datenav-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+                        <span class="app-datenav-label" data-i18n="mockup.todayLabel">Today</span>
+                        <div class="app-datenav-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></div>
+                      </div>
+
+                      <!-- AI Card -->
+                      <div class="app-ai">
+                        <div class="app-ai-hdr">
+                          <span class="app-ai-icon">&#10024;</span>
+                          <span class="app-ai-title" data-i18n="mockup.yourDay">Your Day</span>
+                          <span class="app-pro">PRO</span>
+                        </div>
+                        <div class="app-ai-body" data-i18n="mockup.aiText">Great momentum! You've completed 3 of 7 habits. Your morning routine streak is at 12 days.</div>
+                      </div>
+
+                      <!-- Habit List -->
+                      <div class="app-habits">
+                        <!-- Morning Routine (with sub-habits, progress ring) -->
+                        <div class="app-habit due">
+                          <div class="app-expand"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+                          <div class="app-ring">
+                            <svg viewBox="0 0 28 28"><circle class="ring-bg" cx="14" cy="14" r="11"/><circle class="ring-fg" cx="14" cy="14" r="11" stroke-dasharray="69.1" stroke-dashoffset="23"/></svg>
+                            <span class="app-ring-text">2/3</span>
+                          </div>
+                          <div class="app-hcontent">
+                            <div class="app-hname" data-i18n="mockup.habit1">Morning Routine</div>
+                            <div class="app-hmeta">
+                              <span class="app-freq" data-i18n="mockup.freq.daily">Daily</span>
+                              <span class="app-time">7:00 AM</span>
+                              <span class="app-tag" style="background:#f59e0b" data-i18n="mockup.tag.wellness">Wellness</span>
+                            </div>
+                          </div>
+                          <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+                        </div>
+
+                        <!-- Sub-habits -->
+                        <div class="app-sub">
+                          <div class="app-sub-btn checked"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                          <div class="app-hcontent"><div class="app-sub-name striked" data-i18n="mockup.sub1">Stretch (10 min)</div><div class="app-sub-meta" data-i18n="mockup.freq.daily">Daily</div></div>
+                        </div>
+                        <div class="app-sub">
+                          <div class="app-sub-btn checked"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                          <div class="app-hcontent"><div class="app-sub-name striked" data-i18n="mockup.sub2">Healthy breakfast</div><div class="app-sub-meta" data-i18n="mockup.freq.daily">Daily</div></div>
+                        </div>
+                        <div class="app-sub">
+                          <div class="app-sub-btn"></div>
+                          <div class="app-hcontent"><div class="app-sub-name" data-i18n="mockup.sub3">Journal (5 min)</div><div class="app-sub-meta" data-i18n="mockup.freq.daily">Daily</div></div>
+                        </div>
+
+                        <!-- Exercise (completed) -->
+                        <div class="app-habit done">
+                          <div class="app-logbtn checked"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                          <div class="app-hcontent">
+                            <div class="app-hname striked" data-i18n="mockup.habit2">Exercise</div>
+                            <div class="app-hmeta">
+                              <span class="app-freq" data-i18n="mockup.freq.daily">Daily</span>
+                              <span class="app-time">8:30 AM</span>
+                              <span class="app-checklist-badge">&#9745; 4/4</span>
+                            </div>
+                          </div>
+                          <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+                        </div>
+
+                        <!-- Read 30 minutes -->
+                        <div class="app-habit due">
+                          <div class="app-logbtn"></div>
+                          <div class="app-hcontent">
+                            <div class="app-hname" data-i18n="mockup.habit3">Read 30 minutes</div>
+                            <div class="app-hmeta">
+                              <span class="app-freq" data-i18n="mockup.freq.daily">Daily</span>
+                              <span class="app-time">2:00 PM</span>
+                              <span class="app-tag" style="background:#3b82f6" data-i18n="mockup.tag.growth">Growth</span>
+                            </div>
+                          </div>
+                          <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+                        </div>
+
+                        <!-- Meditate -->
+                        <div class="app-habit due">
+                          <div class="app-logbtn"></div>
+                          <div class="app-hcontent">
+                            <div class="app-hname" data-i18n="mockup.habit4">Meditate</div>
+                            <div class="app-hmeta">
+                              <span class="app-freq" data-i18n="mockup.freq.daily">Daily</span>
+                              <span class="app-time">6:00 PM</span>
+                            </div>
+                          </div>
+                          <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
+                        </div>
+                      </div>
+
+                      <!-- Bottom Nav -->
+                      <div class="app-nav">
+                        <div class="app-nav-inner">
+                          <div class="app-nav-item">
+                            <svg class="app-nav-icon active" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            <span class="app-nav-lbl active" data-i18n="mockup.nav.habits">Habits</span>
+                          </div>
+                          <div class="app-nav-item">
+                            <svg class="app-nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <span class="app-nav-lbl" data-i18n="mockup.nav.chat">Chat</span>
+                          </div>
+                          <div class="app-fab-wrap">
+                            <div class="app-fab"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                          </div>
+                          <div class="app-nav-item">
+                            <svg class="app-nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <span class="app-nav-lbl" data-i18n="mockup.nav.calendar">Calendar</span>
+                          </div>
+                          <div class="app-nav-item">
+                            <svg class="app-nav-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span class="app-nav-lbl" data-i18n="mockup.nav.profile">Profile</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="app-homebar"></div>
                     </div>
-                    <div class="bg-background rounded-xl p-3 border border-primary/20">
-                      <div class="flex items-center gap-2 mb-2">
-                        <div class="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px]">&#10024;</div>
-                        <span class="text-xs font-semibold text-primary" data-i18n="mockup.aiSummary">AI Summary</span>
-                      </div>
-                      <p class="text-[10px] text-text-secondary leading-relaxed" data-i18n="mockup.summaryText">Great progress! You've completed 4 of 6 habits today. Your reading streak is on fire.</p>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 text-sm">&#10003;</div>
-                        <div class="flex-1">
-                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit1">Morning Run</div>
-                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit1sub">30 min - Daily</div>
-                        </div>
-                        <div class="text-[10px] text-green-400 font-medium" data-i18n="mockup.streak1">12 days</div>
-                      </div>
-                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-green-500/20 flex items-center justify-center text-green-400 text-sm">&#10003;</div>
-                        <div class="flex-1">
-                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit2">Read 20 Pages</div>
-                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit2sub">20 pages - Daily</div>
-                        </div>
-                        <div class="text-[10px] text-green-400 font-medium" data-i18n="mockup.streak2">24 days</div>
-                      </div>
-                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-sm">&#9711;</div>
-                        <div class="flex-1">
-                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit3">Meditate</div>
-                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit3sub">10 min - Daily</div>
-                        </div>
-                      </div>
-                      <div class="bg-background rounded-xl p-3 border border-border flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center text-primary text-sm">&#9711;</div>
-                        <div class="flex-1">
-                          <div class="text-xs font-semibold text-text-primary" data-i18n="mockup.habit4">Study Portuguese</div>
-                          <div class="text-[10px] text-text-muted" data-i18n="mockup.habit4sub">30 min - Weekdays</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="flex justify-around pt-3 pb-1">
-                    <div class="w-6 h-6 rounded-full bg-primary/30"></div>
-                    <div class="w-6 h-6 rounded-full bg-surface"></div>
-                    <div class="w-6 h-6 rounded-full bg-surface"></div>
-                    <div class="w-6 h-6 rounded-full bg-surface"></div>
                   </div>
                 </div>
               </div>
@@ -276,18 +371,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "hero.android": "Download for Android",
       "hero.comingSoon": "Coming Soon",
       "mockup.today": "Today",
-      "mockup.aiSummary": "AI Summary",
-      "mockup.summaryText": "Great progress! You've completed 4 of 6 habits today. Your reading streak is on fire.",
-      "mockup.habit1": "Morning Run",
-      "mockup.habit1sub": "30 min - Daily",
-      "mockup.streak1": "12 days",
-      "mockup.habit2": "Read 20 Pages",
-      "mockup.habit2sub": "20 pages - Daily",
-      "mockup.streak2": "24 days",
-      "mockup.habit3": "Meditate",
-      "mockup.habit3sub": "10 min - Daily",
-      "mockup.habit4": "Study Portuguese",
-      "mockup.habit4sub": "30 min - Weekdays",
+      "mockup.allHabits": "All Habits",
+      "mockup.todayLabel": "Today",
+      "mockup.yourDay": "Your Day",
+      "mockup.aiText": "Great momentum! You've completed 3 of 7 habits. Your morning routine streak is at 12 days.",
+      "mockup.habit1": "Morning Routine",
+      "mockup.habit2": "Exercise",
+      "mockup.habit3": "Read 30 minutes",
+      "mockup.habit4": "Meditate",
+      "mockup.sub1": "Stretch (10 min)",
+      "mockup.sub2": "Healthy breakfast",
+      "mockup.sub3": "Journal (5 min)",
+      "mockup.freq.daily": "Daily",
+      "mockup.tag.wellness": "Wellness",
+      "mockup.tag.growth": "Growth",
+      "mockup.nav.habits": "Habits",
+      "mockup.nav.chat": "Chat",
+      "mockup.nav.calendar": "Calendar",
+      "mockup.nav.profile": "Profile",
       "features.title1": "Everything you need to build",
       "features.title2": "lasting habits",
       "features.subtitle": "Simple yet powerful tools designed to help you stick to your routines and see real progress.",
@@ -327,18 +428,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "hero.android": "Baixar para Android",
       "hero.comingSoon": "Em Breve",
       "mockup.today": "Hoje",
-      "mockup.aiSummary": "Resumo IA",
-      "mockup.summaryText": "Ótimo progresso! Você completou 4 de 6 hábitos hoje. Sua sequência de leitura está incrível.",
-      "mockup.habit1": "Corrida Matinal",
-      "mockup.habit1sub": "30 min - Diário",
-      "mockup.streak1": "12 dias",
-      "mockup.habit2": "Ler 20 Páginas",
-      "mockup.habit2sub": "20 páginas - Diário",
-      "mockup.streak2": "24 dias",
-      "mockup.habit3": "Meditar",
-      "mockup.habit3sub": "10 min - Diário",
-      "mockup.habit4": "Estudar Inglês",
-      "mockup.habit4sub": "30 min - Dias úteis",
+      "mockup.allHabits": "Todos os Hábitos",
+      "mockup.todayLabel": "Hoje",
+      "mockup.yourDay": "Seu Dia",
+      "mockup.aiText": "Ótimo ritmo! Você completou 3 de 7 hábitos. Sua sequência matinal está em 12 dias.",
+      "mockup.habit1": "Rotina Matinal",
+      "mockup.habit2": "Exercício",
+      "mockup.habit3": "Ler 30 minutos",
+      "mockup.habit4": "Meditar",
+      "mockup.sub1": "Alongar (10 min)",
+      "mockup.sub2": "Café saudável",
+      "mockup.sub3": "Diário (5 min)",
+      "mockup.freq.daily": "Diário",
+      "mockup.tag.wellness": "Bem-estar",
+      "mockup.tag.growth": "Crescimento",
+      "mockup.nav.habits": "Hábitos",
+      "mockup.nav.chat": "Chat",
+      "mockup.nav.calendar": "Calendário",
+      "mockup.nav.profile": "Perfil",
       "features.title1": "Tudo que você precisa para construir",
       "features.title2": "hábitos duradouros",
       "features.subtitle": "Ferramentas simples e poderosas para ajudar você a manter suas rotinas e ver progresso real.",
