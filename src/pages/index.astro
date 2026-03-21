@@ -39,7 +39,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
       <div class="max-w-6xl mx-auto px-5 sm:px-8 w-full">
         <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div class="fade-in-section text-center lg:text-left">
+          <div class="fade-in-section text-center lg:text-left min-h-[calc(100vh-4rem)] lg:min-h-0 flex flex-col justify-center lg:block">
             <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
               <span data-i18n="hero.title1">Build Better Habits,</span>
               <span class="gradient-text" data-i18n="hero.title2">One Day at a Time</span>
@@ -76,7 +76,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <!-- Phone Mockup -->
           <div class="fade-in-section flex justify-center lg:justify-end">
             <div class="relative">
-              <div class="phone-glow p-[2px] rounded-[3rem] shadow-2xl shadow-primary/20">
+              <div class="phone-glow p-[2px] rounded-[3rem] shadow-2xl shadow-primary-a20">
                 <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
                   <div class="app-screen-scaler">
                     <div class="app-screen">
@@ -234,11 +234,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         </div>
       </div>
 
-      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <svg class="w-5 h-5 text-text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-        </svg>
-      </div>
     </section>
 
     <!-- Features Section -->
@@ -256,32 +251,32 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl mb-5">&#128197;</div>
+            <div class="w-12 h-12 rounded-2xl bg-primary-a10 flex items-center justify-center text-2xl mb-5">&#128197;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.scheduling.title">Smart Scheduling</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
           </div>
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-2xl mb-5">&#128293;</div>
+            <div class="w-12 h-12 rounded-2xl bg-accent-orange flex items-center justify-center text-2xl mb-5">&#128293;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.streaks.title">Streak Tracking</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.streaks.desc">Watch your streaks grow. Visual progress that keeps you motivated day after day.</p>
           </div>
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-2xl mb-5">&#129302;</div>
+            <div class="w-12 h-12 rounded-2xl bg-accent-blue flex items-center justify-center text-2xl mb-5">&#129302;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.ai.title">AI Insights</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.ai.desc">Get personalized daily summaries and routine analysis powered by AI.</p>
           </div>
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center text-2xl mb-5">&#127793;</div>
+            <div class="w-12 h-12 rounded-2xl bg-accent-green flex items-center justify-center text-2xl mb-5">&#127793;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.subhabits.title">Sub-Habits</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.subhabits.desc">Break big habits into smaller steps. Complete sub-tasks to build momentum.</p>
           </div>
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center text-2xl mb-5">&#128200;</div>
+            <div class="w-12 h-12 rounded-2xl bg-accent-pink flex items-center justify-center text-2xl mb-5">&#128200;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.calendar.title">Calendar View</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
           </div>
           <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-2xl mb-5">&#127760;</div>
+            <div class="w-12 h-12 rounded-2xl bg-accent-cyan flex items-center justify-center text-2xl mb-5">&#127760;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.language.title">Multi-Language</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
           </div>
@@ -303,7 +298,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
         <div class="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
           <div class="fade-in-section platform-card bg-surface border border-border rounded-3xl p-8 flex flex-col">
-            <div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl mb-6">&#128421;</div>
+            <div class="w-14 h-14 rounded-2xl bg-primary-a10 flex items-center justify-center text-3xl mb-6">&#128421;</div>
             <h3 class="text-xl font-bold text-text-primary mb-2" data-i18n="platforms.web.title">Web App</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
             <a href={appUrl} class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-6 py-3 rounded-3xl text-sm transition-colors inline-flex items-center justify-center gap-2 w-full">
@@ -313,8 +308,8 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
           <div class="fade-in-section platform-card bg-surface border border-border rounded-3xl p-8 flex flex-col">
             <div class="flex items-start justify-between mb-6">
-              <div class="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-3xl">&#128241;</div>
-              <span class="bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
+              <div class="w-14 h-14 rounded-2xl bg-accent-green flex items-center justify-center text-3xl">&#128241;</div>
+              <span class="bg-primary-a10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2">Android</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
@@ -330,7 +325,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     <!-- CTA Section -->
     <section class="py-24 sm:py-32 relative overflow-hidden">
       <div class="absolute inset-0 flex items-center justify-center">
-        <div class="w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl"></div>
+        <div class="w-[600px] h-[600px] bg-primary-a5 rounded-full blur-3xl"></div>
       </div>
       <div class="fade-in-section relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
         <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">

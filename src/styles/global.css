@@ -10,6 +10,14 @@
   --color-text-primary: #ffffff;
   --color-text-secondary: #a3a3a3;
   --color-text-muted: #525252;
+  --color-primary-a5: rgba(139, 92, 246, 0.05);
+  --color-primary-a10: rgba(139, 92, 246, 0.1);
+  --color-primary-a20: rgba(139, 92, 246, 0.2);
+  --color-accent-orange: rgba(249, 115, 22, 0.1);
+  --color-accent-blue: rgba(59, 130, 246, 0.1);
+  --color-accent-green: rgba(34, 197, 94, 0.1);
+  --color-accent-pink: rgba(236, 72, 153, 0.1);
+  --color-accent-cyan: rgba(6, 182, 212, 0.1);
 }
 
 /* Scroll animations */
@@ -570,6 +578,7 @@
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  color-scheme: dark;
 }
 
 /* Purple glow button */
