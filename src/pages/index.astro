@@ -349,7 +349,11 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <img src="/logo.png" alt="Orbit" class="w-6 h-6 rounded-md" />
         <span class="text-sm font-semibold text-text-primary">Orbit</span>
       </div>
-      <p class="text-text-muted text-sm" data-i18n="footer.text">Built with care &middot; &copy; 2026</p>
+      <div class="flex items-center gap-4">
+        <a href="https://app.useorbit.org/privacy" class="text-text-muted text-sm hover:text-text-secondary transition-colors" data-i18n="footer.privacy">Privacy Policy</a>
+        <span class="text-text-muted/30">|</span>
+        <p class="text-text-muted text-sm" data-i18n="footer.text">Built with care &middot; &copy; 2026</p>
+      </div>
     </div>
   </footer>
 </Layout>
@@ -412,6 +416,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "cta.title3": "?",
       "cta.subtitle": "Join Orbit today and start tracking your progress.",
       "cta.button": "Get Started Free",
+      "footer.privacy": "Privacy Policy",
       "footer.text": "Built with care · © 2026"
     },
     "pt-BR": {
@@ -469,6 +474,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "cta.title3": "?",
       "cta.subtitle": "Entre no Orbit hoje e comece a acompanhar seu progresso.",
       "cta.button": "Começar Grátis",
+      "footer.privacy": "Politica de Privacidade",
       "footer.text": "Feito com carinho · © 2026"
     }
   };
