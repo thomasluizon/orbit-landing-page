@@ -34,23 +34,35 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
   <main>
     <!-- Hero Section -->
-    <section class="hero-gradient relative min-h-screen flex items-center pt-16 pb-16">
-      <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22%3E%3Cpath d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    <section class="hero-gradient relative min-h-screen flex items-center pt-16 pb-16 overflow-hidden">
+      <!-- Orbital Decorations -->
+      <div class="orbital-ring orbital-ring-1"></div>
+      <div class="orbital-ring orbital-ring-2"></div>
 
-      <div class="max-w-6xl mx-auto px-5 sm:px-8 w-full">
-        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div class="fade-in-section text-center lg:text-left min-h-[calc(100vh-4rem)] lg:min-h-0 flex flex-col justify-center lg:block">
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-              <span data-i18n="hero.title1">Build Better Habits,</span>
-              <span class="gradient-text" data-i18n="hero.title2">One Day at a Time</span>
+      <!-- Floating Particles -->
+      <div class="floating-particle lg" style="top:18%;left:12%;--delay:0s;--dur:9s"></div>
+      <div class="floating-particle" style="top:55%;left:6%;--delay:2s;--dur:11s"></div>
+      <div class="floating-particle sm" style="top:25%;left:42%;--delay:1s;--dur:13s"></div>
+      <div class="floating-particle" style="top:72%;left:52%;--delay:3.5s;--dur:8s"></div>
+      <div class="floating-particle lg" style="top:12%;left:78%;--delay:1.5s;--dur:10s"></div>
+      <div class="floating-particle sm" style="top:82%;left:88%;--delay:4s;--dur:7s"></div>
+      <div class="floating-particle" style="top:40%;left:92%;--delay:0.5s;--dur:12s"></div>
+      <div class="floating-particle sm" style="top:65%;left:25%;--delay:2.5s;--dur:9s"></div>
+
+      <div class="max-w-6xl mx-auto px-5 sm:px-8 w-full relative z-10">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100vh-4rem)] lg:min-h-0 flex flex-col justify-center lg:block">
+            <h1 class="hero-title font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
+              <span data-i18n="hero.title1">Build Better Habits,</span><br class="hidden sm:block">
+              <span class="gradient-text italic" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
-            <p class="mt-6 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-xl mx-auto lg:mx-0" data-i18n="hero.subtitle">
+            <p class="hero-subtitle mt-6 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-xl mx-auto lg:mx-0" style="animation-delay:0.8s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
             </p>
-            <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <div class="hero-cta-group mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start" style="animation-delay:1s">
               <a
                 href={appUrl}
-                class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-3xl text-base transition-colors inline-flex items-center justify-center gap-2"
+                class="btn-glow btn-shimmer btn-pulse bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-3xl text-base transition-colors inline-flex items-center justify-center gap-2"
               >
                 <span data-i18n="hero.cta">Get Started</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -74,8 +86,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
 
           <!-- Phone Mockup -->
-          <div class="fade-in-section flex justify-center lg:justify-end">
-            <div class="relative">
+          <div class="fade-in-section stagger-2 flex justify-center lg:justify-end">
+            <div class="relative phone-float">
+              <div class="phone-orbit-ring"></div>
               <div class="phone-glow p-[2px] rounded-[3rem] shadow-2xl shadow-primary-a20">
                 <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
                   <div class="app-screen-scaler">
@@ -236,47 +249,56 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
     </section>
 
+    <!-- Section Divider -->
+    <div class="glow-divider"></div>
+
     <!-- Features Section -->
     <section id="features" class="py-24 sm:py-32">
       <div class="max-w-6xl mx-auto px-5 sm:px-8">
         <div class="fade-in-section text-center mb-16">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
-            <span data-i18n="features.title1">Everything you need to build</span>
-            <span class="gradient-text" data-i18n="features.title2">lasting habits</span>
+          <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight">
+            <span data-i18n="features.title1">Everything you need to build</span><br class="hidden sm:block">
+            <span class="gradient-text italic" data-i18n="features.title2">lasting habits</span>
           </h2>
           <p class="mt-4 text-text-secondary text-lg max-w-2xl mx-auto" data-i18n="features.subtitle">
             Simple yet powerful tools designed to help you stick to your routines and see real progress.
           </p>
         </div>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-primary-a10 flex items-center justify-center text-2xl mb-5">&#128197;</div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-primary-a10 flex items-center justify-center text-2xl mb-5">&#128197;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.scheduling.title">Smart Scheduling</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
           </div>
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-accent-orange flex items-center justify-center text-2xl mb-5">&#128293;</div>
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-accent-orange flex items-center justify-center text-2xl mb-5">&#128293;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.streaks.title">Streak Tracking</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.streaks.desc">Watch your streaks grow. Visual progress that keeps you motivated day after day.</p>
           </div>
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-accent-blue flex items-center justify-center text-2xl mb-5">&#129302;</div>
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-accent-blue flex items-center justify-center text-2xl mb-5">&#129302;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.ai.title">AI Insights</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.ai.desc">Get personalized daily summaries and routine analysis powered by AI.</p>
           </div>
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-accent-green flex items-center justify-center text-2xl mb-5">&#127793;</div>
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-accent-green flex items-center justify-center text-2xl mb-5">&#127793;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.subhabits.title">Sub-Habits</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.subhabits.desc">Break big habits into smaller steps. Complete sub-tasks to build momentum.</p>
           </div>
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-accent-pink flex items-center justify-center text-2xl mb-5">&#128200;</div>
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-accent-pink flex items-center justify-center text-2xl mb-5">&#128200;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.calendar.title">Calendar View</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
           </div>
-          <div class="fade-in-section feature-card bg-surface border border-border rounded-3xl p-7">
-            <div class="w-12 h-12 rounded-2xl bg-accent-cyan flex items-center justify-center text-2xl mb-5">&#127760;</div>
+          <div class="fade-in-section feature-card tilt-card bg-surface border border-border rounded-3xl p-7 relative">
+            <div class="tilt-shine"></div>
+            <div class="feature-icon w-12 h-12 rounded-2xl bg-accent-cyan flex items-center justify-center text-2xl mb-5">&#127760;</div>
             <h3 class="text-lg font-bold text-text-primary mb-2" data-i18n="features.language.title">Multi-Language</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
           </div>
@@ -284,13 +306,16 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       </div>
     </section>
 
+    <!-- Section Divider -->
+    <div class="glow-divider"></div>
+
     <!-- Platforms Section -->
     <section id="platforms" class="py-24 sm:py-32 border-t border-border">
       <div class="max-w-6xl mx-auto px-5 sm:px-8">
         <div class="fade-in-section text-center mb-16">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 class="font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight">
             <span data-i18n="platforms.title1">Available</span>
-            <span class="gradient-text" data-i18n="platforms.title2">everywhere</span>
+            <span class="gradient-text italic" data-i18n="platforms.title2">everywhere</span>
             <span data-i18n="platforms.title3">you are</span>
           </h2>
           <p class="mt-4 text-text-secondary text-lg" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
@@ -322,19 +347,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       </div>
     </section>
 
+    <!-- Section Divider -->
+    <div class="glow-divider"></div>
+
     <!-- CTA Section -->
     <section class="py-24 sm:py-32 relative overflow-hidden">
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="w-[600px] h-[600px] bg-primary-a5 rounded-full blur-3xl"></div>
       </div>
+      <div class="cta-orbit" style="width:400px;height:400px;top:50%;left:50%;transform-origin:center;margin-top:-200px;margin-left:-200px"></div>
+      <div class="cta-orbit" style="width:600px;height:600px;top:50%;left:50%;transform-origin:center;margin-top:-300px;margin-left:-300px;animation-direction:reverse;animation-duration:55s"></div>
       <div class="fade-in-section relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
-        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-          <span data-i18n="cta.title1">Ready to build</span>
-          <span class="gradient-text" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span>
+        <h2 class="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight">
+          <span data-i18n="cta.title1">Ready to build</span><br class="hidden sm:block">
+          <span class="gradient-text italic" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span>
         </h2>
         <p class="mt-5 text-text-secondary text-lg sm:text-xl max-w-xl mx-auto" data-i18n="cta.subtitle">Join Orbit today and start tracking your progress.</p>
         <div class="mt-10">
-          <a href={appUrl} class="btn-glow bg-primary hover:bg-primary-hover text-white font-bold px-10 py-4 rounded-3xl text-lg transition-colors inline-flex items-center justify-center gap-2">
+          <a href={appUrl} class="btn-glow btn-shimmer btn-pulse bg-primary hover:bg-primary-hover text-white font-bold px-10 py-4 rounded-3xl text-lg transition-colors inline-flex items-center justify-center gap-2">
             <span data-i18n="cta.button">Get Started Free</span>
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
           </a>
@@ -524,7 +554,32 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     currentLang = currentLang === "en" ? "pt-BR" : "en";
     setLangCookie(currentLang);
     applyTranslations(currentLang);
+    splitHeroWords();
   });
+
+  // --- Hero word cascade ---
+  function splitHeroWords() {
+    const title1 = document.querySelector('[data-i18n="hero.title1"]');
+    const title2 = document.querySelector('[data-i18n="hero.title2"]');
+
+    if (title1) {
+      const text = (title1.textContent || '').trim();
+      const words = text.split(/\s+/).filter(Boolean);
+      title1.innerHTML = words.map((w, i) =>
+        `<span class="hero-word" style="animation-delay:${0.15 + i * 0.09}s">${w}</span>`
+      ).join(' ');
+    }
+
+    if (title2) {
+      const text = (title2.textContent || '').trim();
+      const words = text.split(/\s+/).filter(Boolean);
+      title2.className = 'italic';
+      title2.innerHTML = words.map((w, i) =>
+        `<span class="hero-word gradient-text-animated" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
+      ).join(' ');
+    }
+  }
+  splitHeroWords();
 
   // --- Scroll animations ---
   const observer = new IntersectionObserver(
@@ -552,4 +607,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       }
     }, { passive: true });
   }
+
+  // --- 3D Card Tilt ---
+  document.querySelectorAll('.tilt-card').forEach(card => {
+    const el = card as HTMLElement;
+
+    el.addEventListener('mousemove', (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      const rotateX = (y - 0.5) * -10;
+      const rotateY = (x - 0.5) * 10;
+      el.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-6px)`;
+      el.style.setProperty('--mouse-x', `${x * 100}%`);
+      el.style.setProperty('--mouse-y', `${y * 100}%`);
+    });
+
+    el.addEventListener('mouseleave', () => {
+      el.style.transform = '';
+    });
+  });
 </script>
