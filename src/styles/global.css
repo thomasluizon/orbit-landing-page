@@ -93,54 +93,75 @@ body::after {
 .orbital-ring {
   position: absolute;
   border-radius: 50%;
-  border: 1px solid rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.04);
   pointer-events: none;
-  display: none;
 }
 
 .orbital-ring::before {
   content: '';
   position: absolute;
-  width: 6px;
-  height: 6px;
-  background: rgba(139, 92, 246, 0.6);
+  width: 4px;
+  height: 4px;
+  background: rgba(139, 92, 246, 0.5);
   border-radius: 50%;
   top: 0;
   left: 50%;
   transform: translateX(-50%) translateY(-50%);
-  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
   animation: pulse-glow 4s ease-in-out infinite;
 }
 
 .orbital-ring-1 {
-  width: 600px;
-  height: 600px;
+  width: 300px;
+  height: 300px;
   top: 50%;
-  left: 65%;
+  left: 50%;
   animation: orbit-spin 50s linear infinite;
 }
 
 .orbital-ring-2 {
-  width: 900px;
-  height: 900px;
+  width: 450px;
+  height: 450px;
   top: 50%;
-  left: 65%;
+  left: 50%;
   border-style: dashed;
   border-color: rgba(139, 92, 246, 0.03);
   animation: orbit-spin-reverse 80s linear infinite;
 }
 
 .orbital-ring-2::before {
-  width: 4px;
-  height: 4px;
-  background: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+  width: 3px;
+  height: 3px;
+  background: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.25);
   animation-delay: 2s;
 }
 
 @media (min-width: 1024px) {
   .orbital-ring {
-    display: block;
+    border-color: rgba(139, 92, 246, 0.06);
+  }
+  .orbital-ring::before {
+    width: 6px;
+    height: 6px;
+    background: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  }
+  .orbital-ring-1 {
+    width: 600px;
+    height: 600px;
+    left: 65%;
+  }
+  .orbital-ring-2 {
+    width: 900px;
+    height: 900px;
+    left: 65%;
+  }
+  .orbital-ring-2::before {
+    width: 4px;
+    height: 4px;
+    background: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
   }
 }
 
@@ -152,41 +173,53 @@ body::after {
 
 .phone-orbit-ring {
   position: absolute;
-  inset: -50px;
+  inset: -24px;
   border-radius: 50%;
-  border: 1px dashed rgba(139, 92, 246, 0.12);
+  border: 1px dashed rgba(139, 92, 246, 0.10);
   animation: phone-orbit 25s linear infinite;
   pointer-events: none;
-  display: none;
 }
 
 .phone-orbit-ring::before {
   content: '';
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   background: #8b5cf6;
   border-radius: 50%;
   top: 15%;
-  right: -4px;
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.7);
+  right: -3px;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
 }
 
 .phone-orbit-ring::after {
   content: '';
   position: absolute;
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
   background: rgba(99, 102, 241, 0.5);
   border-radius: 50%;
   bottom: 25%;
-  left: -3px;
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+  left: -2px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
 @media (min-width: 1024px) {
   .phone-orbit-ring {
-    display: block;
+    inset: -50px;
+    border-color: rgba(139, 92, 246, 0.12);
+  }
+  .phone-orbit-ring::before {
+    width: 8px;
+    height: 8px;
+    right: -4px;
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.7);
+  }
+  .phone-orbit-ring::after {
+    width: 5px;
+    height: 5px;
+    left: -3px;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
   }
 }
 
