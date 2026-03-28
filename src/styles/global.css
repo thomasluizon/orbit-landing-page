@@ -406,7 +406,7 @@ body::after {
 }
 
 .phone-wrapper {
-  --phone-rotate: 1deg;
+  --phone-rotate: 0deg;
   animation: phone-gentle-float 6s ease-in-out infinite;
   will-change: transform;
 }
