@@ -55,8 +55,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100dvh-6rem)] lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
             <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,8vw,5rem)] lg:text-[clamp(4rem,5.5vw,5.5rem)]">
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
-              <span class="heading-rule"></span>
-              <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
+              <span class="heading-editorial-accent block" style="color: #a78bfa" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
             <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.8s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
@@ -86,7 +85,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
 
           <!-- Phone Mockup -->
-          <div class="fade-in-section stagger-2 flex justify-center lg:justify-end">
+          <div class="fade-in-section stagger-2 flex justify-center lg:justify-end lg:mt-4">
             <div class="phone-wrapper relative">
               <div class="phone-border p-[1.5px] rounded-[3rem] shadow-phone">
                 <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
@@ -645,8 +644,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       const text = (title2.textContent || '').trim();
       const words = text.split(/\s+/).filter(Boolean);
       title2.className = 'heading-editorial-accent block';
+      title2.style.color = '#a78bfa';
       title2.innerHTML = words.map((w, i) =>
-        `<span class="hero-word gradient-text" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
+        `<span class="hero-word" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
       ).join(' ');
     }
   }
