@@ -19,7 +19,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <button
           id="lang-toggle"
           class="text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-          aria-label="Switch language"
+          aria-label="EN - Switch language"
         >
           <span id="lang-label" class="border-b border-text-muted/30 pb-0.5">EN</span>
         </button>
@@ -57,10 +57,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
               <span class="heading-editorial-accent block" style="color: #a78bfa" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
-            <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.8s" data-i18n="hero.subtitle">
+            <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.15s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
             </p>
-            <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:1s">
+            <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:0.3s">
               <a
                 href={appUrl}
                 class="btn-magnetic btn-glow btn-shimmer bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-full text-base transition-colors inline-flex items-center gap-2 relative"
@@ -612,6 +612,8 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     });
     const label = document.getElementById("lang-label");
     if (label) label.textContent = lang === "pt-BR" ? "PT" : "EN";
+    const toggle = document.getElementById("lang-toggle");
+    if (toggle) toggle.setAttribute("aria-label", `${lang === "pt-BR" ? "PT" : "EN"} - Switch language`);
     document.documentElement.lang = lang === "pt-BR" ? "pt-BR" : "en";
   }
 

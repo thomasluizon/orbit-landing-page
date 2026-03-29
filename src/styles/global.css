@@ -12,7 +12,7 @@
   --color-primary-hover: #7c3aed;
   --color-text-primary: #ffffff;
   --color-text-secondary: #b0aba3;
-  --color-text-muted: #525252;
+  --color-text-muted: #737373;
   --color-warm-white: #f0ede8;
   --color-primary-a5: rgba(139, 92, 246, 0.05);
   --color-primary-a10: rgba(139, 92, 246, 0.1);
@@ -61,6 +61,13 @@ body::after {
 .stagger-4 { transition-delay: 0.32s; }
 .stagger-5 { transition-delay: 0.40s; }
 .stagger-6 { transition-delay: 0.48s; }
+
+/* Hero is above-the-fold: skip JS-gated fade-in so LCP isn't delayed */
+.hero-section .fade-in-section {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
 
 /* ===== Header Glass ===== */
 .header-glass {
