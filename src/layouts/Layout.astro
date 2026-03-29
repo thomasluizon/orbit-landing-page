@@ -1,4 +1,6 @@
 ---
+import Analytics from "@vercel/analytics/astro";
+
 interface Props {
   title?: string;
   description?: string;
@@ -50,6 +52,7 @@ const siteUrl = "https://useorbit.org";
   </head>
   <body class="bg-background text-text-primary font-sans antialiased">
     <slot />
+    <Analytics />
   </body>
 </html>
 
