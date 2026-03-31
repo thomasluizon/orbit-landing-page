@@ -848,16 +848,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     });
   });
 
-  // --- Streak counter animation (eased) ---
+  // --- Streak counter animation (looping every 3s) ---
   document.querySelectorAll(".streak-counter").forEach(counter => {
     const el = counter as HTMLElement;
     const target = parseInt(el.dataset.target || "0");
-    let animated = false;
+    let loopInterval: ReturnType<typeof setInterval> | null = null;
 
     function runCounter() {
-      if (animated) return;
-      animated = true;
-      const duration = 1000;
+      const duration = 2200;
       const start = performance.now();
       const step = (now: number) => {
         const elapsed = now - start;
@@ -867,7 +865,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         el.textContent = current.toString();
         if (progress < 1) requestAnimationFrame(step);
       };
+      el.textContent = "0";
       requestAnimationFrame(step);
+    }
+
+    function startLoop() {
+      if (loopInterval) return;
+      runCounter();
+      loopInterval = setInterval(runCounter, 3000);
     }
 
     // Wait for parent card to become visible before counting
@@ -876,13 +881,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       const mo = new MutationObserver(() => {
         if ((parentCard as HTMLElement).classList.contains('is-visible')) {
           mo.disconnect();
-          setTimeout(runCounter, 350);
+          setTimeout(startLoop, 350);
         }
       });
       mo.observe(parentCard, { attributes: true, attributeFilter: ['class'] });
     } else {
       const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(runCounter, 350); } });
+        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(startLoop, 350); } });
       }, { threshold: 0.5 });
       io.observe(el);
     }
