@@ -10,7 +10,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
   <!-- Header -->
   <header id="site-header" class="header-glass fixed top-0 left-0 right-0 z-50">
-    <nav class="max-w-7xl mx-auto px-6 sm:px-8 h-16 flex items-center justify-between">
+    <nav class="page-container h-16 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2.5 group logo-hover">
         <img src="/logo.png" alt="Orbit" class="w-8 h-8 rounded-lg transition-all group-hover:drop-shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
         <span class="text-lg font-bold text-text-primary">Orbit</span>
@@ -36,12 +36,52 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
   <main>
     <!-- Hero Section -->
-    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-hidden">
-      <!-- Architectural Orbital Rings -->
-      <div class="orbital-ring orbital-ring-1"></div>
-      <div class="orbital-ring orbital-ring-2"></div>
+    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-x-clip">
+      <!-- Hero Background Layers -->
+      <div class="hero-bg-layer hero-bg-dot-grid"></div>
+      <div class="hero-bg-layer hero-glow-primary"></div>
+      <div class="hero-bg-layer hero-glow-secondary"></div>
+      <div class="hero-bg-layer hero-light-beam"></div>
+      <div class="hero-bg-layer hero-vignette-bottom"></div>
+      <!-- Hero sparkle stars -->
+      <div class="shared-sparkle" style="position:absolute;top:12%;left:8%;z-index:1"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:22%;left:24%;z-index:1"></div>
+      <div class="shared-sparkle" style="position:absolute;top:7%;left:52%;z-index:1"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:18%;left:78%;z-index:1"></div>
+      <div class="shared-sparkle" style="position:absolute;top:55%;left:90%;z-index:1"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:70%;left:6%;z-index:1"></div>
+      <div class="shared-sparkle" style="position:absolute;top:82%;left:38%;z-index:1"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:40%;left:96%;z-index:1"></div>
+      <!-- Large diffuse orbs -->
+      <div class="hero-orb-large" style="width:260px;height:260px;top:10%;left:5%;--orb-opacity:0.10;--drift-x:20px;--drift-y:-30px;--orb-dur:14s;--orb-delay:0s"></div>
+      <div class="hero-orb-large" style="width:200px;height:200px;top:55%;left:2%;--orb-opacity:0.08;--drift-x:-15px;--drift-y:25px;--orb-dur:18s;--orb-delay:2s"></div>
+      <div class="hero-orb-large" style="width:180px;height:180px;top:5%;left:65%;--orb-opacity:0.09;--drift-x:18px;--drift-y:-20px;--orb-dur:16s;--orb-delay:1s"></div>
+      <div class="hero-orb-large" style="width:220px;height:220px;top:65%;left:75%;--orb-opacity:0.07;--drift-x:-20px;--drift-y:-15px;--orb-dur:20s;--orb-delay:3s"></div>
 
-      <!-- Ambient Floating Orbs -->
+      <!-- Architectural Orbital Rings -->
+      <div class="orbital-ring orbital-ring-1">
+        <!-- Bolinhas orbitando ring-1 -->
+        <div class="orbit-dot" style="--orbit-r:400px;--dot-dur:22s;--dot-delay:0s;--dot-dir:normal">
+          <div class="orbit-dot-inner" style="--dot-size:9px;--dot-color:rgba(139,92,246,0.95);--dot-glow:rgba(139,92,246,0.8);--dot-glow2:rgba(139,92,246,0.4);--dot-pulse:2.5s"></div>
+        </div>
+        <div class="orbit-dot" style="--orbit-r:400px;--dot-dur:22s;--dot-delay:-11s;--dot-dir:normal">
+          <div class="orbit-dot-inner" style="--dot-size:6px;--dot-color:rgba(167,139,250,0.85);--dot-glow:rgba(167,139,250,0.7);--dot-glow2:rgba(167,139,250,0.35);--dot-pulse:3.2s"></div>
+        </div>
+        <div class="orbit-dot" style="--orbit-r:400px;--dot-dur:22s;--dot-delay:-5.5s;--dot-dir:normal">
+          <div class="orbit-dot-inner" style="--dot-size:5px;--dot-color:rgba(99,102,241,0.9);--dot-glow:rgba(99,102,241,0.75);--dot-glow2:rgba(99,102,241,0.4);--dot-pulse:2.8s"></div>
+        </div>
+      </div>
+      <div class="orbital-ring orbital-ring-2">
+        <!-- Bolinhas orbitando ring-2 -->
+        <div class="orbit-dot" style="--orbit-r:600px;--dot-dur:35s;--dot-delay:0s;--dot-dir:reverse">
+          <div class="orbit-dot-inner" style="--dot-size:7px;--dot-color:rgba(99,102,241,0.8);--dot-glow:rgba(99,102,241,0.65);--dot-glow2:rgba(99,102,241,0.3);--dot-pulse:4s"></div>
+        </div>
+        <div class="orbit-dot" style="--orbit-r:600px;--dot-dur:35s;--dot-delay:-17.5s;--dot-dir:reverse">
+          <div class="orbit-dot-inner" style="--dot-size:5px;--dot-color:rgba(139,92,246,0.75);--dot-glow:rgba(139,92,246,0.6);--dot-glow2:rgba(139,92,246,0.3);--dot-pulse:3.5s"></div>
+        </div>
+      </div>
+
+      <!-- Ambient Floating Orbs (pequenos - mantidos) -->
       <div class="ambient-orb" style="width:6px;height:6px;top:20%;left:15%;--orb-opacity:0.5;--drift-x:15px;--drift-y:-25px;--orb-dur:9s;--orb-delay:0s"></div>
       <div class="ambient-orb" style="width:4px;height:4px;top:60%;left:8%;--orb-opacity:0.3;--drift-x:-12px;--drift-y:20px;--orb-dur:12s;--orb-delay:2s"></div>
       <div class="ambient-orb" style="width:8px;height:8px;top:15%;left:75%;--orb-opacity:0.25;--drift-x:20px;--drift-y:-15px;--orb-dur:11s;--orb-delay:1s;--orb-blur:1px"></div>
@@ -49,13 +89,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="ambient-orb" style="width:5px;height:5px;top:40%;left:45%;--orb-opacity:0.2;--drift-x:10px;--drift-y:15px;--orb-dur:14s;--orb-delay:4s;--orb-blur:2px"></div>
       <div class="ambient-orb" style="width:4px;height:4px;top:85%;left:30%;--orb-opacity:0.35;--drift-x:14px;--drift-y:-18px;--orb-dur:10s;--orb-delay:1.5s"></div>
 
-      <div class="max-w-7xl mx-auto px-6 sm:px-8 w-full relative z-10">
+      <div class="page-container w-full relative z-10">
         <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-8 items-center">
           <!-- Text -->
           <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100dvh-6rem)] lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
             <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,8vw,5rem)] lg:text-[clamp(4rem,5.5vw,5.5rem)]">
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
-              <span class="heading-editorial-accent block" style="color: #a78bfa" data-i18n="hero.title2">One Day at a Time</span>
+              <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
             <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.15s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
@@ -63,12 +103,12 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:0.3s">
               <a
                 href={appUrl}
-                class="btn-magnetic btn-glow btn-shimmer bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-full text-base transition-colors inline-flex items-center gap-2 relative"
+                class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-semibold px-8 py-3.5 rounded-full text-base inline-flex items-center gap-2 relative"
                 data-magnetic
               >
                 <span data-i18n="hero.cta">Get Started</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+                  <polygon points="0,0 10,6 0,12"/>
                 </svg>
                 <span class="btn-ring rounded-full"></span>
               </a>
@@ -86,9 +126,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
           <!-- Phone Mockup -->
           <div class="fade-in-section stagger-2 flex justify-center lg:justify-end lg:mt-4">
+            <div class="phone-3d-scene">
+            <div class="phone-hero-halo"></div>
+            <div class="phone-3d-card">
+              <div class="phone-3d-glow"></div>
             <div class="phone-wrapper relative">
-              <div class="phone-border p-[1.5px] rounded-[3rem] shadow-phone">
-                <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
+              <div class="phone-chassis">
+                <!-- Botões físicos laterais -->
+                <div class="phone-btn phone-btn-vol-up"></div>
+                <div class="phone-btn phone-btn-vol-down"></div>
+                <div class="phone-btn phone-btn-power"></div>
+                <!-- Notch tradicional (sobrepõe o topo da tela) -->
+                <div class="phone-notch">
+                  <div class="phone-notch-speaker"></div>
+                  <div class="phone-notch-camera"></div>
+                </div>
+                <!-- Reflexo de tela (simulação de profundidade) -->
+                <div class="phone-screen-reflection"></div>
+                <div class="phone-frame w-[264px] sm:w-[284px]">
                   <div class="app-screen-scaler">
                     <div class="app-screen">
                       <!-- Status Bar -->
@@ -238,189 +293,260 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                       <div class="app-homebar"></div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
+              </div><!-- /phone-frame -->
+              </div><!-- /phone-chassis -->
+            </div><!-- /phone-wrapper -->
+            </div><!-- /phone-3d-card -->
+            </div><!-- /phone-3d-scene -->
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Section Divider -->
-    <div class="section-divider fade-in-section"></div>
+    <!-- Gradient bridge: smooths the hero-to-features seam -->
+    <div class="hero-features-bridge"></div>
+
+    <!-- Features + Platforms: shared planet background -->
+    <div class="dual-section-wrap">
+      <!-- Shared background -->
+      <div class="shared-dot-grid"></div>
+      <div class="shared-planet"></div>
+      <!-- Stars scattered across both sections -->
+      <div class="shared-sparkle" style="top:2%;left:6%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:6%;left:20%"></div>
+      <div class="shared-sparkle sparkle--hide-mobile" style="top:4%;left:38%"></div>
+      <div class="shared-sparkle shared-sparkle--sm sparkle--hide-mobile" style="top:9%;left:54%"></div>
+      <div class="shared-sparkle" style="top:3%;left:73%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:8%;left:88%"></div>
+      <div class="shared-sparkle" style="top:15%;left:3%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:20%;left:27%"></div>
+      <div class="shared-sparkle" style="top:18%;left:82%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:25%;left:12%"></div>
+      <div class="shared-sparkle" style="top:28%;left:91%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:32%;left:64%"></div>
+      <div class="shared-sparkle" style="top:37%;left:5%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:42%;left:45%"></div>
+      <div class="shared-sparkle" style="top:46%;left:78%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:50%;left:15%"></div>
+      <div class="shared-sparkle" style="top:54%;left:58%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:58%;left:32%"></div>
+      <div class="shared-sparkle" style="top:62%;left:87%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:68%;left:7%"></div>
+      <div class="shared-sparkle" style="top:72%;left:48%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:76%;left:22%"></div>
+      <div class="shared-sparkle" style="top:80%;left:70%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:85%;left:36%"></div>
+      <div class="shared-sparkle" style="top:88%;left:92%"></div>
+      <div class="shared-sparkle shared-sparkle--sm" style="top:93%;left:60%"></div>
+      <div class="shared-sparkle" style="top:96%;left:14%"></div>
+      <div class="shared-vignette"></div>
 
     <!-- Features Section -->
-    <section id="features" class="py-16 sm:py-28 lg:py-36">
-      <div class="max-w-7xl mx-auto px-6 sm:px-8">
-        <div class="fade-in-section mb-16 text-center lg:text-left lg:max-w-2xl">
-          <span class="text-xs font-extrabold uppercase tracking-[0.2em] text-primary mb-4 block font-sans" data-i18n="features.label">Features</span>
-          <h2 class="heading-editorial text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
+    <section id="features" class="features-bg py-14 sm:py-20 lg:py-24">
+
+      <div class="page-container">
+        <div class="fade-in-section mb-10 text-center lg:text-left lg:max-w-2xl">
+          <span class="tech-label mb-4 inline-flex" data-i18n="features.label">Features</span>
+          <h2 class="heading-editorial text-2xl sm:text-3xl lg:text-[2.25rem] xl:text-[2.75rem]">
             <span data-i18n="features.title1">Everything you need to build</span>
             <span class="heading-editorial-accent gradient-text" data-i18n="features.title2"> lasting habits</span>
           </h2>
         </div>
 
-        <div class="bento-grid">
-          <!-- Smart Scheduling - Wide -->
-          <div class="fade-in-section stagger-1 glass-panel glow-border-hover rounded-2xl p-8 bento-wide flex flex-col justify-between">
-            <div>
-              <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-primary-a10 flex items-center justify-center mb-6">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
-              </div>
-              <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.scheduling.title">Smart Scheduling</h3>
-              <p class="text-text-secondary text-sm leading-relaxed max-w-md" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
+        <div class="feature-grid-6">
+
+          <!-- Card 1: Smart Scheduling -->
+          <div class="scale-in-section stagger-1 neon-card">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
             </div>
-            <!-- Mini week dots -->
-            <div class="flex gap-2 mt-8">
-              <span class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-xs font-bold text-primary/60">M</span>
-              <span class="w-8 h-8 rounded-lg bg-primary/40 flex items-center justify-center text-xs font-bold text-primary">T</span>
-              <span class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-xs font-bold text-white">W</span>
-              <span class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-xs font-bold text-primary/60">T</span>
-              <span class="w-8 h-8 rounded-lg bg-primary/40 flex items-center justify-center text-xs font-bold text-primary">F</span>
-              <span class="w-8 h-8 rounded-lg border border-border-light flex items-center justify-center text-xs font-bold text-text-muted">S</span>
-              <span class="w-8 h-8 rounded-lg border border-border-light flex items-center justify-center text-xs font-bold text-text-muted">S</span>
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.scheduling.title">Smart Scheduling</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
+            <div class="flex gap-2 mt-auto pt-4 justify-center w-full">
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">M</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">T</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">W</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">T</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">F</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">S</span>
+              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">S</span>
             </div>
           </div>
 
-          <!-- AI Insights - Tall -->
-          <div class="fade-in-section stagger-2 glass-panel glow-border-hover rounded-2xl p-8 bento-tall flex flex-col">
-            <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-accent-blue flex items-center justify-center mb-6">
+          <!-- Card 2: AI Insights -->
+          <div class="scale-in-section stagger-2 neon-card neon-card--blue">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2l1.09 3.26L16.36 6l-2.6 2.17L14.36 12 12 9.92 9.64 12l.6-3.83L7.64 6l3.27-.74Z"/><path d="M5 18h14"/><path d="M7 22h10"/></svg>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.ai.title">AI Insights</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="features.ai.desc">Get personalized daily summaries and routine analysis powered by AI.</p>
-            <!-- Mock AI bubble -->
-            <div class="mt-auto rounded-xl bg-surface/80 border border-border-light p-4">
+            <div class="mt-auto w-full rounded-xl p-4" style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18)">
               <div class="flex items-center gap-2 mb-2">
-                <span class="text-primary text-sm">&#10024;</span>
+                <span class="text-blue-400 text-sm">&#10024;</span>
                 <span class="text-xs font-bold text-text-secondary uppercase tracking-wider">AI Summary</span>
               </div>
               <p class="text-xs text-text-muted leading-relaxed typing-cursor">"Your morning routine streak is at 12 days. Keep it going!"</p>
             </div>
           </div>
 
-          <!-- Streak Tracking -->
-          <div class="fade-in-section stagger-3 glass-panel glow-border-hover rounded-2xl p-8">
-            <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-accent-orange flex items-center justify-center mb-6">
+          <!-- Card 3: Streak Tracking -->
+          <div class="scale-in-section stagger-3 neon-card neon-card--orange">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 22c-4.97 0-9-2.69-9-6v-.01C3 12.13 6.16 9.21 8.14 7.14c.49-.51 1.28-.2 1.33.5.11 1.46.66 2.67 1.53 3.36.23-2.08 1.17-4.14 2.81-6.18.37-.46 1.07-.38 1.32.16C16.48 7.92 21 12.14 21 15.99v.01c0 3.31-4.03 6-9 6Z"/></svg>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.streaks.title">Streak Tracking</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.streaks.desc">Watch your streaks grow. Visual progress that keeps you motivated day after day.</p>
-            <div class="mt-6 flex items-baseline gap-1">
-              <span class="streak-counter text-4xl font-extrabold text-primary font-sans" data-target="12">0</span>
-              <span class="text-sm text-text-muted font-semibold">days</span>
+            <div class="mt-auto pt-4 w-full">
+              <div class="flex items-baseline gap-1 mb-4">
+                <span class="streak-counter text-4xl font-extrabold text-primary font-sans" data-target="12">0</span>
+                <span class="text-sm text-text-muted font-semibold">days</span>
+              </div>
+              <svg class="sparkline" viewBox="0 0 140 40" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(139,92,246,0.25)"/>
+                    <stop offset="100%" stop-color="rgba(139,92,246,0)"/>
+                  </linearGradient>
+                </defs>
+                <polygon class="sparkline-area" points="0,40 0,36 16,30 32,26 48,22 64,18 80,14 96,10 112,7 128,4 140,2 140,40"/>
+                <polyline class="sparkline-line" points="0,36 16,30 32,26 48,22 64,18 80,14 96,10 112,7 128,4 140,2"/>
+              </svg>
             </div>
           </div>
 
-          <!-- Sub-Habits -->
-          <div class="fade-in-section stagger-4 glass-panel glow-border-hover rounded-2xl p-8">
-            <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-accent-green flex items-center justify-center mb-6">
+          <!-- Card 4: Sub-Habits -->
+          <div class="scale-in-section stagger-4 neon-card neon-card--green">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 8l4-4 4 4"/><path d="M8 16h8"/><path d="M6 12h12"/></svg>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.subhabits.title">Sub-Habits</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.subhabits.desc">Break big habits into smaller steps. Complete sub-tasks to build momentum.</p>
-            <!-- Visual nesting -->
-            <div class="mt-6 space-y-2 text-xs font-semibold">
-              <div class="flex items-center gap-2 text-text-secondary"><span class="w-3 h-3 rounded-full bg-primary/40"></span> Morning Routine</div>
-              <div class="flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full bg-primary"></span> Stretch</div>
-              <div class="flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full bg-primary"></span> Breakfast</div>
-              <div class="flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full border border-primary/40"></span> Journal</div>
+            <div class="mt-auto pt-4 space-y-2 text-xs font-semibold w-full text-left">
+              <div class="sub-animate flex items-center gap-2 text-text-secondary"><span class="w-3 h-3 rounded-full bg-primary/40 flex-shrink-0"></span> Morning Routine</div>
+              <div class="sub-animate flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span> Stretch</div>
+              <div class="sub-animate flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span> Breakfast</div>
+              <div class="sub-animate flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full border border-primary/40 flex-shrink-0"></span> Journal</div>
             </div>
           </div>
 
-          <!-- Calendar + Multi-Language - Full Width -->
-          <div class="fade-in-section stagger-5 glass-panel glow-border-hover rounded-2xl p-8 bento-full">
-            <div class="grid sm:grid-cols-2 gap-8 items-start">
-              <div>
-                <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-accent-pink flex items-center justify-center mb-6">
-                  <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.calendar.title">Calendar View</h3>
-                <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
-                <!-- Mini heatmap -->
-                <div class="mini-heatmap mt-6 max-w-[200px]">
-                  <div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:4s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.5s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.2s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:3.8s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.5s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.2s;--pulse-delay:0.3s"></div><div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:4.8s;--pulse-delay:0.5s"></div>
-                  <div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.6s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.1s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.3s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:4.4s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.9s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.6s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.4s;--pulse-delay:0.3s"></div>
-                  <div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.3s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.7s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:4.0s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.1s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.7s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.5s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.2s;--pulse-delay:0.3s"></div>
-                  <div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:3.8s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.4s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:3.2s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.6s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.9s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:4.1s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.6s;--pulse-delay:0.6s"></div>
-                  <div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.3s;--pulse-delay:0.3s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.4s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:4.0s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:3.7s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.5s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:3.3s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:4.8s;--pulse-delay:0.0s"></div>
-                </div>
-              </div>
-              <div>
-                <div class="feature-icon-wrap w-12 h-12 rounded-xl bg-accent-cyan flex items-center justify-center mb-6">
-                  <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                </div>
-                <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.language.title">Multi-Language</h3>
-                <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
-                <div class="mt-6 flex gap-3">
-                  <span class="px-4 py-2 rounded-lg bg-primary/15 text-primary text-sm font-bold">EN</span>
-                  <span class="px-4 py-2 rounded-lg bg-primary/15 text-primary text-sm font-bold">PT-BR</span>
-                </div>
-              </div>
+          <!-- Card 5: Calendar View -->
+          <div class="scale-in-section stagger-5 neon-card neon-card--pink">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.calendar.title">Calendar View</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
+            <div class="mini-heatmap mt-auto pt-4 w-full max-w-[200px] mx-auto">
+              <div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:4s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.5s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.2s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:3.8s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.5s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.2s;--pulse-delay:0.3s"></div><div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:4.8s;--pulse-delay:0.5s"></div>
+              <div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.6s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.1s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.3s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:4.4s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.9s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.6s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.4s;--pulse-delay:0.3s"></div>
+              <div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.3s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.7s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:4.0s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.1s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.7s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.5s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.2s;--pulse-delay:0.3s"></div>
+              <div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:3.8s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.4s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:3.2s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.6s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.9s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:4.1s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.6s;--pulse-delay:0.6s"></div>
             </div>
           </div>
+
+          <!-- Card 6: Multi-Language -->
+          <div class="scale-in-section stagger-6 neon-card neon-card--cyan">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.language.title">Multi-Language</h3>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
+            <div class="mt-auto pt-4 flex gap-3 items-center justify-center w-full">
+              <span class="lang-badge-en px-4 py-2 rounded-lg text-sm font-bold text-cyan-300" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">EN</span>
+              <span class="lang-badge-pt px-4 py-2 rounded-lg text-sm font-bold text-cyan-300" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">PT-BR</span>
+              <span class="text-xs text-text-muted italic">+ more soon</span>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- Section Divider -->
-    <div class="section-divider fade-in-section"></div>
-
     <!-- Platforms Section -->
-    <section id="platforms" class="py-16 sm:py-28 lg:py-36">
-      <div class="max-w-7xl mx-auto px-6 sm:px-8">
-        <div class="fade-in-section mb-16 text-center">
-          <span class="text-xs font-extrabold uppercase tracking-[0.2em] text-primary mb-4 block font-sans" data-i18n="platforms.label">Platforms</span>
-          <h2 class="heading-editorial text-3xl sm:text-4xl lg:text-5xl xl:text-6xl">
+    <section id="platforms" class="platforms-bg py-14 sm:py-20 lg:py-24">
+
+      <div class="page-container">
+        <div class="fade-in-section mb-10 text-center">
+          <span class="tech-label mb-4 inline-flex" data-i18n="platforms.label">Platforms</span>
+          <h2 class="heading-editorial text-2xl sm:text-3xl lg:text-[2.25rem] xl:text-[2.75rem]">
             <span data-i18n="platforms.title1">Available</span>
             <span class="heading-editorial-accent gradient-text" data-i18n="platforms.title2"> everywhere</span>
             <span data-i18n="platforms.title3"> you are</span>
           </h2>
-          <p class="mt-5 text-text-secondary text-lg font-sans" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
+          <p class="mt-4 text-text-secondary text-base font-sans" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-[1.2fr_1px_1fr] gap-4 md:gap-0 items-stretch max-w-4xl mx-auto">
-          <!-- Web App Panel -->
-          <div class="fade-in-section stagger-1 glass-panel rounded-2xl md:rounded-r-none p-10 flex flex-col">
-            <div class="w-14 h-14 rounded-2xl bg-primary-a10 flex items-center justify-center mb-6">
-              <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <div class="flex flex-col sm:flex-row justify-center items-stretch gap-10 lg:gap-14">
+
+          <!-- Web App Card -->
+          <div class="fade-in-section stagger-1 neon-card platform-card w-full max-w-sm">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             </div>
-            <h3 class="text-2xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.web.title">Web App</h3>
-            <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
-            <a href={appUrl} class="btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-6 py-3 rounded-full text-sm transition-colors inline-flex items-center justify-center gap-2 w-full">
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.web.title">Web App</h3>
+            <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
+            <a
+              href={appUrl}
+              class="mt-auto btn-magnetic btn-glow btn-vivid btn-shimmer text-white font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full relative"
+              data-magnetic
+            >
               <span data-i18n="platforms.web.cta">Open Web App</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+              <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+                <polygon points="0,0 10,6 0,12"/>
+              </svg>
+              <span class="btn-ring rounded-full"></span>
             </a>
           </div>
 
-          <!-- Vertical Divider -->
-          <div class="hidden md:block bg-primary/10 self-stretch"></div>
-
-          <!-- Android Panel -->
-          <div class="fade-in-section stagger-2 glass-panel rounded-2xl md:rounded-l-none p-10 flex flex-col mt-4 md:mt-0">
-            <div class="flex items-start justify-between mb-6">
-              <div class="w-14 h-14 rounded-2xl bg-accent-green flex items-center justify-center">
-                <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2" stroke-linecap="round"/></svg>
+          <!-- Android Card -->
+          <div class="fade-in-section stagger-2 neon-card platform-card w-full max-w-sm">
+            <div class="neon-card-corner neon-card-corner--tl"></div>
+            <div class="neon-card-corner neon-card-corner--br"></div>
+            <div class="neon-card-scan"></div>
+            <div class="flex items-center justify-between w-full mb-4">
+              <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2" stroke-linecap="round"/></svg>
               </div>
               <span class="bg-primary-a10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
             </div>
-            <h3 class="text-2xl font-bold text-text-primary mb-2 font-sans">Android</h3>
-            <p class="text-text-secondary text-sm leading-relaxed mb-8 flex-1" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
-            <button disabled class="bg-transparent border border-border-light text-text-muted font-semibold px-6 py-3 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans">Android</h3>
+            <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
+            <button disabled class="mt-auto bg-transparent border border-border-light text-text-muted font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/></svg>
               Google Play
             </button>
           </div>
+
         </div>
       </div>
     </section>
 
-    <!-- Section Divider -->
-    <div class="section-divider fade-in-section"></div>
+
 
     <!-- CTA Section -->
     <section class="cta-section relative py-20 sm:py-32 lg:py-44 overflow-hidden">
-      <div class="cta-accent-line top-0"></div>
+      <div class="cta-grid"></div>
       <div class="cta-ambient"></div>
       <div class="fade-in-section relative max-w-4xl mx-auto px-6 sm:px-8 text-center">
         <h2 class="heading-editorial text-3xl sm:text-5xl lg:text-[clamp(4.5rem,7vw,7rem)]">
@@ -431,21 +557,25 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="mt-10 sm:mt-12">
           <a
             href={appUrl}
-            class="btn-magnetic btn-glow btn-shimmer btn-breathe bg-primary hover:bg-primary-hover text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-full text-base sm:text-lg transition-all inline-flex items-center gap-2 relative"
+            class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-full text-base sm:text-lg inline-flex items-center gap-2 relative"
             data-magnetic
           >
             <span data-i18n="cta.button">Get Started Free</span>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+            <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+              <polygon points="0,0 10,6 0,12"/>
+            </svg>
             <span class="btn-ring rounded-full"></span>
           </a>
         </div>
       </div>
       <div class="cta-accent-line bottom-0"></div>
     </section>
+
+    </div><!-- /dual-section-wrap -->
   </main>
 
-  <footer class="footer-gradient-border py-10 sm:py-14">
-    <div class="max-w-7xl mx-auto px-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <footer class="footer-gradient-border py-5 sm:py-7">
+    <div class="page-container flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
         <img src="/logo.png" alt="Orbit" class="w-6 h-6 rounded-md" />
         <span class="text-sm font-semibold text-text-primary">Orbit</span>
@@ -646,9 +776,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       const text = (title2.textContent || '').trim();
       const words = text.split(/\s+/).filter(Boolean);
       title2.className = 'heading-editorial-accent block';
-      title2.style.color = '#a78bfa';
+      title2.removeAttribute('style');
       title2.innerHTML = words.map((w, i) =>
-        `<span class="hero-word" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
+        `<span class="hero-word gradient-text" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
       ).join(' ');
     }
   }
@@ -665,7 +795,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     },
     { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
   );
-  document.querySelectorAll(".fade-in-section, .scale-in").forEach((el) => observer.observe(el));
+  document.querySelectorAll(".fade-in-section, .scale-in, .scale-in-section").forEach((el) => observer.observe(el));
 
   // Heading rule animation
   document.querySelectorAll(".heading-rule").forEach(rule => {
@@ -724,27 +854,38 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     const target = parseInt(el.dataset.target || "0");
     let animated = false;
 
-    const counterObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !animated) {
-          animated = true;
-          const duration = 800;
-          const start = performance.now();
-          const step = (now: number) => {
-            const elapsed = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            const current = Math.round(eased * target);
-            el.textContent = current.toString();
-            if (progress < 1) {
-              requestAnimationFrame(step);
-            }
-          };
-          setTimeout(() => requestAnimationFrame(step), 200);
+    function runCounter() {
+      if (animated) return;
+      animated = true;
+      const duration = 1000;
+      const start = performance.now();
+      const step = (now: number) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(eased * target);
+        el.textContent = current.toString();
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // Wait for parent card to become visible before counting
+    const parentCard = el.closest('.scale-in-section');
+    if (parentCard) {
+      const mo = new MutationObserver(() => {
+        if ((parentCard as HTMLElement).classList.contains('is-visible')) {
+          mo.disconnect();
+          setTimeout(runCounter, 350);
         }
       });
-    }, { threshold: 0.5 });
-    counterObserver.observe(el);
+      mo.observe(parentCard, { attributes: true, attributeFilter: ['class'] });
+    } else {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(runCounter, 350); } });
+      }, { threshold: 0.5 });
+      io.observe(el);
+    }
   });
 
   // --- Parallax phone on scroll ---
