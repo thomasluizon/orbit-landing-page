@@ -36,7 +36,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
   <main>
     <!-- Hero Section -->
-    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-hidden">
+    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-x-clip">
       <!-- Hero Background Layers -->
       <div class="hero-bg-layer hero-bg-dot-grid"></div>
       <div class="hero-bg-layer hero-glow-primary"></div>
@@ -302,6 +302,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         </div>
       </div>
     </section>
+
+    <!-- Gradient bridge: smooths the hero-to-features seam -->
+    <div class="hero-features-bridge"></div>
 
     <!-- Features + Platforms: shared planet background -->
     <div class="dual-section-wrap">

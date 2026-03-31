@@ -98,18 +98,31 @@ body::after {
   animation: hero-gradient-drift 20s ease-in-out infinite;
 }
 
+.hero-features-bridge {
+  height: 120px;
+  margin-top: -60px;
+  margin-bottom: -60px;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(to bottom, #070614 0%, #070614 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 65%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 65%, transparent 100%);
+}
+
 /* ===== Editorial Typography ===== */
 .heading-editorial {
   font-family: var(--font-display);
   font-weight: 300;
   letter-spacing: -0.035em;
-  line-height: 1.05;
+  line-height: 1.1;
   color: var(--color-warm-white);
 }
 
 .heading-editorial-accent {
   font-weight: 600;
   font-style: italic;
+  line-height: 1.14;
+  overflow: visible;
 }
 
 /* Animated rule between heading lines */
@@ -247,6 +260,17 @@ body::after {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: gradient-shimmer 6s ease-in-out infinite;
+  overflow: visible;
+}
+
+.gradient-text:not(.block),
+.hero-word {
+  padding-block: 0.08em 0.14em;
+  margin-block: -0.08em -0.14em;
+}
+
+.gradient-text:not(.block) {
+  display: inline-block;
 }
 
 /* ===== Glassmorphism Panel ===== */
@@ -715,30 +739,6 @@ body::after {
   transform: scale(1.06);
 }
 
-/* ===== Section Divider ===== */
-.section-divider {
-  height: 120px;
-  position: relative;
-  pointer-events: none;
-}
-
-.section-divider::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(165deg,
-    transparent 48.5%,
-    rgba(139, 92, 246, 0.06) 49%,
-    rgba(139, 92, 246, 0.06) 51%,
-    transparent 51.5%
-  );
-  clip-path: inset(0 100% 0 0);
-  transition: clip-path 1s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.section-divider.is-visible::before {
-  clip-path: inset(0 0 0 0);
-}
 
 /* ===== Hero Entrance Animations ===== */
 @keyframes hero-fade-up {
@@ -775,6 +775,8 @@ body::after {
 
 .hero-word {
   display: inline-block;
+  line-height: 1.14;
+  overflow: visible;
   opacity: 0;
   animation: word-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards,
              word-blur 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1160,9 +1162,6 @@ body::after {
   .heading-rule {
     width: 80px;
   }
-  .section-divider::before {
-    clip-path: inset(0 0 0 0);
-  }
   .hero-subtitle,
   .hero-cta-group,
   .hero-word {
@@ -1292,7 +1291,6 @@ body::after {
   position: relative;
   background: #070614;
   overflow-x: clip;
-  margin-top: -2px;
 }
 
 .shared-dot-grid {
