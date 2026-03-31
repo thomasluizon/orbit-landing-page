@@ -27,10 +27,11 @@
 /* ===== Base ===== */
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* ===== Film Grain Overlay ===== */
