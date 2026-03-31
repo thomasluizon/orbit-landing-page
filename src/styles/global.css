@@ -429,8 +429,7 @@ body::after {
   transition: opacity 0.3s ease;
 }
 .neon-card:hover .neon-card-scan {
-  opacity: 1;
-  animation: neon-card-scan 3.5s linear infinite;
+  opacity: 0;
 }
 
 /* Corner ambient glows */
@@ -484,7 +483,6 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 28px 56px -8px rgba(0, 0, 0, 0.80);
 }
-.neon-card--blue .neon-card-scan { background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.5), transparent); }
 .neon-card--blue .neon-card-corner--tl { background: radial-gradient(circle, rgba(59, 130, 246, 0.20) 0%, transparent 70%); }
 
 /* Orange */
@@ -500,7 +498,6 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 28px 56px -8px rgba(0, 0, 0, 0.80);
 }
-.neon-card--orange .neon-card-scan { background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.5), transparent); }
 .neon-card--orange .neon-card-corner--tl { background: radial-gradient(circle, rgba(249, 115, 22, 0.18) 0%, transparent 70%); }
 
 /* Green */
@@ -516,7 +513,6 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 28px 56px -8px rgba(0, 0, 0, 0.80);
 }
-.neon-card--green .neon-card-scan { background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.5), transparent); }
 .neon-card--green .neon-card-corner--tl { background: radial-gradient(circle, rgba(34, 197, 94, 0.16) 0%, transparent 70%); }
 
 /* Pink */
@@ -532,7 +528,6 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 28px 56px -8px rgba(0, 0, 0, 0.80);
 }
-.neon-card--pink .neon-card-scan { background: linear-gradient(90deg, transparent, rgba(236, 72, 153, 0.5), transparent); }
 .neon-card--pink .neon-card-corner--tl { background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, transparent 70%); }
 
 /* Cyan */
@@ -548,7 +543,6 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 28px 56px -8px rgba(0, 0, 0, 0.80);
 }
-.neon-card--cyan .neon-card-scan { background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.5), transparent); }
 .neon-card--cyan .neon-card-corner--tl { background: radial-gradient(circle, rgba(6, 182, 212, 0.16) 0%, transparent 70%); }
 
 /* Icon — default: purple neon */
@@ -1303,14 +1297,14 @@ body::after {
   z-index: 0;
 }
 
-/* Large planet/sphere centered at the seam between the two sections */
+/* Large planet/sphere — arc from mid row-2 of feature cards, overflows sides */
 .shared-planet {
   position: absolute;
   left: 50%;
-  top: clamp(180px, 20vw, 360px);
+  top: clamp(600px, 48vw, 720px);
   transform: translate(-50%, 0);
-  width: clamp(800px, 120vw, 1600px);
-  height: clamp(650px, 76vw, 1400px);
+  width: 106vw;
+  height: 81vw;
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -1404,8 +1398,8 @@ body::after {
 .shared-floor {
   position: absolute;
   left: 50%;
-  /* sits at the bottom-center of the planet's visible arc in this area */
-  top: calc(clamp(180px, 20vw, 360px) + 108vw);
+  /* equator of the planet — planet top + half height (40.5vw) */
+  top: calc(clamp(600px, 48vw, 720px) + 40.5vw);
   transform: translate(-50%, -50%);
   width: clamp(700px, 100vw, 1600px);
   height: clamp(70px, 9vw, 140px);
@@ -2134,23 +2128,26 @@ body::after {
     display: none;
   }
 
-  /* Resize orbital rings to cover the hero text area on mobile */
+  /* Resize orbital rings — ring-2 fills exactly the viewport width */
   .orbital-ring-1 {
-    width: 360px;
-    height: 360px;
+    width: 72vw;
+    height: 72vw;
+    box-shadow:
+      0 0 40px -10px rgba(139, 92, 246, 0.15),
+      inset 0 0 40px -10px rgba(139, 92, 246, 0.15);
   }
   .orbital-ring-2 {
-    width: 500px;
-    height: 500px;
+    width: 100vw;
+    height: 100vw;
   }
 
   /* Override inline --orbit-r values proportionally with new ring sizes.
      !important is required here to beat inline style specificity. */
   .orbital-ring-1 .orbit-dot {
-    --orbit-r: 180px !important;
+    --orbit-r: 36vw !important;
   }
   .orbital-ring-2 .orbit-dot {
-    --orbit-r: 250px !important;
+    --orbit-r: 50vw !important;
   }
 
   /* Center rings over title+subtitle, leaving the button outside */
