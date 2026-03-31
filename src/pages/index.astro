@@ -36,7 +36,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
   <main>
     <!-- Hero Section -->
-    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-x-clip">
+    <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16 overflow-x-hidden">
       <!-- Hero Background Layers -->
       <div class="hero-bg-layer hero-bg-dot-grid"></div>
       <div class="hero-bg-layer hero-glow-primary"></div>
@@ -90,12 +90,12 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="page-container w-full relative z-10">
         <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-8 items-center">
           <!-- Text -->
-          <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100dvh-6rem)] lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
+          <div class="fade-in-section stagger-1 text-center lg:text-left py-16 sm:py-24 lg:py-0 lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
             <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,6vw,4rem)] lg:text-[clamp(3.5rem,4.5vw,5rem)] [text-wrap:balance]">
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
               <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
-            <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.15s" data-i18n="hero.subtitle">
+            <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0 text-center lg:text-left" style="animation-delay:0.15s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
             </p>
             <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:0.3s">
@@ -123,7 +123,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
 
           <!-- Phone Mockup -->
-          <div class="fade-in-section stagger-2 flex justify-center lg:justify-end lg:mt-4">
+          <div class="fade-in-section stagger-2 flex justify-center lg:justify-end pb-8 lg:pb-0 lg:mt-4">
             <div class="phone-3d-scene">
             <div class="phone-hero-halo"></div>
             <div class="phone-3d-card">
@@ -352,14 +352,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.scheduling.title">Smart Scheduling</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
-            <div class="flex gap-2 mt-auto pt-4 justify-center w-full">
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">M</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">T</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">W</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">T</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">F</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">S</span>
-              <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">S</span>
+            <div class="flex gap-1 sm:gap-2 mt-auto pt-4 justify-center w-full">
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">M</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">T</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">W</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">T</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">F</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">S</span>
+              <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">S</span>
             </div>
           </div>
 

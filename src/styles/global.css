@@ -29,6 +29,10 @@ html {
   scroll-behavior: smooth;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 /* ===== Film Grain Overlay ===== */
 body::after {
   content: '';
@@ -435,7 +439,13 @@ body::after {
 
 /* Platform card sizing */
 .platform-card {
-  min-height: 340px;
+  min-height: 260px;
+}
+
+@media (min-width: 640px) {
+  .platform-card {
+    min-height: 340px;
+  }
 }
 
 /* Centered content variant */
@@ -1116,11 +1126,17 @@ body::after {
   }
 }
 
-/* ===== Page Container (80% width) ===== */
+/* ===== Page Container (responsive width) ===== */
 .page-container {
-  width: min(80%, 1400px);
+  width: min(92%, 1400px);
   margin-inline: auto;
   padding-inline: clamp(1rem, 2vw, 1.5rem);
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    width: min(80%, 1400px);
+  }
 }
 
 /* ===== Hero Background Layers ===== */
@@ -1975,11 +1991,6 @@ body::after {
   }
   .orbital-ring-2 {
     top: 25%;
-  }
-
-  /* Push CTA buttons down on mobile */
-  .hero-cta-group {
-    margin-top: 6rem;
   }
 
   /* Increase glow intensity behind the phone mockup on mobile */
