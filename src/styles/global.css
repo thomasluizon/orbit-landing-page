@@ -427,35 +427,176 @@ body::after {
              word-blur 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ===== Phone Mockup ===== */
+/* ===== Phone Chassis (3D Physical Device) ===== */
 @keyframes phone-gentle-float {
-  0%, 100% { transform: rotate(var(--phone-rotate, 0deg)) translateY(var(--parallax-y, 0px)); }
-  50% { transform: rotate(var(--phone-rotate, 0deg)) translateY(calc(var(--parallax-y, 0px) - 12px)); }
-}
-
-@keyframes phone-border-glow {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-
-.phone-border {
-  background: linear-gradient(135deg,
-    rgba(210,190,255,0.45) 0%,
-    rgba(139,92,246,0.30) 30%,
-    rgba(80,60,180,0.12) 60%,
-    rgba(139,92,246,0.25) 100%
-  );
-  animation: phone-border-glow 4s ease-in-out infinite;
-}
-
-.shadow-phone {
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.6), 0 0 60px -30px rgba(139, 92, 246, 0.15);
+  0%, 100% { transform: translateY(var(--parallax-y, 0px)); }
+  50% { transform: translateY(calc(var(--parallax-y, 0px) - 14px)); }
 }
 
 .phone-wrapper {
-  --phone-rotate: 0deg;
   animation: phone-gentle-float 6s ease-in-out infinite;
   will-change: transform;
+  position: relative;
+}
+
+/* === CHASSIS BODY (realistic dark iPhone) === */
+.phone-chassis {
+  position: relative;
+  width: 288px;
+  /* Near-black body matching reference */
+  background: linear-gradient(158deg, #1a1624 0%, #100e18 40%, #0c0a12 100%);
+  border-radius: 50px;
+  padding: 14px 9px 10px;
+  /*
+    Realistic metallic ring:
+    - thin bright outer edge (top-left lit by ambient)
+    - secondary darker ring
+    - inset top highlight
+    - deep drop shadow
+    - purple ambient glow
+  */
+  box-shadow:
+    /* anel metálico externo — topo claro, base escura (simula cromo) */
+    0 0 0 1.5px rgba(200,195,215,0.70),
+    0 0 0 3px rgba(12,10,20,0.98),
+    0 0 0 4.5px rgba(180,170,205,0.22),
+    0 0 0 6px rgba(8,6,14,0.90),
+    /* inset: highlight no topo (luz vinda de cima) */
+    inset 0 2.5px 0 rgba(255,255,255,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.30),
+    /* inset: sombra lateral direita */
+    inset -2px 0 0 rgba(0,0,0,0.70),
+    /* inset: glint lateral esquerda */
+    inset 2px 0 0 rgba(255,255,255,0.08),
+    /* inset: sombra base */
+    inset 0 -2px 0 rgba(0,0,0,0.80),
+    /* sombra de profundidade */
+    0 60px 120px -25px rgba(0,0,0,0.95),
+    0 30px 60px -15px rgba(0,0,0,0.75),
+    /* glow roxo ambiente */
+    0 0 90px -25px rgba(139,92,246,0.55);
+}
+
+@media (min-width: 640px) {
+  .phone-chassis {
+    width: 308px;
+  }
+}
+
+/* === SIDE BUTTONS === */
+.phone-btn {
+  position: absolute;
+  border-radius: 2px;
+  /* gradiente metálico no botão */
+  background: linear-gradient(90deg,
+    rgba(180,170,210,0.18) 0%,
+    rgba(120,110,160,0.25) 30%,
+    rgba(80,70,120,0.15) 70%,
+    rgba(30,25,50,0.9) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(0,0,0,0.6);
+}
+
+/* Volume Up */
+.phone-btn-vol-up {
+  left: -3px;
+  top: 82px;
+  width: 3px;
+  height: 30px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.5),
+    -1px 0 2px rgba(0,0,0,0.8);
+}
+
+/* Volume Down */
+.phone-btn-vol-down {
+  left: -3px;
+  top: 122px;
+  width: 3px;
+  height: 30px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.5),
+    -1px 0 2px rgba(0,0,0,0.8);
+}
+
+/* Power button (right side) */
+.phone-btn-power {
+  right: -3px;
+  top: 100px;
+  width: 3px;
+  height: 52px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.5),
+    1px 0 2px rgba(0,0,0,0.8);
+}
+
+/* === NOTCH (traditional wide notch) === */
+.phone-notch {
+  position: absolute;
+  top: 14px; /* aligns with top of screen */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 24px;
+  background: #0c0a12; /* same as chassis body */
+  border-radius: 0 0 18px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 20;
+  /* subtle inner shadow to separate from screen */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.phone-notch-speaker {
+  width: 42px;
+  height: 5px;
+  background: #080610;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.8);
+}
+
+.phone-notch-camera {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1e1830 0%, #080610 100%);
+  border: 1.5px solid rgba(60,50,90,0.7);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.9);
+}
+
+/* === SCREEN REFLECTION (glass glint across top) === */
+.phone-screen-reflection {
+  position: absolute;
+  top: 14px;
+  left: 9px;
+  right: 9px;
+  height: 80px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.055) 0%,
+    rgba(255,255,255,0.02) 40%,
+    transparent 100%
+  );
+  border-radius: 36px 36px 0 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* === SCREEN FRAME (inner bezel) === */
+.phone-chassis .phone-frame {
+  overflow: hidden;
+  position: relative;
+  background: #0f0d1a;
+  border-radius: 36px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.9),
+    inset 0 0 0 1px rgba(255,255,255,0.03);
 }
 
 
@@ -973,7 +1114,7 @@ body::after {
   top: 0;
   left: 0;
   transform-origin: top left;
-  transform: scale(calc(280 / 393));
+  transform: scale(calc(264 / 393));
   background: #0f0d1a;
   font-family: 'Manrope', sans-serif;
   color: #f1f5f9;
@@ -982,7 +1123,7 @@ body::after {
 
 @media (min-width: 640px) {
   .app-screen {
-    transform: scale(calc(300 / 393));
+    transform: scale(calc(284 / 393));
   }
 }
 

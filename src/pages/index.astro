@@ -121,8 +121,19 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             <div class="phone-3d-card">
               <div class="phone-3d-glow"></div>
             <div class="phone-wrapper relative">
-              <div class="phone-border p-[1.5px] rounded-[3rem] shadow-phone">
-                <div class="phone-frame rounded-[2.9rem] w-[280px] sm:w-[300px]">
+              <div class="phone-chassis">
+                <!-- Botões físicos laterais -->
+                <div class="phone-btn phone-btn-vol-up"></div>
+                <div class="phone-btn phone-btn-vol-down"></div>
+                <div class="phone-btn phone-btn-power"></div>
+                <!-- Notch tradicional (sobrepõe o topo da tela) -->
+                <div class="phone-notch">
+                  <div class="phone-notch-speaker"></div>
+                  <div class="phone-notch-camera"></div>
+                </div>
+                <!-- Reflexo de tela (simulação de profundidade) -->
+                <div class="phone-screen-reflection"></div>
+                <div class="phone-frame w-[264px] sm:w-[284px]">
                   <div class="app-screen-scaler">
                     <div class="app-screen">
                       <!-- Status Bar -->
@@ -272,9 +283,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                       <div class="app-homebar"></div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
+              </div><!-- /phone-frame -->
+              </div><!-- /phone-chassis -->
+            </div><!-- /phone-wrapper -->
             </div><!-- /phone-3d-card -->
             </div><!-- /phone-3d-scene -->
           </div>
