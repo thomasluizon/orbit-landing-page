@@ -1304,7 +1304,7 @@ body::after {
   top: clamp(480px, 38vw, 560px);
   transform: translate(-50%, 0);
   width: 100vw;
-  height: 100vw;
+  height: 85vw;
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -1398,8 +1398,8 @@ body::after {
 .shared-floor {
   position: absolute;
   left: 50%;
-  /* equator of the planet — planet top + radius (50vw) */
-  top: calc(clamp(480px, 38vw, 560px) + 50vw);
+  /* equator of the planet — planet top + half height (42.5vw) */
+  top: calc(clamp(480px, 38vw, 560px) + 42.5vw);
   transform: translate(-50%, -50%);
   width: clamp(700px, 100vw, 1600px);
   height: clamp(70px, 9vw, 140px);
