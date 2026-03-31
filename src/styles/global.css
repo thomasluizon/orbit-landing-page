@@ -1309,8 +1309,8 @@ body::after {
   left: 50%;
   top: clamp(180px, 20vw, 360px);
   transform: translate(-50%, 0);
-  width: clamp(1100px, 170vw, 2200px);
-  height: clamp(900px, 108vw, 1900px);
+  width: clamp(800px, 120vw, 1600px);
+  height: clamp(650px, 76vw, 1400px);
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -2130,11 +2130,8 @@ body::after {
     display: none;
   }
 
-  /* Push planet below the features heading so it doesn't overlap text */
   .shared-planet {
-    top: clamp(280px, 45vw, 340px);
-    width: clamp(520px, 150vw, 800px);
-    height: clamp(420px, 120vw, 680px);
+    display: none;
   }
 
   /* Resize orbital rings to cover the hero text area on mobile */
