@@ -93,7 +93,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-8 items-center">
           <!-- Text -->
           <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100dvh-6rem)] lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
-            <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,8vw,5rem)] lg:text-[clamp(4rem,5.5vw,5.5rem)]">
+            <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,6vw,4rem)] lg:text-[clamp(3.5rem,4.5vw,5rem)] [text-wrap:balance]">
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
               <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
@@ -548,10 +548,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     <section class="cta-section relative py-20 sm:py-32 lg:py-44 overflow-hidden">
       <div class="cta-grid"></div>
       <div class="cta-ambient"></div>
-      <div class="fade-in-section relative max-w-4xl mx-auto px-6 sm:px-8 text-center">
-        <h2 class="heading-editorial text-3xl sm:text-5xl lg:text-[clamp(4.5rem,7vw,7rem)]">
+      <div class="fade-in-section relative max-w-5xl mx-auto px-6 sm:px-8 text-center">
+        <h2 class="heading-editorial text-3xl sm:text-5xl lg:text-[clamp(4rem,5.5vw,6rem)]">
           <span data-i18n="cta.title1">Ready to build</span><br class="hidden sm:block">
-          <span class="heading-editorial-accent gradient-text" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span>
+          <span class="whitespace-nowrap"><span class="heading-editorial-accent gradient-text" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span></span>
         </h2>
         <p class="mt-6 text-text-secondary text-base sm:text-lg lg:text-xl max-w-xl mx-auto font-sans" data-i18n="cta.subtitle">Join Orbit today and start tracking your progress.</p>
         <div class="mt-10 sm:mt-12">
@@ -848,16 +848,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     });
   });
 
-  // --- Streak counter animation (eased) ---
+  // --- Streak counter animation (looping every 3s) ---
   document.querySelectorAll(".streak-counter").forEach(counter => {
     const el = counter as HTMLElement;
     const target = parseInt(el.dataset.target || "0");
-    let animated = false;
+    let loopInterval: ReturnType<typeof setInterval> | null = null;
 
     function runCounter() {
-      if (animated) return;
-      animated = true;
-      const duration = 1000;
+      const duration = 2200;
       const start = performance.now();
       const step = (now: number) => {
         const elapsed = now - start;
@@ -867,7 +865,14 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         el.textContent = current.toString();
         if (progress < 1) requestAnimationFrame(step);
       };
+      el.textContent = "0";
       requestAnimationFrame(step);
+    }
+
+    function startLoop() {
+      if (loopInterval) return;
+      runCounter();
+      loopInterval = setInterval(runCounter, 3000);
     }
 
     // Wait for parent card to become visible before counting
@@ -876,13 +881,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       const mo = new MutationObserver(() => {
         if ((parentCard as HTMLElement).classList.contains('is-visible')) {
           mo.disconnect();
-          setTimeout(runCounter, 350);
+          setTimeout(startLoop, 350);
         }
       });
       mo.observe(parentCard, { attributes: true, attributeFilter: ['class'] });
     } else {
       const io = new IntersectionObserver((entries) => {
-        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(runCounter, 350); } });
+        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(startLoop, 350); } });
       }, { threshold: 0.5 });
       io.observe(el);
     }
