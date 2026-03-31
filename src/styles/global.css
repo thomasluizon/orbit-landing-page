@@ -1297,14 +1297,14 @@ body::after {
   z-index: 0;
 }
 
-/* Large planet/sphere centered at the seam between the two sections */
+/* Large planet/sphere — half-moon arc below row 1 of feature cards */
 .shared-planet {
   position: absolute;
   left: 50%;
-  top: clamp(180px, 20vw, 360px);
+  top: clamp(480px, 38vw, 560px);
   transform: translate(-50%, 0);
-  width: clamp(800px, 120vw, 1600px);
-  height: clamp(650px, 76vw, 1400px);
+  width: 100vw;
+  height: 100vw;
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -1398,8 +1398,8 @@ body::after {
 .shared-floor {
   position: absolute;
   left: 50%;
-  /* sits at the bottom-center of the planet's visible arc in this area */
-  top: calc(clamp(180px, 20vw, 360px) + 108vw);
+  /* equator of the planet — planet top + radius (50vw) */
+  top: calc(clamp(480px, 38vw, 560px) + 50vw);
   transform: translate(-50%, -50%);
   width: clamp(700px, 100vw, 1600px);
   height: clamp(70px, 9vw, 140px);
