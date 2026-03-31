@@ -1969,12 +1969,12 @@ body::after {
     --orbit-r: 50vw !important;
   }
 
-  /* Center rings over title+subtitle, leaving the button outside */
-  .orbital-ring-1 {
-    top: 25%;
-  }
+  /* Center rings over title+subtitle using viewport units so the ring
+     always sits on the heading regardless of how tall the phone mockup
+     section below makes the hero. */
+  .orbital-ring-1,
   .orbital-ring-2 {
-    top: 25%;
+    top: calc(50dvh - 5rem);
   }
 
   /* Push CTA buttons down on mobile */
