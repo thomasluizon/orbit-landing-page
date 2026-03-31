@@ -60,7 +60,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
       <!-- Architectural Orbital Rings -->
       <div class="orbital-ring orbital-ring-1">
-        <!-- Bolinhas orbitando ring-1 -->
         <div class="orbit-dot" style="--orbit-r:400px;--dot-dur:22s;--dot-delay:0s;--dot-dir:normal">
           <div class="orbit-dot-inner" style="--dot-size:9px;--dot-color:rgba(139,92,246,0.95);--dot-glow:rgba(139,92,246,0.8);--dot-glow2:rgba(139,92,246,0.4);--dot-pulse:2.5s"></div>
         </div>
@@ -72,7 +71,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         </div>
       </div>
       <div class="orbital-ring orbital-ring-2">
-        <!-- Bolinhas orbitando ring-2 -->
         <div class="orbit-dot" style="--orbit-r:600px;--dot-dur:35s;--dot-delay:0s;--dot-dir:reverse">
           <div class="orbit-dot-inner" style="--dot-size:7px;--dot-color:rgba(99,102,241,0.8);--dot-glow:rgba(99,102,241,0.65);--dot-glow2:rgba(99,102,241,0.3);--dot-pulse:4s"></div>
         </div>
@@ -81,7 +79,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         </div>
       </div>
 
-      <!-- Ambient Floating Orbs (pequenos - mantidos) -->
+      <!-- Ambient Orbs -->
       <div class="ambient-orb" style="width:6px;height:6px;top:20%;left:15%;--orb-opacity:0.5;--drift-x:15px;--drift-y:-25px;--orb-dur:9s;--orb-delay:0s"></div>
       <div class="ambient-orb" style="width:4px;height:4px;top:60%;left:8%;--orb-opacity:0.3;--drift-x:-12px;--drift-y:20px;--orb-dur:12s;--orb-delay:2s"></div>
       <div class="ambient-orb" style="width:8px;height:8px;top:15%;left:75%;--orb-opacity:0.25;--drift-x:20px;--drift-y:-15px;--orb-dur:11s;--orb-delay:1s;--orb-blur:1px"></div>
@@ -132,21 +130,17 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <div class="phone-3d-glow"></div>
             <div class="phone-wrapper relative">
               <div class="phone-chassis">
-                <!-- Botões físicos laterais -->
                 <div class="phone-btn phone-btn-vol-up"></div>
                 <div class="phone-btn phone-btn-vol-down"></div>
                 <div class="phone-btn phone-btn-power"></div>
-                <!-- Notch tradicional (sobrepõe o topo da tela) -->
                 <div class="phone-notch">
                   <div class="phone-notch-speaker"></div>
                   <div class="phone-notch-camera"></div>
                 </div>
-                <!-- Reflexo de tela (simulação de profundidade) -->
                 <div class="phone-screen-reflection"></div>
                 <div class="phone-frame w-[264px] sm:w-[284px]">
                   <div class="app-screen-scaler">
                     <div class="app-screen">
-                      <!-- Status Bar -->
                       <div class="app-statusbar">
                         <span>9:41</span>
                         <div class="app-statusbar-right">
@@ -190,9 +184,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                         <div class="app-ai-body" data-i18n="mockup.aiText">Great momentum! You've completed 3 of 7 habits. Your morning routine streak is at 12 days.</div>
                       </div>
 
-                      <!-- Habit List -->
                       <div class="app-habits">
-                        <!-- Morning Routine -->
                         <div class="app-habit due">
                           <div class="app-expand"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
                           <div class="app-ring">
@@ -210,7 +202,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                           <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
                         </div>
 
-                        <!-- Sub-habits -->
                         <div class="app-sub">
                           <div class="app-sub-btn checked"><svg style="width:11px;height:11px" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                           <div class="app-hcontent"><div class="app-sub-name striked" data-i18n="mockup.sub1">Stretch (10 min)</div><div class="app-sub-meta" data-i18n="mockup.freq.daily">Daily</div></div>
@@ -224,7 +215,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                           <div class="app-hcontent"><div class="app-sub-name" data-i18n="mockup.sub3">Journal (5 min)</div><div class="app-sub-meta" data-i18n="mockup.freq.daily">Daily</div></div>
                         </div>
 
-                        <!-- Exercise (completed) -->
                         <div class="app-habit done">
                           <div class="app-logbtn checked"><svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                           <div class="app-hcontent">
@@ -238,7 +228,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                           <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
                         </div>
 
-                        <!-- Read 30 minutes -->
                         <div class="app-habit due">
                           <div class="app-logbtn"></div>
                           <div class="app-hcontent">
@@ -252,7 +241,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                           <div class="app-kebab"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg></div>
                         </div>
 
-                        <!-- Meditate -->
                         <div class="app-habit due">
                           <div class="app-logbtn"></div>
                           <div class="app-hcontent">
@@ -266,7 +254,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                         </div>
                       </div>
 
-                      <!-- Bottom Nav -->
                       <div class="app-nav">
                         <div class="app-nav-inner">
                           <div class="app-nav-item">
@@ -293,11 +280,11 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                       <div class="app-homebar"></div>
                     </div>
                   </div>
-              </div><!-- /phone-frame -->
-              </div><!-- /phone-chassis -->
-            </div><!-- /phone-wrapper -->
-            </div><!-- /phone-3d-card -->
-            </div><!-- /phone-3d-scene -->
+              </div>
+              </div>
+            </div>
+            </div>
+            </div>
           </div>
         </div>
       </div>
@@ -530,7 +517,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               </div>
               <span class="bg-primary-a10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
             </div>
-            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans">Android</h3>
+            <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.android.title">Android</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
             <button disabled class="mt-auto bg-transparent border border-border-light text-text-muted font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/></svg>
@@ -581,7 +568,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <span class="text-sm font-semibold text-text-primary">Orbit</span>
       </div>
       <div class="flex items-center gap-4">
-        <a href="https://app.useorbit.org/privacy" class="text-text-muted text-sm hover:text-text-secondary transition-colors" data-i18n="footer.privacy">Privacy Policy</a>
+        <a href={`${appUrl}/privacy`} class="text-text-muted text-sm hover:text-text-secondary transition-colors" data-i18n="footer.privacy">Privacy Policy</a>
         <span class="text-text-muted/30">|</span>
         <p class="text-text-muted text-sm" data-i18n="footer.text">Built with care &middot; &copy; 2026</p>
       </div>
@@ -622,7 +609,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "features.label": "Features",
       "features.title1": "Everything you need to build",
       "features.title2": " lasting habits",
-      "features.subtitle": "Simple yet powerful tools designed to help you stick to your routines and see real progress.",
       "features.scheduling.title": "Smart Scheduling",
       "features.scheduling.desc": "Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.",
       "features.streaks.title": "Streak Tracking",
@@ -643,6 +629,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "platforms.web.title": "Web App",
       "platforms.web.desc": "Access Orbit from any browser. Your habits sync across all your devices.",
       "platforms.web.cta": "Open Web App",
+      "platforms.android.title": "Android",
       "platforms.android.desc": "Take Orbit with you. Track habits on the go with our native Android app.",
       "cta.title1": "Ready to build",
       "cta.title2": "better habits",
@@ -682,7 +669,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "features.label": "Funcionalidades",
       "features.title1": "Tudo que voc\u00ea precisa para construir",
       "features.title2": " h\u00e1bitos duradouros",
-      "features.subtitle": "Ferramentas simples e poderosas para ajudar voc\u00ea a manter suas rotinas e ver progresso real.",
       "features.scheduling.title": "Agendamento Inteligente",
       "features.scheduling.desc": "Defina frequ\u00eancias di\u00e1rias, semanais ou personalizadas. O Orbit calcula exatamente quando cada h\u00e1bito \u00e9 devido.",
       "features.streaks.title": "Rastreamento de Sequ\u00eancias",
@@ -702,14 +688,15 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "platforms.subtitle": "Acesse seus h\u00e1bitos de qualquer dispositivo, a qualquer hora.",
       "platforms.web.title": "Aplicativo Web",
       "platforms.web.desc": "Acesse o Orbit de qualquer navegador. Seus h\u00e1bitos sincronizam em todos os dispositivos.",
-      "platforms.web.cta": "Abrir Web App",
+      "platforms.web.cta": "Abrir Aplicativo Web",
+      "platforms.android.title": "Android",
       "platforms.android.desc": "Leve o Orbit com voc\u00ea. Acompanhe h\u00e1bitos em movimento com nosso app Android nativo.",
       "cta.title1": "Pronto para construir",
       "cta.title2": "h\u00e1bitos melhores",
       "cta.title3": "?",
       "cta.subtitle": "Entre no Orbit hoje e comece a acompanhar seu progresso.",
       "cta.button": "Come\u00e7ar Gr\u00e1tis",
-      "footer.privacy": "Politica de Privacidade",
+      "footer.privacy": "Pol\u00edtica de Privacidade",
       "footer.text": "Feito com carinho \u00b7 \u00a9 2026"
     }
   };
@@ -795,7 +782,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     },
     { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
   );
-  document.querySelectorAll(".fade-in-section, .scale-in, .scale-in-section").forEach((el) => observer.observe(el));
+  document.querySelectorAll(".fade-in-section, .scale-in-section").forEach((el) => observer.observe(el));
 
   // Heading rule animation
   document.querySelectorAll(".heading-rule").forEach(rule => {
