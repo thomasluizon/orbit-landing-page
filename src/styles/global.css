@@ -354,7 +354,7 @@ body::after {
   transition:
     border-color 0.45s ease,
     box-shadow 0.45s ease,
-    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -367,12 +367,29 @@ body::after {
   border-right-color:  rgba(139, 92, 246, 0.18);
   border-bottom-color: rgba(139, 92, 246, 0.10);
   box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.18),
-    0 0 28px rgba(139, 92, 246, 0.32),
-    0 0 80px rgba(139, 92, 246, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 28px 56px -8px rgba(0, 0, 0, 0.80);
-  transform: translateY(-6px);
+    0 0 0 1px rgba(139, 92, 246, 0.22),
+    0 0 36px rgba(139, 92, 246, 0.38),
+    0 0 90px rgba(139, 92, 246, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 32px 64px -8px rgba(0, 0, 0, 0.85);
+  transform: translateY(-10px) scale(1.015);
+}
+
+/* Restore full neon-card transitions for cards that also use scale-in-section entrance.
+   .scale-in-section (0,1,0) overrides .neon-card transition by source order, stripping
+   border-color and box-shadow transitions. This combined selector (0,2,0) wins both. */
+.scale-in-section.neon-card {
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+/* .scale-in-section.is-visible (0,2,0) wins over .neon-card:hover (0,2,0) by source order.
+   This 0,3,0 selector ensures the hover transform always applies. */
+.scale-in-section.neon-card:hover {
+  transform: translateY(-10px) scale(1.015);
 }
 
 /* Scan line that sweeps top-to-bottom on hover */
@@ -416,6 +433,17 @@ body::after {
 .neon-card > *:not(.neon-card-scan):not(.neon-card-corner) {
   position: relative;
   z-index: 1;
+}
+
+/* Platform card sizing */
+.platform-card {
+  min-height: 340px;
+}
+
+/* Centered content variant */
+.neon-card--centered {
+  align-items: center;
+  text-align: center;
 }
 
 /* ── Per-card color accents ── */
@@ -516,9 +544,8 @@ body::after {
   transition: color 0.4s ease, filter 0.4s ease;
 }
 
-/* Icon bounce on any card hover — stays purple unless overridden below */
+/* Icon glow intensifies on card hover — no movement */
 .neon-card:hover .neon-feature-icon {
-  transform: scale(1.15) rotate(-5deg);
   box-shadow:
     0 0 22px rgba(139, 92, 246, 0.55),
     inset 0 0 12px rgba(139, 92, 246, 0.14);
@@ -616,6 +643,29 @@ body::after {
 
 .btn-glow:active {
   box-shadow: 0 6px 12px -3px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== Button Vivid (bright purple + top shine) ===== */
+.btn-vivid {
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 55%, #8654f0 100%) !important;
+  box-shadow:
+    0 10px 24px -4px rgba(139, 92, 246, 0.50),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.3s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+.btn-vivid:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    0 16px 36px -4px rgba(139, 92, 246, 0.65),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
+.btn-vivid:active {
+  filter: brightness(0.96);
+  transform: scale(0.98);
 }
 
 /* ===== Button Shimmer ===== */
@@ -1057,8 +1107,20 @@ body::after {
 
 /* ===== Button Breathe (CTA) ===== */
 @keyframes btn-breathe {
-  0%, 100% { box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.35); }
-  50% { box-shadow: 0 10px 35px -3px rgba(139, 92, 246, 0.55), 0 0 60px -15px rgba(139, 92, 246, 0.2); }
+  0%, 100% {
+    box-shadow:
+      0 10px 24px -4px rgba(139, 92, 246, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 0 0 0 rgba(139, 92, 246, 0);
+  }
+  50% {
+    box-shadow:
+      0 16px 44px -2px rgba(139, 92, 246, 0.70),
+      inset 0 1px 0 rgba(255, 255, 255, 0.26),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+      0 0 0 7px rgba(139, 92, 246, 0.10);
+  }
 }
 
 .btn-breathe {
@@ -1150,9 +1212,10 @@ body::after {
 
 .hero-vignette-bottom {
   background: linear-gradient(to bottom,
-    transparent 35%,
-    rgba(7, 6, 20, 0.55) 60%,
-    rgba(7, 6, 20, 0.88) 80%,
+    transparent 20%,
+    rgba(7, 6, 20, 0.30) 45%,
+    rgba(7, 6, 20, 0.75) 65%,
+    rgba(7, 6, 20, 0.97) 82%,
     #070614 100%
   );
 }
@@ -1166,6 +1229,22 @@ body::after {
   animation: orb-drift var(--orb-dur, 14s) ease-in-out infinite;
   animation-delay: var(--orb-delay, 0s);
   background: radial-gradient(circle, rgba(139,92,246, var(--orb-opacity, 0.1)) 0%, transparent 70%);
+}
+
+/* ===== Phone Hero Halo ===== */
+.phone-hero-halo {
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 65% 55% at 50% 52%,
+    rgba(139, 92, 246, 0.28) 0%,
+    rgba(99, 102, 241, 0.12) 40%,
+    transparent 70%
+  );
+  filter: blur(32px);
+  pointer-events: none;
+  z-index: 0;
+  animation: phone-glow-pulse 5s ease-in-out infinite;
 }
 
 /* ===== 3D Phone Scene ===== */
@@ -1213,6 +1292,7 @@ body::after {
   position: relative;
   background: #070614;
   overflow-x: clip;
+  margin-top: -2px;
 }
 
 .shared-dot-grid {

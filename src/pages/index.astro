@@ -95,7 +95,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <div class="fade-in-section stagger-1 text-center lg:text-left min-h-[calc(100dvh-6rem)] lg:min-h-0 flex flex-col justify-center items-center lg:items-start lg:block">
             <h1 class="heading-editorial text-[clamp(2.2rem,7vw,3.5rem)] sm:text-[clamp(2.8rem,8vw,5rem)] lg:text-[clamp(4rem,5.5vw,5.5rem)]">
               <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
-              <span class="heading-editorial-accent block" style="color: #a78bfa" data-i18n="hero.title2">One Day at a Time</span>
+              <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
             <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0" style="animation-delay:0.15s" data-i18n="hero.subtitle">
               Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
@@ -103,12 +103,12 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:0.3s">
               <a
                 href={appUrl}
-                class="btn-magnetic btn-glow btn-shimmer bg-primary hover:bg-primary-hover text-white font-semibold px-8 py-3.5 rounded-full text-base transition-colors inline-flex items-center gap-2 relative"
+                class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-semibold px-8 py-3.5 rounded-full text-base inline-flex items-center gap-2 relative"
                 data-magnetic
               >
                 <span data-i18n="hero.cta">Get Started</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+                  <polygon points="0,0 10,6 0,12"/>
                 </svg>
                 <span class="btn-ring rounded-full"></span>
               </a>
@@ -127,6 +127,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <!-- Phone Mockup -->
           <div class="fade-in-section stagger-2 flex justify-center lg:justify-end lg:mt-4">
             <div class="phone-3d-scene">
+            <div class="phone-hero-halo"></div>
             <div class="phone-3d-card">
               <div class="phone-3d-glow"></div>
             <div class="phone-wrapper relative">
@@ -352,7 +353,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="feature-grid-6">
 
           <!-- Card 1: Smart Scheduling -->
-          <div class="scale-in-section stagger-1 neon-card">
+          <div class="scale-in-section stagger-1 neon-card neon-card--centered">
             <div class="neon-card-corner neon-card-corner--tl"></div>
             <div class="neon-card-corner neon-card-corner--br"></div>
             <div class="neon-card-scan"></div>
@@ -361,7 +362,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.scheduling.title">Smart Scheduling</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.scheduling.desc">Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.</p>
-            <div class="flex gap-2 mt-auto pt-4">
+            <div class="flex gap-2 mt-auto pt-4 justify-center">
               <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">M</span>
               <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">T</span>
               <span class="day-pill-animated w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all">W</span>
@@ -438,7 +439,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
 
           <!-- Card 5: Calendar View -->
-          <div class="scale-in-section stagger-5 neon-card neon-card--pink">
+          <div class="scale-in-section stagger-5 neon-card neon-card--pink neon-card--centered">
             <div class="neon-card-corner neon-card-corner--tl"></div>
             <div class="neon-card-corner neon-card-corner--br"></div>
             <div class="neon-card-scan"></div>
@@ -447,7 +448,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.calendar.title">Calendar View</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
-            <div class="mini-heatmap mt-auto pt-4 w-full max-w-[200px]">
+            <div class="mini-heatmap mt-auto pt-4 w-full max-w-[200px] mx-auto">
               <div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:4s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.5s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.2s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:3.8s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.5s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.2s;--pulse-delay:0.3s"></div><div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:4.8s;--pulse-delay:0.5s"></div>
               <div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.6s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.1s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.3s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:4.4s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.9s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.6s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.4s;--pulse-delay:0.3s"></div>
               <div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.3s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.7s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:4.0s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.1s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.7s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.5s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.2s;--pulse-delay:0.3s"></div>
@@ -456,7 +457,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           </div>
 
           <!-- Card 6: Multi-Language -->
-          <div class="scale-in-section stagger-6 neon-card neon-card--cyan">
+          <div class="scale-in-section stagger-6 neon-card neon-card--cyan neon-card--centered">
             <div class="neon-card-corner neon-card-corner--tl"></div>
             <div class="neon-card-corner neon-card-corner--br"></div>
             <div class="neon-card-scan"></div>
@@ -465,7 +466,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.language.title">Multi-Language</h3>
             <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.language.desc">Available in English and Portuguese. More languages coming soon.</p>
-            <div class="mt-auto pt-4 flex gap-3 items-center">
+            <div class="mt-auto pt-4 flex gap-3 items-center justify-center">
               <span class="lang-badge-en px-4 py-2 rounded-lg text-sm font-bold text-cyan-300" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">EN</span>
               <span class="lang-badge-pt px-4 py-2 rounded-lg text-sm font-bold text-cyan-300" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">PT-BR</span>
               <span class="text-xs text-text-muted italic">+ more soon</span>
@@ -490,10 +491,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           <p class="mt-4 text-text-secondary text-base font-sans" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+        <div class="flex flex-col sm:flex-row justify-center items-stretch gap-10 lg:gap-14">
 
           <!-- Web App Card -->
-          <div class="fade-in-section stagger-1 neon-card">
+          <div class="fade-in-section stagger-1 neon-card platform-card w-full max-w-sm">
             <div class="neon-card-corner neon-card-corner--tl"></div>
             <div class="neon-card-corner neon-card-corner--br"></div>
             <div class="neon-card-scan"></div>
@@ -502,14 +503,21 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.web.title">Web App</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
-            <a href={appUrl} class="mt-auto btn-glow bg-primary hover:bg-primary-hover text-white font-semibold px-6 py-2.5 rounded-full text-sm transition-colors inline-flex items-center justify-center gap-2 w-full">
+            <a
+              href={appUrl}
+              class="mt-auto btn-magnetic btn-glow btn-vivid btn-shimmer text-white font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full relative"
+              data-magnetic
+            >
               <span data-i18n="platforms.web.cta">Open Web App</span>
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+              <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+                <polygon points="0,0 10,6 0,12"/>
+              </svg>
+              <span class="btn-ring rounded-full"></span>
             </a>
           </div>
 
           <!-- Android Card -->
-          <div class="fade-in-section stagger-2 neon-card neon-card--green">
+          <div class="fade-in-section stagger-2 neon-card platform-card w-full max-w-sm">
             <div class="neon-card-corner neon-card-corner--tl"></div>
             <div class="neon-card-corner neon-card-corner--br"></div>
             <div class="neon-card-scan"></div>
@@ -548,11 +556,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="mt-10 sm:mt-12">
           <a
             href={appUrl}
-            class="btn-magnetic btn-glow btn-shimmer btn-breathe bg-primary hover:bg-primary-hover text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-full text-base sm:text-lg transition-all inline-flex items-center gap-2 relative"
+            class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-full text-base sm:text-lg inline-flex items-center gap-2 relative"
             data-magnetic
           >
             <span data-i18n="cta.button">Get Started Free</span>
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+            <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor">
+              <polygon points="0,0 10,6 0,12"/>
+            </svg>
             <span class="btn-ring rounded-full"></span>
           </a>
         </div>
@@ -560,13 +570,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="cta-accent-line bottom-0"></div>
     </section>
 
-      <!-- Floor effect at the bottom of the shared planet -->
-      <div class="shared-floor"></div>
-
     </div><!-- /dual-section-wrap -->
   </main>
 
-  <footer class="footer-gradient-border py-10 sm:py-14">
+  <footer class="footer-gradient-border py-5 sm:py-7">
     <div class="page-container flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
         <img src="/logo.png" alt="Orbit" class="w-6 h-6 rounded-md" />
@@ -768,9 +775,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       const text = (title2.textContent || '').trim();
       const words = text.split(/\s+/).filter(Boolean);
       title2.className = 'heading-editorial-accent block';
-      title2.style.color = '#a78bfa';
+      title2.removeAttribute('style');
       title2.innerHTML = words.map((w, i) =>
-        `<span class="hero-word" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
+        `<span class="hero-word gradient-text" style="animation-delay:${0.55 + i * 0.09}s">${w}</span>`
       ).join(' ');
     }
   }
@@ -846,27 +853,38 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     const target = parseInt(el.dataset.target || "0");
     let animated = false;
 
-    const counterObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !animated) {
-          animated = true;
-          const duration = 800;
-          const start = performance.now();
-          const step = (now: number) => {
-            const elapsed = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            const current = Math.round(eased * target);
-            el.textContent = current.toString();
-            if (progress < 1) {
-              requestAnimationFrame(step);
-            }
-          };
-          setTimeout(() => requestAnimationFrame(step), 200);
+    function runCounter() {
+      if (animated) return;
+      animated = true;
+      const duration = 1000;
+      const start = performance.now();
+      const step = (now: number) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(eased * target);
+        el.textContent = current.toString();
+        if (progress < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    // Wait for parent card to become visible before counting
+    const parentCard = el.closest('.scale-in-section');
+    if (parentCard) {
+      const mo = new MutationObserver(() => {
+        if ((parentCard as HTMLElement).classList.contains('is-visible')) {
+          mo.disconnect();
+          setTimeout(runCounter, 350);
         }
       });
-    }, { threshold: 0 });
-    counterObserver.observe(el);
+      mo.observe(parentCard, { attributes: true, attributeFilter: ['class'] });
+    } else {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(runCounter, 350); } });
+      }, { threshold: 0.5 });
+      io.observe(el);
+    }
   });
 
   // --- Parallax phone on scroll ---
