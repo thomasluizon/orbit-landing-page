@@ -2127,6 +2127,11 @@ body::after {
 
 /* ===== Mobile Responsiveness — Planet & Orbital Rings ===== */
 @media (max-width: 639px) {
+  /* Hide only the sparkles that overlap the features heading text on mobile */
+  .sparkle--hide-mobile {
+    display: none;
+  }
+
   /* Push planet below the features heading so it doesn't overlap text */
   .shared-planet {
     top: clamp(280px, 45vw, 340px);
