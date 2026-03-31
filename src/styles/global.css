@@ -2124,3 +2124,59 @@ body::after {
   background: #3F3F46;
   border-radius: 4px;
 }
+
+/* ===== Mobile Responsiveness — Planet & Orbital Rings ===== */
+@media (max-width: 639px) {
+  /* Push planet below the features heading so it doesn't overlap text */
+  .shared-planet {
+    top: clamp(280px, 45vw, 340px);
+    width: clamp(520px, 150vw, 800px);
+    height: clamp(420px, 120vw, 680px);
+  }
+
+  /* Resize orbital rings to cover the hero text area on mobile */
+  .orbital-ring-1 {
+    width: 360px;
+    height: 360px;
+  }
+  .orbital-ring-2 {
+    width: 500px;
+    height: 500px;
+  }
+
+  /* Override inline --orbit-r values proportionally with new ring sizes.
+     !important is required here to beat inline style specificity. */
+  .orbital-ring-1 .orbit-dot {
+    --orbit-r: 180px !important;
+  }
+  .orbital-ring-2 .orbit-dot {
+    --orbit-r: 250px !important;
+  }
+
+  /* Center rings over title+subtitle, leaving the button outside */
+  .orbital-ring-1 {
+    top: 25%;
+  }
+  .orbital-ring-2 {
+    top: 25%;
+  }
+
+  /* Push CTA buttons down on mobile */
+  .hero-cta-group {
+    margin-top: 6rem;
+  }
+
+  /* Increase glow intensity behind the phone mockup on mobile */
+  .phone-hero-halo {
+    background: radial-gradient(ellipse 65% 55% at 50% 52%,
+      rgba(139, 92, 246, 0.55) 0%,
+      rgba(99, 102, 241, 0.25) 40%,
+      transparent 70%
+    );
+    filter: blur(28px);
+  }
+  .phone-3d-glow {
+    background: radial-gradient(ellipse 70% 60% at 50% 55%, rgba(139,92,246,0.55) 0%, rgba(99,102,241,0.28) 40%, transparent 70%);
+    filter: blur(28px);
+  }
+}
