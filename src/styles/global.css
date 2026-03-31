@@ -1297,14 +1297,14 @@ body::after {
   z-index: 0;
 }
 
-/* Large planet/sphere — half-moon arc below row 1 of feature cards */
+/* Large planet/sphere — arc from mid row-2 of feature cards, overflows sides */
 .shared-planet {
   position: absolute;
   left: 50%;
-  top: clamp(480px, 38vw, 560px);
+  top: clamp(600px, 48vw, 720px);
   transform: translate(-50%, 0);
-  width: 100vw;
-  height: 85vw;
+  width: 106vw;
+  height: 81vw;
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -1398,8 +1398,8 @@ body::after {
 .shared-floor {
   position: absolute;
   left: 50%;
-  /* equator of the planet — planet top + half height (42.5vw) */
-  top: calc(clamp(480px, 38vw, 560px) + 42.5vw);
+  /* equator of the planet — planet top + half height (40.5vw) */
+  top: calc(clamp(600px, 48vw, 720px) + 40.5vw);
   transform: translate(-50%, -50%);
   width: clamp(700px, 100vw, 1600px);
   height: clamp(70px, 9vw, 140px);
