@@ -2128,26 +2128,26 @@ body::after {
     display: none;
   }
 
-  /* Resize orbital rings to cover the hero text area on mobile */
+  /* Resize orbital rings — ring-2 fills exactly the viewport width */
   .orbital-ring-1 {
-    width: 360px;
-    height: 360px;
+    width: 72vw;
+    height: 72vw;
     box-shadow:
       0 0 40px -10px rgba(139, 92, 246, 0.15),
       inset 0 0 40px -10px rgba(139, 92, 246, 0.15);
   }
   .orbital-ring-2 {
-    width: 500px;
-    height: 500px;
+    width: 100vw;
+    height: 100vw;
   }
 
   /* Override inline --orbit-r values proportionally with new ring sizes.
      !important is required here to beat inline style specificity. */
   .orbital-ring-1 .orbit-dot {
-    --orbit-r: 180px !important;
+    --orbit-r: 36vw !important;
   }
   .orbital-ring-2 .orbit-dot {
-    --orbit-r: 250px !important;
+    --orbit-r: 50vw !important;
   }
 
   /* Center rings over title+subtitle, leaving the button outside */
