@@ -29,6 +29,7 @@ const siteUrl = "https://useorbit.org";
     <meta property="og:url" content={siteUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    <!-- TODO: Replace with dedicated 1200x630 OG image -->
     <meta property="og:image" content={`${siteUrl}${ogImage}`} />
 
     <!-- Twitter -->
@@ -39,6 +40,7 @@ const siteUrl = "https://useorbit.org";
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="canonical" href={siteUrl} />
 
     <!-- IBM Plex Serif + Manrope -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
