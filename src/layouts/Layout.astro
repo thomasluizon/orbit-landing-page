@@ -11,7 +11,7 @@ const {
   description = "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals. Available on web and Android.",
 } = Astro.props;
 
-const ogImage = "/logo.png";
+const ogImage = "/og-image.png";
 const siteUrl = "https://useorbit.org";
 ---
 
@@ -29,7 +29,6 @@ const siteUrl = "https://useorbit.org";
     <meta property="og:url" content={siteUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <!-- TODO: Replace with dedicated 1200x630 OG image -->
     <meta property="og:image" content={`${siteUrl}${ogImage}`} />
 
     <!-- Twitter -->
