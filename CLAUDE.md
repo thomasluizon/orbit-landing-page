@@ -74,6 +74,14 @@ gh pr merge --squash
 - Branch names should be descriptive: `feature/add-tags-to-habits`, `fix/login-redirect`
 - **Never reuse a branch after its PR is squash-merged.** Always create a fresh branch from updated `main`. Reusing branches after squash merge causes repeated merge conflicts because the branch history diverges from main's squashed version.
 
+## Working Principles
+
+### Best Approach Only -- No Workarounds
+- **ALWAYS use the best possible approach.** Never settle for workarounds, hacks, or "good enough" solutions. If the ideal approach exists, use it.
+- Find root causes. No temporary fixes. No band-aids. Senior developer standards.
+- Make every change as simple as possible. Impact minimal code.
+- If a workaround is tempting, STOP and find the proper solution. Ask if unsure.
+
 ## Links
 
 - **App:** https://app.useorbit.org
