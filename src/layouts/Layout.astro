@@ -11,7 +11,7 @@ const {
   description = "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals. Available on web and Android.",
 } = Astro.props;
 
-const ogImage = "/logo.png";
+const ogImage = "/og-image.png";
 const siteUrl = "https://useorbit.org";
 ---
 
@@ -39,6 +39,7 @@ const siteUrl = "https://useorbit.org";
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="canonical" href={siteUrl} />
 
     <!-- IBM Plex Serif + Manrope -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

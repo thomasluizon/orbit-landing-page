@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://useorbit.org/sitemap-index.xml
