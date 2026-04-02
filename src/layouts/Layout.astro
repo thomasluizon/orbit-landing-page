@@ -8,11 +8,37 @@ interface Props {
 
 const {
   title = "Orbit - Build Better Habits",
-  description = "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals. Available on web and Android.",
+  description = "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.",
 } = Astro.props;
 
 const ogImage = "/og-image.png";
-const siteUrl = "https://useorbit.org";
+const siteUrl = Astro.site?.origin || "https://useorbit.org";
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "name": "Orbit",
+      "url": siteUrl,
+      "logo": `${siteUrl}/logo.png`
+    },
+    {
+      "@type": "WebSite",
+      "name": "Orbit",
+      "url": siteUrl
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "Orbit",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "description": description
+    }
+  ]
+};
 ---
 
 <!doctype html>
@@ -23,33 +49,46 @@ const siteUrl = "https://useorbit.org";
     <meta name="color-scheme" content="dark only" />
     <meta name="theme-color" content="#0a0a0a" />
     <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={siteUrl} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={`${siteUrl}${ogImage}`} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Orbit" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
+    <meta name="twitter:site" content="@useorbit" />
 
     <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="canonical" href={siteUrl} />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
 
     <!-- IBM Plex Serif + Manrope -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;1,600&family=Manrope:wght@400;500;600;700;800&display=swap"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
+    <script is:inline>
+      (function() {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;1,600&family=Manrope:wght@400;500;600;700;800&display=swap';
+        link.onerror = function() { console.error('Failed to load Google Fonts'); };
+        document.head.appendChild(link);
+      })();
+    </script>
     <noscript>
       <link
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;1,600&family=Manrope:wght@400;500;600;700;800&display=swap"

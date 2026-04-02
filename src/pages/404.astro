@@ -1,0 +1,27 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+---
+
+<Layout title="Orbit - Page Not Found" description="The page you're looking for doesn't exist.">
+  <main class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <a href="/" class="flex items-center gap-2.5 mb-10 group">
+      <img src="/logo.png" alt="Orbit" width="40" height="40" class="w-10 h-10 rounded-lg" />
+      <span class="text-xl font-bold text-text-primary">Orbit</span>
+    </a>
+    <h1 class="text-6xl font-bold text-primary mb-4 font-sans">404</h1>
+    <p class="text-text-secondary text-lg mb-8 max-w-md">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <a
+      href="/"
+      class="btn-glow btn-vivid text-white font-semibold px-8 py-3.5 rounded-full text-base inline-flex items-center gap-2"
+    >
+      Back to Home
+      <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
+        <polygon points="0,0 10,6 0,12"/>
+      </svg>
+    </a>
+  </main>
+</Layout>

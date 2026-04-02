@@ -1,0 +1,77 @@
+/* ===== Editorial Typography ===== */
+.heading-editorial {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--color-warm-white);
+}
+
+.heading-editorial-accent {
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.14;
+  overflow: visible;
+}
+
+/* ===== Gradient Text ===== */
+@keyframes gradient-shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 25%, #c4b5fd 50%, #818cf8 75%, #8b5cf6 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shimmer 6s ease-in-out infinite;
+  overflow: visible;
+}
+
+.gradient-text:not(.block),
+.hero-word {
+  padding-block: 0.08em 0.14em;
+  margin-block: -0.08em -0.14em;
+}
+
+.gradient-text:not(.block) {
+  display: inline-block;
+}
+
+/* ===== Tech Label Chip ===== */
+.tech-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  border: 1px solid rgba(139,92,246,0.28);
+  border-radius: 100px;
+  padding: 0.28rem 0.85rem;
+  background: rgba(139,92,246,0.07);
+  backdrop-filter: blur(8px);
+}
+
+.tech-label::before {
+  content: '';
+  display: block;
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 7px rgba(139,92,246,0.9), 0 0 14px rgba(139,92,246,0.5);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.65); }
+}

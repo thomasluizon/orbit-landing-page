@@ -1,0 +1,19 @@
+---
+interface Props {
+  variant?: 'default' | 'blue' | 'orange' | 'green' | 'pink' | 'cyan';
+  class?: string;
+  stagger?: number;
+  animation?: 'scale-in' | 'fade-in';
+}
+
+const { variant = 'default', class: className = '', stagger = 1, animation = 'scale-in' } = Astro.props;
+const variantClass = variant !== 'default' ? `neon-card--${variant}` : '';
+const animClass = animation === 'fade-in' ? 'fade-in-section' : 'scale-in-section';
+---
+
+<div class={`${animClass} stagger-${stagger} neon-card ${variantClass} ${className}`.trim()}>
+  <div class="neon-card-corner neon-card-corner--tl"></div>
+  <div class="neon-card-corner neon-card-corner--br"></div>
+  <div class="neon-card-scan"></div>
+  <slot />
+</div>

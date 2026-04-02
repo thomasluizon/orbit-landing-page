@@ -1,0 +1,21 @@
+---
+interface Props {
+  href: string;
+  class?: string;
+  breathe?: boolean;
+}
+
+const { href, class: className = '', breathe = false } = Astro.props;
+---
+
+<a
+  href={href}
+  class={`btn-magnetic btn-glow btn-vivid btn-shimmer ${breathe ? 'btn-breathe' : ''} text-white font-semibold rounded-full inline-flex items-center gap-2 relative ${className}`.trim()}
+  data-magnetic
+>
+  <slot />
+  <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
+    <polygon points="0,0 10,6 0,12"/>
+  </svg>
+  <span class="btn-ring rounded-full"></span>
+</a>

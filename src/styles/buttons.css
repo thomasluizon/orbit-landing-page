@@ -1,0 +1,109 @@
+/* ===== Button Glow ===== */
+.btn-glow {
+  box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.35);
+  transition: box-shadow 0.3s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 14px 28px -4px rgba(139, 92, 246, 0.5);
+}
+
+.btn-glow:active {
+  box-shadow: 0 6px 12px -3px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== Button Vivid (bright purple + top shine) ===== */
+.btn-vivid {
+  background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 55%, #8654f0 100%) !important;
+  box-shadow:
+    0 10px 24px -4px rgba(139, 92, 246, 0.50),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  transition: box-shadow 0.3s ease, transform 0.2s ease, filter 0.2s ease;
+}
+
+.btn-vivid:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    0 16px 36px -4px rgba(139, 92, 246, 0.65),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
+.btn-vivid:active {
+  filter: brightness(0.96);
+  transform: scale(0.98);
+}
+
+/* ===== Button Shimmer ===== */
+@keyframes shimmer-sweep {
+  0%, 40% { transform: translateX(-100%) skewX(-15deg); }
+  60%, 100% { transform: translateX(350%) skewX(-15deg); }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transform: translateX(-100%) skewX(-15deg);
+  animation: shimmer-sweep 5s ease-in-out infinite;
+  animation-delay: 2s;
+  pointer-events: none;
+}
+
+/* ===== Magnetic Button ===== */
+.btn-magnetic {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, background-color 0.2s ease;
+}
+
+/* ===== Button Ring (CTA expand on hover) ===== */
+.btn-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.btn-magnetic:hover .btn-ring {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+/* ===== Button Breathe (CTA) ===== */
+@keyframes btn-breathe {
+  0%, 100% {
+    box-shadow:
+      0 10px 24px -4px rgba(139, 92, 246, 0.50),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+      0 0 0 0 rgba(139, 92, 246, 0);
+  }
+  50% {
+    box-shadow:
+      0 16px 44px -2px rgba(139, 92, 246, 0.70),
+      inset 0 1px 0 rgba(255, 255, 255, 0.26),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+      0 0 0 7px rgba(139, 92, 246, 0.10);
+  }
+}
+
+.btn-breathe {
+  animation: btn-breathe 3s ease-in-out infinite;
+}
+
+.btn-breathe:hover {
+  animation: none;
+}

@@ -1,0 +1,21 @@
+---
+interface Sparkle {
+  top: string;
+  left: string;
+  sm?: boolean;
+  hideMobile?: boolean;
+}
+
+interface Props {
+  sparkles: Sparkle[];
+}
+
+const { sparkles } = Astro.props;
+---
+
+{sparkles.map(s => (
+  <div
+    class={`shared-sparkle${s.sm ? ' shared-sparkle--sm' : ''}${s.hideMobile ? ' sparkle--hide-mobile' : ''}`}
+    style={`position:absolute;top:${s.top};left:${s.left};z-index:1`}
+  />
+))}

@@ -1,0 +1,51 @@
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .fade-in-section,
+  .scale-in-section {
+    opacity: 1;
+    transform: none;
+  }
+  .hero-subtitle,
+  .hero-cta-group,
+  .hero-word {
+    opacity: 1;
+  }
+  .hero-glow-primary,
+  .hero-glow-secondary,
+  .hero-orb-large,
+  .phone-hero-halo,
+  .phone-3d-glow,
+  .ambient-orb {
+    filter: none;
+  }
+  .neon-card-corner--tl,
+  .neon-card-corner--br {
+    filter: blur(8px);
+  }
+  .gradient-text {
+    animation: none;
+    background-size: 100% 100%;
+  }
+  .btn-breathe {
+    animation: none;
+  }
+  .mini-heatmap-cell {
+    animation: none;
+  }
+  .lang-badge-en,
+  .lang-badge-pt {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .day-pill-animated {
+    animation: none;
+    background: rgba(139, 92, 246, 0.5);
+    color: #fff;
+  }
+}
