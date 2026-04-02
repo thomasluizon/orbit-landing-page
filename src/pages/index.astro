@@ -1,25 +1,74 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import NeonCard from "../components/NeonCard.astro";
+import CtaButton from "../components/CtaButton.astro";
+import Sparkles from "../components/Sparkles.astro";
+import { Image } from "astro:assets";
+import logo from "../assets/logo.png";
 
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+
+const heroSparkles = [
+  { top: "12%", left: "8%" },
+  { top: "22%", left: "24%", sm: true },
+  { top: "7%", left: "52%" },
+  { top: "18%", left: "78%", sm: true },
+  { top: "55%", left: "90%" },
+  { top: "70%", left: "6%", sm: true },
+  { top: "82%", left: "38%" },
+  { top: "40%", left: "96%", sm: true },
+];
+
+const dualSectionSparkles = [
+  { top: "2%", left: "6%" },
+  { top: "6%", left: "20%", sm: true },
+  { top: "4%", left: "38%", hideMobile: true },
+  { top: "9%", left: "54%", sm: true, hideMobile: true },
+  { top: "3%", left: "73%" },
+  { top: "8%", left: "88%", sm: true },
+  { top: "15%", left: "3%" },
+  { top: "20%", left: "27%", sm: true },
+  { top: "18%", left: "82%" },
+  { top: "25%", left: "12%", sm: true },
+  { top: "28%", left: "91%" },
+  { top: "32%", left: "64%", sm: true },
+  { top: "37%", left: "5%" },
+  { top: "42%", left: "45%", sm: true },
+  { top: "46%", left: "78%" },
+  { top: "50%", left: "15%", sm: true },
+  { top: "54%", left: "58%" },
+  { top: "58%", left: "32%", sm: true },
+  { top: "62%", left: "87%" },
+  { top: "68%", left: "7%", sm: true },
+  { top: "72%", left: "48%" },
+  { top: "76%", left: "22%", sm: true },
+  { top: "80%", left: "70%" },
+  { top: "85%", left: "36%", sm: true },
+  { top: "88%", left: "92%" },
+  { top: "93%", left: "60%", sm: true },
+  { top: "96%", left: "14%" },
+];
 ---
 
 <Layout>
+  <!-- Skip to Content -->
+  <a href="#main-content" class="skip-to-content">Skip to content</a>
+
   <!-- Scroll Progress -->
-  <div id="scroll-progress" class="scroll-progress"></div>
+  <div id="scroll-progress" class="scroll-progress" aria-hidden="true"></div>
 
   <!-- Header -->
   <header id="site-header" class="header-glass fixed top-0 left-0 right-0 z-50">
-    <nav class="page-container h-16 flex items-center justify-between">
+    <nav aria-label="Main" class="page-container h-16 flex items-center justify-between">
       <a href="/" class="flex items-center gap-2.5 group logo-hover">
-        <img src="/logo.png" alt="Orbit" width="32" height="32" fetchpriority="high" class="w-8 h-8 rounded-lg transition-all group-hover:drop-shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
+        <Image src={logo} alt="Orbit" width={32} height={32} fetchpriority="high" class="w-8 h-8 rounded-lg transition-all group-hover:drop-shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
         <span class="text-lg font-bold text-text-primary">Orbit</span>
       </a>
       <div class="flex items-center gap-5">
         <button
           id="lang-toggle"
-          class="text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer"
-          aria-label="EN - Switch language"
+          class="text-sm text-text-muted hover:text-text-primary transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Switch to Portuguese"
         >
           <span id="lang-label" class="border-b border-text-muted/30 pb-0.5">EN</span>
         </button>
@@ -28,30 +77,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
           class="text-sm font-semibold px-5 py-2 rounded-full border border-primary/30 text-primary hover:bg-primary hover:text-white transition-all duration-300"
           data-i18n="header.cta"
         >
-          Go to Orbit
+          Get Started
         </a>
       </div>
     </nav>
   </header>
 
-  <main>
+  <main id="main-content">
     <!-- Hero Section -->
     <section class="hero-section relative lg:min-h-screen lg:flex lg:items-center pt-16 pb-8 sm:pb-16">
       <!-- Hero Background Layers -->
+      <div aria-hidden="true">
       <div class="hero-bg-layer hero-bg-dot-grid"></div>
       <div class="hero-bg-layer hero-glow-primary"></div>
       <div class="hero-bg-layer hero-glow-secondary"></div>
       <div class="hero-bg-layer hero-light-beam"></div>
       <div class="hero-bg-layer hero-vignette-bottom"></div>
       <!-- Hero sparkle stars -->
-      <div class="shared-sparkle" style="position:absolute;top:12%;left:8%;z-index:1"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:22%;left:24%;z-index:1"></div>
-      <div class="shared-sparkle" style="position:absolute;top:7%;left:52%;z-index:1"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:18%;left:78%;z-index:1"></div>
-      <div class="shared-sparkle" style="position:absolute;top:55%;left:90%;z-index:1"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:70%;left:6%;z-index:1"></div>
-      <div class="shared-sparkle" style="position:absolute;top:82%;left:38%;z-index:1"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="position:absolute;top:40%;left:96%;z-index:1"></div>
+      <Sparkles sparkles={heroSparkles} />
       <!-- Large diffuse orbs -->
       <div class="hero-orb-large" style="width:260px;height:260px;top:10%;left:5%;--orb-opacity:0.10;--drift-x:20px;--drift-y:-30px;--orb-dur:14s;--orb-delay:0s"></div>
       <div class="hero-orb-large" style="width:200px;height:200px;top:55%;left:2%;--orb-opacity:0.08;--drift-x:-15px;--drift-y:25px;--orb-dur:18s;--orb-delay:2s"></div>
@@ -86,6 +129,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="ambient-orb" style="width:3px;height:3px;top:75%;left:85%;--orb-opacity:0.4;--drift-x:-18px;--drift-y:-22px;--orb-dur:8s;--orb-delay:3s"></div>
       <div class="ambient-orb" style="width:5px;height:5px;top:40%;left:45%;--orb-opacity:0.2;--drift-x:10px;--drift-y:15px;--orb-dur:14s;--orb-delay:4s;--orb-blur:2px"></div>
       <div class="ambient-orb" style="width:4px;height:4px;top:85%;left:30%;--orb-opacity:0.35;--drift-x:14px;--drift-y:-18px;--orb-dur:10s;--orb-delay:1.5s"></div>
+      </div><!-- /aria-hidden decorative wrapper -->
 
       <div class="page-container w-full relative z-10">
         <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 lg:gap-8 items-center">
@@ -96,26 +140,18 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <span class="heading-editorial-accent gradient-text block" data-i18n="hero.title2">One Day at a Time</span>
             </h1>
             <p class="hero-subtitle mt-8 text-lg sm:text-xl text-text-secondary leading-relaxed max-w-lg mx-auto lg:mx-0 text-center lg:text-left" style="animation-delay:0.15s" data-i18n="hero.subtitle">
-              Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.
+              AI-powered insights, goal tracking, and streaks that actually keep you motivated.
             </p>
             <div class="hero-cta-group mt-10 flex flex-col sm:flex-row items-center gap-5 justify-center lg:justify-start" style="animation-delay:0.3s">
-              <a
-                href={appUrl}
-                class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-semibold px-8 py-3.5 rounded-full text-base inline-flex items-center gap-2 relative"
-                data-magnetic
-              >
+              <CtaButton href={appUrl} breathe class="px-8 py-3.5 text-base">
                 <span data-i18n="hero.cta">Get Started</span>
-                <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
-                  <polygon points="0,0 10,6 0,12"/>
-                </svg>
-                <span class="btn-ring rounded-full"></span>
-              </a>
+              </CtaButton>
               <div class="tooltip-trigger" tabindex="0" aria-describedby="android-tooltip">
                 <span class="text-text-muted text-sm inline-flex items-center gap-2 cursor-default">
                   <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/>
                   </svg>
-                  <span data-i18n="hero.android">Download for Android</span>
+                  <span data-i18n="hero.android">Android app coming soon</span>
                 </span>
                 <span class="tooltip-text" id="android-tooltip" role="tooltip" data-i18n="hero.comingSoon">Coming Soon</span>
               </div>
@@ -181,7 +217,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                           <span class="app-ai-title" data-i18n="mockup.yourDay">Your Day</span>
                           <span class="app-pro">PRO</span>
                         </div>
-                        <div class="app-ai-body" data-i18n="mockup.aiText">Great momentum! You've completed 3 of 7 habits. Your morning routine streak is at 12 days.</div>
+                        <div class="app-ai-body" data-i18n="mockup.aiText">Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak is at 12 days.</div>
                       </div>
 
                       <div class="app-habits">
@@ -299,33 +335,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="shared-dot-grid"></div>
       <div class="shared-planet"></div>
       <!-- Stars scattered across both sections -->
-      <div class="shared-sparkle" style="top:2%;left:6%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:6%;left:20%"></div>
-      <div class="shared-sparkle sparkle--hide-mobile" style="top:4%;left:38%"></div>
-      <div class="shared-sparkle shared-sparkle--sm sparkle--hide-mobile" style="top:9%;left:54%"></div>
-      <div class="shared-sparkle" style="top:3%;left:73%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:8%;left:88%"></div>
-      <div class="shared-sparkle" style="top:15%;left:3%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:20%;left:27%"></div>
-      <div class="shared-sparkle" style="top:18%;left:82%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:25%;left:12%"></div>
-      <div class="shared-sparkle" style="top:28%;left:91%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:32%;left:64%"></div>
-      <div class="shared-sparkle" style="top:37%;left:5%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:42%;left:45%"></div>
-      <div class="shared-sparkle" style="top:46%;left:78%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:50%;left:15%"></div>
-      <div class="shared-sparkle" style="top:54%;left:58%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:58%;left:32%"></div>
-      <div class="shared-sparkle" style="top:62%;left:87%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:68%;left:7%"></div>
-      <div class="shared-sparkle" style="top:72%;left:48%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:76%;left:22%"></div>
-      <div class="shared-sparkle" style="top:80%;left:70%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:85%;left:36%"></div>
-      <div class="shared-sparkle" style="top:88%;left:92%"></div>
-      <div class="shared-sparkle shared-sparkle--sm" style="top:93%;left:60%"></div>
-      <div class="shared-sparkle" style="top:96%;left:14%"></div>
+      <Sparkles sparkles={dualSectionSparkles} />
       <div class="shared-vignette"></div>
 
     <!-- Features Section -->
@@ -343,10 +353,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="feature-grid-6">
 
           <!-- Card 1: Smart Scheduling -->
-          <div class="scale-in-section stagger-1 neon-card">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard stagger={1}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
             </div>
@@ -361,13 +368,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">S</span>
               <span class="day-pill-animated w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all">S</span>
             </div>
-          </div>
+          </NeonCard>
 
           <!-- Card 2: AI Insights -->
-          <div class="scale-in-section stagger-2 neon-card neon-card--blue">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard variant="blue" stagger={2}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l1.09 3.26L16.36 6l-2.6 2.17L14.36 12 12 9.92 9.64 12l.6-3.83L7.64 6l3.27-.74Z"/><path d="M5 18h14"/><path d="M7 22h10"/></svg>
             </div>
@@ -380,13 +384,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               </div>
               <p class="text-xs text-text-muted leading-relaxed typing-cursor">"Your morning routine streak is at 12 days. Keep it going!"</p>
             </div>
-          </div>
+          </NeonCard>
 
           <!-- Card 3: Streak Tracking -->
-          <div class="scale-in-section stagger-3 neon-card neon-card--orange">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard variant="orange" stagger={3}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c-4.97 0-9-2.69-9-6v-.01C3 12.13 6.16 9.21 8.14 7.14c.49-.51 1.28-.2 1.33.5.11 1.46.66 2.67 1.53 3.36.23-2.08 1.17-4.14 2.81-6.18.37-.46 1.07-.38 1.32.16C16.48 7.92 21 12.14 21 15.99v.01c0 3.31-4.03 6-9 6Z"/></svg>
             </div>
@@ -408,13 +409,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
                 <polyline class="sparkline-line" points="0,36 16,30 32,26 48,22 64,18 80,14 96,10 112,7 128,4 140,2"/>
               </svg>
             </div>
-          </div>
+          </NeonCard>
 
           <!-- Card 4: Sub-Habits -->
-          <div class="scale-in-section stagger-4 neon-card neon-card--green">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard variant="green" stagger={4}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18"/><path d="M8 8l4-4 4 4"/><path d="M8 16h8"/><path d="M6 12h12"/></svg>
             </div>
@@ -426,31 +424,25 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <div class="sub-animate flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></span> Breakfast</div>
               <div class="sub-animate flex items-center gap-2 text-text-muted ml-5"><span class="w-2 h-2 rounded-full border border-primary/40 flex-shrink-0"></span> Journal</div>
             </div>
-          </div>
+          </NeonCard>
 
           <!-- Card 5: Calendar View -->
-          <div class="scale-in-section stagger-5 neon-card neon-card--pink">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard variant="pink" stagger={5}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="features.calendar.title">Calendar View</h3>
-            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance with a heatmap of your habit completions.</p>
+            <p class="text-text-secondary text-sm leading-relaxed" data-i18n="features.calendar.desc">See your entire month at a glance. Navigate dates and track completion patterns over time.</p>
             <div class="mini-heatmap mt-auto pt-4 w-full max-w-[200px] mx-auto">
               <div class="mini-heatmap-cell" style="--heat:0.05;--pulse-dur:4s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.5s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.2s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:3.8s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.5s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.2s;--pulse-delay:0.3s"></div><div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:4.8s;--pulse-delay:0.5s"></div>
               <div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.6s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.1s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.3s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:4.4s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.2;--pulse-dur:3.9s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.6s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.4s;--pulse-delay:0.3s"></div>
               <div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:4.3s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.7s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:4.0s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:3.1s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.7s;--pulse-delay:0.6s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:3.5s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.8;--pulse-dur:4.2s;--pulse-delay:0.3s"></div>
               <div class="mini-heatmap-cell" style="--heat:0.1;--pulse-dur:3.8s;--pulse-delay:0.7s"></div><div class="mini-heatmap-cell" style="--heat:0.5;--pulse-dur:4.4s;--pulse-delay:0.1s"></div><div class="mini-heatmap-cell" style="--heat:0.3;--pulse-dur:3.2s;--pulse-delay:0.5s"></div><div class="mini-heatmap-cell" style="--heat:0.7;--pulse-dur:4.6s;--pulse-delay:0.2s"></div><div class="mini-heatmap-cell" style="--heat:0.4;--pulse-dur:3.9s;--pulse-delay:0.4s"></div><div class="mini-heatmap-cell" style="--heat:0.9;--pulse-dur:4.1s;--pulse-delay:0.0s"></div><div class="mini-heatmap-cell" style="--heat:0.6;--pulse-dur:3.6s;--pulse-delay:0.6s"></div>
             </div>
-          </div>
+          </NeonCard>
 
           <!-- Card 6: Multi-Language -->
-          <div class="scale-in-section stagger-6 neon-card neon-card--cyan">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard variant="cyan" stagger={6}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             </div>
@@ -461,7 +453,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               <span class="lang-badge-pt px-4 py-2 rounded-lg text-sm font-bold text-cyan-300" style="background:rgba(6,182,212,0.12);border:1px solid rgba(6,182,212,0.25)">PT-BR</span>
               <span class="text-xs text-text-muted italic">+ more soon</span>
             </div>
-          </div>
+          </NeonCard>
 
         </div>
       </div>
@@ -474,9 +466,9 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="fade-in-section mb-10 text-center">
           <span class="tech-label mb-4 inline-flex" data-i18n="platforms.label">Platforms</span>
           <h2 class="heading-editorial text-2xl sm:text-3xl lg:text-[2.25rem] xl:text-[2.75rem]">
-            <span data-i18n="platforms.title1">Available</span>
-            <span class="heading-editorial-accent gradient-text" data-i18n="platforms.title2"> everywhere</span>
-            <span data-i18n="platforms.title3"> you are</span>
+            <span data-i18n="platforms.title1">Available on</span>
+            <span class="heading-editorial-accent gradient-text" data-i18n="platforms.title2"> web & mobile</span>
+            <span data-i18n="platforms.title3"></span>
           </h2>
           <p class="mt-4 text-text-secondary text-base font-sans" data-i18n="platforms.subtitle">Access your habits from any device, anytime.</p>
         </div>
@@ -484,10 +476,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         <div class="flex flex-col sm:flex-row justify-center items-stretch gap-10 lg:gap-14">
 
           <!-- Web App Card -->
-          <div class="fade-in-section stagger-1 neon-card platform-card w-full max-w-sm">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard animation="fade-in" class="platform-card w-full max-w-sm" stagger={1}>
             <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center mb-4">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             </div>
@@ -495,7 +484,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.web.desc">Access Orbit from any browser. Your habits sync across all your devices.</p>
             <a
               href={appUrl}
-              class="mt-auto btn-magnetic btn-glow btn-vivid btn-shimmer text-white font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full relative"
+              class="mt-auto btn-magnetic btn-glow btn-vivid btn-shimmer text-white font-semibold px-6 py-2.5 min-h-[44px] rounded-full text-sm inline-flex items-center justify-center gap-2 w-full relative"
               data-magnetic
             >
               <span data-i18n="platforms.web.cta">Open Web App</span>
@@ -504,13 +493,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
               </svg>
               <span class="btn-ring rounded-full"></span>
             </a>
-          </div>
+          </NeonCard>
 
           <!-- Android Card -->
-          <div class="fade-in-section stagger-2 neon-card platform-card w-full max-w-sm">
-            <div class="neon-card-corner neon-card-corner--tl"></div>
-            <div class="neon-card-corner neon-card-corner--br"></div>
-            <div class="neon-card-scan"></div>
+          <NeonCard animation="fade-in" class="platform-card w-full max-w-sm" stagger={2}>
             <div class="flex items-center justify-between w-full mb-4">
               <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2" stroke-linecap="round"/></svg>
@@ -519,11 +505,11 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.android.title">Android</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
-            <button disabled class="mt-auto bg-transparent border border-border-light text-text-muted font-semibold px-6 py-2.5 rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
+            <button disabled aria-label="Google Play - Coming Soon" class="mt-auto bg-transparent border border-border-light text-text-muted font-semibold px-6 py-2.5 min-h-[44px] rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/></svg>
               Google Play
             </button>
-          </div>
+          </NeonCard>
 
         </div>
       </div>
@@ -536,23 +522,15 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       <div class="cta-grid"></div>
       <div class="cta-ambient"></div>
       <div class="fade-in-section relative max-w-5xl mx-auto px-6 sm:px-8 text-center">
-        <h2 class="heading-editorial text-3xl sm:text-5xl lg:text-[clamp(4rem,5.5vw,6rem)]">
+        <h2 class="heading-editorial text-3xl sm:text-5xl lg:text-[clamp(4rem,5.5vw,6rem)] [text-wrap:balance]">
           <span data-i18n="cta.title1">Ready to build</span><br class="hidden sm:block">
           <span class="whitespace-nowrap"><span class="heading-editorial-accent gradient-text" data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span></span>
         </h2>
-        <p class="mt-6 text-text-secondary text-base sm:text-lg lg:text-xl max-w-xl mx-auto font-sans" data-i18n="cta.subtitle">Join Orbit today and start tracking your progress.</p>
+        <p class="mt-6 text-text-secondary text-base sm:text-lg lg:text-xl max-w-xl mx-auto font-sans" data-i18n="cta.subtitle">Free to start. No credit card required.</p>
         <div class="mt-10 sm:mt-12">
-          <a
-            href={appUrl}
-            class="btn-magnetic btn-glow btn-vivid btn-shimmer btn-breathe text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-full text-base sm:text-lg inline-flex items-center gap-2 relative"
-            data-magnetic
-          >
-            <span data-i18n="cta.button">Get Started Free</span>
-            <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
-              <polygon points="0,0 10,6 0,12"/>
-            </svg>
-            <span class="btn-ring rounded-full"></span>
-          </a>
+          <CtaButton href={appUrl} breathe class="font-bold px-8 sm:px-12 py-4 sm:py-5 text-base sm:text-lg">
+            <span data-i18n="cta.button">Get Started</span>
+          </CtaButton>
         </div>
       </div>
       <div class="cta-accent-line bottom-0"></div>
@@ -564,13 +542,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
   <footer class="footer-gradient-border py-5 sm:py-7">
     <div class="page-container flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
-        <img src="/logo.png" alt="Orbit" width="24" height="24" loading="lazy" class="w-6 h-6 rounded-md" />
+        <Image src={logo} alt="Orbit" width={24} height={24} loading="lazy" class="w-6 h-6 rounded-md" />
         <span class="text-sm font-semibold text-text-primary">Orbit</span>
       </div>
       <div class="flex items-center gap-4">
         <a href={`${appUrl}/privacy`} class="text-text-muted text-sm hover:text-text-secondary transition-colors" data-i18n="footer.privacy">Privacy Policy</a>
-        <span class="text-text-muted/30">|</span>
-        <p class="text-text-muted text-sm" data-i18n="footer.text">Built with care &middot; &copy; 2026</p>
+        <span class="text-text-muted/30" aria-hidden="true">|</span>
+        <p class="text-text-muted text-sm" data-i18n="footer.text">Orbit &middot; &copy; 2026</p>
       </div>
     </div>
   </footer>
@@ -580,18 +558,18 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
   // --- i18n ---
   const translations: Record<string, Record<string, string>> = {
     en: {
-      "header.cta": "Go to Orbit",
+      "header.cta": "Get Started",
       "hero.title1": "Build Better Habits,",
       "hero.title2": "One Day at a Time",
-      "hero.subtitle": "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.",
+      "hero.subtitle": "AI-powered insights, goal tracking, and streaks that actually keep you motivated.",
       "hero.cta": "Get Started",
-      "hero.android": "Download for Android",
+      "hero.android": "Android app coming soon",
       "hero.comingSoon": "Coming Soon",
       "mockup.today": "Today",
       "mockup.allHabits": "All Habits",
       "mockup.todayLabel": "Today",
       "mockup.yourDay": "Your Day",
-      "mockup.aiText": "Great momentum! You've completed 3 of 7 habits. Your morning routine streak is at 12 days.",
+      "mockup.aiText": "Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak is at 12 days.",
       "mockup.habit1": "Morning Routine",
       "mockup.habit2": "Exercise",
       "mockup.habit3": "Read 30 minutes",
@@ -618,13 +596,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "features.subhabits.title": "Sub-Habits",
       "features.subhabits.desc": "Break big habits into smaller steps. Complete sub-tasks to build momentum.",
       "features.calendar.title": "Calendar View",
-      "features.calendar.desc": "See your entire month at a glance with a heatmap of your habit completions.",
+      "features.calendar.desc": "See your entire month at a glance. Navigate dates and track completion patterns over time.",
       "features.language.title": "Multi-Language",
       "features.language.desc": "Available in English and Portuguese. More languages coming soon.",
       "platforms.label": "Platforms",
-      "platforms.title1": "Available",
-      "platforms.title2": " everywhere",
-      "platforms.title3": " you are",
+      "platforms.title1": "Available on",
+      "platforms.title2": " web & mobile",
+      "platforms.title3": "",
       "platforms.subtitle": "Access your habits from any device, anytime.",
       "platforms.web.title": "Web App",
       "platforms.web.desc": "Access Orbit from any browser. Your habits sync across all your devices.",
@@ -634,24 +612,24 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "cta.title1": "Ready to build",
       "cta.title2": "better habits",
       "cta.title3": "?",
-      "cta.subtitle": "Join Orbit today and start tracking your progress.",
-      "cta.button": "Get Started Free",
+      "cta.subtitle": "Free to start. No credit card required.",
+      "cta.button": "Get Started",
       "footer.privacy": "Privacy Policy",
-      "footer.text": "Built with care \u00b7 \u00a9 2026"
+      "footer.text": "Orbit \u00b7 \u00a9 2026"
     },
     "pt-BR": {
-      "header.cta": "Ir para o Orbit",
+      "header.cta": "Come\u00e7ar",
       "hero.title1": "Construa H\u00e1bitos Melhores,",
       "hero.title2": "Um Dia de Cada Vez",
-      "hero.subtitle": "Acompanhe seus h\u00e1bitos di\u00e1rios, construa sequ\u00eancias e receba insights de IA para manter suas metas em dia.",
+      "hero.subtitle": "Insights com IA, acompanhamento de metas e sequ\u00eancias que realmente mant\u00eam sua motiva\u00e7\u00e3o.",
       "hero.cta": "Come\u00e7ar",
-      "hero.android": "Baixar para Android",
+      "hero.android": "App Android em breve",
       "hero.comingSoon": "Em Breve",
       "mockup.today": "Hoje",
       "mockup.allHabits": "Todos os H\u00e1bitos",
       "mockup.todayLabel": "Hoje",
       "mockup.yourDay": "Seu Dia",
-      "mockup.aiText": "\u00d3timo ritmo! Voc\u00ea completou 3 de 7 h\u00e1bitos. Sua sequ\u00eancia matinal est\u00e1 em 12 dias.",
+      "mockup.aiText": "Consist\u00eancia incr\u00edvel! Voc\u00ea completou 5 de 7 h\u00e1bitos hoje. Sua sequ\u00eancia matinal est\u00e1 em 12 dias.",
       "mockup.habit1": "Rotina Matinal",
       "mockup.habit2": "Exerc\u00edcio",
       "mockup.habit3": "Ler 30 minutos",
@@ -670,7 +648,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "features.title1": "Tudo que voc\u00ea precisa para construir",
       "features.title2": " h\u00e1bitos duradouros",
       "features.scheduling.title": "Agendamento Inteligente",
-      "features.scheduling.desc": "Defina frequ\u00eancias di\u00e1rias, semanais ou personalizadas. O Orbit calcula exatamente quando cada h\u00e1bito \u00e9 devido.",
+      "features.scheduling.desc": "Defina frequ\u00eancias di\u00e1rias, semanais ou personalizadas. O Orbit sabe o momento certo para cada h\u00e1bito.",
       "features.streaks.title": "Rastreamento de Sequ\u00eancias",
       "features.streaks.desc": "Veja suas sequ\u00eancias crescerem. Progresso visual que mant\u00e9m voc\u00ea motivado dia ap\u00f3s dia.",
       "features.ai.title": "Insights de IA",
@@ -678,13 +656,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "features.subhabits.title": "Sub-H\u00e1bitos",
       "features.subhabits.desc": "Divida grandes h\u00e1bitos em passos menores. Complete sub-tarefas para ganhar impulso.",
       "features.calendar.title": "Vis\u00e3o de Calend\u00e1rio",
-      "features.calendar.desc": "Veja o m\u00eas inteiro de uma s\u00f3 vez com um mapa de calor das suas conclus\u00f5es.",
+      "features.calendar.desc": "Veja o m\u00eas inteiro de uma s\u00f3 vez. Navegue entre datas e acompanhe seus padr\u00f5es ao longo do tempo.",
       "features.language.title": "Multi-Idioma",
       "features.language.desc": "Dispon\u00edvel em ingl\u00eas e portugu\u00eas. Mais idiomas em breve.",
       "platforms.label": "Plataformas",
-      "platforms.title1": "Dispon\u00edvel em",
-      "platforms.title2": " todo lugar",
-      "platforms.title3": " que voc\u00ea estiver",
+      "platforms.title1": "Dispon\u00edvel na",
+      "platforms.title2": " web e mobile",
+      "platforms.title3": "",
       "platforms.subtitle": "Acesse seus h\u00e1bitos de qualquer dispositivo, a qualquer hora.",
       "platforms.web.title": "Aplicativo Web",
       "platforms.web.desc": "Acesse o Orbit de qualquer navegador. Seus h\u00e1bitos sincronizam em todos os dispositivos.",
@@ -694,10 +672,10 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       "cta.title1": "Pronto para construir",
       "cta.title2": "h\u00e1bitos melhores",
       "cta.title3": "?",
-      "cta.subtitle": "Entre no Orbit hoje e comece a acompanhar seu progresso.",
-      "cta.button": "Come\u00e7ar Gr\u00e1tis",
+      "cta.subtitle": "Gr\u00e1tis para come\u00e7ar. Sem cart\u00e3o de cr\u00e9dito.",
+      "cta.button": "Come\u00e7ar",
       "footer.privacy": "Pol\u00edtica de Privacidade",
-      "footer.text": "Feito com carinho \u00b7 \u00a9 2026"
+      "footer.text": "Orbit \u00b7 \u00a9 2026"
     }
   };
 
@@ -712,7 +690,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
   }
 
   function setLangCookie(lang: string) {
-    document.cookie = `${COOKIE_KEY}=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    document.cookie = `${COOKIE_KEY}=${lang}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax; Secure`;
   }
 
   function applyTranslations(lang: string) {
@@ -720,17 +698,15 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n")!;
       if (t[key]) {
-        if (key === "footer.text") {
-          el.innerHTML = t[key];
-        } else {
-          el.textContent = t[key];
-        }
+        el.textContent = t[key];
+      } else if (location.hostname === 'localhost') {
+        console.warn(`[i18n] Missing key "${key}" for "${lang}"`);
       }
     });
     const label = document.getElementById("lang-label");
     if (label) label.textContent = lang === "pt-BR" ? "PT" : "EN";
     const toggle = document.getElementById("lang-toggle");
-    if (toggle) toggle.setAttribute("aria-label", `${lang === "pt-BR" ? "PT" : "EN"} - Switch language`);
+    if (toggle) toggle.setAttribute("aria-label", lang === "pt-BR" ? "Mudar para Ingl\u00eas" : "Switch to Portuguese");
     document.documentElement.lang = lang === "pt-BR" ? "pt-BR" : "en";
   }
 
@@ -777,6 +753,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
         }
       });
     },
@@ -849,6 +826,13 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
       loopInterval = setInterval(runCounter, 3000);
     }
 
+    function stopLoop() {
+      if (loopInterval) {
+        clearInterval(loopInterval);
+        loopInterval = null;
+      }
+    }
+
     // Wait for parent card to become visible before counting
     const parentCard = el.closest('.scale-in-section');
     if (parentCard) {
@@ -859,12 +843,21 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
         }
       });
       mo.observe(parentCard, { attributes: true, attributeFilter: ['class'] });
+      setTimeout(() => mo.disconnect(), 30000);
     } else {
       const io = new IntersectionObserver((entries) => {
         entries.forEach(e => { if (e.isIntersecting) { io.disconnect(); setTimeout(startLoop, 350); } });
       }, { threshold: 0.5 });
       io.observe(el);
     }
+
+    // Pause counter when card scrolls out of view
+    const visObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) stopLoop();
+      });
+    }, { threshold: 0 });
+    visObs.observe(parentCard || el);
   });
 
   // --- Parallax phone on scroll ---

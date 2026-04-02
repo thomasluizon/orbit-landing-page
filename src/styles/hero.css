@@ -1,0 +1,640 @@
+/* ===== Hero Section ===== */
+@keyframes hero-gradient-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-50%, 0, 0); }
+}
+
+.hero-section {
+  position: relative;
+  background: var(--color-hero-bg);
+  overflow: clip;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 200%;
+  height: 100%;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 30% 35%, rgba(140, 60, 230, 0.13) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 60%, rgba(180, 80, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 60% 10%, rgba(120, 40, 220, 0.06) 0%, transparent 50%);
+  animation: hero-gradient-drift 20s ease-in-out infinite;
+  will-change: transform;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-features-bridge {
+  height: 120px;
+  margin-top: -60px;
+  margin-bottom: -60px;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(to bottom, var(--color-hero-bg) 0%, var(--color-hero-bg) 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 65%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 65%, transparent 100%);
+}
+
+/* ===== Architectural Orbital Rings ===== */
+@keyframes orbit-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes orbit-spin-reverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.orbital-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(139, 92, 246, 0.06);
+  pointer-events: none;
+}
+
+.orbital-ring::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: rgba(139, 92, 246, 0.6);
+  border-radius: 50%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.4);
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.orbital-ring-1 {
+  width: 600px;
+  height: 600px;
+  top: 50%;
+  left: 50%;
+  border-color: rgba(139, 92, 246, 0.2);
+  box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.15);
+  animation: orbit-spin 70s linear infinite;
+}
+
+.orbital-ring-2 {
+  width: 900px;
+  height: 900px;
+  top: 50%;
+  left: 50%;
+  border-style: dashed;
+  border-color: rgba(139, 92, 246, 0.08);
+  animation: orbit-spin-reverse 110s linear infinite;
+}
+
+.orbital-ring-2::before {
+  width: 5px;
+  height: 5px;
+  background: rgba(99, 102, 241, 0.7);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5), 0 0 24px rgba(99, 102, 241, 0.3);
+}
+
+@media (min-width: 1024px) {
+  .orbital-ring-1 {
+    width: 800px;
+    height: 800px;
+    left: 60%;
+  }
+  .orbital-ring-2 {
+    width: 1200px;
+    height: 1200px;
+    left: 60%;
+  }
+}
+
+/* ===== Orbit Dots (bolinhas orbitando nos rings) ===== */
+.orbit-dot {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  top: 0;
+  left: 50%;
+  transform-origin: 0 calc(var(--orbit-r, 300px));
+  animation: orbit-spin var(--dot-dur, 70s) linear infinite var(--dot-dir, normal);
+  animation-delay: var(--dot-delay, 0s);
+}
+
+.orbit-dot-inner {
+  width: var(--dot-size, 8px);
+  height: var(--dot-size, 8px);
+  border-radius: 50%;
+  background: var(--dot-color, rgba(139,92,246,0.9));
+  box-shadow: 0 0 10px var(--dot-glow, rgba(139,92,246,0.7)), 0 0 22px var(--dot-glow2, rgba(139,92,246,0.4));
+  transform: translate(-50%, -50%);
+  animation: pulse-glow var(--dot-pulse, 3s) ease-in-out infinite;
+  animation-delay: var(--dot-delay, 0s);
+}
+
+/* ===== Ambient Floating Orbs ===== */
+@keyframes orb-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: var(--orb-opacity, 0.4);
+  }
+  33% {
+    transform: translate(var(--drift-x, 20px), var(--drift-y, -30px)) scale(1.1);
+    opacity: calc(var(--orb-opacity, 0.4) * 1.5);
+  }
+  66% {
+    transform: translate(calc(var(--drift-x, 20px) * -0.5), calc(var(--drift-y, -30px) * -0.7)) scale(0.9);
+    opacity: calc(var(--orb-opacity, 0.4) * 0.7);
+  }
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(139, 92, 246, var(--orb-opacity, 0.4)) 0%, transparent 70%);
+  animation: orb-drift var(--orb-dur, 10s) ease-in-out infinite;
+  animation-delay: var(--orb-delay, 0s);
+  filter: blur(var(--orb-blur, 0px));
+  will-change: transform;
+}
+
+/* ===== Hero Background Layers ===== */
+.hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-bg-dot-grid,
+.shared-dot-grid {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.20) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.09;
+}
+
+.hero-glow-primary {
+  background: radial-gradient(ellipse 80% 70% at 25% 55%, rgba(160,70,255,0.22) 0%, transparent 65%);
+  filter: blur(50px);
+}
+
+.hero-glow-secondary {
+  background: radial-gradient(ellipse 60% 50% at 80% 30%, rgba(120,40,220,0.18) 0%, transparent 60%);
+  filter: blur(40px);
+}
+
+.hero-light-beam {
+  background: linear-gradient(105deg, transparent 38%, rgba(139,92,246,0.05) 49%, rgba(139,92,246,0.05) 51%, transparent 62%);
+  animation: beam-pulse 8s ease-in-out infinite;
+}
+
+@keyframes beam-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.hero-vignette-bottom {
+  background: linear-gradient(to bottom,
+    transparent 20%,
+    rgba(7, 6, 20, 0.30) 45%,
+    rgba(7, 6, 20, 0.75) 65%,
+    rgba(7, 6, 20, 0.97) 82%,
+    var(--color-hero-bg) 100%
+  );
+}
+
+/* Large diffuse orbs */
+.hero-orb-large {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(80px);
+  animation: orb-drift var(--orb-dur, 14s) ease-in-out infinite;
+  animation-delay: var(--orb-delay, 0s);
+  background: radial-gradient(circle, rgba(139,92,246, var(--orb-opacity, 0.1)) 0%, transparent 70%);
+}
+
+/* ===== Dual Section Shared Planet Background ===== */
+.dual-section-wrap {
+  position: relative;
+  background: var(--color-hero-bg);
+  overflow-x: clip;
+}
+
+.shared-dot-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Large planet/sphere — arc from mid row-2 of feature cards, overflows sides */
+.shared-planet {
+  position: absolute;
+  left: 50%;
+  top: clamp(600px, 48vw, 720px);
+  transform: translate(-50%, 0);
+  width: 106vw;
+  height: 81vw;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 35%,
+    #1e1254 0%,
+    #13093c 26%,
+    #0c0628 50%,
+    #07041e 70%,
+    #040215 100%
+  );
+  border: 1.5px solid rgba(210, 170, 255, 0.60);
+  box-shadow:
+    0 0 50px 15px rgba(180, 80, 255, 0.44),
+    0 0 130px 50px rgba(120, 40, 220, 0.26),
+    0 0 280px 90px rgba(80, 20, 180, 0.13),
+    0 0 500px 160px rgba(50, 10, 140, 0.07),
+    inset 0 0 60px 14px rgba(140, 60, 230, 0.20),
+    inset 0 0 140px 45px rgba(100, 30, 200, 0.10);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Specular highlight on the planet surface */
+.shared-planet::after {
+  content: '';
+  position: absolute;
+  top: 9%;
+  left: 16%;
+  width: 32%;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 160, 255, 0.10) 0%, transparent 70%);
+  filter: blur(20px);
+}
+
+/* Outer atmospheric ring */
+.shared-planet::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 120, 255, 0.18);
+  filter: blur(3px);
+}
+
+/* 4-point sparkle stars (shared across both sections) */
+.shared-sparkle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow:
+    0 0 4px 2px rgba(255,255,255,1),
+    0 0 14px 5px rgba(230,200,255,0.90),
+    0 0 28px 8px rgba(200,160,255,0.55);
+  pointer-events: none;
+  z-index: 1;
+}
+.shared-sparkle::before,
+.shared-sparkle::after {
+  content: '';
+  position: absolute;
+  background: rgba(255,255,255,1);
+  border-radius: 2px;
+}
+.shared-sparkle::before { width: 1.5px; height: 14px; top: -5.5px; left: 0.75px; }
+.shared-sparkle::after  { width: 14px; height: 1.5px; top: 0.75px; left: -5.5px; }
+.shared-sparkle--sm::before { height: 8px; top: -3px; }
+.shared-sparkle--sm::after  { width: 8px; left: -3px; }
+
+.shared-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 110% 80% at 50% 50%, transparent 18%, rgba(0,0,0,0.78) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Hero Entrance Animations ===== */
+@keyframes hero-fade-up {
+  0% { opacity: 0; transform: translateY(24px); filter: blur(4px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+.hero-subtitle {
+  opacity: 0;
+  animation: hero-fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-cta-group {
+  opacity: 0;
+  animation: hero-fade-up 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ===== Hero Word Reveal ===== */
+@keyframes word-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-word {
+  display: inline-block;
+  line-height: 1.14;
+  overflow: visible;
+  opacity: 0;
+  animation: word-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ===== Phone Hero Halo ===== */
+.phone-hero-halo {
+  position: absolute;
+  inset: -20%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse 65% 55% at 50% 52%,
+    rgba(139, 92, 246, 0.28) 0%,
+    rgba(99, 102, 241, 0.12) 40%,
+    transparent 70%
+  );
+  filter: blur(32px);
+  pointer-events: none;
+  z-index: 0;
+  animation: phone-glow-pulse 5s ease-in-out infinite;
+}
+
+/* ===== 3D Phone Scene ===== */
+.phone-3d-scene {
+  perspective: 1400px;
+  perspective-origin: 50% 40%;
+}
+
+.phone-3d-card {
+  transform: rotateY(-18deg) rotateX(4deg);
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@media (hover: hover) {
+  .phone-3d-card:hover {
+    transform: rotateY(-8deg) rotateX(2deg);
+  }
+}
+
+@media (max-width: 1023px) {
+  .phone-3d-card {
+    transform: none;
+  }
+}
+
+.phone-3d-glow {
+  position: absolute;
+  inset: -25%;
+  background: radial-gradient(ellipse 70% 60% at 50% 55%, rgba(139,92,246,0.28) 0%, rgba(99,102,241,0.12) 40%, transparent 70%);
+  filter: blur(35px);
+  z-index: -1;
+  animation: phone-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes phone-glow-pulse {
+  0%, 100% { opacity: 0.75; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.07); }
+}
+
+/* ===== Phone Chassis (3D Physical Device) ===== */
+@keyframes phone-gentle-float {
+  0%, 100% { transform: translateY(var(--parallax-y, 0px)); }
+  50% { transform: translateY(calc(var(--parallax-y, 0px) - 14px)); }
+}
+
+.phone-wrapper {
+  animation: phone-gentle-float 6s ease-in-out infinite;
+  will-change: transform;
+  position: relative;
+}
+
+/* === CHASSIS BODY (realistic dark iPhone) === */
+.phone-chassis {
+  position: relative;
+  width: 288px;
+  background: linear-gradient(158deg, #1a1624 0%, #100e18 40%, #0c0a12 100%);
+  border-radius: 50px;
+  padding: 14px 16px 12px;
+  box-shadow:
+    0 0 0 1.5px rgba(210,205,225,0.75),
+    0 0 0 3px rgba(10,8,18,0.98),
+    0 0 0 4.5px rgba(180,170,210,0.20),
+    0 0 0 6px rgba(8,6,14,0.92),
+    inset 0 2.5px 0 rgba(255,255,255,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.32),
+    inset 10px 0 18px -6px rgba(0,0,0,0.75),
+    inset -10px 0 18px -6px rgba(0,0,0,0.85),
+    inset 5px 0 0 rgba(255,255,255,0.055),
+    inset 0 -2.5px 0 rgba(0,0,0,0.85),
+    0 60px 120px -25px rgba(0,0,0,0.95),
+    0 30px 60px -15px rgba(0,0,0,0.75),
+    0 0 90px -25px rgba(139,92,246,0.55);
+}
+
+@media (min-width: 640px) {
+  .phone-chassis {
+    width: 308px;
+  }
+}
+
+/* === SIDE BUTTONS === */
+.phone-btn {
+  position: absolute;
+  border-radius: 2px;
+  background: linear-gradient(90deg,
+    rgba(180,170,210,0.18) 0%,
+    rgba(120,110,160,0.25) 30%,
+    rgba(80,70,120,0.15) 70%,
+    rgba(30,25,50,0.9) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.25),
+    inset 0 -1px 0 rgba(0,0,0,0.6);
+}
+
+/* Volume Up */
+.phone-btn-vol-up {
+  left: -5px;
+  top: 82px;
+  width: 5px;
+  height: 32px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.6),
+    -1px 0 4px rgba(0,0,0,0.9),
+    inset -1px 0 0 rgba(255,255,255,0.08);
+}
+
+/* Volume Down */
+.phone-btn-vol-down {
+  left: -5px;
+  top: 124px;
+  width: 5px;
+  height: 32px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.6),
+    -1px 0 4px rgba(0,0,0,0.9),
+    inset -1px 0 0 rgba(255,255,255,0.08);
+}
+
+/* Power button (right side) */
+.phone-btn-power {
+  right: -5px;
+  top: 100px;
+  width: 5px;
+  height: 56px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    inset 0 -1px 0 rgba(0,0,0,0.6),
+    1px 0 4px rgba(0,0,0,0.9),
+    inset 1px 0 0 rgba(255,255,255,0.08);
+}
+
+/* === NOTCH (traditional wide notch) === */
+.phone-notch {
+  position: absolute;
+  top: 14px; /* aligns with top of screen */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 24px;
+  background: #0c0a12; /* same as chassis body */
+  border-radius: 0 0 18px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 20;
+  /* subtle inner shadow to separate from screen */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.phone-notch-speaker {
+  width: 42px;
+  height: 5px;
+  background: #080610;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(0,0,0,0.8);
+}
+
+.phone-notch-camera {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1e1830 0%, #080610 100%);
+  border: 1.5px solid rgba(60,50,90,0.7);
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.9);
+}
+
+/* === SCREEN REFLECTION (glass glint across top) === */
+.phone-screen-reflection {
+  position: absolute;
+  top: 14px;
+  left: 9px;
+  right: 9px;
+  height: 80px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.055) 0%,
+    rgba(255,255,255,0.02) 40%,
+    transparent 100%
+  );
+  border-radius: 36px 36px 0 0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* === SCREEN FRAME (inner bezel) === */
+.phone-chassis .phone-frame {
+  overflow: hidden;
+  position: relative;
+  background: #0f0d1a;
+  border-radius: 36px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.9),
+    inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+/* ===== Tablet Responsiveness — Orbital Rings ===== */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .orbital-ring-1 {
+    width: 500px;
+    height: 500px;
+  }
+  .orbital-ring-2 {
+    width: 720px;
+    height: 720px;
+  }
+  .orbital-ring-1 .orbit-dot { --orbit-r: 250px !important; }
+  .orbital-ring-2 .orbit-dot { --orbit-r: 360px !important; }
+}
+
+/* ===== Mobile Responsiveness — Planet & Orbital Rings ===== */
+@media (max-width: 639px) {
+  /* Hide only the sparkles that overlap the features heading text on mobile */
+  .sparkle--hide-mobile {
+    display: none;
+  }
+
+  .shared-planet {
+    display: none;
+  }
+
+  /* Resize orbital rings — ring-2 fills exactly the viewport width */
+  .orbital-ring-1 {
+    width: 72vw;
+    height: 72vw;
+    box-shadow:
+      0 0 40px -10px rgba(139, 92, 246, 0.15),
+      inset 0 0 40px -10px rgba(139, 92, 246, 0.15);
+  }
+  .orbital-ring-2 {
+    width: 100vw;
+    height: 100vw;
+  }
+
+  /* Override inline --orbit-r values proportionally with new ring sizes.
+     !important is required here to beat inline style specificity. */
+  .orbital-ring-1 .orbit-dot {
+    --orbit-r: 36vw !important;
+  }
+  .orbital-ring-2 .orbit-dot {
+    --orbit-r: 50vw !important;
+  }
+
+  /* Center rings over title+subtitle, leaving the button outside */
+  .orbital-ring-1 {
+    top: 25%;
+  }
+  .orbital-ring-2 {
+    top: 25%;
+  }
+
+  /* Increase glow intensity behind the phone mockup on mobile */
+  .phone-hero-halo {
+    background: radial-gradient(ellipse 65% 55% at 50% 52%,
+      rgba(139, 92, 246, 0.55) 0%,
+      rgba(99, 102, 241, 0.25) 40%,
+      transparent 70%
+    );
+    filter: blur(28px);
+  }
+  .phone-3d-glow {
+    background: radial-gradient(ellipse 70% 60% at 50% 55%, rgba(139,92,246,0.55) 0%, rgba(99,102,241,0.28) 40%, transparent 70%);
+    filter: blur(28px);
+  }
+}

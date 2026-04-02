@@ -1,0 +1,287 @@
+/* ===== Feature Grid 6 (3x2 Neon Cards) ===== */
+.feature-grid-6 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .feature-grid-6 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .feature-grid-6 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@keyframes neon-card-scan {
+  0%   { top: -2px; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { top: calc(100% + 2px); opacity: 0; }
+}
+
+@keyframes neon-border-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+.neon-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  background: rgba(12, 12, 20, 0.92);
+  border-top:    1px solid rgba(255, 255, 255, 0.13);
+  border-left:   1px solid rgba(255, 255, 255, 0.07);
+  border-right:  1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.10),
+    0 0 30px rgba(139, 92, 246, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 20px 48px -8px rgba(0, 0, 0, 0.70);
+  transition:
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.neon-card:hover {
+  border-top-color:    rgba(139, 92, 246, 0.60);
+  border-left-color:   rgba(139, 92, 246, 0.30);
+  border-right-color:  rgba(139, 92, 246, 0.18);
+  border-bottom-color: rgba(139, 92, 246, 0.10);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.22),
+    0 0 36px rgba(139, 92, 246, 0.38),
+    0 0 90px rgba(139, 92, 246, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 32px 64px -8px rgba(0, 0, 0, 0.85);
+  transform: translateY(-10px) scale(1.015);
+}
+
+/* Restore full neon-card transitions for cards that also use scale-in-section entrance.
+   .scale-in-section (0,1,0) overrides .neon-card transition by source order, stripping
+   border-color and box-shadow transitions. This combined selector (0,2,0) wins both. */
+.scale-in-section.neon-card {
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+/* .scale-in-section.is-visible (0,2,0) wins over .neon-card:hover (0,2,0) by source order.
+   This 0,3,0 selector ensures the hover transform always applies. */
+.scale-in-section.neon-card:hover {
+  transform: translateY(-10px) scale(1.015);
+}
+
+/* Scan line that sweeps top-to-bottom on hover */
+.neon-card-scan {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+  top: -2px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.neon-card:hover .neon-card-scan {
+  opacity: 0.15;
+  animation: neon-card-scan 1.5s ease-in-out;
+}
+
+/* Corner ambient glows */
+.neon-card-corner {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+.neon-card-corner--tl {
+  top: -30px; left: -30px;
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.20) 0%, transparent 70%);
+  filter: blur(20px);
+}
+.neon-card-corner--br {
+  bottom: -24px; right: -24px;
+  width: 110px; height: 110px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, transparent 70%);
+  filter: blur(18px);
+}
+
+/* Bring card content above decorative layers */
+.neon-card > *:not(.neon-card-scan):not(.neon-card-corner) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Platform card sizing */
+.platform-card {
+  min-height: 260px;
+}
+
+@media (min-width: 640px) {
+  .platform-card {
+    min-height: 340px;
+  }
+}
+
+/* Centered content variant */
+.neon-card--centered {
+  align-items: center;
+  text-align: center;
+}
+
+/* ── Per-card color accents ── */
+/* Blue */
+.neon-card--blue:hover {
+  border-top-color: rgba(59, 130, 246, 0.55);
+  border-left-color: rgba(59, 130, 246, 0.28);
+  border-right-color: rgba(59, 130, 246, 0.15);
+  border-bottom-color: rgba(59, 130, 246, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(59, 130, 246, 0.18),
+    0 0 28px rgba(59, 130, 246, 0.28),
+    0 0 80px rgba(59, 130, 246, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 28px 56px -8px rgba(0, 0, 0, 0.80);
+}
+.neon-card--blue .neon-card-corner--tl { background: radial-gradient(circle, rgba(59, 130, 246, 0.20) 0%, transparent 70%); }
+
+/* Orange */
+.neon-card--orange:hover {
+  border-top-color: rgba(249, 115, 22, 0.50);
+  border-left-color: rgba(249, 115, 22, 0.25);
+  border-right-color: rgba(249, 115, 22, 0.13);
+  border-bottom-color: rgba(249, 115, 22, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(249, 115, 22, 0.16),
+    0 0 28px rgba(249, 115, 22, 0.25),
+    0 0 80px rgba(249, 115, 22, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 28px 56px -8px rgba(0, 0, 0, 0.80);
+}
+.neon-card--orange .neon-card-corner--tl { background: radial-gradient(circle, rgba(249, 115, 22, 0.18) 0%, transparent 70%); }
+
+/* Green */
+.neon-card--green:hover {
+  border-top-color: rgba(34, 197, 94, 0.50);
+  border-left-color: rgba(34, 197, 94, 0.25);
+  border-right-color: rgba(34, 197, 94, 0.13);
+  border-bottom-color: rgba(34, 197, 94, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(34, 197, 94, 0.16),
+    0 0 28px rgba(34, 197, 94, 0.22),
+    0 0 80px rgba(34, 197, 94, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 28px 56px -8px rgba(0, 0, 0, 0.80);
+}
+.neon-card--green .neon-card-corner--tl { background: radial-gradient(circle, rgba(34, 197, 94, 0.16) 0%, transparent 70%); }
+
+/* Pink */
+.neon-card--pink:hover {
+  border-top-color: rgba(236, 72, 153, 0.50);
+  border-left-color: rgba(236, 72, 153, 0.25);
+  border-right-color: rgba(236, 72, 153, 0.13);
+  border-bottom-color: rgba(236, 72, 153, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(236, 72, 153, 0.16),
+    0 0 28px rgba(236, 72, 153, 0.24),
+    0 0 80px rgba(236, 72, 153, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 28px 56px -8px rgba(0, 0, 0, 0.80);
+}
+.neon-card--pink .neon-card-corner--tl { background: radial-gradient(circle, rgba(236, 72, 153, 0.18) 0%, transparent 70%); }
+
+/* Cyan */
+.neon-card--cyan:hover {
+  border-top-color: rgba(6, 182, 212, 0.50);
+  border-left-color: rgba(6, 182, 212, 0.25);
+  border-right-color: rgba(6, 182, 212, 0.13);
+  border-bottom-color: rgba(6, 182, 212, 0.07);
+  box-shadow:
+    0 0 0 1px rgba(6, 182, 212, 0.16),
+    0 0 28px rgba(6, 182, 212, 0.22),
+    0 0 80px rgba(6, 182, 212, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 28px 56px -8px rgba(0, 0, 0, 0.80);
+}
+.neon-card--cyan .neon-card-corner--tl { background: radial-gradient(circle, rgba(6, 182, 212, 0.16) 0%, transparent 70%); }
+
+/* Icon — default: purple neon */
+.neon-feature-icon {
+  background: rgba(139, 92, 246, 0.12) !important;
+  box-shadow:
+    0 0 14px rgba(139, 92, 246, 0.40),
+    inset 0 0 8px rgba(139, 92, 246, 0.10);
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.4s ease,
+    box-shadow 0.4s ease;
+}
+.neon-feature-icon svg {
+  color: #8b5cf6 !important;
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.65));
+  transition: color 0.4s ease, filter 0.4s ease;
+}
+
+/* Icon glow intensifies on card hover — no movement */
+.neon-card:hover .neon-feature-icon {
+  box-shadow:
+    0 0 22px rgba(139, 92, 246, 0.55),
+    inset 0 0 12px rgba(139, 92, 246, 0.14);
+}
+
+/* Per-variant icon color on card hover */
+.neon-card--blue:hover .neon-feature-icon {
+  background: rgba(59, 130, 246, 0.16) !important;
+  box-shadow: 0 0 22px rgba(59, 130, 246, 0.50), inset 0 0 12px rgba(59, 130, 246, 0.12);
+}
+.neon-card--blue:hover .neon-feature-icon svg {
+  color: #60a5fa !important;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.70));
+}
+
+.neon-card--orange:hover .neon-feature-icon {
+  background: rgba(249, 115, 22, 0.15) !important;
+  box-shadow: 0 0 22px rgba(249, 115, 22, 0.45), inset 0 0 12px rgba(249, 115, 22, 0.10);
+}
+.neon-card--orange:hover .neon-feature-icon svg {
+  color: #fb923c !important;
+  filter: drop-shadow(0 0 5px rgba(249, 115, 22, 0.65));
+}
+
+.neon-card--green:hover .neon-feature-icon {
+  background: rgba(34, 197, 94, 0.14) !important;
+  box-shadow: 0 0 22px rgba(34, 197, 94, 0.42), inset 0 0 12px rgba(34, 197, 94, 0.10);
+}
+.neon-card--green:hover .neon-feature-icon svg {
+  color: #4ade80 !important;
+  filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.62));
+}
+
+.neon-card--pink:hover .neon-feature-icon {
+  background: rgba(236, 72, 153, 0.15) !important;
+  box-shadow: 0 0 22px rgba(236, 72, 153, 0.45), inset 0 0 12px rgba(236, 72, 153, 0.10);
+}
+.neon-card--pink:hover .neon-feature-icon svg {
+  color: #f472b6 !important;
+  filter: drop-shadow(0 0 5px rgba(236, 72, 153, 0.65));
+}
+
+.neon-card--cyan:hover .neon-feature-icon {
+  background: rgba(6, 182, 212, 0.14) !important;
+  box-shadow: 0 0 22px rgba(6, 182, 212, 0.42), inset 0 0 12px rgba(6, 182, 212, 0.10);
+}
+.neon-card--cyan:hover .neon-feature-icon svg {
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 5px rgba(6, 182, 212, 0.62));
+}
