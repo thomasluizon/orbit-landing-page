@@ -224,6 +224,8 @@
   position: relative;
   background: var(--color-hero-bg);
   overflow-x: clip;
+  --shared-planet-top: clamp(600px, 48vw, 720px);
+  --shared-planet-width: 106vw;
 }
 
 .shared-dot-grid {
@@ -237,10 +239,11 @@
 .shared-planet {
   position: absolute;
   left: 50%;
-  top: clamp(600px, 48vw, 720px);
+  top: var(--shared-planet-top);
   transform: translate(-50%, 0);
-  width: 106vw;
-  height: 81vw;
+  width: var(--shared-planet-width);
+  aspect-ratio: 106 / 81;
+  height: auto;
   border-radius: 50%;
   background: radial-gradient(
     circle at 38% 35%,
@@ -260,6 +263,14 @@
     inset 0 0 140px 45px rgba(100, 30, 200, 0.10);
   pointer-events: none;
   z-index: 0;
+}
+
+/* Cap decorative scaling on very wide screens so the CTA wrapper doesn't get dominated by the planet arc. */
+@media (min-width: 1600px) {
+  .dual-section-wrap {
+    --shared-planet-top: clamp(620px, calc(36vh + 280px), 900px);
+    --shared-planet-width: min(106vw, calc(160vh + 240px), 2600px);
+  }
 }
 
 /* Specular highlight on the planet surface */
