@@ -7,6 +7,8 @@ import { Image } from "astro:assets";
 import logo from "../assets/logo.png";
 
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+const googlePlayUrl =
+  "https://play.google.com/store/apps/details?id=org.useorbit.app";
 
 const heroSparkles = [
   { top: "12%", left: "8%" },
@@ -146,15 +148,34 @@ const dualSectionSparkles = [
               <CtaButton href={appUrl} breathe class="px-8 py-3.5 text-base">
                 <span data-i18n="hero.cta">Get Started</span>
               </CtaButton>
-              <div class="tooltip-trigger" tabindex="0" aria-describedby="android-tooltip">
-                <span class="text-text-muted text-sm inline-flex items-center gap-2 cursor-default">
-                  <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <a
+                href={googlePlayUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open Orbit on Google Play"
+                class="group btn-magnetic btn-shimmer relative inline-flex w-full sm:w-auto min-h-[56px] items-center justify-center gap-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.06] px-4 pr-5 text-white backdrop-blur-xl ring-1 ring-white/5 shadow-[0_18px_40px_-22px_rgba(139,92,246,0.92)] transition-[background-color,border-color,box-shadow,transform] duration-300 hover:border-primary/40 hover:bg-white/[0.1] hover:shadow-[0_22px_48px_-18px_rgba(139,92,246,1)]"
+                data-magnetic
+              >
+                <span
+                  aria-hidden="true"
+                  class="pointer-events-none absolute inset-[1px] rounded-full bg-[linear-gradient(135deg,rgba(255,255,255,0.12),transparent_36%,rgba(139,92,246,0.18)_100%)] opacity-90"
+                ></span>
+                <span
+                  aria-hidden="true"
+                  class="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(167,139,250,0.42)_0%,rgba(106,66,216,0.42)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_10px_20px_-14px_rgba(139,92,246,1)] transition-transform duration-300 group-hover:scale-105"
+                >
+                  <svg class="w-4 h-4 drop-shadow-[0_0_6px_rgba(255,255,255,0.3)]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/>
                   </svg>
-                  <span data-i18n="hero.android">Android app coming soon</span>
                 </span>
-                <span class="tooltip-text" id="android-tooltip" role="tooltip" data-i18n="hero.comingSoon">Coming Soon</span>
-              </div>
+                <span
+                  data-i18n="hero.android"
+                  class="relative whitespace-nowrap text-sm sm:text-[15px] font-semibold tracking-[-0.015em] text-white/96"
+                >
+                  Google Play
+                </span>
+                <span class="btn-ring rounded-full"></span>
+              </a>
             </div>
           </div>
 
@@ -501,14 +522,22 @@ const dualSectionSparkles = [
               <div class="neon-feature-icon w-10 h-10 rounded-xl flex items-center justify-center">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"/><line x1="12" y1="18" x2="12" y2="18.01" stroke-width="2" stroke-linecap="round"/></svg>
               </div>
-              <span class="bg-primary-a10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="hero.comingSoon">Coming Soon</span>
+              <span class="bg-primary-a10 text-primary text-xs font-semibold px-3 py-1 rounded-full" data-i18n="platforms.android.badge">Available Now</span>
             </div>
             <h3 class="text-xl font-bold text-text-primary mb-2 font-sans" data-i18n="platforms.android.title">Android</h3>
             <p class="text-text-secondary text-sm leading-relaxed mb-6" data-i18n="platforms.android.desc">Take Orbit with you. Track habits on the go with our native Android app.</p>
-            <button disabled aria-label="Google Play - Coming Soon" class="mt-auto bg-transparent border border-border-light text-text-muted font-semibold px-6 py-2.5 min-h-[44px] rounded-full text-sm inline-flex items-center justify-center gap-2 w-full cursor-not-allowed">
+            <a
+              href={googlePlayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open Orbit on Google Play"
+              class="mt-auto btn-magnetic btn-glow btn-vivid btn-shimmer text-white font-semibold px-6 py-2.5 min-h-[44px] rounded-full text-sm inline-flex items-center justify-center gap-2 w-full relative"
+              data-magnetic
+            >
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"/></svg>
-              Google Play
-            </button>
+              <span data-i18n="platforms.android.cta">Get it on Google Play</span>
+              <span class="btn-ring rounded-full"></span>
+            </a>
           </NeonCard>
 
         </div>
@@ -563,7 +592,7 @@ const dualSectionSparkles = [
       "hero.title2": "One Day at a Time",
       "hero.subtitle": "AI-powered insights, goal tracking, and streaks that actually keep you motivated.",
       "hero.cta": "Get Started",
-      "hero.android": "Android app coming soon",
+      "hero.android": "Google Play",
       "hero.comingSoon": "Coming Soon",
       "mockup.today": "Today",
       "mockup.allHabits": "All Habits",
@@ -607,8 +636,10 @@ const dualSectionSparkles = [
       "platforms.web.title": "Web App",
       "platforms.web.desc": "Access Orbit from any browser. Your habits sync across all your devices.",
       "platforms.web.cta": "Open Web App",
+      "platforms.android.badge": "Available Now",
       "platforms.android.title": "Android",
       "platforms.android.desc": "Take Orbit with you. Track habits on the go with our native Android app.",
+      "platforms.android.cta": "Get it on Google Play",
       "cta.title1": "Ready to build",
       "cta.title2": "better habits",
       "cta.title3": "?",
@@ -623,7 +654,7 @@ const dualSectionSparkles = [
       "hero.title2": "Um Dia de Cada Vez",
       "hero.subtitle": "Insights com IA, acompanhamento de metas e sequ\u00eancias que realmente mant\u00eam sua motiva\u00e7\u00e3o.",
       "hero.cta": "Come\u00e7ar",
-      "hero.android": "App Android em breve",
+      "hero.android": "Google Play",
       "hero.comingSoon": "Em Breve",
       "mockup.today": "Hoje",
       "mockup.allHabits": "Todos os H\u00e1bitos",
@@ -667,8 +698,10 @@ const dualSectionSparkles = [
       "platforms.web.title": "Aplicativo Web",
       "platforms.web.desc": "Acesse o Orbit de qualquer navegador. Seus h\u00e1bitos sincronizam em todos os dispositivos.",
       "platforms.web.cta": "Abrir Aplicativo Web",
+      "platforms.android.badge": "Dispon\u00edvel Agora",
       "platforms.android.title": "Android",
       "platforms.android.desc": "Leve o Orbit com voc\u00ea. Acompanhe h\u00e1bitos em movimento com nosso app Android nativo.",
+      "platforms.android.cta": "Baixar no Google Play",
       "cta.title1": "Pronto para construir",
       "cta.title2": "h\u00e1bitos melhores",
       "cta.title3": "?",
