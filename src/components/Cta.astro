@@ -1,0 +1,43 @@
+---
+import PillButton from "./PillButton.astro";
+import SatelliteGlyph from "./SatelliteGlyph.astro";
+import Starfield from "./Starfield.astro";
+
+interface Props {
+  appUrl: string;
+}
+
+const { appUrl } = Astro.props;
+
+const ctaStars = [
+  { top: "12%", left: "12%", size: 2, duration: "4.4s" },
+  { top: "28%", left: "26%", size: 1.5, delay: "1.2s", accent: true },
+  { top: "10%", left: "48%", size: 1.5, delay: "2.1s" },
+  { top: "22%", left: "74%", size: 2, duration: "5.1s", delay: "0.5s" },
+  { top: "16%", left: "90%", size: 1.5, accent: true, delay: "1.7s" },
+  { top: "70%", left: "8%", size: 1.5, delay: "0.9s" },
+  { top: "82%", left: "38%", size: 2, duration: "4.7s", delay: "2.5s" },
+  { top: "76%", left: "86%", size: 2, accent: true, duration: "5.5s" },
+];
+---
+
+<section class="relative py-24 sm:py-32">
+  <Starfield stars={ctaStars} />
+  <div class="page-container relative flex flex-col items-center text-center">
+    <div class="reveal">
+      <SatelliteGlyph size={96} class="satellite-bob" />
+    </div>
+    <h2 class="t-display reveal mt-8 max-w-[560px] [text-wrap:balance]">
+      <span data-i18n="cta.title1">Ready to build</span>
+      <span data-i18n="cta.title2">better habits</span><span data-i18n="cta.title3">?</span>
+    </h2>
+    <p class="t-body reveal mt-5 max-w-[400px] text-fg-2" data-i18n="cta.subtitle">
+      Free to start. No credit card required.
+    </p>
+    <div class="reveal mt-9">
+      <PillButton href={appUrl} glow>
+        <span data-i18n="cta.button">Get Started</span>
+      </PillButton>
+    </div>
+  </div>
+</section>

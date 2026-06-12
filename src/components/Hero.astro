@@ -1,0 +1,126 @@
+---
+import AppMockup from "./AppMockup.astro";
+import PillButton from "./PillButton.astro";
+import SatelliteGlyph from "./SatelliteGlyph.astro";
+import Starfield from "./Starfield.astro";
+
+interface Props {
+  appUrl: string;
+  googlePlayUrl: string;
+}
+
+const { appUrl, googlePlayUrl } = Astro.props;
+
+const heroStars = [
+  { top: "14%", left: "6%", size: 2, duration: "4.2s" },
+  { top: "26%", left: "16%", size: 1.5, delay: "1.1s" },
+  { top: "9%", left: "28%", size: 2, accent: true, duration: "5s", delay: "0.4s" },
+  { top: "38%", left: "38%", size: 1.5, delay: "2s" },
+  { top: "7%", left: "55%", size: 2, duration: "4.6s" },
+  { top: "20%", left: "70%", size: 1.5, accent: true, delay: "1.6s" },
+  { top: "12%", left: "88%", size: 2, duration: "5.4s", delay: "0.8s" },
+  { top: "46%", left: "90%", size: 1.5, delay: "2.4s" },
+  { top: "58%", left: "4%", size: 2, accent: true, duration: "4.8s", delay: "0.2s" },
+  { top: "72%", left: "12%", size: 1.5, delay: "1.4s" },
+  { top: "84%", left: "30%", size: 2, duration: "5.2s" },
+  { top: "66%", left: "48%", size: 1.5, delay: "0.6s" },
+  { top: "78%", left: "64%", size: 2, accent: true, duration: "4.4s", delay: "1.9s" },
+  { top: "88%", left: "82%", size: 1.5, delay: "2.8s" },
+  { top: "52%", left: "76%", size: 1.5, duration: "5.6s", delay: "1.2s" },
+  { top: "33%", left: "52%", size: 1.5, delay: "3.2s" },
+];
+---
+
+<section class="relative pt-[104px] pb-16 sm:pb-20 lg:flex lg:min-h-dvh lg:items-center lg:pt-16">
+  <div
+    class="pointer-events-none absolute inset-x-0 top-0 h-[340px]"
+    style="background: var(--gradient-header);"
+    aria-hidden="true"
+  >
+  </div>
+  <Starfield stars={heroStars} />
+
+  <div
+    class="page-container relative grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10"
+  >
+    <div class="text-center lg:text-left">
+      <p class="t-eyebrow hero-rise" data-i18n="hero.eyebrow">Habit tracker</p>
+      <h1 class="t-hero hero-rise mt-4 [text-wrap:balance]" style="animation-delay: 60ms;">
+        <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
+        <span class="block" data-i18n="hero.title2">One Day at a Time</span>
+      </h1>
+      <p
+        class="t-body hero-rise mx-auto mt-6 max-w-[460px] text-fg-2 lg:mx-0"
+        style="animation-delay: 120ms;"
+        data-i18n="hero.subtitle"
+      >
+        AI-powered insights, goal tracking, and streaks that actually keep you motivated.
+      </p>
+      <div
+        class="hero-rise mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start"
+        style="animation-delay: 180ms;"
+      >
+        <PillButton href={appUrl} glow class="w-full sm:w-auto">
+          <span data-i18n="hero.cta">Get Started</span>
+        </PillButton>
+        <PillButton
+          href={googlePlayUrl}
+          variant="ghost"
+          external
+          ariaLabel="Open Orbit on Google Play"
+          class="w-full sm:w-auto"
+        >
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"
+            ></path>
+          </svg>
+          <span data-i18n="hero.android">Google Play</span>
+        </PillButton>
+      </div>
+    </div>
+
+    <div
+      class="hero-rise relative mx-auto lg:mx-0 lg:justify-self-end"
+      style="animation-delay: 240ms;"
+    >
+      <svg
+        class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2"
+        viewBox="0 0 700 500"
+        fill="none"
+        aria-hidden="true"
+      >
+        <ellipse
+          cx="350"
+          cy="250"
+          rx="268"
+          ry="148"
+          stroke="var(--color-hairline)"
+          stroke-width="1"
+          transform="rotate(-14 350 250)"></ellipse>
+        <ellipse
+          cx="350"
+          cy="250"
+          rx="322"
+          ry="182"
+          stroke="var(--color-hairline)"
+          stroke-width="1"
+          opacity="0.6"
+          transform="rotate(-14 350 250)"></ellipse>
+      </svg>
+      <div
+        class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rotate-[-14deg]"
+        aria-hidden="true"
+      >
+        <span
+          class="orbit-dot h-[6px] w-[6px] rounded-full bg-primary"
+          style="box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.8);"></span>
+        <span
+          class="orbit-dot orbit-dot-outer h-[4px] w-[4px] rounded-full"
+          style="background: color-mix(in srgb, var(--color-primary) 55%, white);"></span>
+      </div>
+      <SatelliteGlyph size={72} class="satellite-bob absolute -top-10 -right-6 sm:-right-12" />
+      <AppMockup />
+    </div>
+  </div>
+</section>

@@ -1,27 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
-
-const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+import PillButton from "../components/PillButton.astro";
+import SatelliteGlyph from "../components/SatelliteGlyph.astro";
 ---
 
 <Layout title="Orbit - Page Not Found" description="The page you're looking for doesn't exist.">
-  <main class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-    <a href="/" class="flex items-center gap-2.5 mb-10 group">
-      <img src="/logo.png" alt="Orbit" width="40" height="40" class="w-10 h-10 rounded-lg" />
-      <span class="text-xl font-bold text-text-primary">Orbit</span>
-    </a>
-    <h1 class="text-6xl font-bold text-primary mb-4 font-sans">404</h1>
-    <p class="text-text-secondary text-lg mb-8 max-w-md">
+  <main class="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
+    <SatelliteGlyph size={96} class="satellite-bob" />
+    <h1 class="t-display mt-8">404</h1>
+    <p class="t-body mt-3 max-w-[400px] text-fg-2">
       The page you're looking for doesn't exist or has been moved.
     </p>
-    <a
-      href="/"
-      class="btn-glow btn-vivid text-white font-semibold px-8 py-3.5 rounded-full text-base inline-flex items-center gap-2"
-    >
-      Back to Home
-      <svg class="w-2 h-2.5" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true">
-        <polygon points="0,0 10,6 0,12"/>
-      </svg>
-    </a>
+    <div class="mt-8">
+      <PillButton href="/" glow>Back to Home</PillButton>
+    </div>
   </main>
 </Layout>
