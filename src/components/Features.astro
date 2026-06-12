@@ -1,0 +1,119 @@
+---
+import { CalendarClock, CalendarDays, Globe, ListTree } from "@lucide/astro";
+
+const featureRows = [
+  {
+    icon: CalendarClock,
+    titleKey: "features.scheduling.title",
+    descKey: "features.scheduling.desc",
+    title: "Smart Scheduling",
+    desc: "Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.",
+  },
+  {
+    icon: ListTree,
+    titleKey: "features.subhabits.title",
+    descKey: "features.subhabits.desc",
+    title: "Sub-Habits",
+    desc: "Break big habits into smaller steps. Complete sub-tasks to build momentum.",
+  },
+  {
+    icon: CalendarDays,
+    titleKey: "features.calendar.title",
+    descKey: "features.calendar.desc",
+    title: "Calendar View",
+    desc: "See your entire month at a glance. Navigate dates and track completion patterns over time.",
+  },
+  {
+    icon: Globe,
+    titleKey: "features.language.title",
+    descKey: "features.language.desc",
+    title: "Multi-Language",
+    desc: "Available in English and Portuguese. More languages coming soon.",
+  },
+];
+---
+
+<section id="features" class="py-20 sm:py-24">
+  <div class="page-container">
+    <h2 class="t-display reveal max-w-[560px]">
+      <span data-i18n="features.title1">Everything you need to build</span><span
+        data-i18n="features.title2"
+      >
+        lasting habits</span
+      >
+    </h2>
+
+    <div class="reveal-stagger mt-10 grid gap-4 md:grid-cols-2">
+      <div
+        class="flex flex-col rounded-[18px] bg-bg-field p-7"
+        style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+      >
+        <span class="text-[28px]" aria-hidden="true">🔥</span>
+        <span
+          class="count-up mt-4 font-display text-[44px] leading-none font-bold tracking-[-0.02em] text-fg-1 [font-variant-numeric:tabular-nums]"
+          data-count-target="12"
+        >
+          12
+        </span>
+        <h3
+          class="mt-5 font-sans text-[18px] font-medium text-fg-1"
+          data-i18n="features.streaks.title"
+        >
+          Streak Tracking
+        </h3>
+        <p
+          class="mt-1.5 font-sans text-[14px] leading-[1.55] text-fg-3"
+          data-i18n="features.streaks.desc"
+        >
+          Watch your streaks grow. Visual progress that keeps you motivated day after day.
+        </p>
+      </div>
+
+      <div
+        class="flex flex-col rounded-[18px] p-7"
+        style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.28);"
+      >
+        <span class="text-[28px]" aria-hidden="true">✨</span>
+        <div class="mt-4 rounded-[12px] bg-bg-sunk p-3.5">
+          <p class="font-sans text-[13px] leading-[1.55] text-fg-2" data-i18n="mockup.aiText">
+            Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak
+            is at 12 days.
+          </p>
+        </div>
+        <h3 class="mt-5 font-sans text-[18px] font-medium text-fg-1" data-i18n="features.ai.title">
+          AI Insights
+        </h3>
+        <p
+          class="mt-1.5 font-sans text-[14px] leading-[1.55] text-fg-3"
+          data-i18n="features.ai.desc"
+        >
+          Get personalized daily summaries and routine analysis powered by AI.
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="reveal reveal-stagger mt-4 divide-y divide-hairline rounded-[18px] bg-bg-card"
+      style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+    >
+      {
+        featureRows.map((row) => (
+          <div class="flex items-center gap-4 px-5 py-4 sm:px-6">
+            <row.icon size={22} stroke-width={1.8} class="shrink-0 text-fg-2" />
+            <div class="min-w-0">
+              <h3 class="font-sans text-[17px] text-fg-1" data-i18n={row.titleKey}>
+                {row.title}
+              </h3>
+              <p
+                class="mt-0.5 font-sans text-[13.5px] leading-[1.5] text-fg-3"
+                data-i18n={row.descKey}
+              >
+                {row.desc}
+              </p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

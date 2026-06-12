@@ -1,0 +1,195 @@
+---
+import { Image } from "astro:assets";
+import { CalendarDays, House, MessageCircle, Plus, User } from "@lucide/astro";
+import logoNoBg from "../assets/logo-no-bg.png";
+---
+
+<div class="mockup-float w-[260px] sm:w-[280px]" aria-hidden="true">
+  <div
+    data-tilt
+    class="tilt-target rounded-[36px] bg-bg-elev p-[10px]"
+    style="box-shadow: var(--shadow-3), 0 0 90px rgba(var(--primary-rgb), 0.22), inset 0 0 0 1px var(--color-hairline-strong);"
+  >
+    <div class="relative overflow-hidden rounded-[28px] bg-bg">
+      <div
+        class="pointer-events-none absolute inset-x-0 top-0 h-[170px]"
+        style="background: var(--gradient-header);"
+      >
+      </div>
+
+      <div class="relative flex flex-col gap-3 px-3 pt-4">
+        <div class="flex items-center justify-center py-1">
+          <Image src={logoNoBg} alt="" width={26} height={26} class="h-[26px] w-[26px]" />
+        </div>
+
+        <div
+          class="hero-rise rounded-[14px] p-3"
+          style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.28); animation-delay: 320ms;"
+        >
+          <div class="flex items-center gap-1.5">
+            <span class="text-[13px]">✨</span>
+            <span class="font-sans text-[12px] font-medium text-fg-1" data-i18n="mockup.yourDay">
+              Your Day
+            </span>
+            <span
+              class="ml-auto rounded-full px-[7px] py-[2px] font-sans text-[8.5px] font-semibold tracking-[0.06em] text-fg-1"
+              style="background: rgba(var(--primary-rgb), 0.18);"
+            >
+              PRO
+            </span>
+          </div>
+          <p class="mt-1.5 font-sans text-[11px] leading-[1.5] text-fg-2" data-i18n="mockup.aiText">
+            Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak
+            is at 12 days.
+          </p>
+        </div>
+
+        <div
+          class="hero-rise flex items-center gap-2.5 rounded-[14px] bg-bg-card p-2.5"
+          style="box-shadow: inset 0 0 0 1px var(--color-hairline); animation-delay: 380ms;"
+        >
+          <div
+            class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-bg-elev text-[16px]"
+          >
+            🌅
+          </div>
+          <div class="min-w-0 flex-1">
+            <div
+              class="truncate font-sans text-[12.5px] font-medium text-fg-1"
+              data-i18n="mockup.habit1"
+            >
+              Morning Routine
+            </div>
+            <div class="font-mono text-[10px] text-fg-3 [font-variant-numeric:tabular-nums]">
+              <span data-i18n="mockup.freq.daily">Daily</span> · 🔥 12
+            </div>
+          </div>
+          <div
+            class="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full bg-primary"
+          >
+            <svg
+              class="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--color-fg-on-primary)"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+
+        <div
+          class="hero-rise flex items-center gap-2.5 rounded-[14px] bg-bg-card p-2.5"
+          style="box-shadow: inset 0 0 0 1px var(--color-hairline); animation-delay: 440ms;"
+        >
+          <div
+            class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-bg-elev text-[16px]"
+          >
+            💪
+          </div>
+          <div class="min-w-0 flex-1">
+            <div
+              class="truncate font-sans text-[12.5px] font-medium text-fg-1"
+              data-i18n="mockup.habit2"
+            >
+              Exercise
+            </div>
+            <div class="font-mono text-[10px] text-fg-3 [font-variant-numeric:tabular-nums]">
+              <span data-i18n="mockup.freq.daily">Daily</span> · 🔥 8
+            </div>
+          </div>
+          <div
+            class="h-[22px] w-[22px] shrink-0 rounded-full"
+            style="box-shadow: inset 0 0 0 1.5px var(--color-hairline-strong);"
+          >
+          </div>
+        </div>
+
+        <div
+          class="hero-rise flex items-center gap-2.5 rounded-[14px] bg-bg-card p-2.5"
+          style="box-shadow: inset 0 0 0 1px var(--color-hairline); animation-delay: 500ms;"
+        >
+          <div
+            class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-bg-elev text-[16px]"
+          >
+            📚
+          </div>
+          <div class="min-w-0 flex-1">
+            <div
+              class="truncate font-sans text-[12.5px] font-medium text-fg-1"
+              data-i18n="mockup.habit3"
+            >
+              Read 30 minutes
+            </div>
+            <div class="font-mono text-[10px] text-fg-3 [font-variant-numeric:tabular-nums]">
+              <span data-i18n="mockup.freq.daily">Daily</span> · 🔥 21
+            </div>
+          </div>
+          <div
+            class="h-[22px] w-[22px] shrink-0 rounded-full"
+            style="box-shadow: inset 0 0 0 1.5px var(--color-hairline-strong);"
+          >
+          </div>
+        </div>
+
+        <div
+          class="hero-rise flex items-center gap-2.5 rounded-[14px] bg-bg-card p-2.5"
+          style="box-shadow: inset 0 0 0 1px var(--color-hairline); animation-delay: 560ms;"
+        >
+          <div
+            class="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-bg-elev text-[16px]"
+          >
+            🧘
+          </div>
+          <div class="min-w-0 flex-1">
+            <div
+              class="truncate font-sans text-[12.5px] font-medium text-fg-1"
+              data-i18n="mockup.habit4"
+            >
+              Meditate
+            </div>
+            <div class="font-mono text-[10px] text-fg-3 [font-variant-numeric:tabular-nums]">
+              <span data-i18n="mockup.freq.daily">Daily</span> · 🔥 5
+            </div>
+          </div>
+          <div
+            class="h-[22px] w-[22px] shrink-0 rounded-full"
+            style="box-shadow: inset 0 0 0 1.5px var(--color-hairline-strong);"
+          >
+          </div>
+        </div>
+
+        <div
+          class="hero-rise -mx-3 mt-1"
+          style="box-shadow: inset 0 1px 0 var(--color-hairline); animation-delay: 620ms;"
+        >
+          <div class="flex items-center px-2 pt-3.5 pb-4">
+            <div class="flex h-[28px] flex-1 items-center justify-center">
+              <House size={20} stroke-width={2.2} class="text-primary" />
+            </div>
+            <div class="flex h-[28px] flex-1 items-center justify-center">
+              <MessageCircle size={20} stroke-width={1.8} class="text-fg-4" />
+            </div>
+            <div class="flex flex-1 items-center justify-center">
+              <div
+                class="flex h-[44px] w-[44px] -translate-y-3 items-center justify-center rounded-full bg-primary"
+                style="box-shadow: 0 0 0 5px var(--color-bg), var(--primary-glow);"
+              >
+                <Plus size={20} stroke-width={2.2} class="text-fg-on-primary" />
+              </div>
+            </div>
+            <div class="flex h-[28px] flex-1 items-center justify-center">
+              <CalendarDays size={20} stroke-width={1.8} class="text-fg-4" />
+            </div>
+            <div class="flex h-[28px] flex-1 items-center justify-center">
+              <User size={20} stroke-width={1.8} class="text-fg-4" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

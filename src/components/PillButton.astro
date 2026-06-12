@@ -1,0 +1,57 @@
+---
+type PillVariant = "primary" | "ghost";
+type PillSize = "md" | "sm";
+
+interface Props {
+  href: string;
+  variant?: PillVariant;
+  size?: PillSize;
+  glow?: boolean;
+  external?: boolean;
+  class?: string;
+  ariaLabel?: string;
+}
+
+const {
+  href,
+  variant = "primary",
+  size = "md",
+  glow = false,
+  external = false,
+  class: className = "",
+  ariaLabel,
+} = Astro.props;
+
+const variantClasses: Record<PillVariant, string> = {
+  primary:
+    "bg-primary text-fg-on-primary hover:bg-primary-pressed hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
+  ghost:
+    "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-card active:scale-[0.98]",
+};
+
+const sizeClasses: Record<PillSize, string> = {
+  md: variant === "primary" ? "px-[26px] py-[15px] text-[16px]" : "px-[26px] py-[14px] text-[16px]",
+  sm: "min-h-[44px] px-[18px] text-[14px]",
+};
+
+const glowClasses =
+  glow && variant === "primary"
+    ? "pill-breathe shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow-hover)]"
+    : "";
+---
+
+<a
+  href={href}
+  target={external ? "_blank" : undefined}
+  rel={external ? "noopener noreferrer" : undefined}
+  aria-label={ariaLabel}
+  class:list={[
+    "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
+    variantClasses[variant],
+    sizeClasses[size],
+    glowClasses,
+    className,
+  ]}
+>
+  <slot />
+</a>

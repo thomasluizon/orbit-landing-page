@@ -9,13 +9,34 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "yaml-language-server": {
+      "yaml": "^2.8.3"
+    }
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.2",
+    "@lucide/astro": "^1.18.0",
     "@tailwindcss/vite": "^4.2.2",
     "@vercel/analytics": "^2.0.1",
     "astro": "^6.0.5",
     "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "eslint": "^10.5.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "prettier": "^3.8.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.61.0"
   }
 }

@@ -1,0 +1,27 @@
+---
+interface Star {
+  top: string;
+  left: string;
+  size?: number;
+  accent?: boolean;
+  duration?: string;
+  delay?: string;
+}
+
+interface Props {
+  stars: Star[];
+}
+
+const { stars } = Astro.props;
+---
+
+<div class="pointer-events-none absolute inset-0" aria-hidden="true">
+  {
+    stars.map((star) => (
+      <span
+        class:list={["starfield-dot", star.accent && "starfield-dot-accent"]}
+        style={`top:${star.top};left:${star.left};width:${star.size ?? 2}px;height:${star.size ?? 2}px;--twinkle-duration:${star.duration ?? "4s"};--twinkle-delay:${star.delay ?? "0s"};`}
+      />
+    ))
+  }
+</div>
