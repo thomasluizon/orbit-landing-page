@@ -4,7 +4,7 @@ import { CalendarDays, House, MessageCircle, Plus, User } from "@lucide/astro";
 import logoNoBg from "../assets/logo-no-bg.png";
 ---
 
-<div class="mockup-float w-[272px] sm:w-[292px]" aria-hidden="true">
+<div class="mockup-float w-[260px] sm:w-[280px]" aria-hidden="true">
   <div
     data-tilt
     class="tilt-target rounded-[36px] bg-bg-elev p-[10px]"
@@ -17,7 +17,7 @@ import logoNoBg from "../assets/logo-no-bg.png";
       >
       </div>
 
-      <div class="relative flex min-h-[568px] flex-col gap-3 px-3 pt-4">
+      <div class="relative flex flex-col gap-3 px-3 pt-4">
         <div class="flex items-center justify-center py-1">
           <Image src={logoNoBg} alt="" width={26} height={26} class="h-[26px] w-[26px]" />
         </div>
@@ -163,26 +163,28 @@ import logoNoBg from "../assets/logo-no-bg.png";
         </div>
 
         <div
-          class="hero-rise -mx-3 mt-auto"
+          class="hero-rise -mx-3 mt-1"
           style="box-shadow: inset 0 1px 0 var(--color-hairline); animation-delay: 620ms;"
         >
-          <div class="flex items-center justify-between px-7 pt-3.5 pb-4">
-            <div class="flex h-[28px] w-[44px] items-center justify-center">
+          <div class="flex items-center px-2 pt-3.5 pb-4">
+            <div class="flex h-[28px] flex-1 items-center justify-center">
               <House size={20} stroke-width={2.2} class="text-primary" />
             </div>
-            <div class="flex h-[28px] w-[44px] items-center justify-center">
+            <div class="flex h-[28px] flex-1 items-center justify-center">
               <MessageCircle size={20} stroke-width={1.8} class="text-fg-4" />
             </div>
-            <div
-              class="flex h-[44px] w-[44px] -translate-y-3 items-center justify-center rounded-full bg-primary"
-              style="box-shadow: 0 0 0 5px var(--color-bg), var(--primary-glow);"
-            >
-              <Plus size={20} stroke-width={2.2} class="text-fg-on-primary" />
+            <div class="flex flex-1 items-center justify-center">
+              <div
+                class="flex h-[44px] w-[44px] -translate-y-3 items-center justify-center rounded-full bg-primary"
+                style="box-shadow: 0 0 0 5px var(--color-bg), var(--primary-glow);"
+              >
+                <Plus size={20} stroke-width={2.2} class="text-fg-on-primary" />
+              </div>
             </div>
-            <div class="flex h-[28px] w-[44px] items-center justify-center">
+            <div class="flex h-[28px] flex-1 items-center justify-center">
               <CalendarDays size={20} stroke-width={1.8} class="text-fg-4" />
             </div>
-            <div class="flex h-[28px] w-[44px] items-center justify-center">
+            <div class="flex h-[28px] flex-1 items-center justify-center">
               <User size={20} stroke-width={1.8} class="text-fg-4" />
             </div>
           </div>
