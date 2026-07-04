@@ -13,7 +13,6 @@ const en = {
   "hero.cta": "Start free",
   "hero.ctaNote": "7-day Pro trial, no card required",
   "hero.android": "Google Play",
-  "hero.demoLabel": "Astra in action",
 
   "mockup.yourDay": "Your Day",
   "mockup.aiText":
@@ -174,7 +173,6 @@ const ptBR: Record<TranslationKey, string> = {
   "hero.cta": "Começar grátis",
   "hero.ctaNote": "Teste Pro de 7 dias, sem cartão",
   "hero.android": "Google Play",
-  "hero.demoLabel": "Astra em ação",
 
   "mockup.yourDay": "Seu Dia",
   "mockup.aiText":
