@@ -118,6 +118,10 @@ body {
   color: var(--color-fg-1);
 }
 
+html[lang="pt-BR"] .t-hero {
+  font-size: clamp(2.125rem, 1.3rem + 3.5vw, 3rem);
+}
+
 .t-display {
   font-family: var(--font-sans);
   font-size: clamp(1.75rem, 1.25rem + 2vw, 2.125rem);

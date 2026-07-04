@@ -52,7 +52,7 @@ const en = {
   "mcp.title2": "Claude or ChatGPT",
   "mcp.desc":
     "Orbit exposes a full MCP server, so your favorite AI assistant can create habits, log progress, and check your streaks without leaving your chat.",
-  "mcp.stat1Value": "94",
+  "mcp.stat1Value": "79",
   "mcp.stat1Label": "MCP tools",
   "mcp.stat2Value": "15",
   "mcp.stat2Label": "tool categories",
@@ -212,7 +212,7 @@ const ptBR: Record<TranslationKey, string> = {
   "mcp.title2": "Claude ou ChatGPT",
   "mcp.desc":
     "O Orbit expõe um servidor MCP completo, então seu assistente de IA favorito pode criar hábitos, registrar progresso e checar suas sequências sem sair da conversa.",
-  "mcp.stat1Value": "94",
+  "mcp.stat1Value": "79",
   "mcp.stat1Label": "ferramentas MCP",
   "mcp.stat2Value": "15",
   "mcp.stat2Label": "categorias de ferramentas",
