@@ -6,16 +6,21 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
+  extraJsonLd?: Record<string, unknown>;
 }
 
 const {
-  title = "Orbit - Build Better Habits",
-  description = "Track your daily habits, build streaks, and get AI-powered insights to stay on top of your goals.",
+  title = "Orbit - The habit tracker you can talk to",
+  description = "Orbit pairs a serious habit tracker with Astra, an AI coach that logs your habits and reads your real streaks. Connect Claude or ChatGPT over MCP. Free to start, 7-day Pro trial, no card.",
+  noindex = false,
+  extraJsonLd,
 } = Astro.props;
 
 const ogImage = "/og-image.png";
 const siteUrl = Astro.site?.origin || "https://useorbit.org";
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -39,6 +44,15 @@ const structuredData = {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: description,
     },
+    {
+      "@type": "MobileApplication",
+      name: "Orbit",
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Android",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      installUrl: googlePlayUrl,
+      description: description,
+    },
   ],
 };
 ---
@@ -51,7 +65,7 @@ const structuredData = {
     <meta name="color-scheme" content="dark only" />
     <meta name="theme-color" content="#020618" />
     <meta name="description" content={description} />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
 
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalUrl} />
@@ -74,6 +88,11 @@ const structuredData = {
     <link rel="canonical" href={canonicalUrl} />
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+    {
+      extraJsonLd && (
+        <script is:inline type="application/ld+json" set:html={JSON.stringify(extraJsonLd)} />
+      )
+    }
 
     <Font cssVariable="--font-rubik" preload />
     <Font cssVariable="--font-inter" preload />

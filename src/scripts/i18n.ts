@@ -6,7 +6,7 @@ function isLanguage(value: string): value is Language {
   return (LANGUAGES as readonly string[]).includes(value);
 }
 
-function getLang(): Language {
+export function getLang(): Language {
   const cookie = document.cookie.split("; ").find((entry) => entry.startsWith(`${COOKIE_KEY}=`));
   const stored = cookie?.split("=")[1];
   if (stored && isLanguage(stored)) return stored;
@@ -27,6 +27,11 @@ function applyTranslations(lang: Language) {
     } else if (import.meta.env.DEV) {
       console.warn(`[i18n] Missing key "${key}" for "${lang}"`);
     }
+  });
+  document.querySelectorAll<HTMLElement>("[data-i18n-placeholder]").forEach((element) => {
+    const key = element.getAttribute("data-i18n-placeholder");
+    const value = key ? table[key] : undefined;
+    if (value !== undefined) element.setAttribute("placeholder", value);
   });
   const label = document.getElementById("lang-label");
   if (label) label.textContent = lang === "pt-BR" ? "PT" : "EN";

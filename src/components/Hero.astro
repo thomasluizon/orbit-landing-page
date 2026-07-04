@@ -44,24 +44,25 @@ const heroStars = [
     class="page-container relative grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10"
   >
     <div class="text-center lg:text-left">
-      <p class="t-eyebrow hero-rise" data-i18n="hero.eyebrow">Habit tracker</p>
+      <p class="t-eyebrow hero-rise" data-i18n="hero.eyebrow">Meet Astra, your AI coach</p>
       <h1 class="t-hero hero-rise mt-4 [text-wrap:balance]" style="animation-delay: 60ms;">
-        <span class="block" data-i18n="hero.title1">Build Better Habits,</span>
-        <span class="block" data-i18n="hero.title2">One Day at a Time</span>
+        <span class="block" data-i18n="hero.title1">The habit tracker</span>
+        <span class="block" data-i18n="hero.title2">you can talk to</span>
       </h1>
       <p
-        class="t-body hero-rise mx-auto mt-6 max-w-[460px] text-fg-2 lg:mx-0"
+        class="t-body hero-rise mx-auto mt-6 max-w-[480px] text-fg-2 [text-wrap:pretty] lg:mx-0"
         style="animation-delay: 120ms;"
         data-i18n="hero.subtitle"
       >
-        AI-powered insights, goal tracking, and streaks that actually keep you motivated.
+        Astra is an AI coach that acts, not just chats. Say "I ran today" and it logs it. Ask "how
+        am I doing?" and it reads your real streaks. Type, speak, or connect your own AI assistant.
       </p>
       <div
         class="hero-rise mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start"
         style="animation-delay: 180ms;"
       >
         <PillButton href={appUrl} glow class="w-full sm:w-auto">
-          <span data-i18n="hero.cta">Get Started</span>
+          <span data-i18n="hero.cta">Start free</span>
         </PillButton>
         <PillButton
           href={googlePlayUrl}
@@ -78,6 +79,9 @@ const heroStars = [
           <span data-i18n="hero.android">Google Play</span>
         </PillButton>
       </div>
+      <p class="t-meta hero-rise mt-4" style="animation-delay: 220ms;" data-i18n="hero.ctaNote">
+        7-day Pro trial, no card required
+      </p>
     </div>
 
     <div
@@ -121,6 +125,13 @@ const heroStars = [
       </div>
       <SatelliteGlyph size={72} class="satellite-bob absolute -top-10 -right-6 sm:-right-12" />
       <AppMockup />
+      <span
+        class="absolute -bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-bg-sunk px-3 py-1.5 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap text-fg-2 backdrop-blur-sm"
+        style="box-shadow: inset 0 0 0 1px var(--color-hairline-strong);"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
+        <span data-i18n="hero.demoLabel">Astra in action</span>
+      </span>
     </div>
   </div>
 </section>
