@@ -18,6 +18,7 @@ function setLangCookie(lang: Language) {
 }
 
 function applyTranslations(lang: Language) {
+  document.documentElement.lang = lang === "pt-BR" ? "pt-BR" : "en";
   const table: Record<string, string> = translations[lang];
   document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
     const key = element.getAttribute("data-i18n");
