@@ -1,23 +1,48 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Cta from "../components/Cta.astro";
+import Faq from "../components/Faq.astro";
 import Features from "../components/Features.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import Hero from "../components/Hero.astro";
+import IosWaitlist from "../components/IosWaitlist.astro";
+import Mcp from "../components/Mcp.astro";
 import Platforms from "../components/Platforms.astro";
+import Pricing from "../components/Pricing.astro";
+import Proof from "../components/Proof.astro";
+import { translations } from "../i18n/translations";
 
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
+
+const en = translations.en;
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
+    "@type": "Question",
+    name: en[`faq.q${n}` as keyof typeof en],
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: en[`faq.a${n}` as keyof typeof en],
+    },
+  })),
+};
 ---
 
-<Layout>
+<Layout extraJsonLd={faqJsonLd}>
   <a href="#main-content" class="skip-to-content">Skip to content</a>
   <Header appUrl={appUrl} />
   <main id="main-content">
     <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
     <Features />
+    <Mcp />
+    <Proof />
+    <Pricing appUrl={appUrl} />
     <Platforms appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
+    <IosWaitlist />
+    <Faq />
     <Cta appUrl={appUrl} />
   </main>
   <Footer appUrl={appUrl} />
@@ -29,4 +54,5 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbi
   import "../scripts/i18n";
   import "../scripts/reveal";
   import "../scripts/tilt";
+  import "../scripts/waitlist";
 </script>

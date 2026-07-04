@@ -1,0 +1,39 @@
+---
+interface Props {
+  label?: string;
+  labelKey?: string;
+  ratio?: string;
+  class?: string;
+}
+
+const { label, labelKey, ratio = "16 / 10", class: className = "" } = Astro.props;
+---
+
+<figure
+  class:list={["group relative overflow-hidden rounded-[20px] bg-bg-elev", className]}
+  style="box-shadow: inset 0 0 0 1px var(--color-hairline-strong), var(--shadow-2);"
+>
+  <div
+    class="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+    style="background: linear-gradient(180deg, rgba(248, 250, 252, 0.05) 0%, rgba(248, 250, 252, 0) 100%);"
+    aria-hidden="true"
+  >
+  </div>
+  <div
+    class="relative flex items-center justify-center p-4 sm:p-6"
+    style={`aspect-ratio: ${ratio};`}
+  >
+    <slot />
+  </div>
+  {
+    (label || labelKey) && (
+      <figcaption
+        class="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-bg-sunk px-2.5 py-1 font-mono text-[11px] tracking-[0.02em] text-fg-2 backdrop-blur-sm"
+        style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+        <span data-i18n={labelKey}>{label}</span>
+      </figcaption>
+    )
+  }
+</figure>

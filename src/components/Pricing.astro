@@ -1,0 +1,103 @@
+---
+import { Check } from "@lucide/astro";
+import PillButton from "./PillButton.astro";
+
+interface Props {
+  appUrl: string;
+}
+
+const { appUrl } = Astro.props;
+
+const freeFeatures = [
+  { key: "pricing.free.f1", text: "Up to 10 habits" },
+  { key: "pricing.free.f2", text: "20 AI messages a month" },
+  { key: "pricing.free.f3", text: "Streaks, XP, and achievements" },
+  { key: "pricing.free.f4", text: "Social and accountability buddies" },
+];
+
+const proFeatures = [
+  { key: "pricing.pro.f1", text: "Unlimited habits" },
+  { key: "pricing.pro.f2", text: "500 AI messages a month" },
+  { key: "pricing.pro.f3", text: "Sub-habits, goals, and calendar sync" },
+  { key: "pricing.pro.f4", text: "AI memory, MCP, and API keys" },
+];
+---
+
+<section id="pricing" class="py-20 sm:py-24">
+  <div class="page-container">
+    <div class="reveal max-w-[560px]">
+      <p class="t-eyebrow" data-i18n="pricing.eyebrow">Pricing</p>
+      <h2 class="t-display mt-3 [text-wrap:balance]" data-i18n="pricing.title">
+        Start free. Upgrade when it clicks.
+      </h2>
+      <p class="t-body mt-3 text-primary" data-i18n="pricing.trial">
+        7-day Pro trial, no card required
+      </p>
+    </div>
+
+    <div class="reveal-stagger mt-10 grid gap-4 md:grid-cols-2">
+      <div
+        class="flex flex-col rounded-[20px] bg-bg-card p-7 sm:p-8"
+        style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+      >
+        <h3 class="t-h2" data-i18n="pricing.free.name">Free</h3>
+        <p class="mt-1 font-sans text-[14px] text-fg-3" data-i18n="pricing.free.tagline">
+          Everything you need to get going.
+        </p>
+        <ul class="mt-6 flex flex-1 flex-col gap-3.5">
+          {
+            freeFeatures.map((feature) => (
+              <li class="flex items-center gap-3">
+                <Check size={17} stroke-width={2.2} class="shrink-0 text-fg-3" />
+                <span class="font-sans text-[14px] text-fg-2" data-i18n={feature.key}>
+                  {feature.text}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <PillButton href={appUrl} variant="ghost" size="sm" class="mt-8 w-full">
+          <span data-i18n="pricing.free.cta">Start free</span>
+        </PillButton>
+      </div>
+
+      <div
+        class="relative flex flex-col rounded-[20px] p-7 sm:p-8"
+        style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.3);"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="t-h2" data-i18n="pricing.pro.name">Pro</h3>
+          <span
+            class="rounded-full px-[10px] py-[4px] font-sans text-[10.5px] font-semibold tracking-[0.06em] text-fg-1 uppercase"
+            style="background: rgba(var(--primary-rgb), 0.2);"
+            data-i18n="pricing.pro.badge"
+          >
+            Most popular
+          </span>
+        </div>
+        <p class="mt-1 font-sans text-[14px] text-fg-3" data-i18n="pricing.pro.tagline">
+          The full coach, unlocked.
+        </p>
+        <ul class="mt-6 flex flex-1 flex-col gap-3.5">
+          {
+            proFeatures.map((feature) => (
+              <li class="flex items-center gap-3">
+                <Check size={17} stroke-width={2.2} class="shrink-0 text-primary" />
+                <span class="font-sans text-[14px] text-fg-1" data-i18n={feature.key}>
+                  {feature.text}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <PillButton href={appUrl} glow size="sm" class="mt-8 w-full">
+          <span data-i18n="pricing.pro.cta">Start 7-day trial</span>
+        </PillButton>
+      </div>
+    </div>
+
+    <p class="reveal mt-5 text-center font-sans text-[13px] text-fg-3" data-i18n="pricing.note">
+      No credit card to start the trial. Cancel anytime.
+    </p>
+  </div>
+</section>

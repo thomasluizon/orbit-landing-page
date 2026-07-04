@@ -1,0 +1,78 @@
+---
+import { Image } from "astro:assets";
+import { CircleAlert, CircleCheck } from "@lucide/astro";
+import Layout from "../layouts/Layout.astro";
+import PillButton from "../components/PillButton.astro";
+import logoNoBg from "../assets/logo-no-bg.png";
+
+const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+---
+
+<Layout title="Waitlist confirmation - Orbit" noindex>
+  <main class="relative flex min-h-dvh flex-col items-center justify-center px-6 py-16 text-center">
+    <div
+      class="pointer-events-none absolute inset-x-0 top-0 h-[340px]"
+      style="background: var(--gradient-header);"
+      aria-hidden="true"
+    >
+    </div>
+
+    <a href="/" class="relative flex items-center gap-2.5">
+      <Image src={logoNoBg} alt="Orbit" width={32} height={32} class="h-8 w-8" />
+      <span class="font-sans text-[18px] font-medium text-fg-1">Orbit</span>
+    </a>
+
+    <div id="confirmed-ok" class="relative mt-12 max-w-[440px]">
+      <span
+        class="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+        style="background: rgba(var(--primary-rgb), 0.15);"
+      >
+        <CircleCheck size={28} stroke-width={1.8} class="text-primary" />
+      </span>
+      <h1 class="t-display mt-6 [text-wrap:balance]" data-i18n="waitlistConfirmed.ok.title">
+        You're on the list
+      </h1>
+      <p class="t-body mt-3 text-fg-2 [text-wrap:pretty]" data-i18n="waitlistConfirmed.ok.body">
+        Thanks for confirming. We'll email you the moment Orbit lands on iPhone.
+      </p>
+    </div>
+
+    <div id="confirmed-invalid" class="relative mt-12 hidden max-w-[440px]">
+      <span
+        class="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+        style="background: color-mix(in srgb, var(--color-status-overdue) 15%, transparent);"
+      >
+        <CircleAlert size={28} stroke-width={1.8} class="text-status-overdue" />
+      </span>
+      <h1 class="t-display mt-6 [text-wrap:balance]" data-i18n="waitlistConfirmed.invalid.title">
+        This link has expired
+      </h1>
+      <p
+        class="t-body mt-3 text-fg-2 [text-wrap:pretty]"
+        data-i18n="waitlistConfirmed.invalid.body"
+      >
+        Your confirmation link is invalid or has expired. Head back and join the waitlist again.
+      </p>
+    </div>
+
+    <div class="relative mt-9">
+      <PillButton href={`${appUrl}`} glow>
+        <span data-i18n="waitlistConfirmed.cta">Back to Orbit</span>
+      </PillButton>
+    </div>
+  </main>
+</Layout>
+
+<script is:inline>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("status") === "invalid") {
+      document.getElementById("confirmed-ok")?.classList.add("hidden");
+      document.getElementById("confirmed-invalid")?.classList.remove("hidden");
+    }
+  })();
+</script>
+
+<script>
+  import "../scripts/i18n";
+</script>

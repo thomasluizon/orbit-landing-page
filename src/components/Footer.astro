@@ -17,6 +17,13 @@ const { appUrl } = Astro.props;
     </div>
     <div class="flex items-center gap-5">
       <a
+        href={`${appUrl}/terms`}
+        class="font-sans text-[14px] text-fg-3 transition-[color] duration-[var(--duration-fast)] ease-standard hover:text-fg-1"
+        data-i18n="footer.terms"
+      >
+        Terms
+      </a>
+      <a
         href={`${appUrl}/privacy`}
         class="font-sans text-[14px] text-fg-3 transition-[color] duration-[var(--duration-fast)] ease-standard hover:text-fg-1"
         data-i18n="footer.privacy"

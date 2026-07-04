@@ -1,0 +1,41 @@
+---
+import { Plus } from "@lucide/astro";
+import { translations } from "../i18n/translations";
+
+const en = translations.en;
+const items = [1, 2, 3, 4, 5, 6, 7] as const;
+---
+
+<section id="faq" class="py-20 sm:py-24">
+  <div class="page-container max-w-[760px]">
+    <h2 class="t-display reveal [text-wrap:balance]" data-i18n="faq.title">Questions, answered</h2>
+
+    <div class="reveal-stagger mt-10 flex flex-col gap-3">
+      {
+        items.map((n) => (
+          <details
+            class="group rounded-[16px] bg-bg-card px-5 py-1 sm:px-6"
+            style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+          >
+            <summary class="flex cursor-pointer list-none items-center gap-4 py-4 font-sans text-[16px] font-medium text-fg-1 [&::-webkit-details-marker]:hidden">
+              <span class="flex-1" data-i18n={`faq.q${n}`}>
+                {en[`faq.q${n}` as keyof typeof en]}
+              </span>
+              <Plus
+                size={18}
+                stroke-width={2}
+                class="shrink-0 text-fg-3 transition-[transform,color] duration-[var(--duration-normal)] ease-standard group-open:rotate-45 group-open:text-fg-1"
+              />
+            </summary>
+            <p
+              class="pr-8 pb-5 font-sans text-[14.5px] leading-[1.6] text-fg-2 [text-wrap:pretty]"
+              data-i18n={`faq.a${n}`}
+            >
+              {en[`faq.a${n}` as keyof typeof en]}
+            </p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,64 @@
+---
+const stats = [
+  { target: 232, labelKey: "proof.registrations.label", label: "pre-registrations" },
+  { target: 40, labelKey: "proof.installs.label", label: "installs" },
+  { target: 2, labelKey: "proof.paying.label", label: "paying users" },
+  { target: 61, labelKey: "proof.astraTools.label", label: "Astra tools" },
+  { target: 94, labelKey: "proof.mcpTools.label", label: "MCP tools" },
+];
+---
+
+<section id="proof" class="py-20 sm:py-24">
+  <div class="page-container">
+    <p class="t-eyebrow reveal" data-i18n="proof.eyebrow">Why Orbit</p>
+    <h2 class="t-display reveal mt-3 max-w-[560px] [text-wrap:balance]" data-i18n="proof.title">
+      Built by someone who needed it
+    </h2>
+
+    <dl
+      class="reveal reveal-stagger mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5"
+    >
+      {
+        stats.map((stat) => (
+          <div>
+            <dd
+              class="count-up font-display text-[40px] leading-none font-bold tracking-[-0.02em] text-fg-1 [font-variant-numeric:tabular-nums]"
+              data-count-target={stat.target}
+            >
+              {stat.target}
+            </dd>
+            <dt class="t-secondary mt-2 text-fg-3" data-i18n={stat.labelKey}>
+              {stat.label}
+            </dt>
+          </div>
+        ))
+      }
+    </dl>
+
+    <figure
+      class="reveal mt-12 rounded-[20px] bg-bg-card p-7 sm:p-9"
+      style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+    >
+      <blockquote
+        class="max-w-[62ch] font-sans text-[18px] leading-[1.6] text-fg-1 [text-wrap:pretty] sm:text-[20px]"
+        data-i18n="proof.founder.body"
+      >
+        I'm a software engineer with ADHD. I ran my whole life out of Notion, but it grew so complex
+        that keeping it up became its own chore. So I built Orbit: the simple, forgiving habit
+        tracker I wished existed, for me and for anyone whose brain works the same way.
+      </blockquote>
+      <figcaption class="mt-5 flex items-center gap-3">
+        <span
+          class="flex h-9 w-9 items-center justify-center rounded-full font-display text-[15px] font-bold text-fg-on-primary"
+          style="background: var(--color-primary);"
+          aria-hidden="true"
+        >
+          T
+        </span>
+        <span class="font-sans text-[14px] font-medium text-fg-2" data-i18n="proof.founder.name">
+          Thomas, founder of Orbit
+        </span>
+      </figcaption>
+    </figure>
+  </div>
+</section>

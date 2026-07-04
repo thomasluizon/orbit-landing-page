@@ -1,99 +1,101 @@
 ---
-import { CalendarClock, CalendarDays, Globe, ListTree } from "@lucide/astro";
+import { CalendarDays, Cable, ListChecks, Smartphone, Trophy, Users } from "@lucide/astro";
 
 const featureRows = [
   {
-    icon: CalendarClock,
-    titleKey: "features.scheduling.title",
-    descKey: "features.scheduling.desc",
-    title: "Smart Scheduling",
-    desc: "Set daily, weekly, or custom frequencies. Orbit calculates exactly when each habit is due.",
+    icon: Cable,
+    titleKey: "features.mcp.title",
+    descKey: "features.mcp.desc",
+    title: "Connect your own AI",
+    desc: "Orbit speaks MCP, so Claude or ChatGPT can manage your habits from wherever you already chat.",
   },
   {
-    icon: ListTree,
-    titleKey: "features.subhabits.title",
-    descKey: "features.subhabits.desc",
-    title: "Sub-Habits",
-    desc: "Break big habits into smaller steps. Complete sub-tasks to build momentum.",
+    icon: Users,
+    titleKey: "features.social.title",
+    descKey: "features.social.desc",
+    title: "Support, not scoreboards",
+    desc: "Accountability buddies, co-op challenges, and cheers. No leaderboards, and off until you opt in.",
+  },
+  {
+    icon: ListChecks,
+    titleKey: "features.tracker.title",
+    descKey: "features.tracker.desc",
+    title: "A serious core tracker",
+    desc: "Daily, weekly, flexible, or one-time habits, with sub-habits, checklists, and bad-habit tracking.",
   },
   {
     icon: CalendarDays,
     titleKey: "features.calendar.title",
     descKey: "features.calendar.desc",
-    title: "Calendar View",
-    desc: "See your entire month at a glance. Navigate dates and track completion patterns over time.",
+    title: "Calendar and Google sync",
+    desc: "A color-coded month view, plus import your Google Calendar events straight into your habits.",
   },
   {
-    icon: Globe,
-    titleKey: "features.language.title",
-    descKey: "features.language.desc",
-    title: "Multi-Language",
-    desc: "Available in English and Portuguese. More languages coming soon.",
+    icon: Trophy,
+    titleKey: "features.rewards.title",
+    descKey: "features.rewards.desc",
+    title: "Streaks, XP, and Wrapped",
+    desc: "Streak freezes, achievement badges, levels, and a shareable Orbit Wrapped recap.",
+  },
+  {
+    icon: Smartphone,
+    titleKey: "features.widget.title",
+    descKey: "features.widget.desc",
+    title: "Android home-screen widget",
+    desc: "Today's habits at a glance, right on your home screen.",
   },
 ];
 ---
 
 <section id="features" class="py-20 sm:py-24">
   <div class="page-container">
-    <h2 class="t-display reveal max-w-[560px]">
+    <h2 class="t-display reveal max-w-[560px] [text-wrap:balance]">
       <span data-i18n="features.title1">Everything you need to build</span><span
         data-i18n="features.title2"
       >
-        lasting habits</span
+        habits that stick</span
       >
     </h2>
 
-    <div class="reveal-stagger mt-10 grid gap-4 md:grid-cols-2">
-      <div
-        class="flex flex-col rounded-[18px] bg-bg-field p-7"
-        style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
-      >
-        <span class="text-[28px]" aria-hidden="true">🔥</span>
-        <span
-          class="count-up mt-4 font-display text-[44px] leading-none font-bold tracking-[-0.02em] text-fg-1 [font-variant-numeric:tabular-nums]"
-          data-count-target="12"
-        >
-          12
-        </span>
+    <div
+      class="reveal mt-10 flex flex-col gap-5 rounded-[20px] p-7 sm:flex-row sm:items-center sm:gap-8 sm:p-8"
+      style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.28);"
+    >
+      <div class="sm:max-w-[300px]">
+        <div class="flex items-center gap-2.5">
+          <span class="text-[26px]" aria-hidden="true">✨</span>
+          <span
+            class="rounded-full px-[9px] py-[3px] font-sans text-[10.5px] font-semibold tracking-[0.06em] text-fg-1 uppercase"
+            style="background: rgba(var(--primary-rgb), 0.18);"
+            data-i18n="features.astra.tag"
+          >
+            61 tools
+          </span>
+        </div>
         <h3
-          class="mt-5 font-sans text-[18px] font-medium text-fg-1"
-          data-i18n="features.streaks.title"
+          class="mt-4 font-display text-[24px] font-bold tracking-[-0.01em] text-fg-1"
+          data-i18n="features.astra.title"
         >
-          Streak Tracking
+          Astra, your AI coach
         </h3>
         <p
-          class="mt-1.5 font-sans text-[14px] leading-[1.55] text-fg-3"
-          data-i18n="features.streaks.desc"
+          class="mt-2 font-sans text-[14px] leading-[1.55] text-fg-2 [text-wrap:pretty]"
+          data-i18n="features.astra.desc"
         >
-          Watch your streaks grow. Visual progress that keeps you motivated day after day.
+          Chat or speak to create, log, and adjust habits. 61 built-in tools mean almost anything
+          you can tap, you can just ask.
         </p>
       </div>
-
-      <div
-        class="flex flex-col rounded-[18px] p-7"
-        style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.28);"
-      >
-        <span class="text-[28px]" aria-hidden="true">✨</span>
-        <div class="mt-4 rounded-[12px] bg-bg-sunk p-3.5">
-          <p class="font-sans text-[13px] leading-[1.55] text-fg-2" data-i18n="mockup.aiText">
-            Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak
-            is at 12 days.
-          </p>
-        </div>
-        <h3 class="mt-5 font-sans text-[18px] font-medium text-fg-1" data-i18n="features.ai.title">
-          AI Insights
-        </h3>
-        <p
-          class="mt-1.5 font-sans text-[14px] leading-[1.55] text-fg-3"
-          data-i18n="features.ai.desc"
-        >
-          Get personalized daily summaries and routine analysis powered by AI.
+      <div class="flex-1 rounded-[12px] bg-bg-sunk p-4">
+        <p class="font-sans text-[13.5px] leading-[1.55] text-fg-2" data-i18n="mockup.aiText">
+          Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak is
+          at 12 days.
         </p>
       </div>
     </div>
 
     <div
-      class="reveal reveal-stagger mt-4 divide-y divide-hairline rounded-[18px] bg-bg-card"
+      class="reveal reveal-stagger mt-5 divide-y divide-hairline rounded-[18px] bg-bg-card"
       style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
     >
       {
@@ -101,11 +103,11 @@ const featureRows = [
           <div class="flex items-center gap-4 px-5 py-4 sm:px-6">
             <row.icon size={22} stroke-width={1.8} class="shrink-0 text-fg-2" />
             <div class="min-w-0">
-              <h3 class="font-sans text-[17px] text-fg-1" data-i18n={row.titleKey}>
+              <h3 class="font-sans text-[16px] font-medium text-fg-1" data-i18n={row.titleKey}>
                 {row.title}
               </h3>
               <p
-                class="mt-0.5 font-sans text-[13.5px] leading-[1.5] text-fg-3"
+                class="mt-0.5 font-sans text-[13.5px] leading-[1.5] text-fg-3 [text-wrap:pretty]"
                 data-i18n={row.descKey}
               >
                 {row.desc}
