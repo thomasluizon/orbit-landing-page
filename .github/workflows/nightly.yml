@@ -1,0 +1,108 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  external-links:
+    name: External link check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Check external links
+        id: lychee
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        with:
+          args: >-
+            --root-dir "${{ github.workspace }}/dist"
+            --no-progress
+            ./dist
+          fail: false
+          format: markdown
+
+      - name: Find existing broken-link issue
+        id: existing
+        if: steps.lychee.outputs.exit_code != 0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          number=$(gh issue list --label broken-link --state open \
+            --json number --jq '.[0].number // ""')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update broken-link issue
+        if: steps.lychee.outputs.exit_code != 0
+        uses: peter-evans/create-issue-from-file@e8ef132d6df98ed982188e460ebb3b5d4ef3a9cd # v5.0.1
+        with:
+          title: "Broken external links (nightly link check)"
+          content-filepath: ./lychee/out.md
+          labels: broken-link
+          issue-number: ${{ steps.existing.outputs.number }}
+
+  lighthouse-nightly:
+    name: Lighthouse (performance)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Lighthouse performance gate
+        id: lighthouse
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12.6.2
+        with:
+          configPath: ./lighthouserc.nightly.json
+          uploadArtifacts: true
+
+      - name: Write performance-regression report
+        if: failure() && steps.lighthouse.outcome == 'failure'
+        run: |
+          {
+            echo "The nightly Lighthouse performance gate failed: homepage median performance dropped below 0.9."
+            echo ""
+            echo "Full report and logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > ./lighthouse-perf-report.md
+
+      - name: Find existing performance-regression issue
+        id: existing-perf
+        if: failure() && steps.lighthouse.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          number=$(gh issue list --label perf-regression --state open \
+            --json number --jq '.[0].number // ""')
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update performance-regression issue
+        if: failure() && steps.lighthouse.outcome == 'failure'
+        uses: peter-evans/create-issue-from-file@e8ef132d6df98ed982188e460ebb3b5d4ef3a9cd # v5.0.1
+        with:
+          title: "Performance regression (nightly Lighthouse)"
+          content-filepath: ./lighthouse-perf-report.md
+          labels: perf-regression
+          issue-number: ${{ steps.existing-perf.outputs.number }}
