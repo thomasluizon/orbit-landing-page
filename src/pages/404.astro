@@ -4,7 +4,11 @@ import PillButton from "../components/PillButton.astro";
 import SatelliteGlyph from "../components/SatelliteGlyph.astro";
 ---
 
-<Layout title="Orbit - Page Not Found" description="The page you're looking for doesn't exist.">
+<Layout
+  title="Orbit - Page Not Found"
+  description="The page you're looking for doesn't exist."
+  noindex
+>
   <main class="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
     <SatelliteGlyph size={96} class="satellite-bob" />
     <h1 class="t-display mt-8">404</h1>
