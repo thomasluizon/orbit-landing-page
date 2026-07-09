@@ -68,7 +68,7 @@ const structuredData = {
     <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
 
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={canonicalUrl} />
+    {!noindex && <meta property="og:url" content={canonicalUrl} />}
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={`${siteUrl}${ogImage}`} />
@@ -85,7 +85,7 @@ const structuredData = {
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="canonical" href={canonicalUrl} />
+    {!noindex && <link rel="canonical" href={canonicalUrl} />}
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
     {
