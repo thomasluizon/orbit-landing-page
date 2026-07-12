@@ -12,18 +12,21 @@ const fallbackPoints = [
 
 <section id="mcp" class="py-20 sm:py-24">
   <div class="page-container grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-    <div class="reveal">
+    <div class="reveal text-center lg:text-left">
       <p class="t-eyebrow" data-i18n="mcp.eyebrow">Model Context Protocol</p>
-      <h2 class="t-display mt-3 max-w-[440px] [text-wrap:balance]">
+      <h2 class="t-display mx-auto mt-3 max-w-[440px] [text-wrap:balance] lg:mx-0">
         <span data-i18n="mcp.title1">Run your habits from</span>
         <span class="text-primary" data-i18n="mcp.title2">Claude or ChatGPT</span>
       </h2>
-      <p class="t-body mt-4 max-w-[460px] text-fg-2 [text-wrap:pretty]" data-i18n="mcp.desc">
+      <p
+        class="t-body mx-auto mt-4 max-w-[460px] text-fg-2 [text-wrap:pretty] lg:mx-0"
+        data-i18n="mcp.desc"
+      >
         Orbit exposes a full MCP server, so your favorite AI assistant can create habits, log
         progress, and check your streaks without leaving your chat.
       </p>
 
-      <div class="mt-7 flex gap-8">
+      <div class="mt-7 flex justify-center gap-8 lg:justify-start">
         <div>
           <div
             class="font-display text-[34px] leading-none font-bold tracking-[-0.02em] text-fg-1 [font-variant-numeric:tabular-nums]"
@@ -44,7 +47,7 @@ const fallbackPoints = [
         </div>
       </div>
 
-      <ul class="mt-7 flex flex-col gap-3">
+      <ul class="mx-auto mt-7 flex w-fit flex-col gap-3 text-left lg:mx-0">
         {
           points.map((key, index) => (
             <li class="flex items-center gap-3">

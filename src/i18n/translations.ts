@@ -9,7 +9,7 @@ const en = {
   "hero.title1": "The habit tracker",
   "hero.title2": "you can talk to",
   "hero.subtitle":
-    'Astra is an AI coach that acts, not just chats. Say "I ran today" and it logs it. Ask "how am I doing?" and it reads your real streaks. Type, speak, or connect your own AI assistant.',
+    'An AI coach that acts, not just chats. Say "I ran today" and it logs it, then reads your real streaks.',
   "hero.cta": "Start free",
   "hero.ctaNote": "7-day Pro trial, no card required",
   "hero.android": "Google Play",
@@ -27,7 +27,7 @@ const en = {
   "features.title2": " habits that stick",
   "features.astra.title": "Astra, your AI coach",
   "features.astra.desc":
-    "Chat or speak to create, log, and adjust habits. 61 built-in tools mean almost anything you can tap, you can just ask.",
+    "Chat or speak to create, log, and adjust habits. If you can tap it, you can just ask.",
   "features.astra.tag": "61 tools",
   "features.mcp.title": "Connect your own AI",
   "features.mcp.desc":
@@ -51,13 +51,13 @@ const en = {
   "mcp.title1": "Run your habits from",
   "mcp.title2": "Claude or ChatGPT",
   "mcp.desc":
-    "Orbit exposes a full MCP server, so your favorite AI assistant can create habits, log progress, and check your streaks without leaving your chat.",
+    "Your favorite AI assistant creates habits, logs progress, and checks streaks over MCP, without leaving the chat.",
   "mcp.stat1Value": "79",
   "mcp.stat1Label": "MCP tools",
   "mcp.stat2Value": "15",
   "mcp.stat2Label": "tool categories",
-  "mcp.point1": "OAuth 2.0 or scoped, hashed API keys",
-  "mcp.point2": "Read-only or full access, revocable anytime",
+  "mcp.point1": "OAuth 2.0 or scoped API keys",
+  "mcp.point2": "Read-only or full access, revocable",
   "mcp.point3": "Scoped to your account, nothing else",
   "mcp.caption": "Ask your assistant to log a habit. It just works.",
   "mcp.chat.user": "Log my run for today",
@@ -71,7 +71,7 @@ const en = {
   "proof.astraTools.label": "Astra tools",
   "proof.mcpTools.label": "MCP tools",
   "proof.founder.body":
-    "I'm a software engineer with ADHD. I ran my whole life out of Notion, but it grew so complex that keeping it up became its own chore. So I built Orbit: the simple, forgiving habit tracker I wished existed, for me and for anyone whose brain works the same way.",
+    "I'm a software engineer with ADHD. Running my life from Notion got so complex that the upkeep became its own chore. So I built Orbit: the simple, forgiving tracker I wished existed, for anyone whose brain works like mine.",
   "proof.founder.name": "Thomas, founder of Orbit",
 
   "pricing.eyebrow": "Pricing",
@@ -98,18 +98,17 @@ const en = {
   "platforms.title2": " web and Android",
   "platforms.subtitle": "Access your habits from any device, anytime.",
   "platforms.web.title": "Web App",
-  "platforms.web.desc": "Access Orbit from any browser. Your habits sync across all your devices.",
+  "platforms.web.desc": "Open Orbit in any browser, synced across your devices.",
   "platforms.web.cta": "Open Web App",
   "platforms.android.badge": "Available Now",
   "platforms.android.title": "Android",
-  "platforms.android.desc":
-    "Take Orbit with you. Track habits on the go with our native Android app.",
+  "platforms.android.desc": "Track habits on the go with the native Android app.",
   "platforms.android.cta": "Get it on Google Play",
 
   "ios.eyebrow": "Coming soon",
   "ios.title": "Orbit is coming to iPhone",
   "ios.desc":
-    "The iOS app is in the works. Leave your email and we'll tell you the moment it's ready. Double opt-in, no spam.",
+    "The iOS app is on the way. Leave your email and we'll tell you the moment it's ready. No spam.",
   "ios.placeholder": "you@example.com",
   "ios.button": "Notify me",
   "ios.submitting": "Sending...",
@@ -118,7 +117,7 @@ const en = {
   "ios.invalidEmail": "Please enter a valid email address.",
   "ios.privacy": "We'll only email you about the iOS launch.",
 
-  "faq.title": "Questions, answered",
+  "faq.title": "Frequently asked questions",
   "faq.q1": "Is Orbit free?",
   "faq.a1":
     "Yes. The free plan gives you up to 10 habits, 20 AI messages a month, streaks, and social features. Pro unlocks unlimited habits and 500 messages a month, with a 7-day trial that needs no card.",
@@ -169,7 +168,7 @@ const ptBR: Record<TranslationKey, string> = {
   "hero.title1": "O rastreador de hábitos",
   "hero.title2": "com quem você conversa",
   "hero.subtitle":
-    'A Astra é um coach com IA que age, não só conversa. Diga "corri hoje" e ela registra. Pergunte "como estou indo?" e ela lê suas sequências reais. Digite, fale ou conecte seu próprio assistente de IA.',
+    'Um coach com IA que age, não só conversa. Diga "corri hoje" e ela registra e lê suas sequências reais.',
   "hero.cta": "Começar grátis",
   "hero.ctaNote": "Teste Pro de 7 dias, sem cartão",
   "hero.android": "Google Play",
@@ -187,7 +186,7 @@ const ptBR: Record<TranslationKey, string> = {
   "features.title2": " hábitos que duram",
   "features.astra.title": "Astra, seu coach com IA",
   "features.astra.desc":
-    "Converse ou fale para criar, registrar e ajustar hábitos. São 61 ferramentas integradas: quase tudo que você toca, você pode simplesmente pedir.",
+    "Converse ou fale para criar, registrar e ajustar hábitos. Se dá pra tocar, dá pra pedir.",
   "features.astra.tag": "61 ferramentas",
   "features.mcp.title": "Conecte sua própria IA",
   "features.mcp.desc":
@@ -211,13 +210,13 @@ const ptBR: Record<TranslationKey, string> = {
   "mcp.title1": "Gerencie seus hábitos pelo",
   "mcp.title2": "Claude ou ChatGPT",
   "mcp.desc":
-    "O Orbit expõe um servidor MCP completo, então seu assistente de IA favorito pode criar hábitos, registrar progresso e checar suas sequências sem sair da conversa.",
+    "Seu assistente de IA favorito cria hábitos, registra progresso e checa sequências via MCP, sem sair da conversa.",
   "mcp.stat1Value": "79",
   "mcp.stat1Label": "ferramentas MCP",
   "mcp.stat2Value": "15",
   "mcp.stat2Label": "categorias de ferramentas",
-  "mcp.point1": "OAuth 2.0 ou chaves de API com escopo e hash",
-  "mcp.point2": "Acesso somente leitura ou completo, revogável a qualquer momento",
+  "mcp.point1": "OAuth 2.0 ou chaves de API com escopo",
+  "mcp.point2": "Leitura ou acesso completo, revogável",
   "mcp.point3": "Restrito à sua conta, nada além disso",
   "mcp.caption": "Peça ao seu assistente para registrar um hábito. Simplesmente funciona.",
   "mcp.chat.user": "Registre minha corrida de hoje",
@@ -231,7 +230,7 @@ const ptBR: Record<TranslationKey, string> = {
   "proof.astraTools.label": "ferramentas Astra",
   "proof.mcpTools.label": "ferramentas MCP",
   "proof.founder.body":
-    "Sou engenheiro de software com TDAH. Organizava minha vida inteira no Notion, mas ficou tão complexo que mantê-lo virou uma tarefa em si. Então construí o Orbit: o rastreador de hábitos simples e tolerante que eu queria que existisse, para mim e para quem tem a mente parecida.",
+    "Sou engenheiro de software com TDAH. Organizar minha vida no Notion ficou tão complexo que a manutenção virou uma tarefa em si. Então construí o Orbit: o rastreador simples e tolerante que eu queria que existisse, para quem tem a mente parecida.",
   "proof.founder.name": "Thomas, fundador do Orbit",
 
   "pricing.eyebrow": "Planos",
@@ -258,19 +257,17 @@ const ptBR: Record<TranslationKey, string> = {
   "platforms.title2": " web e no Android",
   "platforms.subtitle": "Acesse seus hábitos de qualquer dispositivo, a qualquer hora.",
   "platforms.web.title": "Aplicativo Web",
-  "platforms.web.desc":
-    "Acesse o Orbit de qualquer navegador. Seus hábitos sincronizam em todos os dispositivos.",
+  "platforms.web.desc": "Abra o Orbit em qualquer navegador, sincronizado entre seus dispositivos.",
   "platforms.web.cta": "Abrir Aplicativo Web",
   "platforms.android.badge": "Disponível Agora",
   "platforms.android.title": "Android",
-  "platforms.android.desc":
-    "Leve o Orbit com você. Acompanhe hábitos em movimento com nosso app Android nativo.",
+  "platforms.android.desc": "Acompanhe hábitos em qualquer lugar com o app Android nativo.",
   "platforms.android.cta": "Baixar no Google Play",
 
   "ios.eyebrow": "Em breve",
   "ios.title": "O Orbit está chegando ao iPhone",
   "ios.desc":
-    "O app de iOS está a caminho. Deixe seu e-mail e avisaremos assim que estiver pronto. Confirmação dupla, sem spam.",
+    "O app de iOS está a caminho. Deixe seu e-mail e avisaremos assim que estiver pronto. Sem spam.",
   "ios.placeholder": "voce@exemplo.com",
   "ios.button": "Avise-me",
   "ios.submitting": "Enviando...",
@@ -279,7 +276,7 @@ const ptBR: Record<TranslationKey, string> = {
   "ios.invalidEmail": "Digite um endereço de e-mail válido.",
   "ios.privacy": "Só enviaremos e-mails sobre o lançamento no iOS.",
 
-  "faq.title": "Perguntas, respondidas",
+  "faq.title": "Perguntas frequentes",
   "faq.q1": "O Orbit é grátis?",
   "faq.a1":
     "Sim. O plano grátis dá até 10 hábitos, 20 mensagens de IA por mês, sequências e recursos sociais. O Pro libera hábitos ilimitados e 500 mensagens por mês, com um teste de 7 dias que não pede cartão.",
