@@ -10,13 +10,16 @@ const stats = [
 
 <section id="proof" class="py-20 sm:py-24">
   <div class="page-container">
-    <p class="t-eyebrow reveal" data-i18n="proof.eyebrow">Why Orbit</p>
-    <h2 class="t-display reveal mt-3 max-w-[560px] [text-wrap:balance]" data-i18n="proof.title">
+    <p class="t-eyebrow reveal text-center lg:text-left" data-i18n="proof.eyebrow">Why Orbit</p>
+    <h2
+      class="t-display reveal mx-auto mt-3 max-w-[560px] text-center [text-wrap:balance] lg:mx-0 lg:text-left"
+      data-i18n="proof.title"
+    >
       Built by someone who needed it
     </h2>
 
     <dl
-      class="reveal reveal-stagger mt-10 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5"
+      class="reveal reveal-stagger mt-10 grid grid-cols-2 gap-x-6 gap-y-8 text-center sm:grid-cols-3 lg:grid-cols-5 lg:text-left"
     >
       {
         stats.map((stat) => (

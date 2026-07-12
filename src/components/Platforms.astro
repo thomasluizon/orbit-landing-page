@@ -12,12 +12,15 @@ const { appUrl, googlePlayUrl } = Astro.props;
 
 <section id="platforms" class="py-20 sm:py-24">
   <div class="page-container">
-    <h2 class="t-display reveal max-w-[560px]">
+    <h2 class="t-display reveal mx-auto max-w-[560px] text-center lg:mx-0 lg:text-left">
       <span data-i18n="platforms.title1">Available on</span><span data-i18n="platforms.title2">
         web and Android</span
       >
     </h2>
-    <p class="t-body reveal mt-3 max-w-[460px] text-fg-2" data-i18n="platforms.subtitle">
+    <p
+      class="t-body reveal mx-auto mt-3 max-w-[460px] text-center text-fg-2 lg:mx-0 lg:text-left"
+      data-i18n="platforms.subtitle"
+    >
       Access your habits from any device, anytime.
     </p>
 
@@ -36,7 +39,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
         >
           Access Orbit from any browser. Your habits sync across all your devices.
         </p>
-        <PillButton href={appUrl} size="sm" class="mt-auto w-full">
+        <PillButton href={appUrl} size="sm" class="mt-auto self-start">
           <span data-i18n="platforms.web.cta">Open Web App</span>
         </PillButton>
       </div>
@@ -68,7 +71,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
           size="sm"
           external
           ariaLabel="Open Orbit on Google Play"
-          class="mt-auto w-full"
+          class="mt-auto self-start"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path
