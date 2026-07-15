@@ -48,7 +48,7 @@ npm run format:check  # Prettier check (CI gate)
 npm run check         # astro check (TS)
 ```
 
-CI (`.github/workflows/build.yml`) runs audit + lint + format:check + check + build on PRs to main.
+CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus a `lighthouse` job asserting `lighthouserc.json`: category scores + the LCP/TBT/script-bundle-size numeric budgets) and `dependency-review.yml`. `nightly.yml` runs a scheduled external-link check + Lighthouse performance gate (`lighthouserc.nightly.json`), each filing a de-duped issue on regression.
 
 ## Git workflow
 
