@@ -23,10 +23,6 @@ Same 10 rules as the monorepo's root `CLAUDE.md`: root cause over workarounds; d
 
 ## Architecture
 
-- `src/pages/index.astro` - thin composition of section components
-- `src/pages/404.astro` - not-found page
-- `src/layouts/Layout.astro` - HTML shell, meta/OG/JSON-LD, fonts
-- `src/components/` - `Header`, `Hero`, `AppMockup`, `Features`, `Platforms`, `Cta`, `Footer` + primitives `PillButton`, `SatelliteGlyph`
 - `src/i18n/translations.ts` - typed EN/PT-BR tables (`Record<TranslationKey, string>` enforces key parity at compile time)
 - `src/scripts/` - client modules: `i18n.ts` (cookie + toggle + DOM apply), `reveal.ts` (scroll reveals), `header-scroll.ts`
 - `src/styles/global.css` - the token mirror + type roles + base styles (single CSS file)
@@ -37,16 +33,8 @@ Bilingual EN/PT-BR via `data-i18n` attributes applied client-side. Every new use
 
 ## Commands
 
-```bash
-npm run dev           # dev server
-npm run build         # production build
-npm run preview       # preview the build
-npm run lint          # ESLint (flat config, astro + ts + local/no-comments)
-npm run lint:fix      # ESLint with autofix
-npm run format        # Prettier write
-npm run format:check  # Prettier check (CI gate)
-npm run check         # astro check (TS)
-```
+Standard Astro scripts; read `package.json` for the list. The CI-gating ones are
+`format:check` and `check` (`astro check`), not just `lint`.
 
 CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus a `lighthouse` job asserting `lighthouserc.json`: category scores + the LCP/TBT/script-bundle-size numeric budgets) and `dependency-review.yml`. `nightly.yml` runs a scheduled external-link check + Lighthouse performance gate (`lighthouserc.nightly.json`), each filing a de-duped issue on regression.
 
