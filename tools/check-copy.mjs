@@ -60,10 +60,7 @@ const translationEntries = (source) => {
   for (const match of source.matchAll(pattern)) {
     const key = match[1] ?? match[2] ?? match[3];
     const raw = match[5] ?? match[6] ?? "";
-    const value = raw.replace(
-      /\\(.)/g,
-      (sequence, escaped) => STRING_ESCAPES[escaped] ?? escaped,
-    );
+    const value = raw.replace(/\\(.)/g, (sequence, escaped) => STRING_ESCAPES[escaped] ?? escaped);
     entries.push([key, value]);
   }
   return entries;
