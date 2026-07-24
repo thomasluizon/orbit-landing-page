@@ -11,4 +11,9 @@ export default [
     plugins: { local: { rules: { "no-comments": noComments } } },
     rules: { "local/no-comments": "error" },
   },
+  {
+    // WHY: vendored guard scripts keep upstream header prose; tools/ is unlinted in the source repo: https://github.com/thomasluizon/orbit-ui-mobile/blob/main/REBUILD.md
+    files: ["tools/**"],
+    rules: { "local/no-comments": "off" },
+  },
 ];
