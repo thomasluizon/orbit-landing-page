@@ -1,0 +1,12 @@
+min_version: "2.1.10"
+pre-commit:
+  commands:
+    eslint:
+      glob: "*.{ts,mjs,cjs,astro}"
+      run: npx eslint --fix {staged_files}
+      stage_fixed: true
+    dashes:
+      run: node tools/check-dashes.mjs --files {staged_files}
+    copy-register:
+      glob: "src/i18n/translations.ts"
+      run: node tools/check-copy.mjs --check

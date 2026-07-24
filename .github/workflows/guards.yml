@@ -1,0 +1,49 @@
+name: Guards
+
+# Vendored from orbit-ui-mobile (REBUILD.md 6.1): the dash ban and the
+# copy-register gate, running against this repo's real copy file
+# (src/i18n/translations.ts), which the old session-only hook never covered.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dashes:
+    name: Dash Ban
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Changed files carry no new dashes
+        if: github.event_name == 'pull_request'
+        run: |
+          git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD -z \
+            | xargs -0 --no-run-if-empty node tools/check-dashes.mjs --files
+      - name: Baseline only shrinks
+        run: node tools/check-dashes.mjs --check-baseline
+      - name: PR title and body carry no dashes
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node tools/check-dashes.mjs --text "$PR_TITLE $PR_BODY"
+
+  copy:
+    name: Copy Register
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: node tools/check-copy.mjs --check
