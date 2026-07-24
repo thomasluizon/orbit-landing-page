@@ -1,6 +1,6 @@
 # Orbit Landing Page
 
-Marketing landing page for the Orbit habit tracker. Static Astro 6 + Tailwind v4 site deployed on Vercel at useorbit.org. Sibling repos: `orbit-ui-mobile` (app monorepo) and `orbit-api` (.NET API) at `C:\Users\thoma\Documents\Programming\Projects\`.
+Marketing landing page for the Orbit habit tracker. Static Astro 7 + Tailwind v4 site deployed on Vercel at useorbit.org. Sibling repos: `orbit-ui-mobile` (app monorepo) and `orbit-api` (.NET API) at `C:\Users\thoma\Documents\Programming\Projects\`.
 
 ## Design system (mirrored, not owned)
 
