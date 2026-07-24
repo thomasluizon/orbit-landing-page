@@ -51,6 +51,8 @@ const longestUppercaseRun = (text) =>
  * plain and quoted keys, double/single-quoted values with escapes. Template
  * literals and computed values yield nothing rather than guessing.
  */
+const STRING_ESCAPES = { n: "\n", r: "\r", t: "\t" };
+
 const translationEntries = (source) => {
   const entries = [];
   const pattern =
@@ -58,12 +60,10 @@ const translationEntries = (source) => {
   for (const match of source.matchAll(pattern)) {
     const key = match[1] ?? match[2] ?? match[3];
     const raw = match[5] ?? match[6] ?? "";
-    let value;
-    try {
-      value = JSON.parse(`"${raw.replace(/\\'/g, "'").replace(/"/g, '\\"')}"`);
-    } catch {
-      value = raw;
-    }
+    const value = raw.replace(
+      /\\(.)/g,
+      (sequence, escaped) => STRING_ESCAPES[escaped] ?? escaped,
+    );
     entries.push([key, value]);
   }
   return entries;
