@@ -1,6 +1,8 @@
 min_version: "2.1.10"
 pre-commit:
   commands:
+    root-allowlist:
+      run: node tools/check-root-allowlist.mjs
     eslint:
       glob: "*.{ts,mjs,cjs,astro}"
       run: npx eslint --fix {staged_files}
