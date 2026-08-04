@@ -36,7 +36,7 @@ Bilingual EN/PT-BR via `data-i18n` attributes applied client-side. Every new use
 Standard Astro scripts; read `package.json` for the list. The CI-gating ones are
 `format:check` and `check` (`astro check`), not just `lint`.
 
-CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus a `lighthouse` job asserting `lighthouserc.json`: category scores + the LCP/TBT/script-bundle-size numeric budgets) and `dependency-review.yml`. `nightly.yml` runs a scheduled external-link check + Lighthouse performance gate (`lighthouserc.nightly.json`), each filing a de-duped issue on regression.
+CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus a `lighthouse` job asserting `lighthouserc.json`: category scores + the LCP/TBT/script-bundle-size numeric budgets) and `dependency-review.yml`. `nightly.yml` runs a scheduled external-link check only, filing a de-duped issue on regression. Lighthouse runs at PR time in `build.yml`, not nightly.
 
 ## Git workflow
 
