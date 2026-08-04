@@ -16,9 +16,9 @@
  * measured in ORB-170 before .env was declared.
  */
 
-import { readdirSync, readFileSync } from "node:fs"
-import { dirname, join, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const USAGE = `usage: check-root-allowlist.mjs
 
@@ -27,54 +27,63 @@ const USAGE = `usage: check-root-allowlist.mjs
 
   --help, -h  print this usage and exit 0
 
-exit codes: 0 every root entry is declared, 1 undeclared root entries exist, 2 usage or configuration error`
+exit codes: 0 every root entry is declared, 1 undeclared root entries exist, 2 usage or configuration error`;
 
 if (process.argv.includes("--help") || process.argv.includes("-h")) {
-  console.log(USAGE)
-  process.exit(0)
+  console.log(USAGE);
+  process.exit(0);
 }
 
 if (process.argv.length > 2) {
-  console.error(`check-root-allowlist: takes no arguments, got: ${process.argv.slice(2).join(" ")}\n`)
-  console.error(USAGE)
-  process.exit(2)
+  console.error(
+    `check-root-allowlist: takes no arguments, got: ${process.argv.slice(2).join(" ")}\n`,
+  );
+  console.error(USAGE);
+  process.exit(2);
 }
 
-const toolsDirectory = dirname(fileURLToPath(import.meta.url))
-const allowlistPath = join(toolsDirectory, "root-allowlist.json")
-const repositoryRoot = resolve(toolsDirectory, "..")
+const toolsDirectory = dirname(fileURLToPath(import.meta.url));
+const allowlistPath = join(toolsDirectory, "root-allowlist.json");
+const repositoryRoot = resolve(toolsDirectory, "..");
 
-let allowlist
+let allowlist;
 try {
-  allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"))
+  allowlist = JSON.parse(readFileSync(allowlistPath, "utf8"));
 } catch (error) {
-  console.error(`check-root-allowlist: cannot read ${allowlistPath}: ${error.message}`)
-  process.exit(2)
+  console.error(`check-root-allowlist: cannot read ${allowlistPath}: ${error.message}`);
+  process.exit(2);
 }
 
 const isNameList = (value) =>
   Array.isArray(value) &&
   value.every((name) => typeof name === "string" && name.length > 0) &&
-  new Set(value).size === value.length
+  new Set(value).size === value.length;
 
-if (allowlist === null || typeof allowlist !== "object" || !isNameList(allowlist.files) || !isNameList(allowlist.directories)) {
+if (
+  allowlist === null ||
+  typeof allowlist !== "object" ||
+  !isNameList(allowlist.files) ||
+  !isNameList(allowlist.directories)
+) {
   console.error(
     "check-root-allowlist: root-allowlist.json must be an object with `files` and `directories`, each an array of unique, non-empty names",
-  )
-  process.exit(2)
+  );
+  process.exit(2);
 }
 
-const allowedFiles = new Set(allowlist.files)
-const allowedDirectories = new Set(allowlist.directories)
+const allowedFiles = new Set(allowlist.files);
+const allowedDirectories = new Set(allowlist.directories);
 
 const undeclared = readdirSync(repositoryRoot, { withFileTypes: true })
   .filter((entry) => entry.name !== ".git")
-  .filter((entry) => (entry.isDirectory() ? !allowedDirectories.has(entry.name) : !allowedFiles.has(entry.name)))
+  .filter((entry) =>
+    entry.isDirectory() ? !allowedDirectories.has(entry.name) : !allowedFiles.has(entry.name),
+  )
   .map((entry) => (entry.isDirectory() ? `${entry.name}/` : entry.name))
-  .sort()
+  .sort();
 
 if (undeclared.length > 0) {
-  console.error("Root allowlist violation: declare or remove these repository-root entries:")
-  for (const name of undeclared) console.error(`  ${name}`)
-  process.exit(1)
+  console.error("Root allowlist violation: declare or remove these repository-root entries:");
+  for (const name of undeclared) console.error(`  ${name}`);
+  process.exit(1);
 }
