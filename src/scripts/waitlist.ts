@@ -11,7 +11,7 @@ const turnstileContainer = document.getElementById("waitlist-turnstile");
 const API_URL = import.meta.env.PUBLIC_API_URL || "https://api.useorbit.org";
 const TURNSTILE_SITE_KEY = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 const TURNSTILE_SCRIPT_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onWaitlistTurnstileLoad";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Strings = Record<TranslationKey, string>;
@@ -36,12 +36,14 @@ interface Turnstile {
 declare global {
   interface Window {
     turnstile?: Turnstile;
+    onWaitlistTurnstileLoad?: () => void;
   }
 }
 
 let turnstileToken = "";
 let turnstileWidgetId: string | null = null;
 let turnstileLoadPromise: Promise<Turnstile> | null = null;
+let turnstileInitializationPromise: Promise<void> | null = null;
 let submitting = false;
 
 function setStatus(message: string, kind: "success" | "error") {
@@ -74,51 +76,78 @@ function loadTurnstile(): Promise<Turnstile> {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   if (turnstileLoadPromise) return turnstileLoadPromise;
 
-  turnstileLoadPromise = new Promise((resolve, reject) => {
+  const loadPromise = new Promise<Turnstile>((resolve, reject) => {
     const script = document.createElement("script");
     script.src = TURNSTILE_SCRIPT_URL;
     script.async = true;
-    script.addEventListener("load", () => {
+
+    const onLoad = () => {
+      delete window.onWaitlistTurnstileLoad;
       if (window.turnstile) resolve(window.turnstile);
       else reject(new Error("Turnstile did not initialize"));
+    };
+
+    window.onWaitlistTurnstileLoad = onLoad;
+    script.addEventListener("error", () => {
+      if (window.onWaitlistTurnstileLoad === onLoad) delete window.onWaitlistTurnstileLoad;
+      reject(new Error("Turnstile failed to load"));
     });
-    script.addEventListener("error", () => reject(new Error("Turnstile failed to load")));
     document.head.append(script);
   });
 
-  return turnstileLoadPromise;
+  turnstileLoadPromise = loadPromise;
+  void loadPromise.catch(() => {
+    if (turnstileLoadPromise === loadPromise) turnstileLoadPromise = null;
+  });
+  return loadPromise;
 }
 
-async function initializeTurnstile() {
-  if (turnstileWidgetId || !turnstileContainer || !TURNSTILE_SITE_KEY) {
-    if (!TURNSTILE_SITE_KEY) handleChallengeFailure();
-    return;
+function initializeTurnstile(): Promise<void> {
+  if (turnstileWidgetId || turnstileInitializationPromise) {
+    return turnstileInitializationPromise ?? Promise.resolve();
   }
 
-  try {
-    const turnstile = await loadTurnstile();
-    turnstileWidgetId = turnstile.render(turnstileContainer, {
-      sitekey: TURNSTILE_SITE_KEY,
-      theme: "dark",
-      size: "flexible",
-      language: getLang(),
-      callback: (token) => {
-        turnstileToken = token;
-        updateSubmitButton(translations[getLang()]);
-      },
-      "error-callback": handleChallengeFailure,
-      "expired-callback": handleChallengeFailure,
-      "timeout-callback": handleChallengeFailure,
-    });
-  } catch {
-    handleChallengeFailure();
+  if (!turnstileContainer || !TURNSTILE_SITE_KEY) {
+    if (!TURNSTILE_SITE_KEY) handleChallengeFailure();
+    return Promise.resolve();
   }
+
+  turnstileInitializationPromise = (async () => {
+    let turnstile: Turnstile;
+    try {
+      turnstile = await loadTurnstile();
+    } catch {
+      turnstileInitializationPromise = null;
+      handleChallengeFailure();
+      return;
+    }
+
+    try {
+      turnstileWidgetId = turnstile.render(turnstileContainer, {
+        sitekey: TURNSTILE_SITE_KEY,
+        theme: "dark",
+        size: "flexible",
+        language: getLang(),
+        callback: (token) => {
+          turnstileToken = token;
+          updateSubmitButton(translations[getLang()]);
+        },
+        "error-callback": handleChallengeFailure,
+        "expired-callback": handleChallengeFailure,
+        "timeout-callback": handleChallengeFailure,
+      });
+    } catch {
+      handleChallengeFailure();
+    }
+  })();
+
+  return turnstileInitializationPromise;
 }
 
 if (form && emailInput && submitButton && status && turnstileContainer) {
   const startChallenge = () => void initializeTurnstile();
-  emailInput.addEventListener("focus", startChallenge, { once: true });
-  emailInput.addEventListener("input", startChallenge, { once: true });
+  emailInput.addEventListener("focus", startChallenge);
+  emailInput.addEventListener("input", startChallenge);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
