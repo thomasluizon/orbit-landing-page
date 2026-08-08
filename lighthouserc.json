@@ -2,7 +2,7 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "autodiscoverUrlBlocklist": ["waitlist-confirmed"]
+      "autodiscoverUrlBlocklist": ["/waitlist-confirmed/index.html"]
     },
     "assert": {
       "assertMatrix": [
@@ -10,16 +10,16 @@
           "matchingUrlPattern": ".*",
           "assertions": {
             "categories:accessibility": ["error", { "minScore": 0.9 }],
-            "categories:best-practices": ["warn", { "minScore": 0.9 }],
-            "categories:performance": ["warn", { "minScore": 0.9 }],
-            "largest-contentful-paint": ["warn", { "maxNumericValue": 2850 }],
-            "total-blocking-time": ["warn", { "maxNumericValue": 200 }],
-            "resource-summary:script:size": ["warn", { "maxNumericValue": 24000 }]
+            "categories:best-practices": ["error", { "minScore": 0.9 }],
+            "largest-contentful-paint": ["error", { "maxNumericValue": 2850 }],
+            "resource-summary:script:size": ["error", { "maxNumericValue": 24000 }]
           }
         },
         {
           "matchingUrlPattern": "^https?://[^/]+/index\\.html$",
           "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "total-blocking-time": ["error", { "maxNumericValue": 200 }],
             "categories:seo": ["error", { "minScore": 0.9 }]
           }
         }
