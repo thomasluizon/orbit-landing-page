@@ -1,4 +1,5 @@
 // @ts-check
+import { readFileSync } from "node:fs";
 import { defineConfig, fontProviders } from "astro/config";
 import sitemap from "@astrojs/sitemap";
 
@@ -7,7 +8,17 @@ import tailwindcss from "@tailwindcss/vite";
 // https://astro.build/config
 export default defineConfig({
   site: "https://useorbit.org",
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      filter(page) {
+        const pathname = new URL(page).pathname;
+        const outputPath = pathname.endsWith("/") ? `${pathname}index.html` : `${pathname}.html`;
+        const pageHtml = readFileSync(new URL(`./dist${outputPath}`, import.meta.url), "utf8");
+
+        return !/<meta name="robots" content="[^"]*\bnoindex\b[^"]*">/i.test(pageHtml);
+      },
+    }),
+  ],
   fonts: [
     {
       provider: fontProviders.google(),
