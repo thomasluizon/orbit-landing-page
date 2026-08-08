@@ -98,7 +98,14 @@ const structuredData = {
     }
     <script is:inline define:vars={{ posthogKey }}>
       if (posthogKey) {
+        let analyticsStarted = false;
+        let consentGranted = false;
+        let pageSettled = false;
+
         const startAnalytics = () => {
+          if (analyticsStarted || !consentGranted || !pageSettled) return;
+          analyticsStarted = true;
+
           function installPostHogStub(document, posthog) {
             let methodIndex;
             let script;
@@ -158,8 +165,11 @@ const structuredData = {
           window.posthog.init(posthogKey, {
             api_host: `${location.origin}/relay`,
             ui_host: "https://us.posthog.com",
-            persistence: "memory",
+            persistence: "localStorage+cookie",
+            cross_subdomain_cookie: true,
             autocapture: false,
+            capture_pageview: true,
+            capture_pageleave: true,
             disable_session_recording: true,
             loaded: (posthog) => {
               window.dispatchEvent(new CustomEvent("orbit:analytics-ready", { detail: posthog }));
@@ -167,13 +177,22 @@ const structuredData = {
           });
         };
 
+        window.addEventListener("orbit:analytics-consent-granted", () => {
+          consentGranted = true;
+          startAnalytics();
+        });
+
         window.addEventListener(
           "load",
           () => {
+            const markPageSettled = () => {
+              pageSettled = true;
+              startAnalytics();
+            };
             if ("requestIdleCallback" in window) {
-              window.requestIdleCallback(startAnalytics, { timeout: 2000 });
+              window.requestIdleCallback(markPageSettled, { timeout: 2000 });
             } else {
-              window.setTimeout(startAnalytics, 0);
+              window.setTimeout(markPageSettled, 0);
             }
           },
           { once: true },

@@ -4,6 +4,7 @@ type ConsentChoice = "accepted" | "declined";
 
 declare global {
   interface WindowEventMap {
+    "orbit:analytics-consent-granted": CustomEvent;
     "orbit:analytics-ready": CustomEvent<PostHog>;
   }
 }
@@ -49,27 +50,29 @@ function hideBanner() {
   }, EXIT_DURATION_MS);
 }
 
-function enableCookiePersistence(client: PostHog) {
-  client.set_config({
-    persistence: "localStorage+cookie",
-    cross_subdomain_cookie: true,
-  });
+function scheduleAfterPageSettles(callback: () => void) {
+  const schedule = () => {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(callback, { timeout: 2000 });
+    } else {
+      setTimeout(callback, 0);
+    }
+  };
+
+  if (document.readyState === "complete") {
+    schedule();
+  } else {
+    window.addEventListener("load", schedule, { once: true });
+  }
 }
 
 window.addEventListener("orbit:analytics-ready", (event) => {
   analytics = event.detail;
-  const choice = readConsentChoice();
-  if (choice === "accepted") {
-    enableCookiePersistence(analytics);
-  } else if (choice === null) {
-    showBanner();
-  }
 });
 
 acceptButton?.addEventListener("click", () => {
-  if (!analytics) return;
-  enableCookiePersistence(analytics);
   storeConsentChoice("accepted");
+  window.dispatchEvent(new CustomEvent("orbit:analytics-consent-granted"));
   hideBanner();
 });
 
@@ -77,6 +80,13 @@ declineButton?.addEventListener("click", () => {
   storeConsentChoice("declined");
   hideBanner();
 });
+
+const choice = readConsentChoice();
+if (choice === "accepted") {
+  window.dispatchEvent(new CustomEvent("orbit:analytics-consent-granted"));
+} else if (choice === null) {
+  scheduleAfterPageSettles(showBanner);
+}
 
 document.addEventListener("click", (event) => {
   if (!analytics || !(event.target instanceof Element)) return;
