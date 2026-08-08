@@ -152,7 +152,7 @@ if (form && emailInput && submitButton && status && turnstileContainer) {
         form.reset();
         setStatus(strings["ios.success"], "success");
       } else if (response.status === 400) {
-        setStatus(strings["ios.challengeFailed"], "error");
+        setStatus(strings["ios.invalidEmail"], "error");
       } else {
         setStatus(strings["ios.error"], "error");
       }
