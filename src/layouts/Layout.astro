@@ -112,14 +112,5 @@ const structuredData = {
   <body class="bg-bg text-fg-1 font-sans antialiased">
     <slot />
     <Analytics />
-    <script is:inline>
-      const lighthouseRegressionStartedAt = performance.now();
-      let lighthouseRegressionIterations = 0;
-      while (performance.now() - lighthouseRegressionStartedAt < 1500) {
-        lighthouseRegressionIterations += 1;
-      }
-      document.body.dataset.lighthouseRegression = lighthouseRegressionIterations.toString();
-    </script>
-    <script is:inline src="/og-image.png"></script>
   </body>
 </html>
