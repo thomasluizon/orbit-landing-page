@@ -31,7 +31,13 @@ const { appUrl } = Astro.props;
       >
         <span id="lang-label" class="border-b border-hairline-strong pb-0.5">EN</span>
       </button>
-      <PillButton href={appUrl} variant="ghost" size="sm">
+      <PillButton
+        href={appUrl}
+        variant="ghost"
+        size="sm"
+        analyticsEvent="header_app_cta_clicked"
+        analyticsSurface="header"
+      >
         <span data-i18n="header.cta">Start free</span>
       </PillButton>
     </div>

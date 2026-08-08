@@ -154,6 +154,11 @@ const en = {
   "cta.subtitle": "Start free today. 7-day Pro trial, no card required.",
   "cta.button": "Start free",
 
+  "consent.body": "We use optional analytics cookies to see how this site is used.",
+  "consent.accept": "Allow",
+  "consent.decline": "Decline",
+  "consent.privacy": "Privacy Policy",
+
   "footer.privacy": "Privacy Policy",
   "footer.terms": "Terms",
   "footer.text": "Orbit · © 2026",
@@ -312,6 +317,11 @@ const ptBR: Record<TranslationKey, string> = {
   "cta.title3": "?",
   "cta.subtitle": "Comece grátis hoje. Teste Pro de 7 dias, sem cartão.",
   "cta.button": "Começar grátis",
+
+  "consent.body": "Usamos cookies opcionais de análise para entender como o site é usado.",
+  "consent.accept": "Permitir",
+  "consent.decline": "Recusar",
+  "consent.privacy": "Política de Privacidade",
 
   "footer.privacy": "Política de Privacidade",
   "footer.terms": "Termos",

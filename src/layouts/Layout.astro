@@ -1,6 +1,7 @@
 ---
 import { Font } from "astro:assets";
 import Analytics from "@vercel/analytics/astro";
+import ConsentBanner from "../components/ConsentBanner.astro";
 import "../styles/global.css";
 
 interface Props {
@@ -21,6 +22,8 @@ const ogImage = "/og-image.png";
 const siteUrl = Astro.site?.origin || "https://useorbit.org";
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
+const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -93,6 +96,90 @@ const structuredData = {
         <script is:inline type="application/ld+json" set:html={JSON.stringify(extraJsonLd)} />
       )
     }
+    <script is:inline define:vars={{ posthogKey }}>
+      if (posthogKey) {
+        const startAnalytics = () => {
+          function installPostHogStub(document, posthog) {
+            let methodIndex;
+            let script;
+            let firstScript;
+            let instance;
+            if (posthog.__SV) return;
+            window.posthog = posthog;
+            posthog._i = [];
+            posthog.init = function (token, config, name) {
+              function stub(target, method) {
+                const parts = method.split(".");
+                if (parts.length === 2) {
+                  target = target[parts[0]];
+                  method = parts[1];
+                }
+                target[method] = function (...args) {
+                  target.push([method].concat(args));
+                };
+              }
+              script = document.createElement("script");
+              script.type = "text/javascript";
+              script.crossOrigin = "anonymous";
+              script.async = true;
+              script.src = `${config.api_host}/static/array.js`;
+              firstScript = document.getElementsByTagName("script")[0];
+              firstScript.parentNode.insertBefore(script, firstScript);
+              instance = posthog;
+              if (name !== undefined) {
+                instance = posthog[name] = [];
+              } else {
+                name = "posthog";
+              }
+              instance.people = instance.people || [];
+              instance.toString = function (detail) {
+                let value = "posthog";
+                if (name !== "posthog") value += `.${name}`;
+                if (!detail) value += " (stub)";
+                return value;
+              };
+              instance.people.toString = function () {
+                return `${instance.toString(1)}.people (stub)`;
+              };
+              const methods =
+                "init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(
+                  " ",
+                );
+              for (methodIndex = 0; methodIndex < methods.length; methodIndex++) {
+                stub(instance, methods[methodIndex]);
+              }
+              posthog._i.push([token, config, name]);
+            };
+            posthog.__SV = 1;
+          }
+
+          installPostHogStub(document, window.posthog || []);
+
+          window.posthog.init(posthogKey, {
+            api_host: `${location.origin}/relay`,
+            ui_host: "https://us.posthog.com",
+            persistence: "memory",
+            autocapture: false,
+            disable_session_recording: true,
+            loaded: (posthog) => {
+              window.dispatchEvent(new CustomEvent("orbit:analytics-ready", { detail: posthog }));
+            },
+          });
+        };
+
+        window.addEventListener(
+          "load",
+          () => {
+            if ("requestIdleCallback" in window) {
+              window.requestIdleCallback(startAnalytics, { timeout: 2000 });
+            } else {
+              window.setTimeout(startAnalytics, 0);
+            }
+          },
+          { once: true },
+        );
+      }
+    </script>
 
     <Font cssVariable="--font-rubik" preload />
     <Font cssVariable="--font-inter" preload />
@@ -111,6 +198,7 @@ const structuredData = {
   </head>
   <body class="bg-bg text-fg-1 font-sans antialiased">
     <slot />
+    {posthogKey && <ConsentBanner appUrl={appUrl} />}
     <Analytics />
   </body>
 </html>

@@ -35,9 +35,10 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@posthog/types": "^1.402.2",
     "eslint": "^10.5.0",
-    "lefthook": "^2.1.10",
     "eslint-plugin-astro": "^1.7.0",
+    "lefthook": "^2.1.10",
     "prettier": "^3.8.4",
     "prettier-plugin-astro": "^0.14.1",
     "typescript": "^5.9.3",

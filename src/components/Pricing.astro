@@ -56,7 +56,14 @@ const proFeatures = [
             ))
           }
         </ul>
-        <PillButton href={appUrl} variant="ghost" size="sm" class="mt-8 self-start">
+        <PillButton
+          href={appUrl}
+          variant="ghost"
+          size="sm"
+          class="mt-8 self-start"
+          analyticsEvent="pricing_free_cta_clicked"
+          analyticsSurface="pricing_free"
+        >
           <span data-i18n="pricing.free.cta">Start free</span>
         </PillButton>
       </div>
@@ -90,7 +97,14 @@ const proFeatures = [
             ))
           }
         </ul>
-        <PillButton href={appUrl} glow size="sm" class="mt-8 self-start">
+        <PillButton
+          href={appUrl}
+          glow
+          size="sm"
+          class="mt-8 self-start"
+          analyticsEvent="pricing_pro_cta_clicked"
+          analyticsSurface="pricing_pro"
+        >
           <span data-i18n="pricing.pro.cta">Start 7-day trial</span>
         </PillButton>
       </div>
