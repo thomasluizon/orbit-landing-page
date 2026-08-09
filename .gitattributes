@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto detect text files and normalize them to LF in the repository AND in the
+# working tree. `text=auto` alone normalizes only the stored blob; the working
+# tree still follows core.eol, which is `native`, so a Windows checkout gets CRLF
+# while the ubuntu-latest CI runner gets LF. Prettier defaults to endOfLine "lf",
+# so `npm run format:check` failed on all 51 tracked text files on Windows and
+# passed in CI, from byte-identical content. Measured 2026-08-08. The same defect
+# class stood 76 tickets down in orbit-api the same night.
+* text=auto eol=lf
