@@ -115,6 +115,7 @@ const en = {
   "ios.success": "Almost there. Check your inbox to confirm your spot.",
   "ios.error": "Something went wrong. Please try again.",
   "ios.invalidEmail": "Please enter a valid email address.",
+  "ios.challengeFailed": "Please complete the security check and try again.",
   "ios.privacy": "We'll only email you about the iOS launch.",
 
   "faq.title": "Frequently asked questions",
@@ -279,6 +280,7 @@ const ptBR: Record<TranslationKey, string> = {
   "ios.success": "Quase lá. Confira sua caixa de entrada para confirmar sua vaga.",
   "ios.error": "Algo deu errado. Tente novamente.",
   "ios.invalidEmail": "Digite um endereço de e-mail válido.",
+  "ios.challengeFailed": "Conclua a verificação de segurança e tente novamente.",
   "ios.privacy": "Só enviaremos e-mails sobre o lançamento no iOS.",
 
   "faq.title": "Perguntas frequentes",
