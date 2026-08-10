@@ -36,7 +36,7 @@ Bilingual EN/PT-BR via `data-i18n` attributes applied client-side. Every new use
 Standard Astro scripts; read `package.json` for the list. The CI-gating ones are
 `format:check` and `check` (`astro check`), not just `lint`.
 
-CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus a `lighthouse` job asserting `lighthouserc.json`: category scores + the LCP/TBT/script-bundle-size numeric budgets) and `dependency-review.yml`. `nightly.yml` runs a scheduled external-link check only, filing a de-duped issue on regression. Lighthouse runs at PR time in `build.yml`, not nightly.
+CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus the required `Lighthouse` check) and `dependency-review.yml`. Lighthouse blocks merging when the home page falls below 0.90 for performance, accessibility, best practices, or SEO, exceeds 2850 ms LCP or 200 ms TBT, or any audited page exceeds 24 KB of script. The synthetic 404 page remains subject to accessibility, best practices, LCP, and script-size assertions, but not performance or TBT. `nightly.yml` runs a scheduled external-link check only, filing a de-duped issue on regression. Lighthouse runs at PR time in `build.yml`, not nightly.
 
 ## Git workflow
 
