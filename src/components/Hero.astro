@@ -61,7 +61,12 @@ const heroStars = [
         class="hero-rise mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start"
         style="animation-delay: 180ms;"
       >
-        <PillButton href={appUrl} glow>
+        <PillButton
+          href={appUrl}
+          glow
+          analyticsEvent="hero_app_cta_clicked"
+          analyticsSurface="hero"
+        >
           <span data-i18n="hero.cta">Start free</span>
         </PillButton>
         <PillButton
@@ -69,6 +74,8 @@ const heroStars = [
           variant="ghost"
           external
           ariaLabel="Open Orbit on Google Play"
+          analyticsEvent="hero_google_play_cta_clicked"
+          analyticsSurface="hero"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path

@@ -198,6 +198,24 @@ html[lang="pt-BR"] .t-hero {
   animation: hero-rise var(--duration-slow) var(--ease-out) both;
 }
 
+.consent-banner {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+}
+
+.consent-banner.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.consent-banner.is-leaving {
+  transition-duration: var(--duration-fast);
+  transition-timing-function: ease-in;
+}
+
 @keyframes mockup-drift {
   0%,
   100% {
@@ -339,7 +357,8 @@ html[lang="pt-BR"] .t-hero {
   }
 
   .reveal,
-  .reveal-stagger > * {
+  .reveal-stagger > *,
+  .consent-banner {
     opacity: 1;
     transform: none;
     transition: none;

@@ -38,7 +38,12 @@ const ctaStars = [
       Start free today. 7-day Pro trial, no card required.
     </p>
     <div class="reveal mt-9">
-      <PillButton href={appUrl} glow>
+      <PillButton
+        href={appUrl}
+        glow
+        analyticsEvent="final_app_cta_clicked"
+        analyticsSurface="final_cta"
+      >
         <span data-i18n="cta.button">Start free</span>
       </PillButton>
     </div>

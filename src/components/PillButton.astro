@@ -3,13 +3,16 @@ type PillVariant = "primary" | "ghost";
 type PillSize = "md" | "sm";
 
 interface Props {
-  href: string;
+  href?: string;
   variant?: PillVariant;
   size?: PillSize;
   glow?: boolean;
   external?: boolean;
   class?: string;
   ariaLabel?: string;
+  id?: string;
+  analyticsEvent?: string;
+  analyticsSurface?: string;
 }
 
 const {
@@ -20,6 +23,9 @@ const {
   external = false,
   class: className = "",
   ariaLabel,
+  id,
+  analyticsEvent,
+  analyticsSurface,
 } = Astro.props;
 
 const variantClasses: Record<PillVariant, string> = {
@@ -40,18 +46,40 @@ const glowClasses =
     : "";
 ---
 
-<a
-  href={href}
-  target={external ? "_blank" : undefined}
-  rel={external ? "noopener noreferrer" : undefined}
-  aria-label={ariaLabel}
-  class:list={[
-    "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
-    variantClasses[variant],
-    sizeClasses[size],
-    glowClasses,
-    className,
-  ]}
->
-  <slot />
-</a>
+{
+  href ? (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noopener noreferrer" : undefined}
+      aria-label={ariaLabel}
+      id={id}
+      data-analytics-event={analyticsEvent}
+      data-analytics-surface={analyticsSurface}
+      class:list={[
+        "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
+        variantClasses[variant],
+        sizeClasses[size],
+        glowClasses,
+        className,
+      ]}
+    >
+      <slot />
+    </a>
+  ) : (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      id={id}
+      class:list={[
+        "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
+        variantClasses[variant],
+        sizeClasses[size],
+        glowClasses,
+        className,
+      ]}
+    >
+      <slot />
+    </button>
+  )
+}

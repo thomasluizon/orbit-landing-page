@@ -39,7 +39,13 @@ const { appUrl, googlePlayUrl } = Astro.props;
         >
           Access Orbit from any browser. Your habits sync across all your devices.
         </p>
-        <PillButton href={appUrl} size="sm" class="mt-auto self-start">
+        <PillButton
+          href={appUrl}
+          size="sm"
+          class="mt-auto self-start"
+          analyticsEvent="platforms_web_cta_clicked"
+          analyticsSurface="platforms_web"
+        >
           <span data-i18n="platforms.web.cta">Open Web App</span>
         </PillButton>
       </div>
@@ -72,6 +78,8 @@ const { appUrl, googlePlayUrl } = Astro.props;
           external
           ariaLabel="Open Orbit on Google Play"
           class="mt-auto self-start"
+          analyticsEvent="platforms_google_play_cta_clicked"
+          analyticsSurface="platforms_android"
         >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path
