@@ -11,6 +11,7 @@
     ".prettierignore",
     ".prettierrc",
     "CLAUDE.md",
+    "LICENSE",
     "README.md",
     "astro.config.mjs",
     "eslint.config.mjs",
