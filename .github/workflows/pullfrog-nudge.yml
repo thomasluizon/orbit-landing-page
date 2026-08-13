@@ -25,11 +25,16 @@ jobs:
 
       - name: Request review when the approval check is missing
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PULLFROG_NUDGE_TOKEN }}
           GH_REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "PULLFROG_NUDGE_TOKEN is not set"
+            exit 1
+          fi
+
           check_count="$(
             gh api \
               --header "Accept: application/vnd.github+json" \
