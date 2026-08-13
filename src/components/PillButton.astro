@@ -71,6 +71,8 @@ const glowClasses =
       type="button"
       aria-label={ariaLabel}
       id={id}
+      data-analytics-event={analyticsEvent}
+      data-analytics-surface={analyticsSurface}
       class:list={[
         "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
         variantClasses[variant],
