@@ -1,0 +1,67 @@
+name: Pullfrog Nudge
+
+on:
+  pull_request:
+    branches: [main]
+    types: [synchronize]
+
+permissions:
+  checks: read
+  pull-requests: write
+  statuses: read
+
+concurrency:
+  group: pullfrog-nudge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  request-review:
+    name: Request Missing Pullfrog Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wait for Pullfrog
+        run: sleep 300
+
+      - name: Request review when the approval check is missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          check_count="$(
+            gh api \
+              --header "Accept: application/vnd.github+json" \
+              "/repos/$GH_REPO/commits/$HEAD_SHA/check-runs?check_name=pullfrog-approval&filter=all&per_page=100" \
+              --jq '.check_runs | length'
+          )"
+
+          if [[ "$check_count" -gt 0 ]]; then
+            exit 0
+          fi
+
+          marker="<!-- pullfrog-nudge:$HEAD_SHA -->"
+          existing_comment="$(
+            gh api \
+              --paginate \
+              --header "Accept: application/vnd.github+json" \
+              "/repos/$GH_REPO/issues/$PR_NUMBER/comments?per_page=100" \
+              --jq ".[] | select(.body | contains(\"$marker\")) | .id"
+          )"
+
+          if [[ -n "$existing_comment" ]]; then
+            exit 0
+          fi
+
+          comment_body="$(
+            printf '@pullfrog review\n\nAutomated fallback for head %s.\n\n%s' \
+              "$HEAD_SHA" \
+              "$marker"
+          )"
+
+          gh api \
+            --method POST \
+            --header "Accept: application/vnd.github+json" \
+            "/repos/$GH_REPO/issues/$PR_NUMBER/comments" \
+            --field "body=$comment_body"
