@@ -64,4 +64,4 @@ jobs:
             --method POST \
             --header "Accept: application/vnd.github+json" \
             "/repos/$GH_REPO/issues/$PR_NUMBER/comments" \
-            --field "body=$comment_body"
+            --raw-field "body=$comment_body"
