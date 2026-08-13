@@ -33,6 +33,11 @@ class FakeElement extends FakeEventTarget {
   dataset = {};
   hidden = false;
 
+  constructor(tagName = "a") {
+    super();
+    this.tagName = tagName;
+  }
+
   classList = {
     add: (...names) => names.forEach((name) => this.classNames.add(name)),
     remove: (...names) => names.forEach((name) => this.classNames.delete(name)),
@@ -43,7 +48,9 @@ class FakeElement extends FakeEventTarget {
   }
 
   closest(selector) {
-    return selector === "a[data-analytics-event]" ? this : null;
+    const selectors = selector.split(",").map((candidate) => candidate.trim());
+    const analyticsSelector = `${this.tagName}[data-analytics-event]`;
+    return this.dataset.analyticsEvent && selectors.includes(analyticsSelector) ? this : null;
   }
 }
 
@@ -211,4 +218,19 @@ test("a returning accepted visitor chooses cookie persistence before PostHog ini
   assert.equal(initialization?.config.persistence, "localStorage+cookie");
   assert.equal(initialization?.config.cross_subdomain_cookie, true);
   assert.deepEqual(harness.configUpdates, []);
+});
+
+test("an accepted visitor captures analytics from a button", async () => {
+  const harness = createHarness("accepted");
+  await executeProductionScripts(harness);
+  harness.window.dispatchEvent({ type: "load" });
+  harness.completePostHogLoad();
+  harness.capturedEvents.length = 0;
+
+  const button = new FakeElement("button");
+  button.dataset.analyticsEvent = "consent_action_clicked";
+  button.dataset.analyticsSurface = "consent_banner";
+  harness.document.dispatchEvent({ type: "click", target: button });
+
+  assert.deepEqual(harness.capturedEvents, ["consent_action_clicked"]);
 });

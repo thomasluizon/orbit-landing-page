@@ -90,9 +90,11 @@ if (choice === "accepted") {
 
 document.addEventListener("click", (event) => {
   if (!analytics || !(event.target instanceof Element)) return;
-  const link = event.target.closest<HTMLAnchorElement>("a[data-analytics-event]");
-  const eventName = link?.dataset.analyticsEvent;
-  const surface = link?.dataset.analyticsSurface;
+  const control = event.target.closest<HTMLElement>(
+    "a[data-analytics-event], button[data-analytics-event]",
+  );
+  const eventName = control?.dataset.analyticsEvent;
+  const surface = control?.dataset.analyticsSurface;
   if (!eventName || !surface) return;
   analytics.capture(eventName, { surface }, { transport: "sendBeacon", send_instantly: true });
 });

@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "node --test tools/consent.test.mjs",
+    "test": "node --test tools/consent.test.mjs tools/pill-button.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@astrojs/compiler": "^2.13.1",
     "@posthog/types": "^1.402.2",
     "eslint": "^10.5.0",
     "eslint-plugin-astro": "^1.7.0",
