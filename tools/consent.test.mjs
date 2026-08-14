@@ -178,6 +178,30 @@ test("a first-time visitor makes no PostHog request and captures nothing before 
   assert.deepEqual(harness.capturedEvents, []);
 });
 
+test("a first-time visitor can allow analytics and capture a hero CTA click", async () => {
+  const harness = createHarness();
+  await executeProductionScripts(harness);
+
+  harness.window.dispatchEvent({ type: "load" });
+  assert.equal(harness.banner.hidden, false);
+  assert.equal(harness.banner.classNames.has("is-visible"), true);
+
+  harness.acceptButton.click();
+  harness.completePostHogLoad();
+
+  const cta = new FakeElement();
+  cta.dataset.analyticsEvent = "hero_app_cta_clicked";
+  cta.dataset.analyticsSurface = "hero";
+  harness.document.dispatchEvent({ type: "click", target: cta });
+
+  assert.deepEqual(harness.networkRequests, [
+    "https://us-assets.i.posthog.com/static/array.js",
+    "https://us.i.posthog.com/e/",
+    "https://us.i.posthog.com/e/",
+  ]);
+  assert.deepEqual(harness.capturedEvents, ["$pageview", "hero_app_cta_clicked"]);
+});
+
 test("decline prevents all later PostHog requests and captures now and after reload", async () => {
   const harness = createHarness();
   await executeProductionScripts(harness);
