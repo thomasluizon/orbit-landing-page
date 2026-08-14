@@ -5,6 +5,26 @@ import sitemap from "@astrojs/sitemap";
 
 import tailwindcss from "@tailwindcss/vite";
 
+const metaTagPattern = /<meta\b[^>]*>/gi;
+const htmlAttributePattern = /(?:^|\s)([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+
+/** @param {string} pageHtml */
+export function hasNoindexRobotsMeta(pageHtml) {
+  return [...pageHtml.matchAll(metaTagPattern)].some(([metaTag]) => {
+    const attributes = new Map(
+      [...metaTag.matchAll(htmlAttributePattern)].map((match) => [
+        match[1].toLowerCase(),
+        match[2] ?? match[3] ?? match[4] ?? "",
+      ]),
+    );
+
+    return (
+      attributes.get("name")?.toLowerCase() === "robots" &&
+      /(?:^|[,\s])noindex(?:$|[,\s])/i.test(attributes.get("content") ?? "")
+    );
+  });
+}
+
 // https://astro.build/config
 export default defineConfig({
   site: "https://useorbit.org",
@@ -15,7 +35,7 @@ export default defineConfig({
         const outputPath = pathname.endsWith("/") ? `${pathname}index.html` : `${pathname}.html`;
         const pageHtml = readFileSync(new URL(`./dist${outputPath}`, import.meta.url), "utf8");
 
-        return !/<meta name="robots" content="[^"]*\bnoindex\b[^"]*">/i.test(pageHtml);
+        return !hasNoindexRobotsMeta(pageHtml);
       },
     }),
   ],

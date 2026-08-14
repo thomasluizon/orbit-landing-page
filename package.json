@@ -8,9 +8,9 @@
   "scripts": {
     "prepare": "lefthook install || true",
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node --test tools/sitemap-output.test.mjs",
     "preview": "astro preview",
-    "test": "node --test tools/consent.test.mjs tools/pill-button.test.mjs",
+    "test": "node --test tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",
