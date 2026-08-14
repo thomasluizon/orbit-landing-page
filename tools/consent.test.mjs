@@ -64,6 +64,7 @@ class FakeCustomEvent {
 function createHarness(initialChoice = null) {
   const networkRequests = [];
   const capturedEvents = [];
+  const capturedCalls = [];
   const configUpdates = [];
   const values = new Map();
   if (initialChoice) values.set("orbit_analytics_consent", initialChoice);
@@ -121,8 +122,9 @@ function createHarness(initialChoice = null) {
     if (!initialization) return null;
     const config = initialization[1];
     const analytics = {
-      capture(eventName) {
+      capture(eventName, properties, options) {
         capturedEvents.push(eventName);
+        capturedCalls.push({ eventName, properties: properties ?? null, options: options ?? null });
         networkRequests.push("https://us.i.posthog.com/e/");
       },
       set_config(update) {
@@ -140,6 +142,7 @@ function createHarness(initialChoice = null) {
   return {
     acceptButton,
     banner,
+    capturedCalls,
     capturedEvents,
     completePostHogLoad,
     configUpdates,
@@ -187,6 +190,7 @@ test("a first-time visitor can allow analytics and capture a hero CTA click", as
   assert.equal(harness.banner.classNames.has("is-visible"), true);
 
   harness.acceptButton.click();
+  assert.equal(harness.context.localStorage.getItem("orbit_analytics_consent"), "accepted");
   harness.completePostHogLoad();
 
   const cta = new FakeElement();
@@ -200,6 +204,14 @@ test("a first-time visitor can allow analytics and capture a hero CTA click", as
     "https://us.i.posthog.com/e/",
   ]);
   assert.deepEqual(harness.capturedEvents, ["$pageview", "hero_app_cta_clicked"]);
+  assert.deepEqual(harness.capturedCalls, [
+    { eventName: "$pageview", properties: null, options: null },
+    {
+      eventName: "hero_app_cta_clicked",
+      properties: { surface: "hero" },
+      options: { transport: "sendBeacon", send_instantly: true },
+    },
+  ]);
 });
 
 test("decline prevents all later PostHog requests and captures now and after reload", async () => {
