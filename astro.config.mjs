@@ -5,7 +5,7 @@ import sitemap from "@astrojs/sitemap";
 
 import tailwindcss from "@tailwindcss/vite";
 
-const metaTagPattern = /<meta\b[^>]*>/gi;
+const metaTagPattern = /<meta\b(?:"[^"]*"|'[^']*'|[^>"'])*>/gi;
 const htmlAttributePattern = /(?:^|\s)([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
 
 /** @param {string} pageHtml */

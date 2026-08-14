@@ -7,6 +7,7 @@ test("detects robots noindex with reordered or additional attributes", () => {
     '<meta content="noindex, nofollow" name="robots">',
     '<meta name="robots" data-owner="layout" content="noindex, nofollow">',
     "<meta content='NOINDEX' data-owner=layout name='ROBOTS' />",
+    '<meta data-owner=">" content="noindex" name="robots">',
   ];
 
   for (const metaTag of variants) {
