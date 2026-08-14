@@ -124,7 +124,11 @@ function createHarness(initialChoice = null) {
     const analytics = {
       capture(eventName, properties, options) {
         capturedEvents.push(eventName);
-        capturedCalls.push({ eventName, properties: properties ?? null, options: options ?? null });
+        capturedCalls.push({
+          eventName,
+          properties: properties ? { ...properties } : null,
+          options: options ? { ...options } : null,
+        });
         networkRequests.push("https://us.i.posthog.com/e/");
       },
       set_config(update) {
