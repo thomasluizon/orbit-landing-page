@@ -260,6 +260,20 @@ test("a returning accepted visitor chooses cookie persistence before PostHog ini
   assert.deepEqual(harness.configUpdates, []);
 });
 
+test("an accepted visitor queues people mutations while PostHog loads", async () => {
+  const harness = createHarness("accepted");
+  await executeProductionScripts(harness);
+
+  harness.window.dispatchEvent({ type: "load" });
+  harness.window.posthog.people.set({ plan: "pro" });
+  harness.window.posthog.people.set_once({ acquisition: "landing" });
+
+  assert.deepEqual(JSON.parse(JSON.stringify(harness.window.posthog.people)), [
+    ["set", { plan: "pro" }],
+    ["set_once", { acquisition: "landing" }],
+  ]);
+});
+
 test("an accepted visitor captures analytics from a button", async () => {
   const harness = createHarness("accepted");
   await executeProductionScripts(harness);
