@@ -30,7 +30,7 @@ const proFeatures = [
       <h2 class="t-display mt-3 [text-wrap:balance]" data-i18n="pricing.title">
         Start free. Upgrade when it clicks.
       </h2>
-      <p class="t-body mt-3 text-primary" data-i18n="pricing.trial">
+      <p class="t-body mt-3 text-primary-soft" data-i18n="pricing.trial">
         7-day Pro trial, no card required
       </p>
     </div>
@@ -89,7 +89,7 @@ const proFeatures = [
           {
             proFeatures.map((feature) => (
               <li class="flex items-center gap-3">
-                <Check size={17} stroke-width={2.2} class="shrink-0 text-primary" />
+                <Check size={17} stroke-width={2.2} class="shrink-0 text-primary-soft" />
                 <span class="font-sans text-[14px] text-fg-1" data-i18n={feature.key}>
                   {feature.text}
                 </span>
@@ -99,7 +99,6 @@ const proFeatures = [
         </ul>
         <PillButton
           href={appUrl}
-          glow
           size="sm"
           class="mt-8 self-start"
           analyticsEvent="pricing_pro_cta_clicked"

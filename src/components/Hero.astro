@@ -32,12 +32,6 @@ const heroStars = [
 ---
 
 <section class="relative pt-[104px] pb-16 sm:pb-20 lg:flex lg:min-h-dvh lg:items-center lg:pt-16">
-  <div
-    class="pointer-events-none absolute inset-x-0 top-0 h-[340px]"
-    style="background: var(--gradient-header);"
-    aria-hidden="true"
-  >
-  </div>
   <Starfield stars={heroStars} />
 
   <div
@@ -61,12 +55,7 @@ const heroStars = [
         class="hero-rise mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start"
         style="animation-delay: 180ms;"
       >
-        <PillButton
-          href={appUrl}
-          glow
-          analyticsEvent="hero_app_cta_clicked"
-          analyticsSurface="hero"
-        >
+        <PillButton href={appUrl} analyticsEvent="hero_app_cta_clicked" analyticsSurface="hero">
           <span data-i18n="hero.cta">Start free</span>
         </PillButton>
         <PillButton
@@ -122,9 +111,7 @@ const heroStars = [
         class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rotate-[-14deg]"
         aria-hidden="true"
       >
-        <span
-          class="orbit-dot h-[6px] w-[6px] rounded-full bg-primary"
-          style="box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.8);"></span>
+        <span class="orbit-dot h-[6px] w-[6px] rounded-full bg-primary"></span>
         <span
           class="orbit-dot orbit-dot-outer h-[4px] w-[4px] rounded-full"
           style="background: color-mix(in srgb, var(--color-primary) 55%, white);"></span>

@@ -4,11 +4,11 @@ Marketing landing page for the Orbit habit tracker. Static Astro 7 + Tailwind v4
 
 ## Design system (mirrored, not owned)
 
-The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/handoff/` (vendored handoff). This repo MIRRORS the purple-scheme dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
+The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/handoff/` (vendored handoff). This repo MIRRORS the dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
 
-- Anchor: navy-violet orbital. Canvas `#020618`, violet `#7f46f7`, gradient header `#22094f → transparent`, Rubik/Inter/Roboto, translucent cards with inset hairline rings, pill CTAs with glow.
-- Dark-only, purple-scheme-only (documented deviation: the landing is the brand surface; the app's light mode and 6 schemes don't apply here).
-- Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-rubik/inter/roboto`.
+- Anchor: spacious near-black. Canvas `#09090B`, warm orange `#C4530F`, Geist Sans/Space Grotesk/Geist Mono, neutral surface steps, flat pill CTAs. No decorative glow or gradient wash.
+- Dark-only (landing deviation); the single accent follows the current canon.
+- Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-geist/space-grotesk/geist-mono`.
 - No raw slate values, no hardcoded violet rgba (use `rgba(var(--primary-rgb), α)`), no `transition-all`, no `h-screen` (use `min-h-dvh`), no em dashes in copy.
 
 ## Code standards
