@@ -93,6 +93,14 @@
   --tracking-tight: -0.01em;
 }
 
+@utility control-transition {
+  transition-property: background-color, color, opacity, box-shadow, transform, translate, scale;
+  transition-duration:
+    var(--duration-hover-control), var(--duration-hover-control), var(--duration-fast),
+    var(--duration-fast), var(--duration-fast), var(--duration-fast), var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
 html {
   color-scheme: dark;
   font-synthesis: none;
