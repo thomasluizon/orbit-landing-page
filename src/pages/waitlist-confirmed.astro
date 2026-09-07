@@ -10,13 +10,6 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 
 <Layout title="Waitlist confirmation - Orbit" noindex>
   <main class="relative flex min-h-dvh flex-col items-center justify-center px-6 py-16 text-center">
-    <div
-      class="pointer-events-none absolute inset-x-0 top-0 h-[340px]"
-      style="background: var(--gradient-header);"
-      aria-hidden="true"
-    >
-    </div>
-
     <a href="/" class="relative flex items-center gap-2.5">
       <Image src={logoNoBg} alt="Orbit" width={32} height={32} class="h-8 w-8" />
       <span class="font-sans text-[18px] font-medium text-fg-1">Orbit</span>
@@ -56,7 +49,7 @@ const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
     </div>
 
     <div class="relative mt-9">
-      <PillButton href={`${appUrl}`} glow>
+      <PillButton href={`${appUrl}`}>
         <span data-i18n="waitlistConfirmed.cta">Back to Orbit</span>
       </PillButton>
     </div>
