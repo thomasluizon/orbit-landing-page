@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build && node --test tools/sitemap-output.test.mjs",
     "preview": "astro preview",
-    "test": "node --test src/styles/tokens.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs",
+    "test": "node --test src/styles/tokens.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/waitlist.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",

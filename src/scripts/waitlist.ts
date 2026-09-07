@@ -72,6 +72,20 @@ function handleChallengeFailure() {
   return true;
 }
 
+function isEmailValidationFailure(payload: unknown): boolean {
+  if (typeof payload !== "object" || payload === null) return false;
+  if (!("type" in payload) || payload.type !== "ValidationFailure" || !("errors" in payload))
+    return false;
+  const errors = payload.errors;
+  return (
+    typeof errors === "object" &&
+    errors !== null &&
+    "Email" in errors &&
+    Array.isArray(errors.Email) &&
+    errors.Email.length > 0
+  );
+}
+
 function loadTurnstile(): Promise<Turnstile> {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   if (turnstileLoadPromise) return turnstileLoadPromise;
@@ -181,7 +195,9 @@ if (form && emailInput && submitButton && status && turnstileContainer) {
         form.reset();
         setStatus(strings["ios.success"], "success");
       } else if (response.status === 400) {
-        setStatus(strings["ios.invalidEmail"], "error");
+        const payload: unknown = await response.json();
+        const key = isEmailValidationFailure(payload) ? "ios.invalidEmail" : "ios.challengeFailed";
+        setStatus(strings[key], "error");
       } else {
         setStatus(strings["ios.error"], "error");
       }
