@@ -32,7 +32,7 @@ test("button mode renders both analytics attributes", async () => {
   });
 });
 
-async function transitionDurations(path, tag) {
+async function compiledControl(path, tag, variant) {
   const source = await readFile(path, "utf8");
   const { ast } = await parse(source);
   const element = findElement(ast, tag);
@@ -42,11 +42,22 @@ async function transitionDurations(path, tag) {
   const classes =
     attribute.kind === "expression" ? attribute.value.match(/"([^"]+)"/)[1] : attribute.value;
   const candidates = classes.split(/\s+/);
+  if (variant) {
+    assert.match(attribute.value, /variantClasses\[variant\]/);
+    const variantClasses = source.match(/const variantClasses[^=]*=\s*\{([^}]+)\}/)[1];
+    const variantMatch = variantClasses.match(new RegExp(`${variant}:\\s*"([^"]+)"`));
+    assert.ok(variantMatch, `${variant} variant has shipping classes`);
+    candidates.push(...variantMatch[1].split(/\s+/));
+  }
   const globalCss = await readFile("src/styles/global.css", "utf8");
   const compiler = await compile(
     globalCss.replace('@import "tailwindcss";', "@tailwind utilities;"),
   );
   const css = compiler.build(candidates);
+  return { css, candidates, globalCss };
+}
+
+function transitionDurations({ css, candidates, globalCss }) {
   const declarations = Object.fromEntries(
     [...globalCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((match) => [match[1], match[2]]),
   );
@@ -65,13 +76,53 @@ async function transitionDurations(path, tag) {
   );
 }
 
-for (const [path, tag] of [
-  ["src/components/PillButton.astro", "a"],
-  ["src/components/PillButton.astro", "button"],
-  ["src/components/IosWaitlist.astro", "button"],
-]) {
-  test(`${path} ${tag}: compiled hover colours use 240ms and press/release movement uses 160ms`, async () => {
-    assert.deepEqual(await transitionDurations(path, tag), {
+function stateDeclarations(css, state) {
+  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selector]) => selector.includes(`:${state}`))
+    .flatMap(([, , body]) =>
+      [...body.matchAll(/([\w-]+):\s*([^;]+);/g)].map(([, property, value]) => [property, value]),
+    );
+}
+
+for (const tag of ["a", "button"]) {
+  for (const variant of ["primary", "ghost"]) {
+    const label = `PillButton ${tag} ${variant}`;
+    const control = () => compiledControl("src/components/PillButton.astro", tag, variant);
+
+    test(`${label}: hover changes fill or label colour only`, async () => {
+      const hover = stateDeclarations((await control()).css, "hover");
+      assert.ok(hover.length > 0, "hover colour feedback survives");
+      assert.deepEqual(
+        hover.filter(([property]) => ["transform", "translate", "scale"].includes(property)),
+        [],
+        "hover must not declare transform, translate or scale",
+      );
+      assert.ok(hover.every(([property]) => ["background-color", "color"].includes(property)));
+    });
+
+    test(`${label}: press retains scale movement`, async () => {
+      const active = Object.fromEntries(stateDeclarations((await control()).css, "active"));
+      assert.equal(active.scale, "0.98", "press must retain scale(0.98)");
+    });
+
+    test(`${label}: hover colours use 240ms and press/release movement uses 160ms`, async () => {
+      assert.deepEqual(transitionDurations(await control()), {
+        "background-color": "240ms",
+        color: "240ms",
+        opacity: "160ms",
+        "box-shadow": "160ms",
+        transform: "160ms",
+        translate: "160ms",
+        scale: "160ms",
+      });
+    });
+  }
+}
+
+test("IosWaitlist button: compiled hover colours use 240ms and press/release movement uses 160ms", async () => {
+  assert.deepEqual(
+    transitionDurations(await compiledControl("src/components/IosWaitlist.astro", "button")),
+    {
       "background-color": "240ms",
       color: "240ms",
       opacity: "160ms",
@@ -79,6 +130,6 @@ for (const [path, tag] of [
       transform: "160ms",
       translate: "160ms",
       scale: "160ms",
-    });
-  });
-}
+    },
+  );
+});
