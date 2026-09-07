@@ -1,7 +1,6 @@
 ---
 import { Image } from "astro:assets";
 import PillButton from "./PillButton.astro";
-import logoNoBg from "../assets/logo-no-bg.png";
 
 interface Props {
   appUrl: string;
@@ -14,7 +13,7 @@ const { appUrl } = Astro.props;
   <nav aria-label="Main" class="page-container flex h-16 items-center justify-between">
     <a href="/" class="flex items-center gap-2.5">
       <Image
-        src={logoNoBg}
+        src="/logo.png"
         alt="Orbit"
         width={32}
         height={32}
