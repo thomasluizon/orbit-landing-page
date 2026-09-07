@@ -4,11 +4,11 @@ Marketing landing page for the Orbit habit tracker. Static Astro 7 + Tailwind v4
 
 ## Design system (mirrored, not owned)
 
-The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/handoff/` (vendored handoff). This repo MIRRORS the purple-scheme dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
+The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/handoff/` (vendored handoff). This repo MIRRORS the dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
 
-- Anchor: navy-violet orbital. Canvas `#020618`, violet `#7f46f7`, gradient header `#22094f → transparent`, Rubik/Inter/Roboto, translucent cards with inset hairline rings, pill CTAs with glow.
-- Dark-only, purple-scheme-only (documented deviation: the landing is the brand surface; the app's light mode and 6 schemes don't apply here).
-- Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-rubik/inter/roboto`.
+- Anchor: spacious near-black. Canvas `#09090B`, warm orange `#C4530F`, Geist Sans/Space Grotesk/Geist Mono, neutral surface steps, flat pill CTAs. No decorative glow or gradient wash.
+- Dark-only (landing deviation); the single accent follows the current canon.
+- Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-geist/space-grotesk/geist-mono`.
 - No raw slate values, no hardcoded violet rgba (use `rgba(var(--primary-rgb), α)`), no `transition-all`, no `h-screen` (use `min-h-dvh`), no em dashes in copy.
 
 ## Code standards
@@ -36,7 +36,7 @@ Bilingual EN/PT-BR via `data-i18n` attributes applied client-side. Every new use
 Standard Astro scripts; read `package.json` for the list. The CI-gating ones are
 `format:check` and `check` (`astro check`), not just `lint`.
 
-CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus the required `Lighthouse` check) and `dependency-review.yml`. Lighthouse blocks merging when the home page falls below 0.90 for performance, accessibility, best practices, or SEO, exceeds 2850 ms LCP or 200 ms TBT, or any audited page exceeds 24 KB of script. The synthetic 404 page remains subject to accessibility, best practices, LCP, and script-size assertions, but not performance or TBT. `nightly.yml` runs a scheduled external-link check only, filing a de-duped issue on regression. Lighthouse runs at PR time in `build.yml`, not nightly.
+CI on PRs to main runs `build.yml` (audit + lint + format:check + check + build + internal-link check, plus the required `Lighthouse` check) and `dependency-review.yml`. Lighthouse blocks merging when the home page falls below 0.90 for performance, accessibility, best practices, or SEO, exceeds 2850 ms LCP or 200 ms TBT, or any audited page exceeds 24 KB of script. The synthetic 404 page remains subject to accessibility, best practices, LCP, and script-size assertions, but not performance or TBT. The post-waitlist confirmation page (`/waitlist-confirmed/`) is excluded from Lighthouse collection by `ci.collect.autodiscoverUrlBlocklist` in `lighthouserc.json`, which matches its generated path `/waitlist-confirmed/index.html`. No Lighthouse assertions run on that page, including the merge-blocking accessibility assertion (`categories:accessibility` at `error` with a 0.90 minimum score), so accessibility regressions there do not block merging through Lighthouse. `nightly.yml` runs a scheduled external-link check only, filing a de-duped issue on regression. Lighthouse runs at PR time in `build.yml`, not nightly.
 
 ## Git workflow
 

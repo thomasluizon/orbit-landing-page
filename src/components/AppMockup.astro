@@ -7,15 +7,9 @@ import { CalendarDays, House, MessageCircle, Plus, User } from "@lucide/astro";
   <div
     data-tilt
     class="tilt-target rounded-[36px] bg-bg-elev p-[10px]"
-    style="box-shadow: var(--shadow-3), 0 0 90px rgba(var(--primary-rgb), 0.22), inset 0 0 0 1px var(--color-hairline-strong);"
+    style="box-shadow: var(--shadow-3), inset 0 0 0 1px var(--color-hairline-strong);"
   >
     <div class="relative overflow-hidden rounded-[28px] bg-bg">
-      <div
-        class="pointer-events-none absolute inset-x-0 top-0 h-[170px]"
-        style="background: var(--gradient-header);"
-      >
-      </div>
-
       <div class="relative flex flex-col gap-3 px-3 pt-4">
         <div class="flex items-center justify-center py-1">
           <Image src="/logo.png" alt="" width={26} height={26} class="h-[26px] w-[26px]" />
@@ -175,7 +169,7 @@ import { CalendarDays, House, MessageCircle, Plus, User } from "@lucide/astro";
             <div class="flex flex-1 items-center justify-center">
               <div
                 class="flex h-[44px] w-[44px] -translate-y-3 items-center justify-center rounded-full bg-primary"
-                style="box-shadow: 0 0 0 5px var(--color-bg), var(--primary-glow);"
+                style="box-shadow: 0 0 0 5px var(--color-bg);"
               >
                 <Plus size={20} stroke-width={2.2} class="text-fg-on-primary" />
               </div>
