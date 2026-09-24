@@ -21,6 +21,7 @@
   --color-fg-2: #c9c9cc;
   --color-fg-3: #8f8f93;
   --color-fg-4: #5d5d60;
+  --color-track-empty: #7a7a7d;
   --color-fg-on-primary: #ffffff;
   --color-primary: #c4530f;
   --color-primary-soft: #c85716;
@@ -28,7 +29,7 @@
   --color-primary-pressed: #a24716;
   --color-primary-dim: #261611;
   --color-status-done: var(--color-fg-1);
-  --color-status-empty: var(--color-fg-4);
+  --color-status-empty: var(--color-track-empty);
   --color-status-frozen: var(--color-fg-2);
   --color-status-overdue: #fe9a00;
   --color-status-bad: #fb2c36;
