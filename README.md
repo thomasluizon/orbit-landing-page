@@ -44,7 +44,7 @@ Dark-only theme, pill CTAs with violet glow, translucent surfaces, Rubik/Inter/R
 
 ## Prerequisites
 
-- **Node.js** >= 22.12.0
+- **Node.js** >= 22.19.0
 
 ## Getting Started
 
