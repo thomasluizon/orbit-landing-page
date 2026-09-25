@@ -18,6 +18,8 @@ test("landing mirrors the dark canon and separates accent fill from text", () =>
     "--color-fg-2": "#c9c9cc",
     "--color-fg-3": "#8f8f93",
     "--color-fg-4": "#5d5d60",
+    "--color-track-empty": "#7a7a7d",
+    "--color-status-empty": "var(--color-track-empty)",
     "--radius-sheet": "28px",
     "--font-sans": "var(--font-geist)",
     "--font-display": "var(--font-space-grotesk)",
