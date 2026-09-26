@@ -354,3 +354,30 @@ test("XML build files have their comments checked", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("an escaped backslash closes a YAML string before a trailing comment", () => {
+  const date = ["2026", "-08-12"].join("");
+  const root = fixture("yaml-escape", "sample.yml", "value: clean\n");
+  writeFileSync(join(root, "sample.yml"), `value: "foo\\\\" # ${date}\n`);
+  git(root, "add", "sample.yml");
+  const all = run(root, ["--all"]);
+  T(
+    "the comment after an escaped backslash fails",
+    all.status === 1 && all.stderr.includes("sample.yml:1: dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("--staged checks a staged file whose working copy is gone", () => {
+  const owner = ["Tho", "mas"].join("");
+  const root = fixture("staged-removed", "sample.md", "clean\n");
+  writeFileSync(join(root, "sample.md"), `Ask ${owner}.\n`);
+  git(root, "add", "sample.md");
+  rmSync(join(root, "sample.md"));
+  const staged = run(root, ["--staged"]);
+  T(
+    "the staged blob is checked",
+    staged.status === 1 && staged.stderr.includes("sample.md:1: owner-name"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
