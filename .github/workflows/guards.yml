@@ -1,19 +1,34 @@
 name: Guards
 
-# Vendored from orbit-ui-mobile (REBUILD.md 6.1): the dash ban and the
-# copy-register gate, running against this repo's real copy file
-# (src/i18n/translations.ts), which the old session-only hook never covered.
-
 on:
   pull_request:
-    branches: [main]
+    branches: [main, redesign/main]
   push:
-    branches: [main]
+    branches: [main, redesign/main]
 
 permissions:
   contents: read
 
 jobs:
+  timeless:
+    name: Timeless Text
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check changed text
+        if: github.event_name == 'pull_request'
+        run: node tools/check-timeless.mjs --base origin/${{ github.base_ref }}
+      - name: Check all text
+        if: github.event_name == 'push'
+        run: node tools/check-timeless.mjs --all
+
   dashes:
     name: Dash Ban
     runs-on: ubuntu-latest
@@ -32,12 +47,7 @@ jobs:
       - name: Baseline only shrinks
         run: node tools/check-dashes.mjs --check-baseline
       - name: PR title and body carry no dashes
-        # Human-authored prose only. A bot PR body is machine-copied upstream text
-        # (Dependabot quotes the dependency's own changelog verbatim), which Orbit
-        # neither wrote nor can edit, and which Dependabot regenerates on every
-        # rebase. The file-level dash check above still runs on bot PRs, because
-        # the files they change ARE Orbit's. See orbit-api#425, where a Hangfire
-        # release note's en dashes blocked a security-relevant NuGet bump.
+        # Bot PR bodies quote upstream prose that this repository cannot edit.
         if: github.event_name == 'pull_request' && github.event.pull_request.user.type != 'Bot'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
