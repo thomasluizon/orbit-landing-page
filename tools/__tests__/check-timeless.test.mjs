@@ -265,3 +265,82 @@ test("timeless checker modes and exceptions", () => {
   );
   rmSync(safe, { recursive: true, force: true });
 });
+
+test("Astro TypeScript comments are checked without treating markup as code", () => {
+  const date = ["2026", "-08-12"].join("");
+  const cases = [
+    ["frontmatter", `---\n// ${date}\nconst title = "ready"\n---\n<p>{title}</p>\n`, 2],
+    ["script", `<p>ready</p>\n<script>\n// ${date}\nconst title = "ready"\n</script>\n`, 3],
+  ];
+  for (const [label, planted, line] of cases) {
+    const root = fixture(`astro-${label}`, "sample.astro", "<p>clean</p>\n");
+    symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+    const hook = run(
+      root,
+      ["--hook"],
+      JSON.stringify({
+        tool_name: "Write",
+        tool_input: { file_path: join(root, "sample.astro"), content: planted },
+      }),
+    );
+    T(
+      `${label} date fails hook at the source line`,
+      hook.status === 2 && hook.stderr.includes(`sample.astro:${line}: dated-anecdote`),
+    );
+    writeFileSync(join(root, "sample.astro"), planted);
+    git(root, "add", "sample.astro");
+    const all = run(root, ["--all"]);
+    T(
+      `${label} date fails all at the source line`,
+      all.status === 1 && all.stderr.includes(`sample.astro:${line}: dated-anecdote`),
+    );
+    rmSync(root, { recursive: true, force: true });
+  }
+  const root = fixture("astro-markup", "sample.astro", `<p>${date}</p>\n`);
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  T("Astro markup date passes all", run(root, ["--all"]).status === 0);
+  const hook = run(
+    root,
+    ["--hook"],
+    JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: join(root, "sample.astro"), content: `<p>changed ${date}</p>\n` },
+    }),
+  );
+  T("Astro markup date passes hook", hook.status === 0);
+  const six = Array.from({ length: 6 }, (_, index) => `// reason ${index}`).join("\n");
+  for (const content of [`---\n${six}\n---\n<p>ready</p>\n`, `<script>\n${six}\n</script>\n`]) {
+    writeFileSync(join(root, "sample.astro"), content);
+    T("six Astro comment lines pass all", run(root, ["--all"]).status === 0);
+    const seven = content.replace(six, `${six}\n// reason 6`);
+    writeFileSync(join(root, "sample.astro"), seven);
+    const result = run(root, ["--all"]);
+    T(
+      "seven Astro comment lines fail all",
+      result.status === 1 && result.stderr.includes("comment-length"),
+    );
+  }
+  writeFileSync(join(root, "sample.astro"), `<!-- ${date} -->\n`);
+  T("Astro markup comments still fail all", run(root, ["--all"]).status === 1);
+  writeFileSync(
+    join(root, "sample.astro"),
+    `<script>\nconst date = "${date}"\nconst pattern = /${date}/\n</script>\n`,
+  );
+  T("Astro script literals pass all", run(root, ["--all"]).status === 0);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("XML build files have their comments checked", () => {
+  const date = ["2026", "-08-12"].join("");
+  for (const name of ["sample.csproj", "Directory.Build.props", "nuget.config"]) {
+    const root = fixture(`xml-${name}`, name, "<Project />\n");
+    writeFileSync(join(root, name), `<Project>\n  <!-- ${date} -->\n</Project>\n`);
+    git(root, "add", name);
+    const all = run(root, ["--all"]);
+    T(
+      `${name} dated comment fails all`,
+      all.status === 1 && all.stderr.includes(`${name}:2: dated-anecdote`),
+    );
+    rmSync(root, { recursive: true, force: true });
+  }
+});
