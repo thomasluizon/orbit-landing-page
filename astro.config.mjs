@@ -25,7 +25,6 @@ export function hasNoindexRobotsMeta(pageHtml) {
   });
 }
 
-// https://astro.build/config
 export default defineConfig({
   site: "https://useorbit.org",
   integrations: [

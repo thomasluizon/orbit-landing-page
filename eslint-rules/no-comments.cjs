@@ -1,15 +1,3 @@
-/**
- * Local ESLint rule: forbid narration comments.
- *
- * Code must read without prose. The only comments allowed are:
- *  - `/** *​/` JSDoc blocks (doc a symbol's intent/contract),
- *  - tooling directives (eslint-disable, @ts-expect-error, /// <reference>, coverage/bundler pragmas),
- *  - a WHY note that links an upstream issue/PR/doc URL (a real external constraint).
- *
- * Everything else is removed by `--fix`. AST-based, so `//` inside strings, URLs,
- * and regex literals is never touched.
- */
-
 const DIRECTIVE =
   /^(eslint-disable|eslint-enable|eslint-disable-line|eslint-disable-next-line|eslint-env|global\s|globals\s|exported\s|@ts-|ts-|prettier-ignore|@jsx|c8\s|v8\s|istanbul\s|webpack|@vite|@vitest|@__PURE__|#__PURE__)/;
 const URL_RE = /https?:\/\//;
