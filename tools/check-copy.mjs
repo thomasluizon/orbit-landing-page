@@ -1,15 +1,5 @@
 #!/usr/bin/env node
-// The copy-register gate, vendored from orbit-ui-mobile (REBUILD.md 6.1):
-// AI-cliche words, placeholder content, and typed-in UPPERCASE in the
-// translation table's string VALUES, plus hardcoded brand-accent colors in
-// source. This repo's copy lives in src/i18n/translations.ts (typed EN/PT-BR
-// tables), which the old hook never covered: its pattern matched i18n *.json
-// only, so the landing page's real copy file was ungated (a confirmed audit
-// gap). Values-only: keys are never scanned.
-//
-// Usage:
-//   node tools/check-copy.mjs --check             full scan vs tools/copy-baseline.json (exit 1 on growth)
-//   node tools/check-copy.mjs --write-baseline    regenerate tools/copy-baseline.json
+// Read translation values because keys are identifiers, not shipped copy.
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
@@ -46,11 +36,6 @@ const isAllUppercase = (text) =>
 const longestUppercaseRun = (text) =>
   Math.max(0, ...[...text.matchAll(/\p{Lu}+/gu)].map((m) => m[0].length));
 
-/**
- * `key: "value"` string entries from the typed translation tables. Handles
- * plain and quoted keys, double/single-quoted values with escapes. Template
- * literals and computed values yield nothing rather than guessing.
- */
 const STRING_ESCAPES = { n: "\n", r: "\r", t: "\t" };
 
 const translationEntries = (source) => {

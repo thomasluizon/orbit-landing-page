@@ -8,7 +8,7 @@ Marketing landing page for **Orbit** -- an AI-powered habit tracker. A single-pa
 
 | Layer      | Technology                                                                                      |
 | ---------- | ----------------------------------------------------------------------------------------------- |
-| Framework  | [Astro 6](https://astro.build)                                                                  |
+| Framework  | [Astro](https://astro.build)                                                                    |
 | Styling    | [Tailwind CSS v4](https://tailwindcss.com)                                                      |
 | Fonts      | Rubik / Inter / Roboto, self-hosted via Astro's Fonts API                                       |
 | Icons      | [Lucide](https://lucide.dev) (`@lucide/astro`)                                                  |
@@ -49,10 +49,8 @@ Dark-only theme, pill CTAs with violet glow, translucent surfaces, Rubik/Inter/R
 ## Getting Started
 
 ```bash
-# Install dependencies
 npm install
 
-# Start development server
 npm run dev
 ```
 
@@ -121,10 +119,10 @@ The `PUBLIC_APP_URL` environment variable controls the app link (defaults to `ht
 
 ## Related Repositories
 
-| Repo                                                               | Description                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| [orbit-ui-mobile](https://github.com/thomasluizon/orbit-ui-mobile) | Turborepo: Next.js 15 web app + Expo Android app (owns `DESIGN.md`, the design canon) |
-| [orbit-api](https://github.com/thomasluizon/orbit-api)             | .NET 10 REST API backend                                                              |
+| Repo                                                               | Description                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [orbit-ui-mobile](https://github.com/thomasluizon/orbit-ui-mobile) | Turborepo: Next.js web app + Expo Android app (owns `DESIGN.md`, the design canon) |
+| [orbit-api](https://github.com/thomasluizon/orbit-api)             | .NET REST API backend                                                              |
 
 ## License
 

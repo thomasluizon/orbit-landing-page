@@ -1,6 +1,6 @@
 # Orbit Landing Page
 
-Marketing landing page for the Orbit habit tracker. Static Astro 7 + Tailwind v4 site deployed on Vercel at useorbit.org. Sibling repos: `orbit-ui-mobile` (app monorepo) and `orbit-api` (.NET API) at `C:\Users\thoma\Documents\Programming\Projects\`.
+Marketing landing page for the Orbit habit tracker. Static Astro + Tailwind site deployed on Vercel at useorbit.org. Sibling repos: `../orbit-ui-mobile` (app monorepo) and `../orbit-api` (.NET API).
 
 ## Design system (mirrored, not owned)
 
@@ -19,7 +19,8 @@ Same 10 rules as the monorepo's root `CLAUDE.md`: root cause over workarounds; d
 
 - Allowed: `/** */` JSDoc on exported symbols; tooling directives (`eslint-disable`, `@ts-expect-error`, `// @ts-check`); WHY comments ONLY when they link an upstream issue/PR/doc URL.
 - Banned: everything else. No narration, no section bars, no TODOs. Rename or extract instead.
-- The rule source is `eslint-rules/no-comments.cjs`, mirrored verbatim from `orbit-ui-mobile/eslint-rules/no-comments.cjs` (cross-repo standard, orbit-ui-mobile#107). Keep them in lockstep.
+- The rule source is `eslint-rules/no-comments.cjs`. Keep its behavior aligned with the sibling repository's rule.
+- Write rules, docs, and comments timelessly: no dates except load-bearing data, names or attributions, incident stories, or machine paths.
 
 ## Architecture
 
