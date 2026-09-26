@@ -354,3 +354,29 @@ test("XML build files have their comments checked", () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("YAML quotes close after an even number of backslashes", () => {
+  const root = fixture("yaml-escaped-backslashes", "sample.yml", "value: clean\n");
+  const date = ["2026", "-08-12"].join("");
+  writeFileSync(join(root, "sample.yml"), `value: "foo${"\\".repeat(4)}" # ${date}\n`);
+  const result = run(root, ["--all"]);
+  T(
+    "dated YAML comment fails on line 1",
+    result.status === 1 && result.stderr.includes("sample.yml:1: dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("staged mode reads a file deleted from the working copy", () => {
+  const root = fixture("staged-missing-worktree", "sample.md", "clean\n");
+  const date = ["2026", "-08-12"].join("");
+  writeFileSync(join(root, "sample.md"), `On ${date}, the run failed.\n`);
+  git(root, "add", "sample.md");
+  rmSync(join(root, "sample.md"));
+  const result = run(root, ["--staged"]);
+  T(
+    "staged violation fails after working copy deletion",
+    result.status === 1 && result.stderr.includes("sample.md:1: dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
