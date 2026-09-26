@@ -380,3 +380,85 @@ test("staged mode reads a file deleted from the working copy", () => {
   );
   rmSync(root, { recursive: true, force: true });
 });
+
+test("a dated comment inside an empty call fails all", () => {
+  const root = fixture("empty-call-comment", "sample.js", "run()\n");
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  const date = ["2026", "-08-12"].join("");
+  writeFileSync(join(root, "sample.js"), `run(/* ${date} */)\n`);
+  const result = run(root, ["--all"]);
+  T(
+    "empty call comment is checked",
+    result.status === 1 && result.stderr.includes("dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("Write hook rejects an existing date line wrapped in a comment", () => {
+  const date = ["2026", "-08-12"].join("");
+  const line = `const value = new Date("${date}")`;
+  const root = fixture("comment-wrapped-date", "sample.js", `${line}\n`);
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  const result = run(
+    root,
+    ["--hook"],
+    JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: join(root, "sample.js"), content: `/*\n${line}\n*/\n` },
+    }),
+  );
+  T(
+    "wrapping the date line adds a finding",
+    result.status === 2 && result.stderr.includes("dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("moving an existing violating comment passes the edit hook", () => {
+  const date = ["2026", "-08-12"].join("");
+  const comment = `// ${date}`;
+  const root = fixture("moved-comment", "sample.js", `${comment}\nconst value = 1\n`);
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  const result = run(
+    root,
+    ["--hook"],
+    JSON.stringify({
+      tool_name: "Edit",
+      tool_input: {
+        file_path: join(root, "sample.js"),
+        old_string: `${comment}\nconst value = 1`,
+        new_string: `const value = 1\n${comment}`,
+      },
+    }),
+  );
+  T("moving a pre-existing finding passes", result.status === 0);
+  writeFileSync(join(root, "sample.js"), `const value = 1\n${comment}\n`);
+  git(root, "add", "sample.js");
+  T("moving a pre-existing finding passes staged mode", run(root, ["--staged"]).status === 0);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("directory allowlist accepts comment length but refuses machine paths", () => {
+  const comments = Array.from({ length: 7 }, (_, index) => `// reason ${index}`).join("\n");
+  const root = fixture("directory-comment-length", "design/sample.js", `${comments}\n`);
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  const entry = {
+    path: "design/",
+    rule: "comment-length",
+    match: null,
+    scope: "directory",
+    reason: "reviewed export",
+  };
+  writeFileSync(join(root, "tools", "timeless-allowlist.json"), JSON.stringify([entry]));
+  T("directory comment length exemption is accepted", run(root, ["--all"]).status === 0);
+  writeFileSync(
+    join(root, "tools", "timeless-allowlist.json"),
+    JSON.stringify([{ ...entry, rule: "machine-path" }]),
+  );
+  const refused = run(root, ["--all"]);
+  T(
+    "directory machine path exemption is refused",
+    refused.status === 2 && refused.stderr.includes("valid exact or directory-scoped entries"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
