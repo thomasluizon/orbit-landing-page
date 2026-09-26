@@ -276,6 +276,11 @@ test("Astro TypeScript comments are checked without treating markup as code", ()
       `<p>ready</p>\n<script>\n// ${date}\nconst title = "ready"\n</script\t\n foo>\n`,
       3,
     ],
+    [
+      "script-lookalike-string",
+      `<p>ready</p>\n<script>\nconst marker = "</script!>"\n// ${date}\n</script>\n`,
+      4,
+    ],
   ];
   for (const [label, planted, line] of cases) {
     const root = fixture(`astro-${label}`, "sample.astro", "<p>clean</p>\n");
