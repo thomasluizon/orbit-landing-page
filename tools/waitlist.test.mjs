@@ -15,10 +15,11 @@ for (const path of ["../i18n/translations", "./i18n", "./waitlist"]) {
   );
 }
 
-function createHarness(language, responses) {
+function createHarness(language, responses, { renderFailures = 0 } = {}) {
   const requests = [];
   const resets = [];
   let challenge;
+  let renderCalls = 0;
   let formResets = 0;
   const elements = new Map();
   for (const id of ["form", "email", "submit", "submit-label", "status", "turnstile"]) {
@@ -50,6 +51,8 @@ function createHarness(language, responses) {
       turnstile: {
         render(container, options) {
           assert.equal(container, elements.get("waitlist-turnstile"));
+          renderCalls++;
+          if (renderCalls <= renderFailures) throw new Error("Turnstile render failed");
           challenge = options;
           return "test-widget";
         },
@@ -85,6 +88,13 @@ function createHarness(language, responses) {
     get formResets() {
       return formResets;
     },
+    get renderCalls() {
+      return renderCalls;
+    },
+    triggerChallenge: (event) => elements.get("waitlist-email").listeners.get(event)(),
+    get challenge() {
+      return challenge;
+    },
     async solve(token) {
       elements.get("waitlist-email").listeners.get("focus")();
       await Promise.resolve();
@@ -100,6 +110,26 @@ const challengeRejection = () =>
   Response.json({ error: "test challenge rejection", requestId: "test-request" }, { status: 400 });
 
 for (const language of ["en", "pt-BR"]) {
+  test(`${language}: a render throw allows a later input to retry`, async () => {
+    const harness = createHarness(language, [], { renderFailures: 1 });
+    harness.triggerChallenge("focus");
+    await Promise.resolve();
+    assert.equal(harness.renderCalls, 1);
+    assert.equal(harness.challenge, undefined);
+    assert.equal(harness.elements.get("waitlist-submit").disabled, true);
+    assert.equal(
+      harness.elements.get("waitlist-status").textContent,
+      harness.strings["ios.challengeFailed"],
+    );
+
+    harness.triggerChallenge("input");
+    await Promise.resolve();
+    assert.equal(harness.renderCalls, 2);
+    assert.ok(harness.challenge);
+    harness.challenge.callback("fresh-token");
+    assert.equal(harness.elements.get("waitlist-submit").disabled, false);
+  });
+
   test(`${language}: server challenge rejection shows recovery and retries with a fresh token`, async () => {
     const harness = createHarness(language, [
       challengeRejection(),

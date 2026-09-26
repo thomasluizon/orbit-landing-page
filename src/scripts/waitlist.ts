@@ -151,6 +151,7 @@ function initializeTurnstile(): Promise<void> {
         "timeout-callback": handleChallengeFailure,
       });
     } catch {
+      turnstileInitializationPromise = null;
       handleChallengeFailure();
     }
   })();
