@@ -1,5 +1,6 @@
 {
   "files": [
+    "AGENTS.md",
     ".env",
     ".env.development.local",
     ".env.local",
@@ -24,6 +25,7 @@
   ],
   "directories": [
     ".astro",
+    ".claude",
     ".codex",
     ".github",
     ".idea",

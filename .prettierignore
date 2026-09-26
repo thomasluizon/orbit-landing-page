@@ -2,3 +2,5 @@ dist/
 .astro/
 node_modules/
 package-lock.json
+tools/check-timeless.mjs
+.claude/hooks/forbid-stale-text.mjs

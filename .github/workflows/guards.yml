@@ -10,6 +10,25 @@ permissions:
   contents: read
 
 jobs:
+  timeless:
+    name: Timeless Text
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check changed text
+        if: github.event_name == 'pull_request'
+        run: node tools/check-timeless.mjs --base origin/${{ github.base_ref }}
+      - name: Check all text
+        if: github.event_name == 'push'
+        run: node tools/check-timeless.mjs --all
+
   dashes:
     name: Dash Ban
     runs-on: ubuntu-latest
