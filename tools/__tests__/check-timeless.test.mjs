@@ -381,3 +381,87 @@ test("--staged checks a staged file whose working copy is gone", () => {
   );
   rmSync(root, { recursive: true, force: true });
 });
+
+test("a dated comment inside an empty call fails --all", () => {
+  const date = ["2026", "-08-12"].join("");
+  const root = fixture("empty-call-comment", "sample.ts", "consume()\n");
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  writeFileSync(join(root, "sample.ts"), `consume(/* ${date} */)\n`);
+  const result = run(root, ["--all"]);
+  T(
+    "the comment in empty call trivia is checked",
+    result.status === 1 && result.stderr.includes("sample.ts:1: dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("a Write hook rejects a date exposed by wrapping code in a comment", () => {
+  const date = ["2026", "-08-12"].join("");
+  const line = `const value = new Date("${date}")`;
+  const root = fixture("wrap-existing-code", "sample.js", `${line}\n`);
+  symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
+  const result = run(
+    root,
+    ["--hook"],
+    JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: join(root, "sample.js"), content: `/*\n${line}\n*/\n` },
+      cwd: root,
+    }),
+  );
+  T(
+    "the newly commented date fails the hook",
+    result.status === 2 && result.stderr.includes("sample.js:2: dated-anecdote"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("moving an existing dated comment passes diff checks", () => {
+  const date = ["2026", "-08-12"].join("");
+  const comment = `// ${date}`;
+  const root = fixture("move-existing-comment", "sample.js", `${comment}\nconst value = 1\n`);
+  const moved = `const value = 1\n${comment}\n`;
+  const hook = run(
+    root,
+    ["--hook"],
+    JSON.stringify({
+      tool_name: "Write",
+      tool_input: { file_path: join(root, "sample.js"), content: moved },
+      cwd: root,
+    }),
+  );
+  T("the hook accepts the moved finding", hook.status === 0);
+  writeFileSync(join(root, "sample.js"), moved);
+  git(root, "add", "sample.js");
+  T("staged mode accepts the moved finding", run(root, ["--staged"]).status === 0);
+  rmSync(root, { recursive: true, force: true });
+});
+
+test("directory allowlists accept comment length but reject machine paths", () => {
+  const root = fixture("directory-rules", "design/example.js", "clean\n");
+  const comment = Array.from({ length: 7 }, (_, index) => `// reason ${index}`).join("\n");
+  writeFileSync(join(root, "design/example.js"), `${comment}\n`);
+  const entry = (rule) => ({
+    path: "design/",
+    rule,
+    match: null,
+    scope: "directory",
+    reason: "reviewed fixture exception",
+  });
+  writeFileSync(
+    join(root, "tools/timeless-allowlist.json"),
+    JSON.stringify([entry("comment-length")]),
+  );
+  T("comment length is accepted in the directory", run(root, ["--all"]).status === 0);
+  writeFileSync(
+    join(root, "tools/timeless-allowlist.json"),
+    JSON.stringify([entry("machine-path")]),
+  );
+  const rejected = run(root, ["--all"]);
+  T(
+    "machine path directory entries are refused",
+    rejected.status === 2 &&
+      rejected.stderr.includes("requires valid exact or directory-scoped entries"),
+  );
+  rmSync(root, { recursive: true, force: true });
+});
