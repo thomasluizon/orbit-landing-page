@@ -119,10 +119,10 @@ The `PUBLIC_APP_URL` environment variable controls the app link (defaults to `ht
 
 ## Related Repositories
 
-| Repo                                                               | Description                                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| [orbit-ui-mobile](https://github.com/thomasluizon/orbit-ui-mobile) | Turborepo: Next.js web app + Expo Android app (owns `DESIGN.md`, the design canon)    |
-| [orbit-api](https://github.com/thomasluizon/orbit-api)             | .NET REST API backend                                                                 |
+| Repo                                                               | Description                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| [orbit-ui-mobile](https://github.com/thomasluizon/orbit-ui-mobile) | Turborepo: Next.js web app + Expo Android app (owns `DESIGN.md`, the design canon) |
+| [orbit-api](https://github.com/thomasluizon/orbit-api)             | .NET REST API backend                                                              |
 
 ## License
 
