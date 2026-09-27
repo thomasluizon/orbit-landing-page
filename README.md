@@ -13,7 +13,7 @@ Marketing landing page for **Orbit** -- an AI-powered habit tracker. A single-pa
 | Fonts      | Rubik / Inter / Roboto, self-hosted via Astro's Fonts API                                       |
 | Icons      | [Lucide](https://lucide.dev) (`@lucide/astro`)                                                  |
 | Linting    | ESLint flat config (`eslint-plugin-astro`, `typescript-eslint`, `local/no-comments`) + Prettier |
-| Deployment | [Vercel](https://vercel.com) (static output)                                                    |
+| Deployment | [Render](https://render.com) (static site)                                                      |
 
 ## Features
 
@@ -111,11 +111,36 @@ Language switching is handled client-side with typed tables in `src/i18n/transla
 
 ## Deployment
 
-Deployed on [Vercel](https://vercel.com) as a static site with auto-deploy on push to `main`.
+Deployed on Render as a static site. Production auto-deploy is disabled. A merge to `main` does not deploy it; run the `Deploy landing` GitHub Actions workflow with a ref (default `main`) to deploy a specific commit after the `production` environment reviewer approves it.
 
 **Domain:** `useorbit.org`
 
-The `PUBLIC_APP_URL` environment variable controls the app link (defaults to `https://app.useorbit.org`).
+Render build contract:
+
+| Setting           | Value                                           |
+| ----------------- | ----------------------------------------------- |
+| Node.js           | 22, with a minimum supported version of 22.19.0 |
+| Build command     | `npm ci && npm run build`                       |
+| Publish directory | `dist`                                          |
+| Auto-deploy       | Disabled                                        |
+
+Build-time variables on the Render static site:
+
+| Variable                    | Purpose                                                       |
+| --------------------------- | ------------------------------------------------------------- |
+| `PUBLIC_API_URL`            | Waitlist API endpoint; defaults to `https://api.useorbit.org` |
+| `PUBLIC_APP_URL`            | Web app links; defaults to `https://app.useorbit.org`         |
+| `PUBLIC_POSTHOG_KEY`        | Enables consent-gated PostHog analytics through `/relay/`     |
+| `PUBLIC_TURNSTILE_SITE_KEY` | Enables the waitlist Turnstile widget                         |
+
+The GitHub `production` environment must require the repository owner as reviewer. Set its `RENDER_API_KEY` secret to a Render API key with access to the static site and its `RENDER_LANDING_SERVICE_ID` variable to the static site's service ID. The release workflow checks that Render auto-deploy is disabled, waits for the selected commit to go live, checks `https://useorbit.org/` for HTTP 200, and records the SHA in GitHub Deployments.
+
+The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the former `vercel.json` delivery rules. Edit Terraform there for changes to:
+
+- The canonical `Link` header on `/`: `<https://useorbit.org/>; rel="canonical"`.
+- Security headers on all paths: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, and `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`.
+- Asset caching on `/_astro/*`: `Cache-Control: public, max-age=31536000, immutable`. Other paths use `Cache-Control: public, max-age=0, must-revalidate`.
+- PostHog rewrites: `/relay/static/*` to `https://us-assets.i.posthog.com/static/*`, `/relay/array/*` to `https://us-assets.i.posthog.com/array/*`, and `/relay/*` to `https://us.i.posthog.com/*`.
 
 ## Related Repositories
 

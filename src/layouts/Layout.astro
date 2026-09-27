@@ -1,6 +1,5 @@
 ---
 import { Font } from "astro:assets";
-import Analytics from "@vercel/analytics/astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
 import "../styles/global.css";
 
@@ -217,6 +216,5 @@ const structuredData = {
   <body class="bg-bg text-fg-1 font-sans antialiased">
     <slot />
     {posthogKey && <ConsentBanner appUrl={appUrl} />}
-    <Analytics />
   </body>
 </html>
