@@ -1,6 +1,5 @@
 ---
 import { Font } from "astro:assets";
-import Analytics from "@vercel/analytics/astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
 import "../styles/global.css";
 
@@ -24,6 +23,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
+const renderBuildCommit = process.env.RENDER_GIT_COMMIT;
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -64,6 +64,7 @@ const structuredData = {
 <html lang="en" style="color-scheme: dark only">
   <head>
     <meta charset="UTF-8" />
+    {renderBuildCommit && <meta name="orbit-build" content={renderBuildCommit} />}
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark only" />
     <meta name="theme-color" content="#09090b" />
@@ -217,6 +218,5 @@ const structuredData = {
   <body class="bg-bg text-fg-1 font-sans antialiased">
     <slot />
     {posthogKey && <ConsentBanner appUrl={appUrl} />}
-    <Analytics />
   </body>
 </html>
