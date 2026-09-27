@@ -117,12 +117,12 @@ Deployed on Render as a static site. Production auto-deploy is disabled. A merge
 
 Render build contract:
 
-| Setting           | Value                                           |
-| ----------------- | ----------------------------------------------- |
-| Node.js           | 22, with a minimum supported version of 22.19.0 |
-| Build command     | `npm ci && npm run build`                       |
-| Publish directory | `dist`                                          |
-| Auto-deploy       | Disabled                                        |
+| Setting           | Value                     |
+| ----------------- | ------------------------- |
+| Node.js           | `NODE_VERSION=22.19.0`    |
+| Build command     | `npm ci && npm run build` |
+| Publish directory | `dist`                    |
+| Auto-deploy       | Disabled                  |
 
 Build-time variables on the Render static site:
 
@@ -133,7 +133,7 @@ Build-time variables on the Render static site:
 | `PUBLIC_POSTHOG_KEY`        | Enables consent-gated PostHog analytics through `/relay/`     |
 | `PUBLIC_TURNSTILE_SITE_KEY` | Enables the waitlist Turnstile widget                         |
 
-The GitHub `production` environment must require the repository owner as reviewer. Set its `RENDER_API_KEY` secret to a Render API key with access to the static site and its `RENDER_LANDING_SERVICE_ID` variable to the static site's service ID. The release workflow checks that Render auto-deploy is disabled, waits for the selected commit to go live, checks `https://useorbit.org/` for HTTP 200, and records the SHA in GitHub Deployments.
+The GitHub `production` environment must require the repository owner as reviewer. In repository Settings > Environments > Production, turn off "Allow administrators to bypass configured protection rules" so every run needs approval. Set its `RENDER_API_KEY` secret to a Render API key with access to the static site and its `RENDER_LANDING_SERVICE_ID` variable to the static site's service ID. The release workflow checks that Render auto-deploy is disabled, waits for the selected commit to go live, checks `https://useorbit.org/` for HTTP 200, and records the SHA in GitHub Deployments.
 
 The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the former `vercel.json` delivery rules. Edit Terraform there for changes to:
 
