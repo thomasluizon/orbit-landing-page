@@ -111,7 +111,7 @@ Language switching is handled client-side with typed tables in `src/i18n/transla
 
 ## Deployment
 
-Deployed on Render as static sites for production and staging. Auto-deploy is disabled on both sites. Merges and pushes do not deploy them. Run the `Release landing` GitHub Actions workflow from `main` with an environment and branch. Production accepts only `main`; staging accepts the selected branch head.
+Deployed on Render as static sites for production and staging. Auto-deploy is disabled on both sites. Merges and pushes do not deploy them. Run the `Release landing` GitHub Actions workflow from `main` with an environment and branch. The `production` GitHub environment permits deployments only from `main`. Production accepts only the `main` branch; staging accepts the selected branch head.
 
 ```sh
 gh workflow run release.yml --ref main -f environment=production
@@ -138,7 +138,16 @@ Build-time variables on the Render static site:
 | `PUBLIC_POSTHOG_KEY`        | Enables consent-gated PostHog analytics through `/relay/`     |
 | `PUBLIC_TURNSTILE_SITE_KEY` | Enables the waitlist Turnstile widget                         |
 
-Set the repository secret `RENDER_API_KEY` to a Render API key with access to both static sites. Set the repository variables `RENDER_LANDING_SERVICE_ID` and `RENDER_LANDING_STAGING_SERVICE_ID` to their respective Render service IDs. The release workflow checks that Render auto-deploy is disabled, then deploys the resolved commit, waits for it to go live, and confirms that the Render service URL serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. Staging first updates the site's tracked branch through the Render API. The workflow records a GitHub Deployment in the selected environment. For production, it also checks `https://useorbit.org/`: a page that carries a different build marker fails the run, and a page without one (the old host, before the DNS cutover) records the Render service URL in GitHub Deployments instead of the public domain.
+Configure release credentials in GitHub Settings > Environments:
+
+| Environment  | Secret           | Deployment branches |
+| ------------ | ---------------- | ------------------- |
+| `production` | `RENDER_API_KEY` | Selected: `main`    |
+| `staging`    | `RENDER_API_KEY` | Selected: `main`    |
+
+Use a selected deployment branch rule matching only `main` for both environments, with no required reviewers. Set the repository variables `RENDER_LANDING_SERVICE_ID` and `RENDER_LANDING_STAGING_SERVICE_ID` to their respective Render service IDs. Dispatch the workflow from `main` and choose the branch to deploy in its input. Keep the Render API key out of repository secrets. Once both release paths have succeeded with their environment secrets, delete the old repository secret `RENDER_API_KEY` from GitHub Settings > Secrets and variables > Actions.
+
+Both jobs use the Render API to check that auto-deploy is disabled, deploy the resolved commit, wait for it to go live, and confirm that the Render service URL serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. The staging job first sets the service's tracked branch to the selected branch. Production also checks `https://useorbit.org/`: a page that carries a different build marker fails the run, and a page without one (the old host, before the DNS cutover) records the Render service URL in GitHub Deployments instead of the public domain. Each job records a GitHub Deployment for the verified commit.
 
 The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the former `vercel.json` delivery rules. Edit Terraform there for changes to:
 
