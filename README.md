@@ -140,14 +140,14 @@ Build-time variables on the Render static site:
 
 Configure release credentials in GitHub Settings > Environments:
 
-| Environment  | Secret                           | Variable                     | Deployment branches |
-| ------------ | -------------------------------- | ---------------------------- | ------------------- |
-| `production` | `RENDER_API_KEY`                 | None                         | Selected: `main`    |
-| `staging`    | `RENDER_STAGING_DEPLOY_HOOK_URL` | `RENDER_LANDING_STAGING_URL` | As needed           |
+| Environment  | Secret           | Deployment branches |
+| ------------ | ---------------- | ------------------- |
+| `production` | `RENDER_API_KEY` | Selected: `main`    |
+| `staging`    | `RENDER_API_KEY` | Selected: `main`    |
 
-Use a selected deployment branch rule matching only `main` for `production`, with no required reviewers. Set the repository variable `RENDER_LANDING_SERVICE_ID` to the production Render service ID. The staging secret is the staging static site's deploy hook URL from its Render Dashboard > Settings > Deploy Hook. The staging variable is that site's public HTTPS URL. Keep the Render API key out of repository secrets. Once both release paths have succeeded with their environment secrets, delete the old repository secret `RENDER_API_KEY` from GitHub Settings > Secrets and variables > Actions.
+Use a selected deployment branch rule matching only `main` for both environments, with no required reviewers. Set the repository variables `RENDER_LANDING_SERVICE_ID` and `RENDER_LANDING_STAGING_SERVICE_ID` to their respective Render service IDs. Dispatch the workflow from `main` and choose the branch to deploy in its input. Keep the Render API key out of repository secrets. Once both release paths have succeeded with their environment secrets, delete the old repository secret `RENDER_API_KEY` from GitHub Settings > Secrets and variables > Actions.
 
-The production job uses the Render API to check that auto-deploy is disabled, deploy the resolved commit, wait for it to go live, and confirm that the Render service URL serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. It also checks `https://useorbit.org/`: a page that carries a different build marker fails the run, and a page without one (the old host, before the DNS cutover) records the Render service URL in GitHub Deployments instead of the public domain. The staging job sends the resolved commit SHA as the deploy hook's `ref` parameter, waits until the public staging URL serves that SHA in the same build marker, and records a staging GitHub Deployment. Staging does not use the Render API or change the site's tracked branch.
+Both jobs use the Render API to check that auto-deploy is disabled, deploy the resolved commit, wait for it to go live, and confirm that the Render service URL serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. The staging job first sets the service's tracked branch to the selected branch. Production also checks `https://useorbit.org/`: a page that carries a different build marker fails the run, and a page without one (the old host, before the DNS cutover) records the Render service URL in GitHub Deployments instead of the public domain. Each job records a GitHub Deployment for the verified commit.
 
 The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the former `vercel.json` delivery rules. Edit Terraform there for changes to:
 
