@@ -1,10 +1,18 @@
-name: Deploy landing
+name: Release landing
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: Git ref to deploy
+      environment:
+        description: Render environment to deploy
+        type: choice
+        options:
+          - production
+          - staging
+        required: true
+      branch:
+        description: Git branch to deploy
+        type: string
         required: true
         default: main
 
@@ -13,41 +21,70 @@ permissions:
   deployments: write
 
 concurrency:
-  group: production-landing
+  group: ${{ inputs.environment }}-landing
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy landing
-    if: github.ref == 'refs/heads/main'
+    name: Release landing
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment:
-      name: production
-      url: https://useorbit.org/
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.environment == 'production' && 'https://useorbit.org/' || '' }}
 
     steps:
+      - name: Validate release selection
+        env:
+          RELEASE_ENVIRONMENT: ${{ inputs.environment }}
+          RELEASE_BRANCH: ${{ inputs.branch }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Dispatch this workflow from main" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_ENVIRONMENT" != "production" && "$RELEASE_ENVIRONMENT" != "staging" ]]; then
+            echo "Select production or staging" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_ENVIRONMENT" == "production" && "$RELEASE_BRANCH" != "main" ]]; then
+            echo "Production releases must deploy main" >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: refs/heads/${{ inputs.branch }}
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
 
-      - name: Deploy approved commit
+      - name: Deploy selected commit
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ vars.RENDER_LANDING_SERVICE_ID }}
+          RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_LANDING_SERVICE_ID }}
+          RENDER_STAGING_SERVICE_ID: ${{ vars.RENDER_LANDING_STAGING_SERVICE_ID }}
+          RELEASE_ENVIRONMENT: ${{ inputs.environment }}
+          RELEASE_BRANCH: ${{ inputs.branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
 
           const sha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-          const { RENDER_API_KEY, RENDER_SERVICE_ID, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID } = process.env;
+          const {
+            RENDER_API_KEY, RENDER_PRODUCTION_SERVICE_ID, RENDER_STAGING_SERVICE_ID,
+            RELEASE_ENVIRONMENT, RELEASE_BRANCH, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
+          } = process.env;
+          const RENDER_SERVICE_ID = RELEASE_ENVIRONMENT === "production"
+            ? RENDER_PRODUCTION_SERVICE_ID
+            : RENDER_STAGING_SERVICE_ID;
           if (!RENDER_API_KEY || !RENDER_SERVICE_ID || !GH_TOKEN) {
-            throw new Error("Configure RENDER_API_KEY and RENDER_LANDING_SERVICE_ID in the production environment");
+            const serviceVariable = RELEASE_ENVIRONMENT === "production"
+              ? "RENDER_LANDING_SERVICE_ID"
+              : "RENDER_LANDING_STAGING_SERVICE_ID";
+            throw new Error(`Configure RENDER_API_KEY and ${serviceVariable} for ${RELEASE_ENVIRONMENT}`);
           }
 
           const renderUrl = `https://api.render.com/v1/services/${encodeURIComponent(RENDER_SERVICE_ID)}`;
@@ -78,6 +115,17 @@ jobs:
           }
           const serviceOrigin = service.serviceDetails?.url;
           if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
+
+          if (RELEASE_ENVIRONMENT === "staging") {
+            const updated = await jsonRequest(renderUrl, {
+              method: "PATCH",
+              headers: { ...renderHeaders, "Content-Type": "application/json" },
+              body: JSON.stringify({ branch: RELEASE_BRANCH }),
+            });
+            if (updated.branch !== RELEASE_BRANCH) {
+              throw new Error(`Render did not select staging branch ${RELEASE_BRANCH}`);
+            }
+          }
 
           const triggeredAt = Date.now();
           let deploy = await jsonRequest(`${renderUrl}/deploys`, {
@@ -136,14 +184,17 @@ jobs:
           if (!renderServes) throw new Error(`${serviceOrigin} does not serve ${sha}`);
 
           // Before the DNS cutover the public domain still points at the old host, which carries no build marker.
-          const publicResult = await servedCommit("https://useorbit.org");
-          if (publicResult.status !== 200) throw new Error(`https://useorbit.org/ returned HTTP ${publicResult.status}`);
-          if (publicResult.commit && publicResult.commit !== sha) {
-            throw new Error(`https://useorbit.org/ serves ${publicResult.commit} instead of ${sha}`);
-          }
-          const environmentUrl = publicResult.commit === sha ? "https://useorbit.org/" : `${serviceOrigin}/`;
-          if (publicResult.commit !== sha) {
-            console.log(`::warning::https://useorbit.org/ is not served by the Render site yet; recorded ${environmentUrl}`);
+          let environmentUrl = `${serviceOrigin}/`;
+          if (RELEASE_ENVIRONMENT === "production") {
+            const publicResult = await servedCommit("https://useorbit.org");
+            if (publicResult.status !== 200) throw new Error(`https://useorbit.org/ returned HTTP ${publicResult.status}`);
+            if (publicResult.commit && publicResult.commit !== sha) {
+              throw new Error(`https://useorbit.org/ serves ${publicResult.commit} instead of ${sha}`);
+            }
+            environmentUrl = publicResult.commit === sha ? "https://useorbit.org/" : `${serviceOrigin}/`;
+            if (publicResult.commit !== sha) {
+              console.log(`::warning::https://useorbit.org/ is not served by the Render site yet; recorded ${environmentUrl}`);
+            }
           }
 
           const deployment = await jsonRequest(githubUrl, {
@@ -151,7 +202,7 @@ jobs:
             headers: { ...githubHeaders, "Content-Type": "application/json" },
             body: JSON.stringify({
               ref: sha,
-              environment: "production",
+              environment: RELEASE_ENVIRONMENT,
               auto_merge: false,
               required_contexts: [],
               description: "Render landing release",
