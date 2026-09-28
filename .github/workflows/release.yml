@@ -146,29 +146,24 @@ jobs:
             return { status: 200, commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null };
           }
 
-          let renderServes = false;
-          for (let attempt = 0; attempt < 6 && !renderServes; attempt++) {
-            try {
-              const result = await servedCommit(serviceOrigin);
-              renderServes = result.status === 200 && result.commit === sha;
-              if (!renderServes) console.log(`${serviceOrigin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
-            } catch (error) {
-              console.log(`${serviceOrigin} check failed: ${error.message}`);
+          async function requireServedCommit(origin) {
+            let serves = false;
+            for (let attempt = 0; attempt < 6 && !serves; attempt++) {
+              try {
+                const result = await servedCommit(origin);
+                serves = result.status === 200 && result.commit === sha;
+                if (!serves) console.log(`${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
+              } catch (error) {
+                console.log(`${origin} check failed: ${error.message}`);
+              }
+              if (!serves) await sleep(5_000);
             }
-            if (!renderServes) await sleep(5_000);
+            if (!serves) throw new Error(`${origin}/ does not serve ${sha}`);
           }
-          if (!renderServes) throw new Error(`${serviceOrigin} does not serve ${sha}`);
 
-          // Before the DNS cutover the public domain still points at the old host, which carries no build marker.
-          const publicResult = await servedCommit("https://useorbit.org");
-          if (publicResult.status !== 200) throw new Error(`https://useorbit.org/ returned HTTP ${publicResult.status}`);
-          if (publicResult.commit && publicResult.commit !== sha) {
-            throw new Error(`https://useorbit.org/ serves ${publicResult.commit} instead of ${sha}`);
-          }
-          const environmentUrl = publicResult.commit === sha ? "https://useorbit.org/" : `${serviceOrigin}/`;
-          if (publicResult.commit !== sha) {
-            console.log(`::warning::https://useorbit.org/ is not served by the Render site yet; recorded ${environmentUrl}`);
-          }
+          await requireServedCommit(serviceOrigin);
+          await requireServedCommit("https://useorbit.org");
+          const environmentUrl = "https://useorbit.org/";
 
           const deployment = await jsonRequest(githubUrl, {
             method: "POST",
