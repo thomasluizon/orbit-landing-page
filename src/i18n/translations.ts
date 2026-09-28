@@ -170,11 +170,11 @@ export type TranslationKey = keyof typeof en;
 const ptBR: Record<TranslationKey, string> = {
   "header.cta": "Começar grátis",
 
-  "hero.eyebrow": "Conheça a Astra, seu coach com IA",
+  "hero.eyebrow": "Conheça a Astra, sua coach com IA",
   "hero.title1": "O rastreador de hábitos",
   "hero.title2": "com quem você conversa",
   "hero.subtitle":
-    'Um coach com IA que age, não só conversa. Diga "corri hoje" e ela registra e lê suas sequências reais.',
+    'Uma coach com IA que age, não só conversa. Diga "corri hoje" e ela registra e lê suas sequências reais.',
   "hero.cta": "Começar grátis",
   "hero.ctaNote": "Teste Pro de 7 dias, sem cartão",
   "hero.android": "Google Play",
@@ -190,7 +190,7 @@ const ptBR: Record<TranslationKey, string> = {
 
   "features.title1": "Tudo que você precisa para construir",
   "features.title2": " hábitos que duram",
-  "features.astra.title": "Astra, seu coach com IA",
+  "features.astra.title": "Astra, sua coach com IA",
   "features.astra.desc":
     "Converse ou fale para criar, registrar e ajustar hábitos. Se dá pra tocar, dá pra pedir.",
   "features.astra.tag": "61 ferramentas",
@@ -251,7 +251,7 @@ const ptBR: Record<TranslationKey, string> = {
   "pricing.free.cta": "Começar grátis",
   "pricing.pro.name": "Pro",
   "pricing.pro.badge": "Mais popular",
-  "pricing.pro.tagline": "O coach completo, liberado.",
+  "pricing.pro.tagline": "A coach completa, liberada.",
   "pricing.pro.f1": "Hábitos ilimitados",
   "pricing.pro.f2": "500 mensagens de IA por mês",
   "pricing.pro.f3": "Sub-hábitos, metas e sincronização de calendário",
@@ -289,7 +289,7 @@ const ptBR: Record<TranslationKey, string> = {
     "Sim. O plano grátis dá até 10 hábitos, 20 mensagens de IA por mês, sequências e recursos sociais. O Pro libera hábitos ilimitados e 500 mensagens por mês, com um teste de 7 dias que não pede cartão.",
   "faq.q2": "O que é a Astra?",
   "faq.a2":
-    'A Astra é o coach com IA integrado ao Orbit. Ela cria, registra e ajusta seus hábitos por chat ou voz, e lê suas sequências e taxas de conclusão reais para responder perguntas como "como estou indo?"',
+    'A Astra é a coach com IA integrada ao Orbit. Ela cria, registra e ajusta seus hábitos por chat ou voz, e lê suas sequências e taxas de conclusão reais para responder perguntas como "como estou indo?"',
   "faq.q3": "Posso usar o Orbit pelo Claude ou ChatGPT?",
   "faq.a3":
     "Sim. O Orbit expõe um servidor Model Context Protocol, então qualquer assistente compatível com MCP pode gerenciar seus hábitos e metas. É protegido por OAuth ou chaves de API com escopo e está disponível no plano Pro.",

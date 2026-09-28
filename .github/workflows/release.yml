@@ -1,0 +1,357 @@
+name: Release landing
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Render environment to deploy
+        type: choice
+        options:
+          - production
+          - staging
+        required: true
+      branch:
+        description: Git branch to deploy
+        type: string
+        required: true
+        default: main
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: ${{ inputs.environment }}-landing
+  cancel-in-progress: false
+
+jobs:
+  production:
+    if: inputs.environment == 'production'
+    name: Release production landing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://useorbit.org/
+
+    steps:
+      - name: Validate release selection
+        env:
+          RELEASE_ENVIRONMENT: ${{ inputs.environment }}
+          RELEASE_BRANCH: ${{ inputs.branch }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Dispatch this workflow from main" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_ENVIRONMENT" != "production" || "$RELEASE_BRANCH" != "main" ]]; then
+            echo "Production releases must deploy main" >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: refs/heads/${{ inputs.branch }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Deploy selected commit
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_LANDING_SERVICE_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from "node:child_process";
+
+          const sha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          const {
+            RENDER_API_KEY, RENDER_PRODUCTION_SERVICE_ID, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
+          } = process.env;
+          if (!RENDER_API_KEY || !RENDER_PRODUCTION_SERVICE_ID || !GH_TOKEN) {
+            throw new Error("Configure the production environment secret RENDER_API_KEY and variable RENDER_LANDING_SERVICE_ID");
+          }
+
+          const renderUrl = `https://api.render.com/v1/services/${encodeURIComponent(RENDER_PRODUCTION_SERVICE_ID)}`;
+          const renderHeaders = {
+            Authorization: `Bearer ${RENDER_API_KEY}`,
+            Accept: "application/json",
+          };
+          const githubUrl = `https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments`;
+          const githubHeaders = {
+            Authorization: `Bearer ${GH_TOKEN}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10",
+          };
+
+          const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+          // Render answers 201 with the deploy, or 202 Queued with no body; an empty body parses as null.
+          async function jsonRequest(url, options = {}) {
+            const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
+            const body = await response.text();
+            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}: ${body}`);
+            return body.trim() === "" ? null : JSON.parse(body);
+          }
+
+          const service = await jsonRequest(renderUrl, { headers: renderHeaders });
+          if (service.autoDeploy !== "no") {
+            throw new Error("The Render landing service must have auto-deploy disabled");
+          }
+          const serviceOrigin = service.serviceDetails?.url;
+          if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
+
+          const triggeredAt = Date.now();
+          let deploy = await jsonRequest(`${renderUrl}/deploys`, {
+            method: "POST",
+            headers: { ...renderHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ commitId: sha }),
+          });
+          for (let attempt = 0; !deploy?.id && attempt < 30; attempt++) {
+            await sleep(5_000);
+            const recent = await jsonRequest(`${renderUrl}/deploys?limit=20`, { headers: renderHeaders });
+            deploy = (recent ?? [])
+              .map((entry) => entry.deploy)
+              .find((entry) => entry?.commit?.id === sha && Date.parse(entry.createdAt) >= triggeredAt - 60_000);
+          }
+          if (!deploy?.id) throw new Error(`Render did not create a deploy for ${sha}`);
+          console.log(`Render deploy ${deploy.id} for ${sha}`);
+
+          let live = false;
+          for (let attempt = 0; attempt < 60; attempt++) {
+            const current = await jsonRequest(`${renderUrl}/deploys/${deploy.id}`, { headers: renderHeaders });
+            if (current.commit?.id && current.commit.id !== sha) {
+              throw new Error(`Render is deploying ${current.commit.id} instead of ${sha}`);
+            }
+            console.log(`Render status: ${current.status}`);
+            if (current.status === "live") {
+              if (current.commit?.id !== sha) throw new Error("Render did not confirm the deployed SHA");
+              live = true;
+              break;
+            }
+            if (["build_failed", "update_failed", "pre_deploy_failed", "canceled", "deactivated"].includes(current.status)) {
+              throw new Error(`Render deploy ended with ${current.status}`);
+            }
+            await sleep(10_000);
+          }
+          if (!live) throw new Error("Render deploy did not go live before the timeout");
+
+          // Layout.astro writes <meta name="orbit-build" content="<RENDER_GIT_COMMIT>">, so a page proves which build serves it.
+          async function servedCommit(origin) {
+            const response = await fetch(`${origin}/`, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
+            if (response.status !== 200) return { status: response.status, commit: null };
+            const html = await response.text();
+            return { status: 200, commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null };
+          }
+
+          async function requireServedCommit(origin) {
+            let serves = false;
+            for (let attempt = 0; attempt < 6 && !serves; attempt++) {
+              try {
+                const result = await servedCommit(origin);
+                serves = result.status === 200 && result.commit === sha;
+                if (!serves) console.log(`${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
+              } catch (error) {
+                console.log(`${origin} check failed: ${error.message}`);
+              }
+              if (!serves) await sleep(5_000);
+            }
+            if (!serves) throw new Error(`${origin}/ does not serve ${sha}`);
+          }
+
+          await requireServedCommit(serviceOrigin);
+          await requireServedCommit("https://useorbit.org");
+          const environmentUrl = "https://useorbit.org/";
+
+          const deployment = await jsonRequest(githubUrl, {
+            method: "POST",
+            headers: { ...githubHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ref: sha,
+              environment: "production",
+              auto_merge: false,
+              required_contexts: [],
+              description: "Render landing release",
+            }),
+          });
+          if (deployment.sha !== sha) throw new Error("GitHub Deployment did not record the deployed SHA");
+
+          await jsonRequest(`${githubUrl}/${deployment.id}/statuses`, {
+            method: "POST",
+            headers: { ...githubHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              state: "success",
+              environment_url: environmentUrl,
+              log_url: `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`,
+              description: "Render deploy is live and serves the deployed commit",
+            }),
+          });
+          console.log(`GitHub Deployment ${deployment.id} succeeded for ${sha}`);
+          NODE
+
+  staging:
+    if: inputs.environment == 'staging'
+    name: Release staging landing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Validate release selection
+        env:
+          RELEASE_BRANCH: ${{ inputs.branch }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Dispatch this workflow from main" >&2
+            exit 1
+          fi
+          if [[ -z "$RELEASE_BRANCH" ]]; then
+            echo "Select a staging branch" >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: refs/heads/${{ inputs.branch }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+
+      - name: Deploy and verify selected commit
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_STAGING_SERVICE_ID: ${{ vars.RENDER_LANDING_STAGING_SERVICE_ID }}
+          RELEASE_BRANCH: ${{ inputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from "node:child_process";
+
+          const sha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          const {
+            RENDER_API_KEY, RENDER_STAGING_SERVICE_ID, RELEASE_BRANCH, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
+          } = process.env;
+          if (!RENDER_API_KEY || !RENDER_STAGING_SERVICE_ID || !GH_TOKEN) {
+            throw new Error("Configure the staging environment secret RENDER_API_KEY and variable RENDER_LANDING_STAGING_SERVICE_ID");
+          }
+
+          const renderUrl = `https://api.render.com/v1/services/${encodeURIComponent(RENDER_STAGING_SERVICE_ID)}`;
+          const renderHeaders = {
+            Authorization: `Bearer ${RENDER_API_KEY}`,
+            Accept: "application/json",
+          };
+          const githubUrl = `https://api.github.com/repos/${GITHUB_REPOSITORY}/deployments`;
+          const githubHeaders = {
+            Authorization: `Bearer ${GH_TOKEN}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10",
+          };
+          const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+          // Render answers 201 with the deploy, or 202 Queued with no body; an empty body parses as null.
+          async function jsonRequest(url, options = {}) {
+            const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
+            const body = await response.text();
+            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}: ${body}`);
+            return body.trim() === "" ? null : JSON.parse(body);
+          }
+
+          const service = await jsonRequest(renderUrl, { headers: renderHeaders });
+          if (service.autoDeploy !== "no") {
+            throw new Error("The Render landing service must have auto-deploy disabled");
+          }
+          const serviceOrigin = service.serviceDetails?.url;
+          if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
+
+          const updated = await jsonRequest(renderUrl, {
+            method: "PATCH",
+            headers: { ...renderHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ branch: RELEASE_BRANCH }),
+          });
+          if (updated.branch !== RELEASE_BRANCH) {
+            throw new Error(`Render did not select staging branch ${RELEASE_BRANCH}`);
+          }
+
+          const triggeredAt = Date.now();
+          let deploy = await jsonRequest(`${renderUrl}/deploys`, {
+            method: "POST",
+            headers: { ...renderHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({ commitId: sha }),
+          });
+          for (let attempt = 0; !deploy?.id && attempt < 30; attempt++) {
+            await sleep(5_000);
+            const recent = await jsonRequest(`${renderUrl}/deploys?limit=20`, { headers: renderHeaders });
+            deploy = (recent ?? [])
+              .map((entry) => entry.deploy)
+              .find((entry) => entry?.commit?.id === sha && Date.parse(entry.createdAt) >= triggeredAt - 60_000);
+          }
+          if (!deploy?.id) throw new Error(`Render did not create a deploy for ${sha}`);
+          console.log(`Render deploy ${deploy.id} for ${sha}`);
+
+          let live = false;
+          for (let attempt = 0; attempt < 60; attempt++) {
+            const current = await jsonRequest(`${renderUrl}/deploys/${deploy.id}`, { headers: renderHeaders });
+            if (current.commit?.id && current.commit.id !== sha) {
+              throw new Error(`Render is deploying ${current.commit.id} instead of ${sha}`);
+            }
+            console.log(`Render status: ${current.status}`);
+            if (current.status === "live") {
+              if (current.commit?.id !== sha) throw new Error("Render did not confirm the deployed SHA");
+              live = true;
+              break;
+            }
+            if (["build_failed", "update_failed", "pre_deploy_failed", "canceled", "deactivated"].includes(current.status)) {
+              throw new Error(`Render deploy ended with ${current.status}`);
+            }
+            await sleep(10_000);
+          }
+          if (!live) throw new Error("Render deploy did not go live before the timeout");
+
+          // Layout.astro writes <meta name="orbit-build" content="<RENDER_GIT_COMMIT>">, so a page proves which build serves it.
+          async function servedCommit(origin) {
+            const response = await fetch(`${origin}/`, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
+            if (response.status !== 200) return { status: response.status, commit: null };
+            const html = await response.text();
+            return { status: 200, commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null };
+          }
+
+          let renderServes = false;
+          for (let attempt = 0; attempt < 6 && !renderServes; attempt++) {
+            try {
+              const result = await servedCommit(serviceOrigin);
+              renderServes = result.status === 200 && result.commit === sha;
+              if (!renderServes) console.log(`${serviceOrigin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
+            } catch (error) {
+              console.log(`${serviceOrigin} check failed: ${error.message}`);
+            }
+            if (!renderServes) await sleep(5_000);
+          }
+          if (!renderServes) throw new Error(`${serviceOrigin} does not serve ${sha}`);
+
+          const deployment = await jsonRequest(githubUrl, {
+            method: "POST",
+            headers: { ...githubHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ref: sha,
+              environment: "staging",
+              auto_merge: false,
+              required_contexts: [],
+              description: "Render landing release",
+            }),
+          });
+          if (deployment.sha !== sha) throw new Error("GitHub Deployment did not record the deployed SHA");
+          await jsonRequest(`${githubUrl}/${deployment.id}/statuses`, {
+            method: "POST",
+            headers: { ...githubHeaders, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              state: "success",
+              environment_url: `${serviceOrigin}/`,
+              log_url: `https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`,
+              description: "Render deploy is live and serves the deployed commit",
+            }),
+          });
+          console.log(`GitHub Deployment ${deployment.id} succeeded for ${sha}`);
+          NODE
