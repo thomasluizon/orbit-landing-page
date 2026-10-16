@@ -29,7 +29,7 @@ const en = translations.en;
               variant="ghost"
               size="sm"
               external={platform === "android"}
-              analyticsEvent={`platforms_${platform}_cta_clicked`}
+              analyticsEvent={`platforms_${platform === "android" ? "google_play" : platform}_cta_clicked`}
               analyticsSurface={`platforms_${platform}`}
             >
               <span data-i18n={`platforms.${platform}.cta`}>{en[`platforms.${platform}.cta`]}</span>

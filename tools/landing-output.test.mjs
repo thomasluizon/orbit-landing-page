@@ -8,6 +8,54 @@ const structured = [
   ...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
 ].map((match) => JSON.parse(match[1]));
 
+for (const [event, region, label] of [
+  [
+    "final_app_cta_clicked",
+    /<section\b[^>]*class="[^"]*final-cta[^"]*"[^>]*>[\s\S]*?<\/section>/,
+    "cta.button",
+  ],
+  ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
+  ["hero_app_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.web"],
+  ["hero_google_play_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.cta"],
+  [
+    "platforms_google_play_cta_clicked",
+    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
+    "platforms.android.cta",
+  ],
+  [
+    "platforms_web_cta_clicked",
+    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
+    "platforms.web.cta",
+  ],
+  [
+    "pricing_free_cta_clicked",
+    /<article\b[^>]*class="plan"[^>]*>[\s\S]*?<\/article>/,
+    "pricing.cta",
+  ],
+  [
+    "pricing_pro_cta_clicked",
+    /<article\b[^>]*class="plan plan-pro"[^>]*>[\s\S]*?<\/article>/,
+    "pricing.cta",
+  ],
+]) {
+  test(`the built ${event} stays on its original CTA`, () => {
+    const attribute = `data-analytics-event="${event}"`;
+    assert.equal(html.split(attribute).length - 1, 1, `${event} occurs exactly once`);
+    const surface = html.match(region)?.[0];
+    assert.ok(surface, `CTA region for ${event} exists`);
+    const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
+      .map(([tag]) => tag)
+      .find((tag) => tag.includes(attribute));
+    assert.ok(anchor, `${event} belongs to a link in its original region`);
+    assert.ok(anchor.includes(`data-i18n="${label}"`), `${event} labels its original CTA`);
+    const destination =
+      event.includes("google_play") || event.startsWith("final_") || event.startsWith("header_")
+        ? "https://play.google.com/store/apps/details?id=org.useorbit.app"
+        : process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+    assert.ok(anchor.includes(`href="${destination}"`), `${event} keeps its destination`);
+  });
+}
+
 test("the built offer names the routine friction and links directly to Android", () => {
   assert.match(html, /id="hero"/);
   const hero = html.split('id="hero"')[1].split("</section>")[0];
