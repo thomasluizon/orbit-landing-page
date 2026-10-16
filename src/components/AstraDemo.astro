@@ -1,0 +1,70 @@
+---
+import AstraGlyph from "./AstraGlyph.astro";
+import { translations } from "../i18n/translations";
+const en = translations.en;
+---
+
+<section id="astra-demo" class="astra-demo" aria-labelledby="demo-title" data-example>
+  <div class="demo-heading">
+    <AstraGlyph />
+    <h2 id="demo-title" class="t-secondary" translate="no">Astra</h2>
+    <span class="t-meta" data-i18n="demo.example">{en["demo.example"]}</span>
+  </div>
+  <div class="demo-exchange" aria-live="polite" aria-atomic="true" aria-busy="false">
+    <p id="demo-request" class="demo-request t-secondary" data-i18n="demo.start.request">
+      {en["demo.start.request"]}
+    </p>
+    <div id="demo-response" class="demo-response">
+      <p id="demo-reply" class="t-secondary" data-i18n="demo.start.reply">
+        {en["demo.start.reply"]}
+      </p>
+      <div class="demo-preview" data-state="proposed">
+        <p class="demo-proposed t-meta" data-i18n="demo.proposed">{en["demo.proposed"]}</p>
+        <div class="demo-habits">
+          <div class="demo-habit">
+            <p id="demo-habit" class="t-secondary" data-i18n="demo.start.habit">
+              {en["demo.start.habit"]}
+            </p>
+            <p id="demo-repeat" class="t-meta" data-i18n="demo.start.repeat">
+              {en["demo.start.repeat"]}
+            </p>
+          </div>
+          <div id="demo-second" class="demo-habit" hidden>
+            <p class="t-secondary" data-i18n="demo.move.secondHabit">
+              {en["demo.move.secondHabit"]}
+            </p>
+            <p class="t-meta" data-i18n="demo.move.secondRepeat">{en["demo.move.secondRepeat"]}</p>
+          </div>
+        </div>
+        <div class="demo-preview-actions" aria-hidden="true">
+          <span data-i18n="demo.approve">{en["demo.approve"]}</span>
+          <span data-i18n="demo.edit">{en["demo.edit"]}</span>
+          <span data-i18n="demo.reject">{en["demo.reject"]}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    class="demo-composer"
+    role="group"
+    aria-label={en["demo.choose"]}
+    data-i18n-label="demo.choose"
+  >
+    {
+      (["start", "restart", "move"] as const).map((example, index) => (
+        <button
+          type="button"
+          class="demo-chip"
+          data-demo={example}
+          aria-pressed={index === 0 ? "true" : "false"}
+        >
+          <span data-i18n={`demo.${example}.chip`}>{en[`demo.${example}.chip`]}</span>
+        </button>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  import "../scripts/demo";
+</script>

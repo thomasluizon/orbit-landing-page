@@ -4,6 +4,30 @@ export const LANGUAGES = ["en", "pt-BR"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "demo.example": "Scripted example",
+  "demo.choose": "Try a request",
+  "demo.proposed": "Proposed, awaiting approval",
+  "demo.approve": "Approve",
+  "demo.edit": "Edit",
+  "demo.reject": "Reject",
+  "demo.start.chip": "Start walking",
+  "demo.start.request": "Help me start walking in the morning.",
+  "demo.start.reply": "I can make room for a morning walk. Review the plan before saving.",
+  "demo.start.habit": "Walk",
+  "demo.start.repeat": "Every day · Morning",
+  "demo.restart.chip": "Try again",
+  "demo.restart.request": "I missed my walk. Help me get back to it.",
+  "demo.restart.reply": "We can pick it up this evening. The rest of your routine stays as it is.",
+  "demo.restart.habit": "Walk",
+  "demo.restart.repeat": "Today · Evening",
+  "demo.move.chip": "Move both",
+  "demo.move.request": "Move my walk and reading to the evening.",
+  "demo.move.reply": "I can move both together. Review the changes before saving.",
+  "demo.move.habit": "Walk",
+  "demo.move.repeat": "Every day · Evening",
+  "demo.move.secondHabit": "Read",
+  "demo.move.secondRepeat": "Every day · Evening",
+
   "meta.title": "Orbit | A little help keeping a routine",
   "meta.description":
     "Orbit is an AI that tracks habits. Ask Astra to help you start, adjust a routine, or return after a missed day. Review every change before it is saved.",
@@ -161,6 +185,30 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
+  "demo.example": "Exemplo de conversa",
+  "demo.choose": "Experimente um pedido",
+  "demo.proposed": "Proposta para você aprovar",
+  "demo.approve": "Aprovar",
+  "demo.edit": "Editar",
+  "demo.reject": "Rejeitar",
+  "demo.start.chip": "Quero caminhar",
+  "demo.start.request": "Quero começar a caminhar de manhã.",
+  "demo.start.reply": "Posso encaixar uma caminhada de manhã. Veja a proposta antes de salvar.",
+  "demo.start.habit": "Caminhar",
+  "demo.start.repeat": "Todos os dias · De manhã",
+  "demo.restart.chip": "Quero voltar",
+  "demo.restart.request": "Não consegui caminhar. Me ajuda a voltar?",
+  "demo.restart.reply": "Podemos retomar hoje à noite. O restante da rotina continua como está.",
+  "demo.restart.habit": "Caminhar",
+  "demo.restart.repeat": "Hoje · À noite",
+  "demo.move.chip": "Mudar horários",
+  "demo.move.request": "Passe a caminhada e a leitura para a noite.",
+  "demo.move.reply": "Posso mudar os dois de uma vez. Confira a proposta antes de salvar.",
+  "demo.move.habit": "Caminhar",
+  "demo.move.repeat": "Todos os dias · À noite",
+  "demo.move.secondHabit": "Ler",
+  "demo.move.secondRepeat": "Todos os dias · À noite",
+
   "meta.title": "Orbit | Uma ajuda para manter a rotina",
   "meta.description":
     "O Orbit é uma IA que acompanha seus hábitos. Peça ajuda ao Astra para começar, ajustar a rotina ou voltar depois de um dia difícil. Você revisa cada mudança antes de salvar.",
