@@ -151,3 +151,10 @@ test("both locales have the same complete keys and no retired marketing", () => 
     );
   }
 });
+
+test("pt-BR always refers to Astra with feminine articles and contractions", () => {
+  const { tables } = harness();
+  for (const [key, text] of Object.entries(tables["pt-BR"])) {
+    assert.doesNotMatch(text, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
+  }
+});

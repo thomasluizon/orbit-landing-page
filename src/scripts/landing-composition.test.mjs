@@ -103,3 +103,34 @@ test("Astra keeps the app's row, body and secondary type roles", async () => {
   assert.match(source, /id="demo-habit" class="t-row"/);
   assert.match(source, /id="demo-repeat" class="t-secondary"/);
 });
+
+test("every example chip has the product's resting, selected and focus treatments", () => {
+  for (const width of [320, 360, 768, 1512]) {
+    const resting = activeDeclarations(".demo-chip", width, 568);
+    assert.equal(resting.background, "var(--color-bg-elev)");
+    assert.equal(resting["box-shadow"], "inset 0 0 0 1px var(--color-hairline)");
+    assert.equal(resting.color, "var(--color-fg-2)");
+    assert.equal(resting["font-size"], "var(--fs-sm)");
+    assert.equal(resting["font-weight"], "500");
+    assert.equal(resting["border-radius"], "var(--radius-full)");
+    assert.equal(resting["white-space"], "nowrap");
+    const selected = activeDeclarations('.demo-chip[aria-pressed="true"]', width, 568);
+    assert.equal(selected.background, "var(--selection-bg)");
+    assert.equal(selected.color, "var(--color-fg-1)");
+    assert.equal(selected["box-shadow"], "inset 0 0 0 1px rgba(var(--primary-rgb), 0.45)");
+    assert.equal(activeDeclarations(".demo-chip:focus-visible", width, 568)["box-shadow"], "none");
+    assert.equal(
+      activeDeclarations(":focus-visible", width, 568).outline,
+      "2px solid var(--color-primary)",
+    );
+    assert.equal(
+      activeDeclarations(".demo-examples", width, 568)["flex-wrap"] ?? "nowrap",
+      "nowrap",
+    );
+  }
+  assert.ok(
+    declarationsFor(".demo-chip:hover").some(([, , declarations]) =>
+      declarations.includes("background: var(--color-bg-hover)"),
+    ),
+  );
+});

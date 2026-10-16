@@ -85,7 +85,7 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
-  "hero.title": "O Astra organiza sua rotina.",
+  "hero.title": "A Astra organiza sua rotina.",
   "hero.platforms": "Android e web",
   "hero.ios": "Lista de espera do iPhone",
   "ios.close": "Fechar lista",
@@ -131,7 +131,7 @@ const ptBR: Record<TranslationKey, string> = {
   "nav.label": "Navegação principal",
   "language.switch": "pt-BR. Mudar para inglês",
   "header.cta": "Instalar Orbit",
-  "hero.subtitle": "Diga o que quer mudar e confira a proposta do Astra antes de salvar.",
+  "hero.subtitle": "Diga o que quer mudar e confira a proposta da Astra antes de salvar.",
   "hero.cta": "Instalar Orbit",
   "hero.web": "Abrir Orbit",
   "ios.title": "Saiba quando o Orbit chegar ao iPhone.",
