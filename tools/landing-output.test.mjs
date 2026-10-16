@@ -10,8 +10,12 @@ const structured = [
 
 for (const [event, region, label] of [
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
-  ["hero_app_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.web"],
-  ["hero_google_play_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.cta"],
+  ["hero_app_cta_clicked", /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/, "hero.web"],
+  [
+    "hero_google_play_cta_clicked",
+    /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
+    "hero.cta",
+  ],
 ]) {
   test(`the built ${event} keeps its action and destination`, () => {
     const attribute = `data-analytics-event="${event}"`;

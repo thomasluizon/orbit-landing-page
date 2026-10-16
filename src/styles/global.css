@@ -286,6 +286,8 @@ body {
 #main-content {
   display: grid;
   align-items: center;
+  justify-items: center;
+  min-block-size: 0;
 }
 .site-header {
   background: var(--color-bg);
@@ -337,29 +339,34 @@ body {
 }
 .hero {
   display: grid;
-  align-items: center;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 16px;
+  inline-size: 100%;
+  max-inline-size: 800px;
 }
 .hero-copy {
   display: grid;
-  justify-items: start;
-  gap: 16px;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
 }
 .hero-description {
-  max-inline-size: 48ch;
+  max-inline-size: 60ch;
 }
 .hero-controls {
   display: grid;
-  gap: 8px;
+  justify-items: center;
+  gap: 4px;
 }
 .hero-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 24px;
 }
 .hero-meta {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
 }
@@ -393,11 +400,8 @@ body {
   display: grid;
   align-content: start;
   gap: 16px;
-  padding: 16px;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl);
   inline-size: 100%;
-  max-inline-size: 480px;
+  max-inline-size: 560px;
   justify-self: center;
 }
 .demo-heading {
@@ -419,13 +423,13 @@ body {
 }
 .demo-request {
   justify-self: end;
-  max-inline-size: 36ch;
+  max-inline-size: 48ch;
   font-weight: 500;
 }
 .demo-preview {
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 16px;
   border: 1px dashed var(--color-track-empty);
   border-radius: var(--radius-md);
   color: var(--color-fg-3);
@@ -449,15 +453,18 @@ body {
 .demo-composer {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 12px;
+  padding: 4px;
+  border-radius: var(--radius-sheet);
+  background: var(--color-bg-field);
 }
 .demo-chip {
   min-block-size: 48px;
   padding: 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   font-size: var(--fs-xs);
   color: var(--color-fg-2);
-  background: var(--color-bg-field);
   cursor: pointer;
   white-space: nowrap;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
@@ -579,35 +586,30 @@ body {
   .landing-shell {
     padding-inline: max(32px, env(safe-area-inset-left)) max(32px, env(safe-area-inset-right));
   }
-  .hero {
-    gap: 32px;
-  }
   .t-hero {
     font-size: var(--fs-4xl);
   }
 }
 
-@media (min-width: 64rem) and (min-height: 44rem) {
+@media (min-height: 56.25rem) {
   .landing-shell {
     padding-block: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-bottom));
   }
   .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 48px;
+    gap: 24px;
   }
   .hero-copy {
-    gap: 24px;
+    gap: 16px;
   }
   .hero-description {
     font-size: var(--fs-base);
   }
-  .astra-demo {
+  .demo-preview {
     padding: 24px;
-    gap: 24px;
   }
 }
 
-@media (min-width: 80rem) and (min-height: 50rem) {
+@media (min-width: 80rem) and (min-height: 56.25rem) {
   .t-hero {
     font-size: var(--fs-5xl);
   }
@@ -634,9 +636,7 @@ body {
   }
   .astra-demo {
     gap: 8px;
-    padding: 12px;
   }
-  .demo-request,
   #demo-reply {
     display: none;
   }
@@ -644,8 +644,13 @@ body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .demo-preview {
-    gap: 8px;
     padding: 8px;
+  }
+}
+
+@media (max-height: 38.75rem) {
+  .demo-request {
+    display: none;
   }
 }
 
@@ -680,24 +685,10 @@ body {
     display: none;
   }
   .astra-demo {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 4px 8px;
-    padding: 4px;
-    max-inline-size: none;
-  }
-  .demo-heading {
-    grid-row: 1;
     gap: 4px;
   }
-  .demo-heading h2 {
-    display: none;
-  }
-  .demo-heading > span {
-    margin: 0;
-  }
-  .demo-exchange {
-    grid-column: 2;
-    grid-row: 1;
+  .demo-heading {
+    gap: 4px;
   }
   .demo-proposed {
     display: none;
@@ -709,10 +700,15 @@ body {
     padding: 4px 8px;
   }
   .demo-composer {
-    grid-column: 1 / -1;
-    justify-content: center;
+    padding: 0;
+    background: none;
   }
   .demo-preview-actions {
+    gap: 8px;
+  }
+  .demo-habit {
+    display: flex;
+    align-items: baseline;
     gap: 8px;
   }
   .demo-habit .t-meta {
