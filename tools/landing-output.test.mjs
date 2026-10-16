@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import sharp from "sharp";
 
 const html = readFileSync("dist/index.html", "utf8");
 const prose = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<[^>]+>/g, " ");
@@ -8,94 +9,109 @@ const structured = [
   ...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
 ].map((match) => JSON.parse(match[1]));
 
+test("the built header lockup paints pale ink with only the moon in the accent", async () => {
+  const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
+  const lockup = header?.match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
+  assert.ok(lockup, "the header must inline the lockup so currentColor resolves");
+  const css = readFileSync("src/styles/global.css", "utf8");
+  assert.match(css, /\.brand\s*\{[^}]*color:\s*var\(--color-fg-1\)/);
+  assert.match(css, /--primary:\s*var\(--color-primary\)/);
+  const token = (name) => css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]+)`))?.[1];
+  const fills = [...lockup.matchAll(/<path\b[^>]*fill="([^"]+)"/g)].map(([, fill]) => fill);
+  assert.deepEqual(fills, ["currentColor", "var(--primary, currentColor)", "currentColor"]);
+  const resolved = lockup
+    .replaceAll("var(--primary, currentColor)", token("primary"))
+    .replaceAll("currentColor", token("fg-1"));
+  const { data } = await sharp(Buffer.from(resolved))
+    .resize({ width: 448 })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const pixels = Array.from({ length: data.length / 4 }, (_, index) =>
+    [...data.subarray(index * 4, index * 4 + 4)].map(Number),
+  );
+  for (const name of ["fg-1", "primary"]) {
+    const color = token(name)
+      .slice(1)
+      .match(/../g)
+      .map((channel) => Number.parseInt(channel, 16));
+    assert.ok(
+      pixels.some((pixel) => pixel[3] === 255 && color.every((value, i) => pixel[i] === value)),
+      `${name} must be visible in the built lockup`,
+    );
+  }
+});
+
 for (const [event, region, label] of [
-  [
-    "final_app_cta_clicked",
-    /<section\b[^>]*class="[^"]*final-cta[^"]*"[^>]*>[\s\S]*?<\/section>/,
-    "cta.button",
-  ],
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
-  ["hero_app_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.web"],
-  ["hero_google_play_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.cta"],
+  ["hero_app_cta_clicked", /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/, "hero.web"],
   [
-    "platforms_google_play_cta_clicked",
-    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
-    "platforms.android.cta",
-  ],
-  [
-    "platforms_web_cta_clicked",
-    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
-    "platforms.web.cta",
-  ],
-  [
-    "pricing_free_cta_clicked",
-    /<article\b[^>]*class="plan"[^>]*>[\s\S]*?<\/article>/,
-    "pricing.cta",
-  ],
-  [
-    "pricing_pro_cta_clicked",
-    /<article\b[^>]*class="plan plan-pro"[^>]*>[\s\S]*?<\/article>/,
-    "pricing.cta",
+    "hero_google_play_cta_clicked",
+    /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
+    "hero.cta",
   ],
 ]) {
-  test(`the built ${event} stays on its original CTA`, () => {
+  test(`the built ${event} keeps its action and destination`, () => {
     const attribute = `data-analytics-event="${event}"`;
-    assert.equal(html.split(attribute).length - 1, 1, `${event} occurs exactly once`);
+    assert.equal(html.split(attribute).length - 1, 1);
     const surface = html.match(region)?.[0];
-    assert.ok(surface, `CTA region for ${event} exists`);
+    assert.ok(surface);
     const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
-    assert.ok(anchor, `${event} belongs to a link in its original region`);
-    assert.ok(anchor.includes(`data-i18n="${label}"`), `${event} labels its original CTA`);
+    assert.ok(anchor?.includes(`data-i18n="${label}"`));
     const destination =
-      event.includes("google_play") || event.startsWith("final_") || event.startsWith("header_")
-        ? "https://play.google.com/store/apps/details?id=org.useorbit.app"
-        : process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
-    assert.ok(anchor.includes(`href="${destination}"`), `${event} keeps its destination`);
+      event === "hero_app_cta_clicked"
+        ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
+        : "https://play.google.com/store/apps/details?id=org.useorbit.app";
+    assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
 
-test("the built offer names the routine friction and links directly to Android", () => {
-  assert.match(html, /id="hero"/);
-  const hero = html.split('id="hero"')[1].split("</section>")[0];
-  assert.match(hero, /Keeping a routine is hard/);
-  assert.match(hero, /play\.google\.com\/store\/apps\/details\?id=org\.useorbit\.app/);
-  assert.match(hero, /proof\.founder\.body/);
-  assert.doesNotMatch(hero, /hero-rise|animation-delay|<video/);
-});
-
-test("built marketing contains no retired claims or decorative behavior", () => {
+test("the homepage is one Astra composition with a dialog instead of retired sections", () => {
+  assert.match(html, /class="landing-shell"/);
+  assert.match(html, /id="astra-demo"/);
+  assert.match(html, /<dialog[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
+  assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
   assert.doesNotMatch(
     html,
-    /data-count-target|count-up|Most popular|MCP|AI memory|accountability|leaderboards|500 AI|20 AI|unlimited habits/i,
+    /id="(?:pricing|platforms|faq|features)"|data-screen="today"|proof\.founder/,
   );
-  assert.doesNotMatch(html, /data-tilt|starfield|orbit-dot|satellite-bob|<video/);
-  assert.match(html, /data-screen="today"/);
-  assert.match(html, /data-screen="astra"/);
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
   for (const action of ["Approve", "Edit", "Reject"]) assert.ok(prose.includes(action));
+  for (const example of ["start", "restart", "move"])
+    assert.match(html, new RegExp(`data-demo="${example}"`));
 });
 
-test("application offers and FAQ use complete, visible values", () => {
-  assert.equal(structured.length, 2);
-  for (const block of structured) assert.ok(!JSON.stringify(block).includes("undefined"));
-  const graph = structured[0]["@graph"];
-  for (const app of graph.filter((entry) => /Application$/.test(entry["@type"]))) {
-    assert.equal(app.offers.length, 3);
+test("the built proposal has three native small pill actions with ghost actions first", () => {
+  const row = html.match(/<div class="demo-preview-actions">([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(row);
+  const buttons = [...row.matchAll(/<button\b([^>]+)>/g)].map(([, attributes]) => attributes);
+  assert.equal(buttons.length, 3);
+  for (const [index, action] of ["reject", "edit", "approve"].entries()) {
+    assert.ok(buttons[index].includes(`id="demo-${action}"`));
+    assert.ok(buttons[index].includes('type="button"'));
+    assert.ok(buttons[index].includes("pill-sm"));
+    assert.ok(buttons[index].includes(index === 2 ? "bg-primary" : "bg-transparent"));
+    assert.doesNotMatch(buttons[index], /\sdisabled(?:\s|=|$)|\stabindex="-1"/);
+  }
+});
+
+test("the application metadata describes Astra without retired FAQ structured data", () => {
+  assert.equal(structured.length, 1);
+  assert.doesNotMatch(html, /FAQPage/);
+  const applications = structured[0]["@graph"].filter((entry) =>
+    /Application$/.test(entry["@type"]),
+  );
+  assert.equal(applications.length, 2);
+  for (const app of applications) {
+    assert.match(app.description, /Astra/);
     assert.deepEqual(
       app.offers.map(({ price }) => price),
       [0, 9.99, 69.99],
     );
-    for (const offer of app.offers) {
-      assert.equal(offer.priceCurrency, "USD");
-      assert.ok(prose.includes(`$${offer.price.toFixed(2)}`), `visible price ${offer.price}`);
-    }
-  }
-  for (const question of structured[1].mainEntity) {
-    assert.ok(question.name && question.acceptedAnswer.text);
-    assert.ok(prose.includes(question.name));
-    assert.ok(prose.includes(question.acceptedAnswer.text));
+    assert.ok(app.offers.every(({ priceCurrency }) => priceCurrency === "USD"));
   }
 });
 

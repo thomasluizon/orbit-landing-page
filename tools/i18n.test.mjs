@@ -24,8 +24,8 @@ function element(attributes = {}, textContent = "") {
 function harness({ cookie = "", language = "en-US" } = {}) {
   const toggle = element();
   const label = element();
-  const headline = element({ "data-i18n": "hero.title1" });
-  const continuation = element({ "data-i18n": "cta.title2" });
+  const headline = element({ "data-i18n": "hero.title" });
+  const continuation = element({ "data-i18n": "demo.start.request" });
   const placeholder = element({ "data-i18n-placeholder": "ios.placeholder" });
   const description = element({ "data-i18n-content": "meta.description" });
   const nav = element({ "data-i18n-label": "nav.label" });
@@ -33,7 +33,6 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     {},
     JSON.stringify({ "@graph": [{ "@type": "SoftwareApplication", offers: {} }] }),
   );
-  const faq = element({}, JSON.stringify({ "@type": "FAQPage", mainEntity: [] }));
   const document = {
     cookie,
     documentElement: {},
@@ -44,7 +43,7 @@ function harness({ cookie = "", language = "en-US" } = {}) {
         "[data-i18n-placeholder]": [placeholder],
         "[data-i18n-content]": [description],
         "[data-i18n-label]": [nav],
-        'script[type="application/ld+json"]': [graph, faq],
+        'script[type="application/ld+json"]': [graph],
       })[selector] ?? [],
   };
   const context = vm.createContext({
@@ -77,7 +76,6 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     description,
     nav,
     graph,
-    faq,
     tables: require("../i18n/translations").translations,
     prices: require("../config/pricing"),
   };
@@ -98,9 +96,8 @@ test("the actual toggle switches prose, placeholder, labels, metadata and struct
   for (const lang of ["en", "pt-BR", "en"]) {
     if (h.document.documentElement.lang !== lang) h.toggle.listeners.get("click")();
     const table = h.tables[lang];
-    assert.equal(h.headline.textContent, table["hero.title1"]);
-    assert.equal(h.continuation.textContent, table["cta.title2"]);
-    assert.ok(h.continuation.textContent.startsWith(" "));
+    assert.equal(h.headline.textContent, table["hero.title"]);
+    assert.equal(h.continuation.textContent, table["demo.start.request"]);
     assert.equal(h.placeholder.attributes.placeholder, table["ios.placeholder"]);
     assert.equal(h.nav.attributes["aria-label"], table["nav.label"]);
     assert.equal(h.description.attributes.content, table["meta.description"]);
@@ -113,14 +110,11 @@ test("the actual toggle switches prose, placeholder, labels, metadata and struct
     assert.match(h.document.cookie, /path=\/;.*SameSite=Lax; Secure/);
     const app = JSON.parse(h.graph.textContent)["@graph"][0];
     assert.equal(app.offers[0].priceCurrency, lang === "en" ? "USD" : "BRL");
-    const faq = JSON.parse(h.faq.textContent);
-    assert.equal(faq.mainEntity.length, 7);
-    assert.equal(faq.mainEntity[0].name, table["faq.q1"]);
   }
 });
 
-test("price display and offers share the verified amount and billing interval", () => {
-  const { prices, tables } = harness();
+test("application offers keep the verified amount and billing interval", () => {
+  const { prices } = harness();
   for (const [lang, amounts, currency] of [
     ["en", [0, 9.99, 69.99], "USD"],
     ["pt-BR", [0, 29.9, 199], "BRL"],
@@ -133,10 +127,6 @@ test("price display and offers share the verified amount and billing interval", 
     assert.ok(offers.every((offer) => offer.priceCurrency === currency));
     assert.equal(offers[1].priceSpecification.billingDuration, "P1M");
     assert.equal(offers[2].priceSpecification.billingDuration, "P1Y");
-    const display = prices.pricesFor(lang);
-    assert.ok(tables[lang]["pricing.pro.monthly"].includes(display.monthly));
-    assert.ok(tables[lang]["pricing.pro.yearly"].includes(display.yearly));
-    assert.ok(tables[lang]["pricing.pro.savings"].includes(display.savings));
   }
 });
 
@@ -154,7 +144,29 @@ test("both locales have the same complete keys and no retired marketing", () => 
       Object.values(table).join(" "),
       /[\u2013\u2014]|unlimited habits|AI memory|MCP|accountability|leaderboard|500 messages|20 AI/i,
     );
-    for (const key of ["hero.title2", "features.title2", "cta.title2"])
-      assert.ok(table[key].startsWith(" "), key);
+    assert.ok(
+      !Object.keys(table).some((key) =>
+        /^(faq|pricing|platforms|proof|features|mockup|preview|astra|cta)\./.test(key),
+      ),
+    );
+  }
+});
+
+test("pt-BR always refers to Astra with feminine articles and contractions", () => {
+  const { tables } = harness();
+  for (const [key, text] of Object.entries(tables["pt-BR"])) {
+    assert.doesNotMatch(text, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
+  }
+});
+
+test("pt-BR demo repeat labels name every time of day with the same adverbial form", () => {
+  const { tables } = harness();
+  const repeatKeys = Object.keys(tables["pt-BR"]).filter((key) =>
+    /^demo\..+\.(?:alternateRepeat|repeat|secondRepeat)$/u.test(key),
+  );
+  assert.ok(repeatKeys.length > 0);
+  for (const key of repeatKeys) {
+    const timeOfDay = tables["pt-BR"][key].split(" · ").at(-1);
+    assert.match(timeOfDay, /^(?:De manhã|À tarde|À noite)$/u, key);
   }
 });

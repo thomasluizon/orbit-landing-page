@@ -74,13 +74,6 @@ function applyStructuredData(lang: Language) {
           }
         }
       }
-      if (data["@type"] === "FAQPage") {
-        data.mainEntity = [1, 2, 3, 4, 5, 6, 7].map((n) => ({
-          "@type": "Question",
-          name: table[`faq.q${n}` as keyof typeof table],
-          acceptedAnswer: { "@type": "Answer", text: table[`faq.a${n}` as keyof typeof table] },
-        }));
-      }
       script.textContent = JSON.stringify(data);
     });
 }

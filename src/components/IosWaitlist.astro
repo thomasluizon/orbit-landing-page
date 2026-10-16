@@ -1,39 +1,56 @@
 ---
+import { X } from "@lucide/astro";
 import PillButton from "./PillButton.astro";
 import { translations } from "../i18n/translations";
 const en = translations.en;
 ---
 
-<section id="ios" class="section page-container waitlist-section" aria-labelledby="ios-title">
-  <div>
-    <h2 id="ios-title" class="t-display" data-i18n="ios.title">{en["ios.title"]}</h2><p
-      class="t-body text-fg-2"
-      data-i18n="ios.desc"
-    >
-      {en["ios.desc"]}
-    </p>
-  </div>
-  <div>
-    <form id="waitlist-form" novalidate>
-      <label for="waitlist-email" class="t-secondary" data-i18n="ios.label">{en["ios.label"]}</label
+<dialog
+  id="ios"
+  class="waitlist-dialog"
+  aria-labelledby="ios-title"
+  aria-describedby="ios-description"
+>
+  <button
+    id="ios-close"
+    class="dialog-close"
+    type="button"
+    aria-label={en["ios.close"]}
+    data-i18n-label="ios.close"><X size={20} /></button
+  >
+  <div class="waitlist-content">
+    <div>
+      <h2 id="ios-title" class="t-h1" data-i18n="ios.title">{en["ios.title"]}</h2><p
+        id="ios-description"
+        class="t-secondary"
+        data-i18n="ios.desc"
       >
-      <input
-        id="waitlist-email"
-        type="email"
-        name="email"
-        autocomplete="email"
-        spellcheck="false"
-        required
-        placeholder={en["ios.placeholder"]}
-        data-i18n-placeholder="ios.placeholder"
-        aria-describedby="waitlist-status waitlist-privacy"
-      />
-      <div id="waitlist-turnstile"></div>
-      <PillButton id="waitlist-submit" type="submit" disabled size="md">
-        <span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span>
-      </PillButton>
-    </form>
-    <p id="waitlist-status" role="status" aria-live="polite" class="t-secondary"></p>
-    <p id="waitlist-privacy" class="t-meta" data-i18n="ios.privacy">{en["ios.privacy"]}</p>
+        {en["ios.desc"]}
+      </p>
+    </div>
+    <div>
+      <form id="waitlist-form" novalidate>
+        <label for="waitlist-email" class="t-secondary" data-i18n="ios.label"
+          >{en["ios.label"]}</label
+        >
+        <input
+          id="waitlist-email"
+          type="email"
+          name="email"
+          autocomplete="email"
+          spellcheck="false"
+          required
+          placeholder={en["ios.placeholder"]}
+          data-i18n-placeholder="ios.placeholder"
+          aria-describedby="waitlist-status waitlist-privacy"
+        />
+        <div id="waitlist-turnstile"></div>
+        <PillButton id="waitlist-submit" type="submit" disabled size="md">
+          <span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span>
+        </PillButton>
+      </form>
+      <p id="waitlist-status" role="status" aria-live="polite" class="t-secondary"></p>
+      <p id="waitlist-privacy" class="t-meta" data-i18n="ios.privacy">{en["ios.privacy"]}</p>
+    </div>
   </div>
-</section>
+</dialog>

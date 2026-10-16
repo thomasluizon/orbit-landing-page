@@ -5,21 +5,6 @@ const plans = {
 
 type PriceLanguage = keyof typeof plans;
 
-export function pricesFor(language: PriceLanguage) {
-  const plan = plans[language];
-  const format = (cents: number) =>
-    new Intl.NumberFormat(plan.locale, {
-      style: "currency",
-      currency: plan.currency,
-    }).format(cents / 100);
-  return {
-    free: format(0),
-    monthly: format(plan.monthly),
-    yearly: format(plan.yearly),
-    savings: format(plan.monthly * 12 - plan.yearly),
-  };
-}
-
 export function offersFor(language: PriceLanguage) {
   const plan = plans[language];
   return [
