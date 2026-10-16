@@ -141,16 +141,6 @@ body {
   left: 0;
 }
 
-.t-eyebrow {
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  font-weight: 500;
-  line-height: var(--lh-snug);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-fg-3);
-}
-
 .t-hero {
   font-family: var(--font-display);
   font-size: var(--fs-3xl);
@@ -175,24 +165,6 @@ body {
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: var(--lh-tight);
-  color: var(--color-fg-1);
-}
-
-.t-h2 {
-  font-family: var(--font-sans);
-  font-size: var(--fs-xl);
-  font-weight: 500;
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--lh-snug);
-  color: var(--color-fg-1);
-}
-
-.t-row {
-  font-family: var(--font-sans);
-  font-size: var(--fs-md);
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: var(--lh-row);
   color: var(--color-fg-1);
 }
 
@@ -222,23 +194,6 @@ body {
   letter-spacing: 0.02em;
   color: var(--color-fg-3);
   font-variant-numeric: tabular-nums;
-}
-
-.t-num,
-.t-num-xl {
-  font-family: var(--font-display);
-  font-size: inherit;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0;
-  color: var(--color-fg-1);
-  font-variant-numeric: tabular-nums;
-}
-
-.t-num-xl {
-  font-size: var(--fs-4xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
 }
 
 .page-container {
@@ -314,8 +269,7 @@ body {
 .brand img {
   outline: none;
 }
-.brand span,
-.wordmark {
+.brand span {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
   font-weight: 600;

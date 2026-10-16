@@ -1,6 +1,6 @@
 # Orbit Landing Page
 
-Marketing landing page for **Orbit** -- an AI-powered habit tracker. A single-page static site showcasing features, platform availability, and bilingual content.
+One screen for **Orbit**, an AI that tracks habits. Astra turns a plain request into a proposed routine change for the person to review.
 
 **Live:** [useorbit.org](https://useorbit.org) | **App:** [app.useorbit.org](https://app.useorbit.org) | **API:** [api.useorbit.org](https://api.useorbit.org)
 
@@ -10,37 +10,45 @@ Marketing landing page for **Orbit** -- an AI-powered habit tracker. A single-pa
 | ---------- | ----------------------------------------------------------------------------------------------- |
 | Framework  | [Astro](https://astro.build)                                                                    |
 | Styling    | [Tailwind CSS v4](https://tailwindcss.com)                                                      |
-| Fonts      | Rubik / Inter / Roboto, self-hosted via Astro's Fonts API                                       |
+| Fonts      | Geist Sans / Space Grotesk / Geist Mono, self-hosted via Astro's Fonts API                      |
 | Icons      | [Lucide](https://lucide.dev) (`@lucide/astro`)                                                  |
 | Linting    | ESLint flat config (`eslint-plugin-astro`, `typescript-eslint`, `local/no-comments`) + Prettier |
 | Deployment | [Render](https://render.com) (static site)                                                      |
 
-## Features
+## Page
 
-- **Hero Section** -- Eyebrow, headline, subtitle, pill CTAs, and a phone mockup of the Orbit app's Today screen built from the design system's own primitives
-- **Features Section** -- Streak stat tile + AI insight card, plus a list-row card for Smart Scheduling, Sub-Habits, Calendar View, and Multi-Language
-- **Platform Section** -- Web App and Android (Google Play) cards with CTAs
-- **CTA Section** -- Satellite glyph and final call-to-action
-- **Bilingual** -- Client-side i18n switching between English and Portuguese (Brazil) via `data-i18n` attributes with cookie persistence
-- **Scroll Animations** -- Intersection Observer reveals, transform + opacity only, `prefers-reduced-motion` respected
-- **Sticky Header** -- Transparent at top, opaque canvas with hairline on scroll
-- **SEO** -- Open Graph and Twitter meta tags, JSON-LD, semantic HTML
-- **Responsive** -- Mobile-first from 360px to 1440px
+The header, headline, Astra conversation, actions and footer share one centred column. The page uses the visible viewport height, with fewer conversation turns in short windows.
 
-## Design System
+- Three example requests replay locally, with no model or network call. Each shows a proposed habit change; approval, edit and rejection labels are visual examples.
+- English and Brazilian Portuguese copy switches through `data-i18n` attributes with cookie persistence.
+- The iPhone waitlist opens in a native dialog, including direct links to `/#ios`, and keeps the existing email confirmation and Turnstile flow.
+- Open Graph, Twitter metadata and application structured data describe Astra and the supported platforms.
 
-Mirrors the Orbit app's **navy-violet orbital** design system. The canon lives in the `orbit-ui-mobile` repo (`DESIGN.md`); this repo ports the purple-scheme dark tokens into `src/styles/global.css`:
+## Design system
 
-| Token           | Value                                          |
-| --------------- | ---------------------------------------------- |
-| Canvas          | `#020618`                                      |
-| Primary         | `#7f46f7` (pressed `#631df2`)                  |
-| Gradient header | `#22094f → transparent`                        |
-| Foregrounds     | `#f8fafc` / `#cad5e2` / `#90a1b9` / `#62748e`  |
-| Cards           | `rgba(248,250,252,0.04)` + inset hairline ring |
-| Hairlines       | `rgba(248,250,252,0.10)` / `0.18`              |
+The canon lives in `orbit-ui-mobile/DESIGN.md`. This repository mirrors its dark tokens in `src/styles/global.css`:
 
-Dark-only theme, pill CTAs with violet glow, translucent surfaces, Rubik/Inter/Roboto type. See `CLAUDE.md` for token-mirror rules and code standards.
+| Token        | Value                                         |
+| ------------ | --------------------------------------------- |
+| Canvas       | `#09090B`                                     |
+| Primary      | `#C4530F`                                     |
+| Foregrounds  | `#F4F4F6` / `#C9C9CC` / `#8F8F93` / `#5D5D60` |
+| Card surface | `rgba(250,250,250,0.04)`                      |
+| Hairline     | `rgba(255,255,255,0.08)`                      |
+
+Type sizes step with viewport width and height. The Astra preview uses the canon's dashed proposed state. See `CLAUDE.md` for token rules and code standards.
+
+## Viewport assertions
+
+`src/scripts/landing-viewport.mjs` exports the required viewport sizes, languages and example names, plus `measureLandingViewport(window)` and `assertLandingViewport(sample)`. The measurement function waits for fonts and layout; call it after the selected demo finishes. It reads the rendered document without navigating or starting a browser. These functions are verification code and are not included in the page's client bundle.
+
+The rendered verification runner collects one observation per viewport, language and example, then writes the array as JSON. Validate that complete matrix in CI with:
+
+```bash
+npm run check:landing-viewports -- /path/to/observations.json
+```
+
+The validator requires all 120 combinations and rejects document scroll, offscreen boxes, clipped content, overlapping interactive targets, headlines over two lines, or a composition that loses its centred vertical order. `npm test` covers the validator and the Astro composition without a browser. Rendered measurements and keyboard interaction checks belong to the orchestrator's verification pass.
 
 ## Prerequisites
 
@@ -61,26 +69,27 @@ The site runs at `http://localhost:4321`.
 ```
 src/
   pages/
-    index.astro          # Thin composition of section components
+    index.astro          # One-screen composition and waitlist dialog
     404.astro            # Not-found page
+    waitlist-confirmed.astro # Email confirmation result
   layouts/
-    Layout.astro         # Base HTML with meta tags, OG/Twitter cards, fonts
+    Layout.astro         # HTML, metadata, fonts and application structured data
   components/
-    Header.astro         # Fixed header: logo, language toggle, CTA
-    Hero.astro           # Gradient crown, headline, CTAs, mockup, satellite
-    AppMockup.astro      # Phone mockup of the app's Today screen
-    Features.astro       # Stat tile + AI card + feature list rows
-    Platforms.astro      # Web + Android cards
-    Cta.astro            # Closing call-to-action
-    Footer.astro         # Logo, privacy link, copyright
-    PillButton.astro     # Pill CTA primitive (primary glow / ghost)
-    SatelliteGlyph.astro # Kit satellite SVG
+    Header.astro         # Orbit lockup, language toggle and install action
+    Hero.astro           # Copy, conversation and actions in one column
+    AstraDemo.astro      # Proposed changes and example request chips
+    AstraGlyph.astro     # Astra identity
+    IosWaitlist.astro    # Waitlist dialog and form
+    Footer.astro         # Privacy, terms and copyright
+    PillButton.astro     # Shared action primitive
   i18n/
-    translations.ts      # Typed EN/PT-BR copy tables
+    translations.ts      # Typed English and Brazilian Portuguese copy
   scripts/
-    i18n.ts              # Language detection, cookie, toggle, DOM apply
-    reveal.ts            # IntersectionObserver scroll reveals
-    header-scroll.ts     # Header scrolled state
+    i18n.ts              # Language cookie, toggle and translated metadata
+    demo.ts              # Local scripted examples
+    waitlist.ts          # Turnstile and waitlist submission
+    waitlist-dialog.ts   # Fragment navigation and modal dismissal
+    landing-viewport.mjs # Rendered geometry assertions
   styles/
     global.css           # Tailwind v4 @theme token mirror + type roles + base
 eslint-rules/
