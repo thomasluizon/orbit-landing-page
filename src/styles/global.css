@@ -722,6 +722,13 @@ body {
   }
 }
 
+@media (max-height: 19.9375rem) {
+  .landing-shell {
+    block-size: auto;
+    min-block-size: 100dvh;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -4,6 +4,7 @@ import {
   assertLandingViewport,
   assertLandingViewportMatrix,
   LANDING_EXAMPLES,
+  LANDING_FALLBACK_VIEWPORTS,
   LANDING_LANGUAGES,
   LANDING_VIEWPORTS,
 } from "./landing-viewport.mjs";
@@ -65,8 +66,18 @@ for (const [label, mutate, message] of [
   });
 }
 
+test("a fallback viewport may scroll but keeps every target distinct", () => {
+  const sample = measurement(512, 300);
+  sample.scrollHeight = 334;
+  sample.elements.push(rectangle("open", 260, 280, 340, 328, true));
+  assert.throws(() => assertLandingViewport(sample), /scrolls vertically/);
+  assert.doesNotThrow(() => assertLandingViewport(sample, { allowScroll: true }));
+  sample.elements.push(rectangle("terms", 300, 300, 360, 340, true));
+  assert.throws(() => assertLandingViewport(sample, { allowScroll: true }), /terms overlaps open/);
+});
+
 test("the matrix requires every requested size, locale and example", () => {
-  const samples = LANDING_VIEWPORTS.flatMap(([width, height]) =>
+  const samples = [...LANDING_VIEWPORTS, ...LANDING_FALLBACK_VIEWPORTS].flatMap(([width, height]) =>
     LANDING_LANGUAGES.flatMap((language) =>
       LANDING_EXAMPLES.map((example) => {
         const sample = measurement(width, height, language, example);
@@ -79,7 +90,7 @@ test("the matrix requires every requested size, locale and example", () => {
       }),
     ),
   );
-  assert.equal(samples.length, 126);
+  assert.equal(samples.length, 132);
   assert.doesNotThrow(() => assertLandingViewportMatrix(samples));
   assert.throws(
     () => assertLandingViewportMatrix(samples.slice(1)),

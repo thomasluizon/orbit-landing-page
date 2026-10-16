@@ -22,6 +22,9 @@ export const LANDING_VIEWPORTS = [
   [3840, 2160],
 ];
 
+/** Windows too short for the one-screen composition: the document may scroll, targets stay distinct. */
+export const LANDING_FALLBACK_VIEWPORTS = [[512, 300]];
+
 export const LANDING_LANGUAGES = ["en", "pt-BR"];
 export const LANDING_EXAMPLES = ["start", "restart", "move"];
 
@@ -110,9 +113,11 @@ function compositionFailures(regions) {
 }
 
 /** Checks one measured viewport, including hidden overflow, target collisions and reading order. */
-export function assertLandingViewport(sample) {
+export function assertLandingViewport(sample, { allowScroll = false } = {}) {
   const failures = compositionFailures(sample.composition);
-  if (sample.scrollHeight > sample.height) failures.push("The document scrolls vertically");
+  const bottomLimit = allowScroll ? sample.scrollHeight : sample.height;
+  if (!allowScroll && sample.scrollHeight > sample.height)
+    failures.push("The document scrolls vertically");
   if (sample.scrollWidth > sample.width) failures.push("The document scrolls horizontally");
   if (sample.busy) failures.push("The example has not finished playing");
   if (
@@ -126,7 +131,7 @@ export function assertLandingViewport(sample) {
       element.left < 0 ||
       element.top < 0 ||
       element.right > sample.width ||
-      element.bottom > sample.height
+      element.bottom > bottomLimit
     )
       failures.push(`${element.name} extends outside the viewport`);
     if (element.clipped) failures.push(`${element.name} clips content`);
@@ -146,11 +151,16 @@ export function assertLandingViewport(sample) {
 export function assertLandingViewportMatrix(samples) {
   const key = ({ language, width, height, example }) => `${language}/${width}/${height}/${example}`;
   const measured = new Set();
+  const fallback = new Set(
+    LANDING_FALLBACK_VIEWPORTS.map(([width, height]) => `${width}x${height}`),
+  );
   for (const sample of samples) {
-    assertLandingViewport(sample);
+    assertLandingViewport(sample, {
+      allowScroll: fallback.has(`${sample.width}x${sample.height}`),
+    });
     measured.add(key(sample));
   }
-  for (const [width, height] of LANDING_VIEWPORTS) {
+  for (const [width, height] of [...LANDING_VIEWPORTS, ...LANDING_FALLBACK_VIEWPORTS]) {
     for (const language of LANDING_LANGUAGES) {
       for (const example of LANDING_EXAMPLES) {
         const expected = key({ language, width, height, example });
