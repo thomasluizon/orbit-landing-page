@@ -114,79 +114,9 @@ const structuredData = {
         <script is:inline type="application/ld+json" set:html={JSON.stringify(extraJsonLd)} />
       )
     }
-    <script is:inline define:vars={{ posthogKey }}>
-      if (posthogKey) {
-        let analyticsStarted = false;
-        let consentGranted = false;
-        let pageSettled = false;
-
-        const startAnalytics = () => {
-          if (analyticsStarted || !consentGranted || !pageSettled) return;
-          analyticsStarted = true;
-
-          function installPostHogStub(document, posthog) {
-            if (posthog.__SV) return;
-            window.posthog = posthog;
-            posthog._i = [];
-            posthog.init = function (token, config) {
-              const script = document.createElement("script");
-              script.crossOrigin = "anonymous";
-              script.async = true;
-              script.src = `${config.api_host}/static/array.js`;
-              const firstScript = document.getElementsByTagName("script")[0];
-              firstScript.parentNode.insertBefore(script, firstScript);
-              posthog.people = posthog.people || [];
-              for (const [target, methods] of [
-                [posthog, ["capture", "set_config"]],
-                [posthog.people, ["set", "set_once"]],
-              ]) {
-                for (const method of methods) {
-                  target[method] = (...args) => target.push([method, ...args]);
-                }
-              }
-              posthog._i.push([token, config, "posthog"]);
-            };
-            posthog.__SV = 1;
-          }
-
-          installPostHogStub(document, window.posthog || []);
-
-          window.posthog.init(posthogKey, {
-            api_host: `${location.origin}/relay`,
-            ui_host: "https://us.posthog.com",
-            persistence: "localStorage+cookie",
-            cross_subdomain_cookie: true,
-            autocapture: false,
-            capture_pageview: true,
-            capture_pageleave: true,
-            disable_session_recording: true,
-            loaded: (posthog) => {
-              window.dispatchEvent(new CustomEvent("orbit:analytics-ready", { detail: posthog }));
-            },
-          });
-        };
-
-        window.addEventListener("orbit:analytics-consent-granted", () => {
-          consentGranted = true;
-          startAnalytics();
-        });
-
-        window.addEventListener(
-          "load",
-          () => {
-            const markPageSettled = () => {
-              pageSettled = true;
-              startAnalytics();
-            };
-            if ("requestIdleCallback" in window) {
-              window.requestIdleCallback(markPageSettled, { timeout: 2000 });
-            } else {
-              window.setTimeout(markPageSettled, 0);
-            }
-          },
-          { once: true },
-        );
-      }
+    <script>
+      import "../scripts/analytics";
+      import "../scripts/consent";
     </script>
 
     <Font cssVariable="--font-geist" preload />

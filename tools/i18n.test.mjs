@@ -106,6 +106,10 @@ test("the actual toggle switches prose, placeholder, labels, metadata and struct
     assert.equal(h.description.attributes.content, table["meta.description"]);
     assert.equal(h.toggle.attributes["aria-label"], table["language.switch"]);
     assert.equal(h.label.textContent, lang === "en" ? "EN" : "pt-BR");
+    assert.ok(
+      h.toggle.attributes["aria-label"].includes(h.label.textContent),
+      "the accessible name includes the visible language label",
+    );
     assert.match(h.document.cookie, /path=\/;.*SameSite=Lax; Secure/);
     const app = JSON.parse(h.graph.textContent)["@graph"][0];
     assert.equal(app.offers[0].priceCurrency, lang === "en" ? "USD" : "BRL");
