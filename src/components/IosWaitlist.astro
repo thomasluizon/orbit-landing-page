@@ -1,4 +1,5 @@
 ---
+import PillButton from "./PillButton.astro";
 import { translations } from "../i18n/translations";
 const en = translations.en;
 ---
@@ -28,13 +29,9 @@ const en = translations.en;
         aria-describedby="waitlist-status waitlist-privacy"
       />
       <div id="waitlist-turnstile"></div>
-      <button
-        id="waitlist-submit"
-        type="submit"
-        disabled
-        class="control-transition inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-full bg-primary px-[26px] font-sans text-[16px] font-medium text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
-        ><span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span></button
-      >
+      <PillButton id="waitlist-submit" type="submit" disabled size="md">
+        <span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span>
+      </PillButton>
     </form>
     <p id="waitlist-status" role="status" aria-live="polite" class="t-secondary"></p>
     <p id="waitlist-privacy" class="t-meta" data-i18n="ios.privacy">{en["ios.privacy"]}</p>

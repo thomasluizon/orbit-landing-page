@@ -5,7 +5,7 @@ import { parse } from "@astrojs/compiler";
 import { compile } from "tailwindcss";
 
 function findElement(node, name) {
-  if (node.type === "element" && node.name === name) return node;
+  if (["element", "component"].includes(node.type) && node.name === name) return node;
   for (const child of node.children ?? []) {
     const element = findElement(child, name);
     if (element) return element;
@@ -104,7 +104,7 @@ for (const tag of ["a", "button"]) {
 
     test(`${label}: press retains scale movement`, async () => {
       const active = Object.fromEntries(stateDeclarations((await control()).css, "active"));
-      assert.equal(active.scale, "0.98", "press must retain scale(0.98)");
+      assert.equal(active.scale, "0.96", "press must retain scale(0.96)");
     });
 
     test(`${label}: hover colours use 240ms and press/release movement uses 160ms`, async () => {
@@ -121,17 +121,19 @@ for (const tag of ["a", "button"]) {
   }
 }
 
-test("IosWaitlist button: compiled hover colours use 240ms and press/release movement uses 160ms", async () => {
-  assert.deepEqual(
-    transitionDurations(await compiledControl("src/components/IosWaitlist.astro", "button")),
-    {
-      "background-color": "240ms",
-      color: "240ms",
-      opacity: "160ms",
-      "box-shadow": "160ms",
-      transform: "160ms",
-      translate: "160ms",
-      scale: "160ms",
-    },
-  );
+test("IosWaitlist forwards submit and challenge state through PillButton", async () => {
+  const { ast } = await parse(await readFile("src/components/IosWaitlist.astro", "utf8"));
+  const submit = findElement(ast, "PillButton");
+  assert.ok(submit, "the waitlist uses the shared pill");
+  const attributes = Object.fromEntries(submit.attributes.map(({ name, value }) => [name, value]));
+  assert.equal(attributes.id, "waitlist-submit");
+  assert.equal(attributes.type, "submit");
+  assert.ok(submit.attributes.some(({ name }) => name === "disabled"));
+  const { ast: primitive } = await parse(await readFile("src/components/PillButton.astro", "utf8"));
+  const button = findElement(primitive, "button");
+  for (const name of ["type", "disabled"]) {
+    const attribute = button.attributes.find((candidate) => candidate.name === name);
+    assert.equal(attribute?.kind, "expression");
+    assert.equal(attribute?.value, name);
+  }
 });

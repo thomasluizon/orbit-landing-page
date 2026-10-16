@@ -18,11 +18,7 @@ const { appUrl } = Astro.props;
         <p class="t-secondary" data-i18n="consent.body">
           We use optional analytics cookies to see how this site is used.
         </p>
-        <a
-          href={`${appUrl}/privacy`}
-          class="font-sans text-[14px] text-fg-2 underline underline-offset-2 transition-[color] duration-[var(--duration-fast)] ease-standard hover:text-fg-1"
-          data-i18n="consent.privacy"
-        >
+        <a href={`${appUrl}/privacy`} class="text-link" data-i18n="consent.privacy">
           Privacy policy
         </a>
       </div>

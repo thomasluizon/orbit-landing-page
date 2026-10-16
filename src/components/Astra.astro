@@ -32,27 +32,25 @@ const steps = ["start", "remember", "act", "restart"] as const;
         <span class="t-meta" translate="no">Astra</span><X size={20} />
       </div>
       <div class="conversation-thread">
-        <p class="conversation-ask" data-i18n="astra.preview.ask">{en["astra.preview.ask"]}</p>
+        <p class="conversation-ask" data-i18n="preview.ask">{en["preview.ask"]}</p>
         <AstraGlyph />
-        <p data-i18n="astra.preview.reply">{en["astra.preview.reply"]}</p>
+        <p data-i18n="preview.reply">{en["preview.reply"]}</p>
         <div class="preview" data-state="proposed">
-          <p class="t-meta" data-i18n="astra.preview.state">{en["astra.preview.state"]}</p>
-          <p class="preview-title" data-i18n="astra.preview.title">{en["astra.preview.title"]}</p>
+          <p class="t-meta" data-i18n="preview.state">{en["preview.state"]}</p>
+          <p class="preview-title" data-i18n="preview.title">{en["preview.title"]}</p>
           <ul>
-            <li data-i18n="astra.preview.walk">{en["astra.preview.walk"]}</li><li
-              data-i18n="astra.preview.read"
-            >
-              {en["astra.preview.read"]}
+            <li data-i18n="preview.walk">{en["preview.walk"]}</li><li data-i18n="preview.read">
+              {en["preview.read"]}
             </li>
           </ul>
           <div class="preview-actions">
-            <span class="preview-approve" data-i18n="astra.preview.approve"
-              >{en["astra.preview.approve"]}</span
-            ><span data-i18n="astra.preview.edit">{en["astra.preview.edit"]}</span><span
-              data-i18n="astra.preview.reject">{en["astra.preview.reject"]}</span>
+            <span class="preview-approve" data-i18n="preview.approve">{en["preview.approve"]}</span
+            ><span data-i18n="preview.edit">{en["preview.edit"]}</span><span
+              data-i18n="preview.reject">{en["preview.reject"]}</span
+            >
           </div>
         </div>
-        <p class="t-secondary" data-i18n="astra.preview.note">{en["astra.preview.note"]}</p>
+        <p class="t-secondary" data-i18n="preview.note">{en["preview.note"]}</p>
       </div>
       <div class="conversation-composer">
         <span data-i18n="mockup.composer">{en["mockup.composer"]}</span><Plus size={20} /><ArrowUp
@@ -60,8 +58,8 @@ const steps = ["start", "remember", "act", "restart"] as const;
         />
       </div>
     </div>
-    <figcaption class="t-meta" data-i18n="astra.preview.caption">
-      {en["astra.preview.caption"]}
+    <figcaption class="t-meta" data-i18n="preview.caption">
+      {en["preview.caption"]}
     </figcaption>
   </figure>
 </section>

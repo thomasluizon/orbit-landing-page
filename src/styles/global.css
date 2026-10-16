@@ -308,8 +308,8 @@ body {
   position: sticky;
   inset-block-start: 0;
   z-index: 10;
+  padding-block-start: env(safe-area-inset-top);
   background: var(--color-bg);
-  container-type: scroll-state;
 
   &::after {
     content: "";
@@ -333,7 +333,7 @@ body {
 .header-content {
   min-height: 80px;
   justify-content: space-between;
-  gap: 24px;
+  gap: 12px;
 }
 
 .header-actions {
@@ -343,6 +343,9 @@ body {
 .brand {
   gap: 4px;
   flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 
 .brand img {
@@ -456,6 +459,11 @@ body {
   justify-content: space-between;
   min-height: 48px;
   color: var(--color-fg-3);
+}
+
+.phone-tools {
+  justify-content: end;
+  gap: 24px;
 }
 
 .phone-notice {
@@ -829,6 +837,8 @@ body {
 
 .consent-banner {
   opacity: 1;
+  inset-block-end: max(16px, env(safe-area-inset-bottom));
+  padding-inline: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
 }
 
 .simple-page {
@@ -840,7 +850,7 @@ body {
   padding-block: 48px;
   max-width: 740px;
 
-  & > div {
+  & > div:not(.simple-page-tools) {
     display: grid;
     gap: 16px;
   }
@@ -854,6 +864,8 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .brand:hover,
+  .wordmark:hover,
   .language-toggle:hover,
   .faq-list summary:hover {
     background: var(--color-bg-hover);
@@ -999,4 +1011,30 @@ body {
 
 .hero-positioning {
   font-weight: 500;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding-inline: 8px;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+
+@media (max-width: 23rem) {
+  .site-header .brand span {
+    display: none;
+  }
+}
+
+.pill-sm::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block: -4px;
 }

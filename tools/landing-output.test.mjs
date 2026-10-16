@@ -64,3 +64,57 @@ test("all built pages expose translated copy and stable waitlist controls", () =
     assert.ok(html.includes(`id="waitlist-${id}"`));
   }
 });
+
+test("confirmation uses native hidden state for both response paths", async () => {
+  const { default: vm } = await import("node:vm");
+  const page = readFileSync("dist/waitlist-confirmed/index.html", "utf8");
+  const tags = Object.fromEntries(
+    [...page.matchAll(/<div\b([^>]*id="(confirmed-(?:ok|invalid))"[^>]*)>/g)].map(
+      ([, attributes, id]) => [id, attributes],
+    ),
+  );
+  const script = [...page.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(([, code]) => code)
+    .find((code) => code.includes('get("status")'));
+  assert.ok(script, "confirmation chooses the response state");
+  for (const [search, invalid] of [
+    ["", false],
+    ["?status=invalid", true],
+  ]) {
+    const elements = Object.fromEntries(
+      Object.entries(tags).map(([id, attributes]) => [
+        id,
+        { hidden: /(?:^|\s)hidden(?:\s|=|$)/.test(attributes) },
+      ]),
+    );
+    assert.equal(elements["confirmed-invalid"].hidden, true);
+    vm.runInNewContext(script, {
+      URLSearchParams,
+      window: { location: { search } },
+      document: { getElementById: (id) => elements[id] },
+    });
+    assert.equal(elements["confirmed-ok"].hidden, invalid);
+    assert.equal(elements["confirmed-invalid"].hidden, !invalid);
+  }
+});
+
+test("the complete local script graph stays inside the raw byte budget", () => {
+  const seen = new Set();
+  function bytesFor(path) {
+    if (seen.has(path)) return 0;
+    seen.add(path);
+    const source = readFileSync(`dist${path}`, "utf8");
+    let bytes = Buffer.byteLength(source);
+    for (const [, imported] of source.matchAll(/(?:from|import)\s*["']([^"']+\.js)["']/g)) {
+      bytes += bytesFor(new URL(imported, `https://useorbit.org${path}`).pathname);
+    }
+    return bytes;
+  }
+  let bytes = 0;
+  for (const [, attributes, body] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+    if (attributes.includes("application/ld+json")) continue;
+    const path = attributes.match(/src="([^"]+)"/)?.[1];
+    bytes += path ? bytesFor(path) : Buffer.byteLength(body);
+  }
+  assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
+});

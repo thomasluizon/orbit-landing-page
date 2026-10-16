@@ -21,7 +21,7 @@ const en = translations.en;
         {en["waitlistConfirmed.ok.body"]}
       </p>
     </div>
-    <div id="confirmed-invalid" class="hidden">
+    <div id="confirmed-invalid" hidden>
       <h1 class="t-display" data-i18n="waitlistConfirmed.invalid.title">
         {en["waitlistConfirmed.invalid.title"]}
       </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.invalid.body">
@@ -35,8 +35,10 @@ const en = translations.en;
 </Layout>
 <script is:inline>
   if (new URLSearchParams(window.location.search).get("status") === "invalid") {
-    document.getElementById("confirmed-ok")?.classList.add("hidden");
-    document.getElementById("confirmed-invalid")?.classList.remove("hidden");
+    const ok = document.getElementById("confirmed-ok");
+    const invalid = document.getElementById("confirmed-invalid");
+    if (ok) ok.hidden = true;
+    if (invalid) invalid.hidden = false;
   }
 </script>
 <script>
