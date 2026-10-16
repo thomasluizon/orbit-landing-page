@@ -1,123 +1,29 @@
 ---
-import { CalendarDays, Cable, ListChecks, Smartphone, Trophy, Users } from "@lucide/astro";
-
-const featureRows = [
-  {
-    icon: Cable,
-    titleKey: "features.mcp.title",
-    descKey: "features.mcp.desc",
-    title: "Connect your own AI",
-    desc: "Orbit speaks MCP, so Claude or ChatGPT can manage your habits from wherever you already chat.",
-  },
-  {
-    icon: Users,
-    titleKey: "features.social.title",
-    descKey: "features.social.desc",
-    title: "Support, not scoreboards",
-    desc: "Accountability buddies, co-op challenges, and cheers. No leaderboards, and off until you opt in.",
-  },
-  {
-    icon: ListChecks,
-    titleKey: "features.tracker.title",
-    descKey: "features.tracker.desc",
-    title: "A serious core tracker",
-    desc: "Daily, weekly, flexible, or one-time habits, with sub-habits, checklists, and bad-habit tracking.",
-  },
-  {
-    icon: CalendarDays,
-    titleKey: "features.calendar.title",
-    descKey: "features.calendar.desc",
-    title: "Calendar and Google sync",
-    desc: "A color-coded month view, plus import your Google Calendar events straight into your habits.",
-  },
-  {
-    icon: Trophy,
-    titleKey: "features.rewards.title",
-    descKey: "features.rewards.desc",
-    title: "Streaks, XP, and Wrapped",
-    desc: "Streak freezes, achievement badges, levels, and a shareable Orbit Wrapped recap.",
-  },
-  {
-    icon: Smartphone,
-    titleKey: "features.widget.title",
-    descKey: "features.widget.desc",
-    title: "Android home-screen widget",
-    desc: "Today's habits at a glance, right on your home screen.",
-  },
-];
+import { translations } from "../i18n/translations";
+const en = translations.en;
+const features = ["tracker", "goals", "progress", "widget"] as const;
 ---
 
-<section id="features" class="py-20 sm:py-24">
-  <div class="page-container">
-    <h2
-      class="t-display reveal mx-auto max-w-[560px] text-center [text-wrap:balance] lg:mx-0 lg:text-left"
+<section id="features" class="section page-container" aria-labelledby="features-title">
+  <h2 id="features-title" class="t-display section-title">
+    <span data-i18n="features.title1">{en["features.title1"]}</span><span
+      data-i18n="features.title2">{en["features.title2"]}</span
     >
-      <span data-i18n="features.title1">Everything you need to build</span><span
-        data-i18n="features.title2"
-      >
-        habits that stick</span
-      >
-    </h2>
-
-    <div
-      class="reveal mt-10 flex flex-col gap-5 rounded-[20px] p-7 sm:flex-row sm:items-center sm:gap-8 sm:p-8"
-      style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.28);"
-    >
-      <div class="sm:max-w-[300px]">
-        <div class="flex items-center gap-2.5">
-          <span class="text-[26px]" aria-hidden="true">✨</span>
-          <span
-            class="rounded-full px-[9px] py-[3px] font-sans text-[10.5px] font-semibold tracking-[0.06em] text-fg-1 uppercase"
-            style="background: rgba(var(--primary-rgb), 0.18);"
-            data-i18n="features.astra.tag"
-          >
-            61 tools
-          </span>
-        </div>
-        <h3
-          class="mt-4 font-display text-[24px] font-semibold tracking-[-0.01em] text-fg-1"
-          data-i18n="features.astra.title"
-        >
-          Astra, your AI coach
-        </h3>
-        <p
-          class="mt-2 font-sans text-[14px] leading-[1.55] text-fg-2 [text-wrap:pretty]"
-          data-i18n="features.astra.desc"
-        >
-          Chat or speak to create, log, and adjust habits. 61 built-in tools mean almost anything
-          you can tap, you can just ask.
-        </p>
-      </div>
-      <div class="flex-1 rounded-[12px] bg-bg-sunk p-4">
-        <p class="font-sans text-[13.5px] leading-[1.55] text-fg-2" data-i18n="mockup.aiText">
-          Amazing consistency! You've completed 5 of 7 habits today. Your morning routine streak is
-          at 12 days.
-        </p>
-      </div>
-    </div>
-
-    <div
-      class="reveal reveal-stagger mt-5 divide-y divide-hairline rounded-[18px] bg-bg-card"
-      style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
-    >
-      {
-        featureRows.map((row) => (
-          <div class="flex items-center gap-4 px-5 py-4 sm:px-6">
-            <row.icon size={22} stroke-width={1.8} class="shrink-0 text-fg-2" />
-            <div class="min-w-0">
-              <h3 class="font-sans text-[16px] font-medium text-fg-1" data-i18n={row.titleKey}>
-                {row.title}
-              </h3>
-              <p
-                class="mt-0.5 font-sans text-[13.5px] leading-[1.5] text-fg-3 [text-wrap:pretty]"
-                data-i18n={row.descKey}
-              >
-                {row.desc}
-              </p>
-            </div>
-          </div>
-        ))
-      }
-    </div>
+  </h2>
+  <div class="feature-grid">
+    {
+      features.map((feature) => (
+        <article>
+          <>
+            <h3 class="t-h2" data-i18n={`features.${feature}.title`}>
+              {en[`features.${feature}.title`]}
+            </h3>
+            <p class="t-body text-fg-2" data-i18n={`features.${feature}.desc`}>
+              {en[`features.${feature}.desc`]}
+            </p>
+          </>
+        </article>
+      ))
+    }
   </div>
 </section>

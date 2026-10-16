@@ -5,7 +5,7 @@ import vm from "node:vm";
 import ts from "typescript";
 
 const scripts = new Map();
-for (const path of ["../i18n/translations", "./i18n", "./waitlist"]) {
+for (const path of ["../config/pricing", "../i18n/translations", "./i18n", "./waitlist"]) {
   const source = await readFile(new URL(`../src/scripts/${path}.ts`, import.meta.url), "utf8");
   scripts.set(
     path,

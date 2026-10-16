@@ -160,17 +160,18 @@ function createHarness(initialChoice = null) {
 
 async function executeProductionScripts(harness) {
   const layout = await readFile("src/layouts/Layout.astro", "utf8");
-  const inlineScript = layout.match(
-    /<script is:inline define:vars=\{\{ posthogKey \}\}>\s*([\s\S]*?)\s*<\/script>/,
-  )?.[1];
-  assert.ok(inlineScript, "PostHog inline script exists");
-  vm.runInContext(`const posthogKey = "phc_test";\n${inlineScript}`, harness.context);
-
-  const consentSource = await readFile("src/scripts/consent.ts", "utf8");
-  const consentScript = ts.transpileModule(consentSource, {
-    compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
-  vm.runInContext(consentScript, harness.context);
+  const imports = [...layout.matchAll(/import "\.\.\/scripts\/(analytics|consent)";/g)].map(
+    (match) => match[1],
+  );
+  assert.deepEqual(imports, ["analytics", "consent"]);
+  harness.context.environment = { PUBLIC_POSTHOG_KEY: "phc_test" };
+  for (const name of imports) {
+    const source = await readFile(`src/scripts/${name}.ts`, "utf8");
+    const script = ts.transpileModule(source.replaceAll("import.meta.env", "environment"), {
+      compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    vm.runInContext(script, harness.context);
+  }
 }
 
 test("a first-time visitor makes no PostHog request and captures nothing before consent", async () => {

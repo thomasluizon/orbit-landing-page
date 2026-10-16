@@ -1,77 +1,39 @@
 ---
-import { Apple } from "@lucide/astro";
+import PillButton from "./PillButton.astro";
+import { translations } from "../i18n/translations";
+const en = translations.en;
 ---
 
-<section id="ios" class="py-20 sm:py-24">
-  <div class="page-container">
-    <div
-      class="relative overflow-hidden rounded-[24px] px-6 py-12 text-center sm:px-12 sm:py-16"
-      style="background: rgba(var(--primary-rgb), 0.06); box-shadow: inset 0 0 0 1px var(--color-hairline);"
+<section id="ios" class="section page-container waitlist-section" aria-labelledby="ios-title">
+  <div>
+    <h2 id="ios-title" class="t-display" data-i18n="ios.title">{en["ios.title"]}</h2><p
+      class="t-body text-fg-2"
+      data-i18n="ios.desc"
     >
-      <div class="reveal relative mx-auto max-w-[520px]">
-        <span
-          class="inline-flex items-center gap-2 rounded-full bg-bg-sunk px-3 py-1.5 font-mono text-[11px] tracking-[0.02em] text-fg-2"
-          style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
-        >
-          <Apple size={13} class="text-fg-1" />
-          <span data-i18n="ios.eyebrow">Coming soon</span>
-        </span>
-        <h2 class="t-display mt-5 [text-wrap:balance]" data-i18n="ios.title">
-          Orbit is coming to iPhone
-        </h2>
-        <p
-          class="t-body mx-auto mt-4 max-w-[420px] text-fg-2 [text-wrap:pretty]"
-          data-i18n="ios.desc"
-        >
-          The iOS app is in the works. Leave your email and we'll tell you the moment it's ready.
-          Double opt-in, no spam.
-        </p>
-
-        <form
-          id="waitlist-form"
-          novalidate
-          class="mx-auto mt-8 grid max-w-[440px] grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
-        >
-          <label for="waitlist-email" class="sr-only" data-i18n="ios.placeholder">
-            you@example.com
-          </label>
-          <input
-            id="waitlist-email"
-            type="email"
-            name="email"
-            autocomplete="email"
-            required
-            placeholder="you@example.com"
-            data-i18n-placeholder="ios.placeholder"
-            class="min-h-[48px] w-full rounded-full bg-bg-field px-5 font-sans text-[15px] text-fg-1 placeholder:text-fg-3 sm:col-start-1 sm:row-start-1"
-            style="box-shadow: inset 0 0 0 1px var(--color-hairline-strong);"
-          />
-          <div
-            id="waitlist-turnstile"
-            class="flex min-h-[65px] w-full items-center justify-center sm:col-span-2 sm:row-start-2"
-          >
-          </div>
-          <button
-            id="waitlist-submit"
-            type="submit"
-            disabled
-            class="control-transition inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-full bg-primary px-[26px] font-sans text-[15px] font-medium text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 sm:col-start-2 sm:row-start-1"
-          >
-            <span id="waitlist-submit-label" data-i18n="ios.button">Notify me</span>
-          </button>
-        </form>
-
-        <p
-          id="waitlist-status"
-          role="status"
-          aria-live="polite"
-          class="mt-4 min-h-[20px] font-sans text-[13.5px]"
-        >
-        </p>
-        <p class="mt-2 font-sans text-[12.5px] text-fg-3" data-i18n="ios.privacy">
-          We'll only email you about the iOS launch.
-        </p>
-      </div>
-    </div>
+      {en["ios.desc"]}
+    </p>
+  </div>
+  <div>
+    <form id="waitlist-form" novalidate>
+      <label for="waitlist-email" class="t-secondary" data-i18n="ios.label">{en["ios.label"]}</label
+      >
+      <input
+        id="waitlist-email"
+        type="email"
+        name="email"
+        autocomplete="email"
+        spellcheck="false"
+        required
+        placeholder={en["ios.placeholder"]}
+        data-i18n-placeholder="ios.placeholder"
+        aria-describedby="waitlist-status waitlist-privacy"
+      />
+      <div id="waitlist-turnstile"></div>
+      <PillButton id="waitlist-submit" type="submit" disabled size="md">
+        <span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span>
+      </PillButton>
+    </form>
+    <p id="waitlist-status" role="status" aria-live="polite" class="t-secondary"></p>
+    <p id="waitlist-privacy" class="t-meta" data-i18n="ios.privacy">{en["ios.privacy"]}</p>
   </div>
 </section>

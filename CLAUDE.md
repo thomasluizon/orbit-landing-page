@@ -1,10 +1,10 @@
 # Orbit Landing Page
 
-Marketing landing page for the Orbit habit tracker. Static Astro + Tailwind site deployed on Vercel at useorbit.org. Sibling repos: `../orbit-ui-mobile` (app monorepo) and `../orbit-api` (.NET API).
+Landing page for Orbit, an AI that tracks habits. Static Astro + Tailwind site deployed on Render at useorbit.org through the manual release workflow. Sibling repos: `../orbit-ui-mobile` (app monorepo) and `../orbit-api` (.NET API).
 
 ## Design system (mirrored, not owned)
 
-The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/handoff/` (vendored handoff). This repo MIRRORS the dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
+The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/canvas/` (granted drawings). This repo MIRRORS the dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
 
 - Anchor: spacious near-black. Canvas `#09090B`, warm orange `#C4530F`, Geist Sans/Space Grotesk/Geist Mono, neutral surface steps, flat pill CTAs. No decorative glow or gradient wash.
 - Dark-only (landing deviation); the single accent follows the current canon.
@@ -25,7 +25,7 @@ Same 10 rules as the monorepo's root `CLAUDE.md`: root cause over workarounds; d
 ## Architecture
 
 - `src/i18n/translations.ts` - typed EN/PT-BR tables (`Record<TranslationKey, string>` enforces key parity at compile time)
-- `src/scripts/` - client modules: `i18n.ts` (cookie + toggle + DOM apply), `reveal.ts` (scroll reveals), `header-scroll.ts`
+- `src/scripts/` - client modules: `i18n.ts` (language cookie, toggle, copy and structured data), `waitlist.ts` (Turnstile and waitlist requests), `analytics.ts` (consent-gated loader), `consent.ts` (analytics choice and events)
 - `src/styles/global.css` - the token mirror + type roles + base styles (single CSS file)
 
 ## i18n

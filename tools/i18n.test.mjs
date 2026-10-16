@@ -1,0 +1,160 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import vm from "node:vm";
+import ts from "typescript";
+
+function element(attributes = {}, textContent = "") {
+  return {
+    textContent,
+    attributes: { ...attributes },
+    listeners: new Map(),
+    getAttribute(name) {
+      return this.attributes[name] ?? null;
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+    addEventListener(name, listener) {
+      this.listeners.set(name, listener);
+    },
+  };
+}
+
+function harness({ cookie = "", language = "en-US" } = {}) {
+  const toggle = element();
+  const label = element();
+  const headline = element({ "data-i18n": "hero.title1" });
+  const continuation = element({ "data-i18n": "cta.title2" });
+  const placeholder = element({ "data-i18n-placeholder": "ios.placeholder" });
+  const description = element({ "data-i18n-content": "meta.description" });
+  const nav = element({ "data-i18n-label": "nav.label" });
+  const graph = element(
+    {},
+    JSON.stringify({ "@graph": [{ "@type": "SoftwareApplication", offers: {} }] }),
+  );
+  const faq = element({}, JSON.stringify({ "@type": "FAQPage", mainEntity: [] }));
+  const document = {
+    cookie,
+    documentElement: {},
+    getElementById: (id) => ({ "lang-label": label, "lang-toggle": toggle })[id] ?? null,
+    querySelectorAll: (selector) =>
+      ({
+        "[data-i18n]": [headline, continuation],
+        "[data-i18n-placeholder]": [placeholder],
+        "[data-i18n-content]": [description],
+        "[data-i18n-label]": [nav],
+        'script[type="application/ld+json"]': [graph, faq],
+      })[selector] ?? [],
+  };
+  const context = vm.createContext({
+    document,
+    navigator: { language },
+    environment: { DEV: false },
+    Intl,
+  });
+  const modules = new Map();
+  function require(path) {
+    if (modules.has(path)) return modules.get(path);
+    const source = readFileSync(`src/scripts/${path}.ts`, "utf8");
+    const code = ts.transpileModule(source.replaceAll("import.meta.env", "environment"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    const exports = {};
+    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(exports, require);
+    modules.set(path, exports);
+    return exports;
+  }
+  const module = require("./i18n");
+  return {
+    module,
+    document,
+    toggle,
+    label,
+    headline,
+    continuation,
+    placeholder,
+    description,
+    nav,
+    graph,
+    faq,
+    tables: require("../i18n/translations").translations,
+    prices: require("../config/pricing"),
+  };
+}
+
+test("language cookies override the browser and invalid cookies use its language", () => {
+  assert.equal(harness({ cookie: "orbit_lang=pt-BR", language: "en" }).module.getLang(), "pt-BR");
+  assert.equal(harness({ cookie: "orbit_lang=en", language: "pt-BR" }).module.getLang(), "en");
+  assert.equal(
+    harness({ cookie: "orbit_lang=invalid", language: "pt-PT" }).module.getLang(),
+    "pt-BR",
+  );
+  assert.equal(harness({ language: "fr-FR" }).module.getLang(), "en");
+});
+
+test("the actual toggle switches prose, placeholder, labels, metadata and structured data both ways", () => {
+  const h = harness();
+  for (const lang of ["en", "pt-BR", "en"]) {
+    if (h.document.documentElement.lang !== lang) h.toggle.listeners.get("click")();
+    const table = h.tables[lang];
+    assert.equal(h.headline.textContent, table["hero.title1"]);
+    assert.equal(h.continuation.textContent, table["cta.title2"]);
+    assert.ok(h.continuation.textContent.startsWith(" "));
+    assert.equal(h.placeholder.attributes.placeholder, table["ios.placeholder"]);
+    assert.equal(h.nav.attributes["aria-label"], table["nav.label"]);
+    assert.equal(h.description.attributes.content, table["meta.description"]);
+    assert.equal(h.toggle.attributes["aria-label"], table["language.switch"]);
+    assert.equal(h.label.textContent, lang === "en" ? "EN" : "pt-BR");
+    assert.ok(
+      h.toggle.attributes["aria-label"].includes(h.label.textContent),
+      "the accessible name includes the visible language label",
+    );
+    assert.match(h.document.cookie, /path=\/;.*SameSite=Lax; Secure/);
+    const app = JSON.parse(h.graph.textContent)["@graph"][0];
+    assert.equal(app.offers[0].priceCurrency, lang === "en" ? "USD" : "BRL");
+    const faq = JSON.parse(h.faq.textContent);
+    assert.equal(faq.mainEntity.length, 7);
+    assert.equal(faq.mainEntity[0].name, table["faq.q1"]);
+  }
+});
+
+test("price display and offers share the verified amount and billing interval", () => {
+  const { prices, tables } = harness();
+  for (const [lang, amounts, currency] of [
+    ["en", [0, 9.99, 69.99], "USD"],
+    ["pt-BR", [0, 29.9, 199], "BRL"],
+  ]) {
+    const offers = prices.offersFor(lang);
+    assert.deepEqual(
+      Array.from(offers, (offer) => offer.price),
+      amounts,
+    );
+    assert.ok(offers.every((offer) => offer.priceCurrency === currency));
+    assert.equal(offers[1].priceSpecification.billingDuration, "P1M");
+    assert.equal(offers[2].priceSpecification.billingDuration, "P1Y");
+    const display = prices.pricesFor(lang);
+    assert.ok(tables[lang]["pricing.pro.monthly"].includes(display.monthly));
+    assert.ok(tables[lang]["pricing.pro.yearly"].includes(display.yearly));
+    assert.ok(tables[lang]["pricing.pro.savings"].includes(display.savings));
+  }
+});
+
+test("both locales have the same complete keys and no retired marketing", () => {
+  const { tables } = harness();
+  assert.deepEqual(Object.keys(tables.en), Object.keys(tables["pt-BR"]));
+  for (const table of Object.values(tables)) {
+    assert.ok(Object.values(table).every((text) => text.length > 0));
+    assert.ok(
+      !Object.keys(table).some((key) =>
+        /mcp|proof\.(registrations|installs|paying|astraTools|mcpTools)|social|badge/.test(key),
+      ),
+    );
+    assert.doesNotMatch(
+      Object.values(table).join(" "),
+      /[\u2013\u2014]|unlimited habits|AI memory|MCP|accountability|leaderboard|500 messages|20 AI/i,
+    );
+    for (const key of ["hero.title2", "features.title2", "cta.title2"])
+      assert.ok(table[key].startsWith(" "), key);
+  }
+});

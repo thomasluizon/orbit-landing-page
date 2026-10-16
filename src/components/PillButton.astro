@@ -4,6 +4,8 @@ type PillSize = "md" | "sm";
 
 interface Props {
   href?: string;
+  type?: "button" | "submit";
+  disabled?: boolean;
   variant?: PillVariant;
   size?: PillSize;
   external?: boolean;
@@ -16,8 +18,10 @@ interface Props {
 
 const {
   href,
+  type = "button",
+  disabled = false,
   variant = "primary",
-  size = "md",
+  size = "sm",
   external = false,
   class: className = "",
   ariaLabel,
@@ -28,14 +32,14 @@ const {
 
 const variantClasses: Record<PillVariant, string> = {
   primary:
-    "bg-primary text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.98]",
+    "bg-primary text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.96]",
   ghost:
-    "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-card active:scale-[0.98]",
+    "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-hover active:scale-[0.96]",
 };
 
 const sizeClasses: Record<PillSize, string> = {
-  md: variant === "primary" ? "px-[26px] py-[15px] text-[16px]" : "px-[26px] py-[14px] text-[16px]",
-  sm: "min-h-[44px] px-[18px] text-[14px]",
+  md: "min-h-[50px] px-[26px] text-[16px] gap-[9px]",
+  sm: "pill-sm min-h-[40px] px-[18px] text-[14px] gap-[7px]",
 };
 ---
 
@@ -50,7 +54,7 @@ const sizeClasses: Record<PillSize, string> = {
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "control-transition inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -60,13 +64,14 @@ const sizeClasses: Record<PillSize, string> = {
     </a>
   ) : (
     <button
-      type="button"
+      type={type}
+      disabled={disabled}
       aria-label={ariaLabel}
       id={id}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "control-transition inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
         className,
