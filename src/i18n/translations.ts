@@ -24,7 +24,7 @@ const en = {
   "demo.start.approved": "Your walk is added.",
   "demo.restart.chip": "Missed a day",
   "demo.restart.request": "I missed my walk.",
-  "demo.restart.reply": "Let's return this evening.",
+  "demo.restart.reply": "Let's pick it back up tonight.",
   "demo.restart.habit": "Walk",
   "demo.restart.repeat": "Today · Evening",
   "demo.restart.alternateRepeat": "Today · Morning",
@@ -124,7 +124,7 @@ const ptBR: Record<TranslationKey, string> = {
 
   "meta.title": "Orbit | Organize sua rotina com a Astra",
   "meta.description":
-    "O Orbit é uma IA que acompanha seus hábitos. Peça ajuda à Astra para começar, ajustar a rotina ou voltar depois de um dia difícil. Você revisa cada mudança antes de salvar.",
+    "O Orbit é uma IA que acompanha seus hábitos. Peça ajuda à Astra para começar, ajustar a rotina ou retomar depois de perder um dia. Você revisa cada mudança antes de salvar.",
   "meta.notFound": "Página não encontrada | Orbit",
   "meta.confirmed": "Confirmação da lista | Orbit",
   skip: "Ir para o conteúdo",
