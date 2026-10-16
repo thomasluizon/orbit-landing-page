@@ -17,7 +17,7 @@ const en = {
   "hero.title1": "Keeping a routine is hard.",
   "hero.title2": " Getting back can be easier.",
   "hero.subtitle":
-    "Tell Astra what you want to do. It helps turn it into habits. You review a preview before anything changes.",
+    "Tell Astra what you want to do. Review its plan before it creates or changes your habits.",
   "hero.cta": "Install Orbit",
   "hero.web": "Open Orbit",
   "hero.ctaNote": "Free to start on Android. Also on the web.",
@@ -64,13 +64,13 @@ const en = {
   "features.title2": " between conversations.",
   "features.tracker.title": "Mark it done",
   "features.tracker.desc":
-    "Use the habit list directly. One tap records a habit, even when you are offline.",
+    "Mark a habit done in one tap, even offline. Choose when it repeats or add a task for one day. You can also track habits you want to stop.",
   "features.goals.title": "See what adds up",
   "features.goals.desc":
     "Break a habit into smaller steps and link habits to a goal. Subhabits and goals are free.",
   "features.progress.title": "Look back",
   "features.progress.desc":
-    "See your streaks and completion history. Orbit Wrapped closes the period with a recap.",
+    "Follow your streaks and completion history. Bank streak freezes and see your XP, levels and achievements. Share a recap with Orbit Wrapped.",
   "features.widget.title": "Keep today close",
   "features.widget.desc": "The Android widget puts your habits on your home screen.",
   "pricing.eyebrow": "Pricing",
@@ -141,6 +141,7 @@ const en = {
   "waitlistConfirmed.invalid.body":
     "Your confirmation link is invalid or has expired. Join the waitlist again to get a new link.",
   "waitlistConfirmed.cta": "Open Orbit",
+  "waitlistConfirmed.retry": "Join waitlist",
   "notFound.title": "Page not found",
   "notFound.body":
     "This page does not exist. Return to Orbit to find the app or join the iPhone waitlist.",
@@ -173,7 +174,7 @@ const ptBR: Record<TranslationKey, string> = {
   "hero.title1": "É difícil manter a rotina.",
   "hero.title2": " Voltar pode ser mais fácil.",
   "hero.subtitle":
-    "Conte ao Astra o que você quer fazer. Ele ajuda a criar hábitos e mostra uma prévia para você revisar antes de salvar.",
+    "Conte ao Astra o que você quer fazer. Revise o plano antes de criar ou mudar seus hábitos.",
   "hero.cta": "Instalar Orbit",
   "hero.web": "Abrir Orbit",
   "hero.ctaNote": "Comece grátis no Android. Também disponível na web.",
@@ -219,13 +220,13 @@ const ptBR: Record<TranslationKey, string> = {
   "features.title2": " entre uma conversa e outra.",
   "features.tracker.title": "Marque o que fez",
   "features.tracker.desc":
-    "Use a lista de hábitos diretamente. Um toque registra o que você fez, mesmo sem internet.",
+    "Marque um hábito com um toque, mesmo sem internet. Escolha quando repetir ou crie uma tarefa para um dia. Também dá para acompanhar hábitos que você quer deixar.",
   "features.goals.title": "Acompanhe suas metas",
   "features.goals.desc":
     "Divida um hábito em passos menores e conecte seus hábitos a uma meta. Subhábitos e metas são grátis.",
   "features.progress.title": "Veja como foi",
   "features.progress.desc":
-    "Acompanhe suas sequências e seu histórico. O Orbit Wrapped traz um resumo ao fechar o período.",
+    "Veja seu histórico, suas sequências e as proteções que guardou. Acompanhe o XP, seus níveis e conquistas. Compartilhe o resumo do período com o Orbit Wrapped.",
   "features.widget.title": "Veja sem abrir",
   "features.widget.desc": "O widget do Android deixa seus hábitos na tela inicial.",
   "pricing.eyebrow": "Planos",
@@ -242,8 +243,7 @@ const ptBR: Record<TranslationKey, string> = {
   "pricing.pro.f2": "Receba uma retrospectiva periódica do Astra",
   "pricing.pro.f3": "Receba uma mensagem quando o Astra perceber algo",
   "pricing.cta": "Começar grátis",
-  "pricing.note":
-    "As mensagens renovam à meia noite no seu fuso. Cancele a assinatura quando quiser.",
+  "pricing.note": "As mensagens renovam às 00h no seu fuso. Cancele a assinatura quando quiser.",
   "platforms.title": "No Android e na web.",
   "platforms.android.title": "Android",
   "platforms.android.desc":
@@ -282,7 +282,7 @@ const ptBR: Record<TranslationKey, string> = {
     "Use o Orbit no Android ou na web. Entre na lista do iOS para saber quando o app para iPhone chegar.",
   "faq.q6": "Quais são os limites?",
   "faq.a6":
-    "Os dois planos permitem 1000 hábitos ativos. O Astra tem 5 mensagens por dia no grátis e 50 no Pro, renovadas à meia noite no seu fuso. A lista continua disponível quando as mensagens acabam.",
+    "Os dois planos permitem 1000 hábitos ativos. O Astra tem 5 mensagens por dia no grátis e 50 no Pro, renovadas às 00h no seu fuso. A lista continua disponível quando as mensagens acabam.",
   "faq.q7": "Posso excluir meus dados?",
   "faq.a7":
     "Exporte seus dados ou exclua a conta nas configurações da conta. A política de privacidade explica como o Orbit usa seus dados.",
@@ -297,10 +297,11 @@ const ptBR: Record<TranslationKey, string> = {
   "waitlistConfirmed.invalid.body":
     "Seu link de confirmação é inválido ou expirou. Entre na lista de novo para receber outro link.",
   "waitlistConfirmed.cta": "Abrir Orbit",
+  "waitlistConfirmed.retry": "Tentar novamente",
   "notFound.title": "Página não encontrada",
   "notFound.body":
     "Esta página não existe. Volte ao Orbit para encontrar o app ou entrar na lista do iPhone.",
-  "notFound.cta": "Voltar ao início",
+  "notFound.cta": "Voltar",
   "consent.body": "Usamos cookies opcionais de análise para entender como o site é usado.",
   "consent.accept": "Permitir",
   "consent.decline": "Recusar",

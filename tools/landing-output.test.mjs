@@ -77,6 +77,24 @@ test("confirmation uses native hidden state for both response paths", async () =
     .map(([, code]) => code)
     .find((code) => code.includes('get("status")'));
   assert.ok(script, "confirmation chooses the response state");
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(page);
+  const attributes = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const hasCtaLabel = (node) =>
+    attributes(node)["data-i18n"]?.startsWith("waitlistConfirmed.") ||
+    (node.children ?? []).some(hasCtaLabel);
+  function visibleDestinations(node, states, inherited = false) {
+    const attrs = attributes(node);
+    const hidden =
+      states[attrs.id]?.hidden ??
+      (inherited || (node.attributes ?? []).some(({ name }) => name === "hidden"));
+    if (hidden) return [];
+    if (node.name === "a" && hasCtaLabel(node)) return [attrs.href];
+    return (node.children ?? []).flatMap((child) => visibleDestinations(child, states, hidden));
+  }
+  const appDestination = visibleDestinations(ast, {})[0];
+  assert.ok(appDestination.startsWith("https://"), "the app destination is configured");
   for (const [search, invalid] of [
     ["", false],
     ["?status=invalid", true],
@@ -95,6 +113,7 @@ test("confirmation uses native hidden state for both response paths", async () =
     });
     assert.equal(elements["confirmed-ok"].hidden, invalid);
     assert.equal(elements["confirmed-invalid"].hidden, !invalid);
+    assert.deepEqual(visibleDestinations(ast, elements), [invalid ? "/#ios" : appDestination]);
   }
 });
 

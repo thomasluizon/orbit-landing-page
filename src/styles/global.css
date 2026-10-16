@@ -854,6 +854,7 @@ body {
 
   & > div:not(.simple-page-tools) {
     display: grid;
+    justify-items: start;
     gap: 16px;
   }
 }

@@ -20,6 +20,9 @@ const en = translations.en;
       </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.ok.body">
         {en["waitlistConfirmed.ok.body"]}
       </p>
+      <PillButton href={appUrl}
+        ><span data-i18n="waitlistConfirmed.cta">{en["waitlistConfirmed.cta"]}</span></PillButton
+      >
     </div>
     <div id="confirmed-invalid" hidden>
       <h1 class="t-display" data-i18n="waitlistConfirmed.invalid.title">
@@ -27,10 +30,11 @@ const en = translations.en;
       </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.invalid.body">
         {en["waitlistConfirmed.invalid.body"]}
       </p>
+      <PillButton href="/#ios"
+        ><span data-i18n="waitlistConfirmed.retry">{en["waitlistConfirmed.retry"]}</span
+        ></PillButton
+      >
     </div>
-    <PillButton href={appUrl}
-      ><span data-i18n="waitlistConfirmed.cta">{en["waitlistConfirmed.cta"]}</span></PillButton
-    >
   </main>
 </Layout>
 <script is:inline>
