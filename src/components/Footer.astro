@@ -7,11 +7,10 @@ const { appUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<footer class="page-container site-footer">
-  <a href="/" class="wordmark" translate="no">Orbit</a><div>
-    <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">{en["footer.terms"]}</a
-    ><a href={`${appUrl}/privacy`} class="text-link" data-i18n="footer.privacy"
-      >{en["footer.privacy"]}</a
-    >
-  </div>
+<footer class="site-footer t-meta">
+  <a href={`${appUrl}/privacy`} class="text-link" data-i18n="footer.privacy"
+    >{en["footer.privacy"]}</a
+  >
+  <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">{en["footer.terms"]}</a>
+  <span translate="no">© Orbit</span>
 </footer>

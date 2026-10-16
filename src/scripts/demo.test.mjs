@@ -42,7 +42,7 @@ function harness(language = "en", reducedMotion = false) {
   elements.get("astra-demo").querySelectorAll = () => chips;
   const motion = {
     matches: reducedMotion,
-    addEventListener(name, callback) {
+    addEventListener(_name, callback) {
       this.change = callback;
     },
   };
@@ -63,9 +63,9 @@ function harness(language = "en", reducedMotion = false) {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
   }).outputText;
   const table = {};
-  vm.runInContext(`(function(exports, require) { ${translations} })`, context)(table, () => ({
-    pricesFor: () => ({}),
-  }));
+  vm.runInContext(`(function(exports, require) { ${translations} })`, context)(table, () => {
+    throw new Error("unexpected dependency");
+  });
   const code = ts.transpileModule(readFileSync("src/scripts/demo.ts", "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
   }).outputText;

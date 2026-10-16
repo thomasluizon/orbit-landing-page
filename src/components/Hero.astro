@@ -1,7 +1,6 @@
 ---
-import AppMockup from "./AppMockup.astro";
+import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
-import Proof from "./Proof.astro";
 import { translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
@@ -11,34 +10,39 @@ const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<section id="hero" class="hero page-container">
+<section id="hero" class="hero">
   <div class="hero-copy">
-    <p class="t-secondary hero-positioning" data-i18n="hero.eyebrow">{en["hero.eyebrow"]}</p>
-    <h1 class="t-hero">
-      <span data-i18n="hero.title1">{en["hero.title1"]}</span><span
-        class="hero-promise"
-        data-i18n="hero.title2">{en["hero.title2"]}</span
-      >
-    </h1>
-    <p class="t-body text-fg-2" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
-    <div class="hero-actions">
-      <PillButton
-        href={googlePlayUrl}
-        size="md"
-        external
-        analyticsEvent="hero_google_play_cta_clicked"
-        analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
-      >
-      <a
-        class="text-link"
-        href={appUrl}
-        data-i18n="hero.web"
-        data-analytics-event="hero_app_cta_clicked"
-        data-analytics-surface="hero">{en["hero.web"]}</a
-      >
+    <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
+    <p class="hero-description t-secondary" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
+    <div class="hero-controls">
+      <div class="hero-actions">
+        <PillButton
+          href={googlePlayUrl}
+          size="md"
+          external
+          analyticsEvent="hero_google_play_cta_clicked"
+          analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
+        >
+        <a
+          class="text-link"
+          href={appUrl}
+          data-i18n="hero.web"
+          data-analytics-event="hero_app_cta_clicked"
+          data-analytics-surface="hero">{en["hero.web"]}</a
+        >
+      </div>
+      <p class="hero-meta t-meta">
+        <span data-i18n="hero.platforms">{en["hero.platforms"]}</span>
+        <a
+          href="#ios"
+          id="ios-trigger"
+          class="text-link"
+          aria-haspopup="dialog"
+          aria-controls="ios"
+          data-i18n="hero.ios">{en["hero.ios"]}</a
+        >
+      </p>
     </div>
-    <p class="t-meta" data-i18n="hero.ctaNote">{en["hero.ctaNote"]}</p>
-    <Proof />
   </div>
-  <AppMockup />
+  <AstraDemo />
 </section>

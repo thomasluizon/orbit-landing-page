@@ -1,52 +1,28 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Cta from "../components/Cta.astro";
-import Faq from "../components/Faq.astro";
-import Features from "../components/Features.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
-import Astra from "../components/Astra.astro";
-import Platforms from "../components/Platforms.astro";
-import Pricing from "../components/Pricing.astro";
 import { translations } from "../i18n/translations";
-
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
-
-const en = translations.en;
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
-    "@type": "Question",
-    name: en[`faq.q${n}` as keyof typeof en],
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: en[`faq.a${n}` as keyof typeof en],
-    },
-  })),
-};
 ---
 
-<Layout extraJsonLd={faqJsonLd} withAstraGlyph>
-  <a href="#main-content" class="skip-to-content" data-i18n="skip">{en["skip"]}</a>
-  <Header googlePlayUrl={googlePlayUrl} />
-  <main id="main-content">
-    <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
-    <Astra />
-    <Features />
-    <Pricing appUrl={appUrl} />
-    <Platforms appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
-    <IosWaitlist />
-    <Faq />
-    <Cta googlePlayUrl={googlePlayUrl} />
-  </main>
-  <Footer appUrl={appUrl} />
+<Layout withAstraGlyph>
+  <div class="landing-shell">
+    <a href="#main-content" class="skip-to-content" data-i18n="skip">{translations.en.skip}</a>
+    <Header googlePlayUrl={googlePlayUrl} />
+    <main id="main-content" tabindex="-1">
+      <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
+    </main>
+    <Footer appUrl={appUrl} />
+  </div>
+  <IosWaitlist />
 </Layout>
 
 <script>
   import "../scripts/i18n";
   import "../scripts/waitlist";
+  import "../scripts/waitlist-dialog";
 </script>

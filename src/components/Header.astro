@@ -9,13 +9,9 @@ const { googlePlayUrl } = Astro.props;
 ---
 
 <header id="site-header" class="site-header">
-  <nav
-    class="page-container header-content"
-    aria-label={translations.en["nav.label"]}
-    data-i18n-label="nav.label"
-  >
+  <nav class="header-content" aria-label={translations.en["nav.label"]} data-i18n-label="nav.label">
     <a href="/" class="brand" aria-label="Orbit" translate="no"
-      ><img src="/logo.png" alt="" width="48" height="48" /><span>Orbit</span></a
+      ><img src="/brand/orbit-lockup.svg" alt="" width="112" height="24" /></a
     >
     <div class="header-actions">
       <LanguageToggle /><PillButton

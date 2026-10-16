@@ -9,93 +9,57 @@ const structured = [
 ].map((match) => JSON.parse(match[1]));
 
 for (const [event, region, label] of [
-  [
-    "final_app_cta_clicked",
-    /<section\b[^>]*class="[^"]*final-cta[^"]*"[^>]*>[\s\S]*?<\/section>/,
-    "cta.button",
-  ],
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
   ["hero_app_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.web"],
   ["hero_google_play_cta_clicked", /<section\b[^>]*id="hero"[^>]*>[\s\S]*?<\/section>/, "hero.cta"],
-  [
-    "platforms_google_play_cta_clicked",
-    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
-    "platforms.android.cta",
-  ],
-  [
-    "platforms_web_cta_clicked",
-    /<section\b[^>]*id="platforms"[^>]*>[\s\S]*?<\/section>/,
-    "platforms.web.cta",
-  ],
-  [
-    "pricing_free_cta_clicked",
-    /<article\b[^>]*class="plan"[^>]*>[\s\S]*?<\/article>/,
-    "pricing.cta",
-  ],
-  [
-    "pricing_pro_cta_clicked",
-    /<article\b[^>]*class="plan plan-pro"[^>]*>[\s\S]*?<\/article>/,
-    "pricing.cta",
-  ],
 ]) {
-  test(`the built ${event} stays on its original CTA`, () => {
+  test(`the built ${event} keeps its action and destination`, () => {
     const attribute = `data-analytics-event="${event}"`;
-    assert.equal(html.split(attribute).length - 1, 1, `${event} occurs exactly once`);
+    assert.equal(html.split(attribute).length - 1, 1);
     const surface = html.match(region)?.[0];
-    assert.ok(surface, `CTA region for ${event} exists`);
+    assert.ok(surface);
     const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
-    assert.ok(anchor, `${event} belongs to a link in its original region`);
-    assert.ok(anchor.includes(`data-i18n="${label}"`), `${event} labels its original CTA`);
+    assert.ok(anchor?.includes(`data-i18n="${label}"`));
     const destination =
-      event.includes("google_play") || event.startsWith("final_") || event.startsWith("header_")
-        ? "https://play.google.com/store/apps/details?id=org.useorbit.app"
-        : process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
-    assert.ok(anchor.includes(`href="${destination}"`), `${event} keeps its destination`);
+      event === "hero_app_cta_clicked"
+        ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
+        : "https://play.google.com/store/apps/details?id=org.useorbit.app";
+    assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
 
-test("the built offer names the routine friction and links directly to Android", () => {
-  assert.match(html, /id="hero"/);
-  const hero = html.split('id="hero"')[1].split("</section>")[0];
-  assert.match(hero, /Keeping a routine is hard/);
-  assert.match(hero, /play\.google\.com\/store\/apps\/details\?id=org\.useorbit\.app/);
-  assert.match(hero, /proof\.founder\.body/);
-  assert.doesNotMatch(hero, /hero-rise|animation-delay|<video/);
-});
-
-test("built marketing contains no retired claims or decorative behavior", () => {
+test("the homepage is one Astra composition with a dialog instead of retired sections", () => {
+  assert.match(html, /class="landing-shell"/);
+  assert.match(html, /id="astra-demo"/);
+  assert.match(html, /<dialog[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
+  assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
   assert.doesNotMatch(
     html,
-    /data-count-target|count-up|Most popular|MCP|AI memory|accountability|leaderboards|500 AI|20 AI|unlimited habits/i,
+    /id="(?:pricing|platforms|faq|features)"|data-screen="today"|proof\.founder/,
   );
-  assert.doesNotMatch(html, /data-tilt|starfield|orbit-dot|satellite-bob|<video/);
-  assert.match(html, /data-screen="today"/);
-  assert.match(html, /data-screen="astra"/);
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
   for (const action of ["Approve", "Edit", "Reject"]) assert.ok(prose.includes(action));
+  for (const example of ["start", "restart", "move"])
+    assert.match(html, new RegExp(`data-demo="${example}"`));
 });
 
-test("application offers and FAQ use complete, visible values", () => {
-  assert.equal(structured.length, 2);
-  for (const block of structured) assert.ok(!JSON.stringify(block).includes("undefined"));
-  const graph = structured[0]["@graph"];
-  for (const app of graph.filter((entry) => /Application$/.test(entry["@type"]))) {
-    assert.equal(app.offers.length, 3);
+test("the application metadata describes Astra without retired FAQ structured data", () => {
+  assert.equal(structured.length, 1);
+  assert.doesNotMatch(html, /FAQPage/);
+  const applications = structured[0]["@graph"].filter((entry) =>
+    /Application$/.test(entry["@type"]),
+  );
+  assert.equal(applications.length, 2);
+  for (const app of applications) {
+    assert.match(app.description, /Astra/);
     assert.deepEqual(
       app.offers.map(({ price }) => price),
       [0, 9.99, 69.99],
     );
-    for (const offer of app.offers) {
-      assert.equal(offer.priceCurrency, "USD");
-      assert.ok(prose.includes(`$${offer.price.toFixed(2)}`), `visible price ${offer.price}`);
-    }
-  }
-  for (const question of structured[1].mainEntity) {
-    assert.ok(question.name && question.acceptedAnswer.text);
-    assert.ok(prose.includes(question.name));
-    assert.ok(prose.includes(question.acceptedAnswer.text));
+    assert.ok(app.offers.every(({ priceCurrency }) => priceCurrency === "USD"));
   }
 });
 
