@@ -8,9 +8,9 @@
   "scripts": {
     "prepare": "lefthook install || true",
     "dev": "astro dev",
-    "build": "astro build && node --test tools/sitemap-output.test.mjs",
+    "build": "astro build && node --test tools/sitemap-output.test.mjs tools/landing-output.test.mjs",
     "preview": "astro preview",
-    "test": "node --test tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/brand-assets.test.mjs src/styles/tokens.test.mjs tools/waitlist.test.mjs",
+    "test": "node --test tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/brand-assets.test.mjs src/styles/tokens.test.mjs tools/waitlist.test.mjs tools/i18n.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",

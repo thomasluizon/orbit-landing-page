@@ -1,0 +1,67 @@
+---
+import { X, Plus, ArrowUp } from "@lucide/astro";
+import AstraGlyph from "./AstraGlyph.astro";
+import { translations } from "../i18n/translations";
+const en = translations.en;
+const steps = ["start", "remember", "act", "restart"] as const;
+---
+
+<section id="astra" class="section page-container astra-section" aria-labelledby="astra-title">
+  <div class="astra-copy">
+    <h2 id="astra-title" class="t-display" data-i18n="astra.title">{en["astra.title"]}</h2>
+    <dl class="astra-steps">
+      {
+        steps.map((step) => (
+          <div>
+            <>
+              <dt class="t-h2" data-i18n={`astra.${step}.title`}>
+                {en[`astra.${step}.title`]}
+              </dt>
+              <dd class="t-body text-fg-2" data-i18n={`astra.${step}.body`}>
+                {en[`astra.${step}.body`]}
+              </dd>
+            </>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+  <figure class="product-figure">
+    <div class="conversation" data-screen="astra" data-mock="true" aria-hidden="true">
+      <div class="conversation-header">
+        <span class="t-meta" translate="no">Astra</span><X size={20} />
+      </div>
+      <div class="conversation-thread">
+        <p class="conversation-ask" data-i18n="astra.preview.ask">{en["astra.preview.ask"]}</p>
+        <AstraGlyph />
+        <p data-i18n="astra.preview.reply">{en["astra.preview.reply"]}</p>
+        <div class="preview" data-state="proposed">
+          <p class="t-meta" data-i18n="astra.preview.state">{en["astra.preview.state"]}</p>
+          <p class="preview-title" data-i18n="astra.preview.title">{en["astra.preview.title"]}</p>
+          <ul>
+            <li data-i18n="astra.preview.walk">{en["astra.preview.walk"]}</li><li
+              data-i18n="astra.preview.read"
+            >
+              {en["astra.preview.read"]}
+            </li>
+          </ul>
+          <div class="preview-actions">
+            <span class="preview-approve" data-i18n="astra.preview.approve"
+              >{en["astra.preview.approve"]}</span
+            ><span data-i18n="astra.preview.edit">{en["astra.preview.edit"]}</span><span
+              data-i18n="astra.preview.reject">{en["astra.preview.reject"]}</span>
+          </div>
+        </div>
+        <p class="t-secondary" data-i18n="astra.preview.note">{en["astra.preview.note"]}</p>
+      </div>
+      <div class="conversation-composer">
+        <span data-i18n="mockup.composer">{en["mockup.composer"]}</span><Plus size={20} /><ArrowUp
+          size={20}
+        />
+      </div>
+    </div>
+    <figcaption class="t-meta" data-i18n="astra.preview.caption">
+      {en["astra.preview.caption"]}
+    </figcaption>
+  </figure>
+</section>

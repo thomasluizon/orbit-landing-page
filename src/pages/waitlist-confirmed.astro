@@ -1,70 +1,44 @@
 ---
-import { Image } from "astro:assets";
-import { CircleAlert, CircleCheck } from "@lucide/astro";
 import Layout from "../layouts/Layout.astro";
 import PillButton from "../components/PillButton.astro";
-
+import LanguageToggle from "../components/LanguageToggle.astro";
+import { translations } from "../i18n/translations";
 const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+const en = translations.en;
 ---
 
-<Layout title="Waitlist confirmation - Orbit" noindex>
-  <main class="relative flex min-h-dvh flex-col items-center justify-center px-6 py-16 text-center">
-    <a href="/" class="relative flex items-center gap-2.5">
-      <Image src="/logo.png" alt="Orbit" width={32} height={32} class="h-8 w-8" />
-      <span class="font-sans text-[18px] font-medium text-fg-1">Orbit</span>
-    </a>
-
-    <div id="confirmed-ok" class="relative mt-12 max-w-[440px]">
-      <span
-        class="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style="background: rgba(var(--primary-rgb), 0.15);"
-      >
-        <CircleCheck size={28} stroke-width={1.8} class="text-primary" />
-      </span>
-      <h1 class="t-display mt-6 [text-wrap:balance]" data-i18n="waitlistConfirmed.ok.title">
-        You're on the list
-      </h1>
-      <p class="t-body mt-3 text-fg-2 [text-wrap:pretty]" data-i18n="waitlistConfirmed.ok.body">
-        Thanks for confirming. We'll email you the moment Orbit lands on iPhone.
+<Layout title={en["meta.confirmed"]} titleKey="meta.confirmed" noindex>
+  <main class="simple-page page-container">
+    <div class="simple-page-tools">
+      <a href="/" class="brand" translate="no"
+        ><img src="/logo.png" alt="" width="48" height="48" /><span>Orbit</span></a
+      ><LanguageToggle />
+    </div>
+    <div id="confirmed-ok">
+      <h1 class="t-display" data-i18n="waitlistConfirmed.ok.title">
+        {en["waitlistConfirmed.ok.title"]}
+      </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.ok.body">
+        {en["waitlistConfirmed.ok.body"]}
       </p>
     </div>
-
-    <div id="confirmed-invalid" class="relative mt-12 hidden max-w-[440px]">
-      <span
-        class="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
-        style="background: color-mix(in srgb, var(--color-status-overdue) 15%, transparent);"
-      >
-        <CircleAlert size={28} stroke-width={1.8} class="text-status-overdue" />
-      </span>
-      <h1 class="t-display mt-6 [text-wrap:balance]" data-i18n="waitlistConfirmed.invalid.title">
-        This link has expired
-      </h1>
-      <p
-        class="t-body mt-3 text-fg-2 [text-wrap:pretty]"
-        data-i18n="waitlistConfirmed.invalid.body"
-      >
-        Your confirmation link is invalid or has expired. Head back and join the waitlist again.
+    <div id="confirmed-invalid" class="hidden">
+      <h1 class="t-display" data-i18n="waitlistConfirmed.invalid.title">
+        {en["waitlistConfirmed.invalid.title"]}
+      </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.invalid.body">
+        {en["waitlistConfirmed.invalid.body"]}
       </p>
     </div>
-
-    <div class="relative mt-9">
-      <PillButton href={`${appUrl}`}>
-        <span data-i18n="waitlistConfirmed.cta">Back to Orbit</span>
-      </PillButton>
-    </div>
+    <PillButton href={appUrl}
+      ><span data-i18n="waitlistConfirmed.cta">{en["waitlistConfirmed.cta"]}</span></PillButton
+    >
   </main>
 </Layout>
-
 <script is:inline>
-  (function () {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("status") === "invalid") {
-      document.getElementById("confirmed-ok")?.classList.add("hidden");
-      document.getElementById("confirmed-invalid")?.classList.remove("hidden");
-    }
-  })();
+  if (new URLSearchParams(window.location.search).get("status") === "invalid") {
+    document.getElementById("confirmed-ok")?.classList.add("hidden");
+    document.getElementById("confirmed-invalid")?.classList.remove("hidden");
+  }
 </script>
-
 <script>
   import "../scripts/i18n";
 </script>

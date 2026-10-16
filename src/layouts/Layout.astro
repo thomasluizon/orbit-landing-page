@@ -1,20 +1,27 @@
 ---
 import { Font } from "astro:assets";
+import AstraGlyph from "../components/AstraGlyph.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
 import "../styles/global.css";
+import { translations } from "../i18n/translations";
+import { offersFor } from "../config/pricing";
 
 interface Props {
   title?: string;
   description?: string;
   noindex?: boolean;
   extraJsonLd?: Record<string, unknown>;
+  withAstraGlyph?: boolean;
+  titleKey?: "meta.title" | "meta.notFound" | "meta.confirmed";
 }
 
 const {
-  title = "Orbit - The habit tracker you can talk to",
-  description = "Orbit pairs a serious habit tracker with Astra, an AI coach that logs your habits and reads your real streaks. Connect Claude or ChatGPT over MCP. Free to start, 7-day Pro trial, no card.",
+  title = translations.en["meta.title"],
+  description = translations.en["meta.description"],
   noindex = false,
   extraJsonLd,
+  withAstraGlyph = false,
+  titleKey = "meta.title",
 } = Astro.props;
 
 const ogImage = "/og-image.png";
@@ -44,7 +51,7 @@ const structuredData = {
       name: "Orbit",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      offers: offersFor("en"),
       description: description,
     },
     {
@@ -52,7 +59,7 @@ const structuredData = {
       name: "Orbit",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Android",
-      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      offers: offersFor("en"),
       installUrl: googlePlayUrl,
       description: description,
     },
@@ -65,23 +72,23 @@ const structuredData = {
   <head>
     <meta charset="UTF-8" />
     {renderBuildCommit && <meta name="orbit-build" content={renderBuildCommit} />}
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="dark only" />
     <meta name="theme-color" content="#09090b" />
-    <meta name="description" content={description} />
+    <meta name="description" content={description} data-i18n-content="meta.description" />
     <meta name="robots" content={noindex ? "noindex, nofollow" : "index, follow"} />
 
     <meta property="og:type" content="website" />
     {!noindex && <meta property="og:url" content={canonicalUrl} />}
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:title" content={title} data-i18n-content={titleKey} />
+    <meta property="og:description" content={description} data-i18n-content="meta.description" />
     <meta property="og:image" content={`${siteUrl}${ogImage}`} />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Orbit" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:title" content={title} data-i18n-content={titleKey} />
+    <meta name="twitter:description" content={description} data-i18n-content="meta.description" />
     <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
 
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
@@ -90,7 +97,18 @@ const structuredData = {
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     {!noindex && <link rel="canonical" href={canonicalUrl} />}
 
-    <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(
+        noindex
+          ? {
+              "@context": structuredData["@context"],
+              "@graph": structuredData["@graph"].slice(0, 2),
+            }
+          : structuredData,
+      )}
+    />
     {
       extraJsonLd && (
         <script is:inline type="application/ld+json" set:html={JSON.stringify(extraJsonLd)} />
@@ -204,18 +222,10 @@ const structuredData = {
     <Font cssVariable="--font-space-grotesk" preload />
     <Font cssVariable="--font-geist-mono" />
 
-    <noscript>
-      <style>
-        .reveal {
-          opacity: 1;
-          transform: none;
-        }
-      </style>
-    </noscript>
-
-    <title>{title}</title>
+    <title data-i18n={titleKey}>{title}</title>
   </head>
   <body class="bg-bg text-fg-1 font-sans antialiased">
+    {withAstraGlyph && <AstraGlyph definition />}
     <slot />
     {posthogKey && <ConsentBanner appUrl={appUrl} />}
   </body>

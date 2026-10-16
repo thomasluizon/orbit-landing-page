@@ -4,7 +4,12 @@ import { join } from "node:path";
 import test from "node:test";
 
 const css = await readFile("src/styles/global.css", "utf8");
-const tokens = new Map([...css.matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2]]));
+const tokens = new Map(
+  [...css.slice(0, css.indexOf("@utility")).matchAll(/(--[\w-]+):\s*([^;]+);/g)].map((m) => [
+    m[1],
+    m[2],
+  ]),
+);
 
 test("landing mirrors the dark canon and separates accent fill from text", () => {
   for (const [name, value] of Object.entries({
@@ -18,7 +23,8 @@ test("landing mirrors the dark canon and separates accent fill from text", () =>
     "--color-fg-2": "#c9c9cc",
     "--color-fg-3": "#8f8f93",
     "--color-fg-4": "#5d5d60",
-    "--color-track-empty": "#7a7a7d",
+    "--color-track-empty": "#8b8b8e",
+    "--color-primary-text": "#ed773e",
     "--color-status-empty": "var(--color-track-empty)",
     "--radius-sheet": "28px",
     "--font-sans": "var(--font-geist)",

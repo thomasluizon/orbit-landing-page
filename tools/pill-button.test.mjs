@@ -51,7 +51,9 @@ async function compiledControl(path, tag, variant) {
   }
   const globalCss = await readFile("src/styles/global.css", "utf8");
   const compiler = await compile(
-    globalCss.replace('@import "tailwindcss";', "@tailwind utilities;"),
+    globalCss
+      .slice(0, globalCss.indexOf("\nhtml {"))
+      .replace('@import "tailwindcss";', "@tailwind utilities;"),
   );
   const css = compiler.build(candidates);
   return { css, candidates, globalCss };
