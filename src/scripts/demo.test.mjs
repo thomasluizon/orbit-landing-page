@@ -5,11 +5,23 @@ import vm from "node:vm";
 import ts from "typescript";
 import { parse } from "@astrojs/compiler";
 
+const source = readFileSync("src/components/AstraDemo.astro", "utf8");
+const { ast } = await parse(source);
+const nodes = [];
+function visit(node) {
+  if (node.name) nodes.push(node);
+  for (const child of node.children ?? []) visit(child);
+}
+visit(ast);
+const attributes = (node) =>
+  Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+
 function harness(language = "en", reducedMotion = false) {
   const timers = new Map();
   const elements = new Map();
   const chips = ["start", "restart", "move"].map((example) => ({
     dataset: { demo: example },
+    focused: false,
     attributes: {},
     listeners: new Map(),
     setAttribute(name, value) {
@@ -18,23 +30,27 @@ function harness(language = "en", reducedMotion = false) {
     addEventListener(name, listener) {
       this.listeners.set(name, listener);
     },
+    focus() {
+      this.focused = true;
+    },
   }));
-  for (const id of [
-    "astra-demo",
-    "demo-response",
-    "demo-second",
-    "demo-request",
-    "demo-reply",
-    "demo-habit",
-    "demo-repeat",
-    "exchange",
-  ]) {
+  for (const node of nodes) {
+    const attrs = attributes(node);
+    const id = attrs.id || (attrs.class?.includes("demo-exchange") ? "exchange" : undefined);
+    if (!id) continue;
     elements.set(id, {
       style: {},
-      attributes: {},
-      hidden: false,
+      attributes: { ...attrs },
+      listeners: new Map(),
+      hidden: Object.hasOwn(attrs, "hidden"),
       setAttribute(name, value) {
         this.attributes[name] = value;
+      },
+      removeAttribute(name) {
+        delete this.attributes[name];
+      },
+      addEventListener(name, listener) {
+        this.listeners.set(name, listener);
       },
     });
   }
@@ -128,19 +144,69 @@ test("changing the motion preference finishes an in-flight replay", () => {
   assert.equal(h.elements.get("demo-response").style.visibility, "visible");
 });
 
-test("example choices use native keyboard buttons and the visual preview has no false controls", async () => {
-  const { ast } = await parse(readFileSync("src/components/AstraDemo.astro", "utf8"));
-  const buttons = [];
-  function visit(node) {
-    if (node.name === "button") buttons.push(node);
-    for (const child of node.children ?? []) visit(child);
-  }
-  visit(ast);
-  assert.equal(buttons.length, 1, "the mapped examples share one native button template");
-  assert.ok(buttons[0].attributes.some(({ name }) => name === "data-demo"));
-  assert.ok(!buttons[0].attributes.some(({ name }) => name === "tabindex" || name === "disabled"));
-  assert.match(
-    readFileSync("src/components/AstraDemo.astro", "utf8"),
-    /demo-preview-actions" aria-hidden="true"/,
-  );
+test("chips are keyboard buttons above a separate decorative composer", () => {
+  const chip = nodes.find((node) => Object.hasOwn(attributes(node), "data-demo"));
+  assert.equal(chip.name, "button");
+  assert.ok(!chip.attributes.some(({ name }) => name === "tabindex" || name === "disabled"));
+  const composer = nodes.find((node) => attributes(node).class === "demo-composer");
+  assert.equal(attributes(composer)["aria-hidden"], "true");
+  assert.ok(!composer.children.some((node) => node.name === "button" || node.name === "input"));
+  assert.match(source, /data-i18n="demo.placeholder"/);
+});
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: approval and rejection finish each example and return focus to its chip`, () => {
+    for (const action of ["approve", "reject"]) {
+      const h = harness(language, true);
+      for (const chip of h.chips) {
+        chip.listeners.get("click")();
+        const button = h.elements.get(`demo-${action}`);
+        assert.ok(button?.listeners.has("click"), `${action} must be a real control`);
+        button.listeners.get("click")();
+        assert.equal(h.elements.get("demo-preview").hidden, true);
+        assert.equal(h.elements.get("demo-result").hidden, false);
+        const key = action === "approve" ? `demo.${chip.dataset.demo}.approved` : "demo.rejected";
+        assert.equal(h.elements.get("demo-result").textContent, h.strings[key]);
+        assert.equal(h.elements.get("exchange").attributes["aria-live"], "polite");
+        assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
+        assert.equal(chip.focused, true);
+        chip.listeners.get("click")();
+        assert.equal(h.elements.get("demo-preview").hidden, false);
+        assert.equal(h.elements.get("demo-result").hidden, true);
+      }
+    }
+  });
+
+  test(`${language}: edit switches morning and evening in place and keeps the whole batch proposed`, () => {
+    const h = harness(language, true);
+    for (const chip of h.chips) {
+      chip.listeners.get("click")();
+      const example = chip.dataset.demo;
+      const original = h.elements.get("demo-repeat").textContent;
+      const edit = h.elements.get("demo-edit");
+      assert.ok(edit?.listeners.has("click"), "edit must change the proposal");
+      edit.listeners.get("click")();
+      const key = `demo.${example}.alternateRepeat`;
+      assert.equal(h.elements.get("demo-repeat").textContent, h.strings[key]);
+      if (example === "move")
+        assert.equal(h.elements.get("demo-second-repeat").textContent, h.strings[key]);
+      assert.equal(h.elements.get("demo-preview").attributes["data-state"], "proposed");
+      assert.equal(h.elements.get("demo-preview").hidden, false);
+      assert.equal(h.elements.get("demo-announcement").textContent, h.strings["demo.edited"]);
+      edit.listeners.get("click")();
+      assert.equal(h.elements.get("demo-repeat").textContent, original);
+      chip.listeners.get("click")();
+      assert.equal(h.elements.get("demo-announcement").attributes["data-i18n"], undefined);
+    }
+  });
+}
+
+test("actions during a replay clear its timer before announcing the result", () => {
+  const h = harness();
+  assert.equal(h.timers.size, 1);
+  assert.ok(h.elements.get("demo-approve")?.listeners.has("click"));
+  h.elements.get("demo-approve").listeners.get("click")();
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.elements.get("demo-response").style.visibility, "visible");
+  assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
 });

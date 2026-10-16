@@ -1,12 +1,46 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import sharp from "sharp";
 
 const html = readFileSync("dist/index.html", "utf8");
 const prose = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<[^>]+>/g, " ");
 const structured = [
   ...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
 ].map((match) => JSON.parse(match[1]));
+
+test("the built header lockup paints pale ink with only the moon in the accent", async () => {
+  const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
+  const lockup = header?.match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
+  assert.ok(lockup, "the header must inline the lockup so currentColor resolves");
+  const css = readFileSync("src/styles/global.css", "utf8");
+  assert.match(css, /\.brand\s*\{[^}]*color:\s*var\(--color-fg-1\)/);
+  assert.match(css, /--primary:\s*var\(--color-primary\)/);
+  const token = (name) => css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]+)`))?.[1];
+  const fills = [...lockup.matchAll(/<path\b[^>]*fill="([^"]+)"/g)].map(([, fill]) => fill);
+  assert.deepEqual(fills, ["currentColor", "var(--primary, currentColor)", "currentColor"]);
+  const resolved = lockup
+    .replaceAll("var(--primary, currentColor)", token("primary"))
+    .replaceAll("currentColor", token("fg-1"));
+  const { data } = await sharp(Buffer.from(resolved))
+    .resize({ width: 448 })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const pixels = Array.from({ length: data.length / 4 }, (_, index) =>
+    [...data.subarray(index * 4, index * 4 + 4)].map(Number),
+  );
+  for (const name of ["fg-1", "primary"]) {
+    const color = token(name)
+      .slice(1)
+      .match(/../g)
+      .map((channel) => Number.parseInt(channel, 16));
+    assert.ok(
+      pixels.some((pixel) => pixel[3] === 255 && color.every((value, i) => pixel[i] === value)),
+      `${name} must be visible in the built lockup`,
+    );
+  }
+});
 
 for (const [event, region, label] of [
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
@@ -48,6 +82,20 @@ test("the homepage is one Astra composition with a dialog instead of retired sec
   for (const action of ["Approve", "Edit", "Reject"]) assert.ok(prose.includes(action));
   for (const example of ["start", "restart", "move"])
     assert.match(html, new RegExp(`data-demo="${example}"`));
+});
+
+test("the built proposal has three native small pill actions with ghost actions first", () => {
+  const row = html.match(/<div class="demo-preview-actions">([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(row);
+  const buttons = [...row.matchAll(/<button\b([^>]+)>/g)].map(([, attributes]) => attributes);
+  assert.equal(buttons.length, 3);
+  for (const [index, action] of ["reject", "edit", "approve"].entries()) {
+    assert.ok(buttons[index].includes(`id="demo-${action}"`));
+    assert.ok(buttons[index].includes('type="button"'));
+    assert.ok(buttons[index].includes("pill-sm"));
+    assert.ok(buttons[index].includes(index === 2 ? "bg-primary" : "bg-transparent"));
+    assert.doesNotMatch(buttons[index], /\sdisabled(?:\s|=|$)|\stabindex="-1"/);
+  }
 });
 
 test("the application metadata describes Astra without retired FAQ structured data", () => {

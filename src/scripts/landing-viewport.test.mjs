@@ -79,7 +79,7 @@ test("the matrix requires every requested size, locale and example", () => {
       }),
     ),
   );
-  assert.equal(samples.length, 120);
+  assert.equal(samples.length, 126);
   assert.doesNotThrow(() => assertLandingViewportMatrix(samples));
   assert.throws(
     () => assertLandingViewportMatrix(samples.slice(1)),
