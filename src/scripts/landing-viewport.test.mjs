@@ -76,6 +76,18 @@ test("a fallback viewport may scroll but keeps every target distinct", () => {
   assert.throws(() => assertLandingViewport(sample, { allowScroll: true }), /terms overlaps open/);
 });
 
+test("a fallback viewport allows subpixel rounding at the document bottom", () => {
+  const sample = measurement(512, 300);
+  sample.scrollHeight = 334;
+  sample.elements.push(rectangle("shell", 0, 0, 512, 334.203125));
+  assert.doesNotThrow(() => assertLandingViewport(sample, { allowScroll: true }));
+  sample.elements.push(rectangle("footer", 0, 300, 512, 336));
+  assert.throws(
+    () => assertLandingViewport(sample, { allowScroll: true }),
+    /footer extends outside the viewport/,
+  );
+});
+
 test("the matrix requires every requested size, locale and example", () => {
   const samples = [...LANDING_VIEWPORTS, ...LANDING_FALLBACK_VIEWPORTS].flatMap(([width, height]) =>
     LANDING_LANGUAGES.flatMap((language) =>

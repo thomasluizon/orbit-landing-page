@@ -97,6 +97,8 @@ function overlap(a, b) {
   );
 }
 
+const INTEGER_SCROLL_HEIGHT_ROUNDING = 1;
+
 function compositionFailures(regions) {
   const failures = [];
   if (regions.length !== 3) return ["Missing composition regions"];
@@ -115,7 +117,9 @@ function compositionFailures(regions) {
 /** Checks one measured viewport, including hidden overflow, target collisions and reading order. */
 export function assertLandingViewport(sample, { allowScroll = false } = {}) {
   const failures = compositionFailures(sample.composition);
-  const bottomLimit = allowScroll ? sample.scrollHeight : sample.height;
+  const bottomLimit = allowScroll
+    ? sample.scrollHeight + INTEGER_SCROLL_HEIGHT_ROUNDING
+    : sample.height;
   if (!allowScroll && sample.scrollHeight > sample.height)
     failures.push("The document scrolls vertically");
   if (sample.scrollWidth > sample.width) failures.push("The document scrolls horizontally");
