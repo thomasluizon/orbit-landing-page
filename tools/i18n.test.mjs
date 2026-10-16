@@ -158,3 +158,15 @@ test("pt-BR always refers to Astra with feminine articles and contractions", () 
     assert.doesNotMatch(text, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
   }
 });
+
+test("pt-BR demo repeat labels name every time of day with the same adverbial form", () => {
+  const { tables } = harness();
+  const repeatKeys = Object.keys(tables["pt-BR"]).filter((key) =>
+    /^demo\..+\.(?:alternateRepeat|repeat|secondRepeat)$/u.test(key),
+  );
+  assert.ok(repeatKeys.length > 0);
+  for (const key of repeatKeys) {
+    const timeOfDay = tables["pt-BR"][key].split(" · ").at(-1);
+    assert.match(timeOfDay, /^(?:De manhã|À tarde|À noite)$/u, key);
+  }
+});
