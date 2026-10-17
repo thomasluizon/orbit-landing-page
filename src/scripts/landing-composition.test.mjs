@@ -194,25 +194,65 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(css, /\.pricing-grid\s*\{[^}]*max-inline-size:\s*var\(--landing-content\)/);
   assert.match(css, /\.faq-list\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
   assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
-  assert.match(
-    css,
-    /\.feature-art\s*\{[^}]*inline-size:\s*100%;[^}]*block-size:\s*440px;[^}]*padding:\s*48px/,
-  );
+  const panel = css.match(/\.feature-art\s*\{([^}]+)\}/)[1];
+  assert.match(panel, /max-inline-size:\s*760px/);
+  assert.match(panel, /padding:\s*64px/);
+  assert.doesNotMatch(panel, /(?:min-)?block-size:/);
   const busy = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-busy"),
   );
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
-  assert.match(css, /\.feature-art > \.product-card\s*\{[^}]*inline-size:\s*440px/);
-  assert.match(css, /\.feature-art-progress > \.product-week\s*\{[^}]*justify-self:\s*end/);
-  assert.match(css, /\.feature-reminder,\s*\.feature-return\s*\{[^}]*inset-inline-end:\s*-40px/);
+  assert.match(
+    css,
+    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 48px auto;[^}]*inline-size:\s*440px;[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
+  );
+  assert.match(css, /\.feature-primary\s*\{[^}]*grid-row:\s*1 \/ 3/);
+  assert.match(css, /\.feature-primary > \.product-card\s*\{[^}]*padding-block-end:\s*64px/);
+  assert.match(
+    css,
+    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-row:\s*2 \/ 4;[^}]*justify-self:\s*end;[^}]*inset-inline-end:\s*64px;[^}]*inline-size:\s*280px/,
+  );
+  assert.match(
+    css,
+    /\.progress-reply\s*\{[^}]*justify-self:\s*start;[^}]*inset-inline-start:\s*64px;[^}]*inset-inline-end:\s*auto/,
+  );
+  for (const [selector, size] of [
+    ["product-card h3", "lg"],
+    ["product-reply", "base"],
+    ["proactive-line", "base"],
+    ["product-caption", "sm"],
+  ]) {
+    assert.match(
+      css,
+      new RegExp(`\\.feature-art \\.${selector}\\s*\\{[^}]*font-size:\\s*var\\(--fs-${size}\\)`),
+    );
+  }
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-reminder,\s*\.feature-return\s*\{[^}]*inset-inline-end:\s*-16px/);
+  assert.match(mobile, /\.feature-art\s*\{[^}]*padding:\s*24px/);
+  assert.match(
+    mobile,
+    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto;[^}]*inline-size:\s*100%/,
+  );
+  assert.match(
+    mobile,
+    /\.feature-secondary\s*\{[^}]*inset-inline-end:\s*-8px;[^}]*inline-size:\s*min\(280px, calc\(100% \+ 16px\)\)/,
+  );
+  assert.match(mobile, /\.progress-reply\s*\{[^}]*inset-inline-start:\s*-8px/);
   const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
   assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(
     rows,
-    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-return"[\s\S]*kind="walk"/,
+    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="walk"/,
   );
+  const stacks = descendants(components.get("FeatureRows")).filter(
+    (node) => attributes(node).class === "feature-stack",
+  );
+  assert.equal(stacks.length, 3);
+  for (const stack of stacks) {
+    const children = stack.children.filter((node) => node.name);
+    assert.equal(attributes(children[0]).class, "feature-primary");
+    assert.ok(attributes(children[1]).class.includes("feature-secondary"));
+  }
 });
 
 test("example disclosure belongs once below each composition, outside the product surfaces", async () => {
@@ -268,14 +308,15 @@ test("the week composition answers the person's request with Astra's line then h
   const composition = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-progress"),
   );
-  const children = composition.children.filter((node) => node.name);
+  const nodes = descendants(composition);
+  const primary = nodes.find((node) => attributes(node).class === "feature-primary");
+  assert.ok(primary, "the request and chart form the primary product card group");
+  const children = primary.children.filter((node) => node.name);
   assert.equal(attributes(children[0]).class, "sample-message");
-  assert.equal(attributes(children[1]).class, "progress-reply");
-  assert.ok(descendants(children[1]).some((node) => node.name === "AstraGlyph"));
-  assert.ok(
-    descendants(children[1]).some((node) => attributes(node).name === "product.progressReply"),
-  );
-  assert.equal(attributes(children[2]).kind, "week");
+  assert.equal(attributes(children[1]).kind, "week");
+  const reply = nodes.find((node) => attributes(node).class?.includes("progress-reply"));
+  assert.ok(descendants(reply).some((node) => node.name === "AstraGlyph"));
+  assert.ok(descendants(reply).some((node) => attributes(node).name === "product.progressReply"));
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
 });

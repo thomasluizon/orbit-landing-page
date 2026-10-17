@@ -22,8 +22,11 @@ const { appUrl } = Astro.props;
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-busy">
-          <ProductCard kind="today" /><div class="feature-reminder" data-reveal>
-            <ProductCard kind="reminder" />
+          <div class="feature-stack">
+            <div class="feature-primary"><ProductCard kind="today" /></div>
+            <div class="feature-secondary feature-reminder" data-reveal>
+              <ProductCard kind="reminder" />
+            </div>
           </div>
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
@@ -43,13 +46,15 @@ const { appUrl } = Astro.props;
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-progress">
-          <p class="sample-message">
-            <Copy name="product.progressRequest" />
-          </p>
-          <div class="progress-reply" data-reveal>
-            <AstraGlyph /><p><Copy name="product.progressReply" /></p>
+          <div class="feature-stack">
+            <div class="feature-primary">
+              <p class="sample-message"><Copy name="product.progressRequest" /></p>
+              <ProductCard kind="week" />
+            </div>
+            <div class="feature-secondary progress-reply" data-reveal>
+              <AstraGlyph /><p><Copy name="product.progressReply" /></p>
+            </div>
           </div>
-          <ProductCard kind="week" />
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
@@ -66,8 +71,12 @@ const { appUrl } = Astro.props;
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-restart">
-          <ProductCard kind="restart" />
-          <div class="feature-return" data-reveal><ProductCard kind="walk" /></div>
+          <div class="feature-stack">
+            <div class="feature-primary"><ProductCard kind="restart" /></div>
+            <div class="feature-secondary feature-return" data-reveal>
+              <ProductCard kind="walk" />
+            </div>
+          </div>
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
