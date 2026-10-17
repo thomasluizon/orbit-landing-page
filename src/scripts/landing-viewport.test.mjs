@@ -157,11 +157,24 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(hero, /data-mock>9:41/);
   assert.match(hero, /class="device-home"/);
   assert.match(hero, /class="device-screen"/);
-  assert.match(css, /\.hero-device\s*\{[^}]*block-size:\s*700px/);
+  assert.match(css, /\.hero-device\s*\{[^}]*block-size:\s*auto/);
   assert.match(css, /\.hero-device\s*\{[^}]*padding:\s*10px/);
   assert.match(css, /\.hero-device\s*\{[^}]*border-radius:\s*56px/);
   assert.match(css, /\.device-screen\s*\{[^}]*border-radius:\s*46px/);
   assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
+});
+
+test("the hero conversation starts below its header and sizes the phone around the proposal", () => {
+  assert.match(css, /\.astra-demo\s*\{[^}]*gap:\s*24px;[^}]*padding:\s*12px 12px 16px/);
+  assert.match(css, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
+  assert.match(css, /\.demo-exchange\s*\{[^}]*gap:\s*16px/);
+  assert.match(css, /\.demo-response\s*\{[^}]*gap:\s*12px/);
+  assert.match(css, /\.demo-request\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(css, /\.device-home\s*\{[^}]*position:\s*absolute;[^}]*inset-block-end:\s*8px/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.doesNotMatch(mobile, /\.(?:hero-device|device-screen)\s*\{[^}]*min-block-size:/);
+  assert.doesNotMatch(mobile, /\.astra-demo\s*\{[^}]*(?:gap|padding):/);
+  assert.doesNotMatch(mobile, /\.demo-(?:exchange|request)\s*\{[^}]*(?:gap|font-size):/);
 });
 
 test("marketing paragraphs use the body role and feature titles have the reference weight", () => {
@@ -235,15 +248,12 @@ test("wide hero cards and their motion stay outside the phone with a 24px cleara
 
 test("compact hero cards overlap only the input area and grow the composition in flow", () => {
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(
-    mobile,
-    /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*min-block-size:\s*540px;\s*block-size:\s*auto/,
-  );
+  assert.match(mobile, /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*block-size:\s*auto/);
   assert.match(mobile, /\.hero-stage\s*\{[^}]*grid-template-rows:\s*auto 144px auto auto/);
   assert.match(mobile, /\.hero-device\s*\{[^}]*grid-row:\s*1 \/ 3/);
   assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static;[^}]*grid-row:\s*2 \/ 4/);
   assert.match(mobile, /\.demo-thread\s*\{[^}]*flex:\s*none;[^}]*overflow:\s*visible/);
-  assert.match(mobile, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
+  assert.match(css, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
   assert.match(mobile, /\.float-today,\s*\.hero-phrase\s*\{\s*display:\s*none/);
   assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
   assert.match(mobile, /\.float-week\s*\{[^}]*grid-row:\s*1 \/ 3/);
