@@ -108,3 +108,9 @@ test("the header opens Orbit while the hero has only its install action", async 
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }
 });
+
+test("the trust strip gives each of its three facts a heading and a caption", () => {
+  const trust = descendants(components.get("TrustStrip"));
+  assert.equal(trust.filter((node) => node.name === "dt").length, 3);
+  assert.equal(trust.filter((node) => node.name === "dd").length, 3);
+});
