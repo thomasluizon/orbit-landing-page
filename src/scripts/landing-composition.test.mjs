@@ -114,3 +114,16 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   assert.equal(trust.filter((node) => node.name === "dt").length, 3);
   assert.equal(trust.filter((node) => node.name === "dd").length, 3);
 });
+
+test("feature copy precedes its centered product composition", () => {
+  const rows = descendants(components.get("FeatureRows")).filter((node) =>
+    attributes(node).class?.split(" ").includes("feature-row"),
+  );
+  assert.equal(rows.length, 3);
+  for (const row of rows) {
+    assert.deepEqual(
+      row.children.filter((node) => node.name === "div").map((node) => attributes(node).class),
+      ["feature-copy", "feature-art"],
+    );
+  }
+});

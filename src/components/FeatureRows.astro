@@ -11,9 +11,6 @@ const { appUrl } = Astro.props;
 <section class="section" data-section="details" aria-labelledby="remember-title">
   <div class="section-inner">
     <div class="feature-row">
-      <div class="feature-art">
-        <ProductCard kind="today" /><div data-reveal><ProductCard kind="reminder" /></div>
-      </div>
       <div class="feature-copy">
         <h2 id="remember-title" class="section-title"><Copy name="remember.title" /></h2><p
           class="section-description"
@@ -21,17 +18,15 @@ const { appUrl } = Astro.props;
           <Copy name="remember.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
+      <div class="feature-art">
+        <ProductCard kind="today" /><div data-reveal><ProductCard kind="reminder" /></div>
+      </div>
     </div>
   </div>
 </section>
 <section class="section" data-section="progress" aria-labelledby="understand-title">
   <div class="section-inner">
-    <div class="feature-row reverse">
-      <div class="feature-art">
-        <ProductCard kind="week" /><p class="sample-message" data-reveal>
-          <Copy name="product.progressRequest" />
-        </p>
-      </div>
+    <div class="feature-row">
       <div class="feature-copy">
         <h2 id="understand-title" class="section-title"><Copy name="understand.title" /></h2><p
           class="section-description"
@@ -39,13 +34,17 @@ const { appUrl } = Astro.props;
           <Copy name="understand.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
+      <div class="feature-art">
+        <ProductCard kind="week" /><p class="sample-message" data-reveal>
+          <Copy name="product.progressRequest" />
+        </p>
+      </div>
     </div>
   </div>
 </section>
 <section class="section" data-section="restart" aria-labelledby="restart-title">
   <div class="section-inner">
     <div class="feature-row">
-      <div class="feature-art"><ProductCard kind="restart" /></div>
       <div class="feature-copy">
         <h2 id="restart-title" class="section-title"><Copy name="restart.title" /></h2><p
           class="section-description"
@@ -53,6 +52,7 @@ const { appUrl } = Astro.props;
           <Copy name="restart.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
+      <div class="feature-art"><ProductCard kind="restart" /></div>
     </div>
   </div>
 </section>

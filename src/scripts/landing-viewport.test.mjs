@@ -174,3 +174,11 @@ test("marketing paragraphs use the body role and grid titles stay at 22px at eve
     assert.match(declarations, /font-size:\s*var\(--fs-xl\)/);
   }
 });
+
+test("section grids follow their headings without oversized empty bands", () => {
+  assert.match(css, /\.section\s*\{\s*padding-block:\s*64px;/);
+  assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px;/);
+  assert.match(css, /\.section-heading\s*\{[^}]*gap:\s*16px;/);
+  assert.doesNotMatch(css, /min-block-size:\s*(?:280|300|480)px/);
+  assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+});
