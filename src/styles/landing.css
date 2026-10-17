@@ -631,6 +631,8 @@
   line-height: var(--lh-body);
 }
 .feature-row {
+  min-block-size: calc(100svh + 96px);
+  align-content: start;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 32px;
@@ -664,6 +666,10 @@
   inline-size: 100%;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   align-items: center;
+}
+.section[data-section="security"],
+.section[data-section="faq"] {
+  min-block-size: 100svh;
 }
 .security-grid .feature-card {
   min-block-size: 200px;

@@ -144,3 +144,16 @@ test("How it works lands on the feature grid at the retained 96px offset", async
     /@media \(max-width: 47\.999rem\)[\s\S]*\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*64px/,
   );
 });
+
+test("neighboring accent actions have a viewport of separation and the grid action is neutral", () => {
+  const gridAction = descendants(components.get("Features")).find(
+    (node) => node.name === "PillButton",
+  );
+  assert.equal(attributes(gridAction).variant, "ghost");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.feature-row\s*\{[^}]*min-block-size:\s*calc\(100svh \+ 96px\)/);
+  assert.match(
+    css,
+    /\.section\[data-section="security"\],\s*\.section\[data-section="faq"\]\s*\{[^}]*min-block-size:\s*100svh/,
+  );
+});
