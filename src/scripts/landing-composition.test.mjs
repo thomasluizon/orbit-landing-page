@@ -188,6 +188,39 @@ test("feature copy precedes its centered product composition", () => {
   }
 });
 
+test("feature product surfaces sit on the canvas and alternate within a centered 960px stage", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const art = css.match(/^\.feature-art\s*\{([^}]+)\}/m)[1];
+  assert.doesNotMatch(art, /background|box-shadow|border(?:-radius)?:/);
+  const row = css.match(/\.feature-row\s*\{([^}]+)\}/)[1];
+  assert.match(row, /inline-size:\s*100%/);
+  assert.match(row, /max-inline-size:\s*960px/);
+  assert.match(row, /margin-inline:\s*auto/);
+  assert.match(row, /gap:\s*32px/);
+  assert.match(
+    css,
+    /\.feature-composition\s*\{[^}]*inline-size:\s*min\(680px, 100%\);[^}]*justify-self:\s*start/,
+  );
+  for (const [section, alignment] of [
+    ["progress", "end"],
+    ["restart", "center"],
+  ]) {
+    assert.match(
+      css,
+      new RegExp(
+        `\\[data-section="${section}"\\] \\.feature-composition\\s*\\{[^}]*justify-self:\\s*${alignment}`,
+      ),
+    );
+  }
+  const mobile = css.slice(
+    css.indexOf("@media (max-width: 47.999rem)"),
+    css.indexOf("@media (max-width: 40rem)"),
+  );
+  assert.match(mobile, /\.feature-section \.feature-composition\s*\{[^}]*justify-self:\s*center/);
+  assert.match(mobile, /--landing-gutter:\s*16px/);
+  assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);
+});
+
 test("How it works lands on the feature grid at the retained 96px offset", async () => {
   const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
   assert.ok(descendants(header).some((node) => attributes(node).href === "#features"));

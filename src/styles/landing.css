@@ -699,6 +699,9 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 32px;
   justify-items: center;
+  inline-size: 100%;
+  max-inline-size: 960px;
+  margin-inline: auto;
 }
 .feature-section {
   padding-block-start: 96px;
@@ -721,7 +724,14 @@
   display: grid;
   justify-items: center;
   gap: 16px;
-  inline-size: 100%;
+  inline-size: min(680px, 100%);
+  justify-self: start;
+}
+[data-section="progress"] .feature-composition {
+  justify-self: end;
+}
+[data-section="restart"] .feature-composition {
+  justify-self: center;
 }
 .composition-caption {
   font-size: var(--fs-xs);
@@ -734,8 +744,6 @@
   inline-size: 100%;
   max-inline-size: 680px;
   padding: 48px;
-  border-radius: var(--radius-sheet);
-  background: var(--color-bg-card);
 }
 .feature-stack {
   display: grid;
@@ -1144,6 +1152,9 @@
   }
   .feature-section {
     padding-block-start: 64px;
+  }
+  .feature-section .feature-composition {
+    justify-self: center;
   }
   .trust-fact dt {
     font-size: var(--fs-xl);
