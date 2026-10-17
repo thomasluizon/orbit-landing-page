@@ -598,9 +598,6 @@
   line-height: var(--lh-body);
   color: var(--color-fg-2);
 }
-.section-action {
-  justify-self: center;
-}
 .trust-strip {
   padding: 24px 16px;
   box-shadow:

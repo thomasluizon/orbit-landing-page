@@ -168,7 +168,15 @@ test("section rhythm uses fixed spacing without viewport minimums or feature pin
   const gridAction = descendants(components.get("Features")).find(
     (node) => node.name === "PillButton",
   );
-  assert.equal(attributes(gridAction).variant, "ghost");
+  assert.equal(
+    gridAction,
+    undefined,
+    "the grid cannot repeat the next feature row's Start free action",
+  );
+  assert.equal(
+    descendants(components.get("FeatureRows")).filter((node) => node.name === "PillButton").length,
+    3,
+  );
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /--landing-section-gap:\s*160px/);
   assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*--landing-section-gap:\s*96px/);

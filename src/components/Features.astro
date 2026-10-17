@@ -1,11 +1,6 @@
 ---
 import { MessageCircle, Bell, ListChecks, RotateCcw } from "@lucide/astro";
 import Copy from "./Copy.astro";
-import PillButton from "./PillButton.astro";
-interface Props {
-  appUrl: string;
-}
-const { appUrl } = Astro.props;
 const features = [
   { key: "start", Icon: MessageCircle },
   { key: "remember", Icon: Bell },
@@ -37,8 +32,5 @@ const features = [
         ))
       }
     </div>
-    <PillButton href={appUrl} variant="ghost" size="md" class="section-action"
-      ><Copy name="action.start" /></PillButton
-    >
   </div>
 </section>
