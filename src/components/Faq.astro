@@ -1,0 +1,32 @@
+---
+import { ChevronDown } from "@lucide/astro";
+import Copy from "./Copy.astro";
+const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
+---
+
+<section id="faq" class="section" data-section="faq" aria-labelledby="faq-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="faq-title" class="section-title"><Copy name="faq.title" /></h2>
+    </div>
+    <div class="faq-list">
+      {
+        questions.map((key) => (
+          <details name="orbit-questions">
+            <>
+              <summary>
+                <>
+                  <Copy name={`faq.${key}.q`} />
+                  <ChevronDown size={20} />
+                </>
+              </summary>
+              <p>
+                <Copy name={`faq.${key}.a`} />
+              </p>
+            </>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
