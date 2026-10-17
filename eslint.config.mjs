@@ -7,6 +7,14 @@ export default [
   ...tseslint.configs.recommended,
   ...eslintPluginAstro.configs.recommended,
   {
+    rules: {
+      "astro/no-exports-from-components": "off",
+      "astro/no-prerender-export-outside-pages": "off",
+      // WHY: preserve the configured rule set across the upgrade: https://github.com/ota-meshi/eslint-plugin-astro/blob/main/CHANGELOG.md
+      "astro/valid-compile": "error",
+    },
+  },
+  {
     files: ["**/*.{ts,mjs,astro}"],
     plugins: { local: { rules: { "no-comments": noComments } } },
     rules: { "local/no-comments": "error" },
