@@ -28,6 +28,13 @@ const components = new Map(
   ),
 );
 const page = (await parse(readFileSync("src/pages/index.astro", "utf8"))).ast;
+const copyTables = {};
+vm.runInNewContext(
+  ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText,
+  { exports: copyTables },
+);
 function expand(node) {
   const source = components.get(node.name);
   if (source) return expand(source);
@@ -141,9 +148,17 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.trust-strip\s*\{[^}]*padding-inline:\s*var\(--landing-gutter\)/);
   const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
-  assert.equal(rules.length, 1, "all viewports keep the same three-column layout");
+  assert.equal(rules.length, 2, "trust facts stack below 640px and use three columns above");
   assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(rules[0][1], /gap:\s*8px/);
+  const stacked = css.slice(
+    css.indexOf("@media (max-width: 39.999rem)"),
+    css.indexOf("@media (max-width: 24.999rem)"),
+  );
+  assert.match(stacked, /\.trust-content\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(stacked, /\.trust-content\s*\{[^}]*justify-items:\s*center/);
+  assert.match(stacked, /\.trust-content\s*\{[^}]*gap:\s*16px/);
+  assert.equal(rules[1][1], stacked.match(/\.trust-content\s*\{([^}]+)\}/)[1]);
   assert.match(
     css,
     /\.trust-fact dt\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-2xl\)/,
@@ -163,13 +178,57 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   assert.match(narrow, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
   assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-xl\)/);
-  const copy = readFileSync("src/i18n/translations.ts", "utf8");
-  for (const key of ["trust.free.title", "trust.approval.title", "hero.platforms"]) {
-    const values = [
-      ...copy.matchAll(new RegExp(`"${key.replaceAll(".", "\\.")}": "([^"]+)"`, "g")),
-    ];
-    assert.equal(values.length, 2);
-    for (const [, value] of values) assert.ok(value.split(/\s+/u).length <= 2, value);
+  assert.match(css, /\.trust-fact dt\s*\{[^}]*white-space:\s*nowrap/);
+});
+
+test("the trust strip renders the approved checkable facts in both locales", () => {
+  const trust = descendants(components.get("TrustStrip"));
+  for (const name of [
+    "trust.free.title",
+    "trust.free.caption",
+    "trust.approval.title",
+    "trust.approval.caption",
+    "trust.platforms.caption",
+  ]) {
+    assert.ok(trust.some((node) => node.name === "Copy" && attributes(node).name === name));
+  }
+  assert.ok(trust.some((node) => attributes(node)["data-i18n"] === "hero.platforms"));
+  for (const [lang, expected] of [
+    [
+      "en",
+      [
+        "Free to start",
+        "Pro adds more Astra",
+        "You approve",
+        "every change Astra proposes",
+        "Android and web",
+        "iPhone waitlist open",
+      ],
+    ],
+    [
+      "pt-BR",
+      [
+        "Comece grátis",
+        "O Pro libera mais Astra",
+        "Você aprova",
+        "cada mudança que a Astra propõe",
+        "Android e web",
+        "lista do iPhone aberta",
+      ],
+    ],
+  ]) {
+    const copy = { ...copyTables.translations[lang], ...copyTables.landingCopy[lang] };
+    assert.deepEqual(
+      [
+        "trust.free.title",
+        "trust.free.caption",
+        "trust.approval.title",
+        "trust.approval.caption",
+        "hero.platforms",
+        "trust.platforms.caption",
+      ].map((key) => copy[key]),
+      expected,
+    );
   }
 });
 

@@ -1443,6 +1443,13 @@
     max-inline-size: calc(100vw - 64px);
   }
 }
+@media (max-width: 39.999rem) {
+  .trust-content {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 16px;
+  }
+}
 @media (max-width: 24.999rem) {
   .trust-fact dt {
     font-size: var(--fs-lg);
