@@ -227,3 +227,22 @@ test("example disclosure belongs once below each composition, outside the produc
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.composition-caption\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
 });
+
+test("each week bar and its localized weekday share one of seven equal columns", async () => {
+  const product = (await parse(readFileSync("src/components/ProductCard.astro", "utf8"))).ast;
+  const column = descendants(product).find((node) => attributes(node).class === "chart-column");
+  assert.ok(column, "the shared hero and feature chart owns a column for each day");
+  const children = descendants(column);
+  assert.ok(children.some((node) => attributes(node).class === "chart-bar"));
+  const label = children.find((node) => attributes(node).class === "chart-day");
+  assert.ok(attributes(label)["data-copy-en"]);
+  assert.ok(attributes(label)["data-copy-pt"]);
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.week-chart\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/);
+  assert.match(
+    css,
+    /\.chart-column\s*\{[^}]*grid-template-rows:\s*minmax\(0, 1fr\) auto;[^}]*gap:\s*8px/,
+  );
+  assert.match(css, /\.chart-day\s*\{[^}]*font-size:\s*var\(--fs-xs\);[^}]*text-align:\s*center/);
+  assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
+});

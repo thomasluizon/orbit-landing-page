@@ -492,24 +492,30 @@
 .week-chart {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  align-items: end;
   gap: 12px;
   block-size: 128px;
   padding-block-start: 16px;
 }
-.week-chart > span {
+.chart-column {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.chart-track {
+  display: flex;
+  align-items: end;
+}
+.chart-bar {
+  inline-size: 100%;
   block-size: var(--bar-height);
   border-radius: var(--radius-sm);
   background: var(--color-fg-2);
 }
-.chart-days {
+.chart-day {
   color: var(--color-fg-3);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
-}
-.chart-days > span {
-  display: block;
-  word-spacing: 16px;
+  text-align: center;
   white-space: nowrap;
 }
 .product-icon {

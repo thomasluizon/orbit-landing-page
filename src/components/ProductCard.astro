@@ -112,12 +112,20 @@ const { kind } = Astro.props;
           data-copy-label-en={landingCopy.en["product.chart"]}
           data-copy-label-pt={landingCopy["pt-BR"]["product.chart"]}
         >
-          {[46, 74, 58, 90, 62, 100, 78].map((height) => (
-            <span style={`--bar-height: ${height}%`} />
+          {[46, 74, 58, 90, 62, 100, 78].map((height, index) => (
+            <div class="chart-column" aria-hidden="true">
+              <div class="chart-track">
+                <span class="chart-bar" style={`--bar-height: ${height}%`} />
+              </div>
+              <span
+                class="chart-day"
+                data-copy-en={landingCopy.en["product.days"].split(" ")[index]}
+                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
+              >
+                {landingCopy.en["product.days"].split(" ")[index]}
+              </span>
+            </div>
           ))}
-        </div>
-        <div class="chart-days" aria-hidden="true">
-          <Copy name="product.days" />
         </div>
       </>
     )
