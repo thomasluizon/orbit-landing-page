@@ -37,7 +37,9 @@ const { appUrl } = Astro.props;
             ))
           }
         </ul>
-        <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
+        <div class="plan-action">
+          <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
+        </div>
       </article>
       <article class="plan-card plan-pro">
         <div class="plan-name">
@@ -70,7 +72,9 @@ const { appUrl } = Astro.props;
             )
           }
         </ul>
-        <PillButton href={`${appUrl}/upgrade`}><Copy name="pricing.pro.cta" /></PillButton>
+        <div class="plan-action">
+          <PillButton href={`${appUrl}/upgrade`}><Copy name="pricing.pro.cta" /></PillButton>
+        </div>
       </article>
     </div>
   </div>

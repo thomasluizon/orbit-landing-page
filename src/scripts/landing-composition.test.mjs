@@ -70,6 +70,25 @@ test("each section has at most one filled accent action, including the expanded 
   }
 });
 
+test("pricing actions stay at the bottom independently of list length and hug their labels", () => {
+  const plans = descendants(components.get("Pricing")).filter((node) => node.name === "article");
+  assert.equal(plans.length, 2);
+  for (const plan of plans) {
+    const children = plan.children.filter((node) => node.name);
+    const action = children.at(-1);
+    assert.equal(attributes(action).class, "plan-action");
+    assert.equal(descendants(action).filter((node) => node.name === "PillButton").length, 1);
+  }
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const card = css.match(/\.plan-card\s*\{([^}]+)\}/)[1];
+  assert.match(card, /display:\s*flex/);
+  assert.match(card, /flex-direction:\s*column/);
+  assert.match(card, /align-items:\s*flex-start/);
+  assert.doesNotMatch(card, /grid-template-rows:/);
+  assert.match(css, /\.plan-action\s*\{[^}]*margin-block-start:\s*auto/);
+  assert.doesNotMatch(css, /\.plan-(?:card|action)[^{]*\{[^}]*inline-size:\s*100%/);
+});
+
 test("the hero keeps copy and actions above the centered device", () => {
   const hero = sections[0];
   assert.deepEqual(
