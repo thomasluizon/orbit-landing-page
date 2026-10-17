@@ -1,0 +1,21 @@
+---
+import Copy from "./Copy.astro";
+import PillButton from "./PillButton.astro";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
+---
+
+<section class="final-section" data-section="final" aria-labelledby="final-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="final-title" class="section-title"><Copy name="final.title" /></h2><p
+        class="section-description"
+      >
+        <Copy name="final.body" />
+      </p>
+    </div>
+    <PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+  </div>
+</section>
