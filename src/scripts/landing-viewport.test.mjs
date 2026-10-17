@@ -282,39 +282,49 @@ test("the hero, trust strip and feature heading share the compact reference tran
   assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px/);
 });
 
-test("below 480px every floating card keeps viewport gutters and a vertical overlap", () => {
-  const compact = css.slice(css.indexOf("@media (max-width: 29.999rem)"));
-  assert.ok(compact, "the narrow viewport has its own clamp");
-  assert.match(
-    compact,
-    /\.hero-float,\s*\.feature-secondary\s*\{[^}]*max-inline-size:\s*calc\(100vw - 64px\)/,
+test("below 480px the phone, both product cards and reminder form one flowing cluster", () => {
+  const compact = css.slice(
+    css.indexOf("@media (max-width: 29.999rem)"),
+    css.indexOf("@media (max-width: 23rem)"),
   );
   assert.match(
     compact,
-    /\.hero-right \.hero-float\s*\{[^}]*inline-size:\s*min\(280px, calc\(100vw - 64px\)\)/,
+    /\.hero-stage\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 180px\)\);[^}]*grid-template-rows:\s*auto 24px auto 16px auto auto;[^}]*column-gap:\s*12px;[^}]*padding:\s*0 16px/,
   );
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.hero-right\s*\{[^}]*inline-size:\s*min\(440px, calc\(100% - 32px\)\)/);
-  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
-  assert.match(mobile, /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
-});
-
-test("the narrow hero hides quick replies and centers the week card over the whole composer", () => {
-  const compact = css.slice(css.indexOf("@media (max-width: 29.999rem)"));
+  assert.match(compact, /\.hero-right\s*\{[^}]*display:\s*contents/);
+  assert.match(compact, /\.hero-device\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*1 \/ 3/);
+  assert.match(
+    compact,
+    /\.float-today,\s*\.hero-right \.hero-float\s*\{[^}]*position:\s*static;[^}]*display:\s*block;[^}]*inline-size:\s*100%;[^}]*max-inline-size:\s*none/,
+  );
+  assert.match(compact, /\.float-today\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*2 \/ 5/);
+  assert.match(compact, /\.float-week\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*2 \/ 5/);
+  assert.match(
+    compact,
+    /\.hero-right \.float-reminder\s*\{[^}]*z-index:\s*4;[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*4 \/ 6/,
+  );
+  assert.match(
+    compact,
+    /\.hero-phone > \.composition-caption\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*6;[^}]*padding-block-start:\s*12px/,
+  );
+  assert.match(compact, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
+  assert.match(
+    compact,
+    /\.hero-stage \.product-card h3,\s*\.hero-stage \.habit-name,\s*\.hero-stage \.product-caption,\s*\.hero-stage \.chart-day\s*\{[^}]*font-size:\s*var\(--fs-sm\);[^}]*white-space:\s*nowrap/,
+  );
+  assert.match(
+    compact,
+    /\.float-today \.habit-emoji,\s*\.float-today \.product-caption\s*\{[^}]*display:\s*none/,
+  );
   assert.match(compact, /\.hero-stage \.demo-examples\s*\{\s*display:\s*none/);
-  assert.match(compact, /\.float-week\s*\{[^}]*justify-self:\s*center/);
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  const phoneWidth = Number(mobile.match(/\.hero-device\s*\{[^}]*inline-size:\s*(\d+)px/)[1]);
-  const bezel = Number(css.match(/--hero-device-bezel:\s*(\d+)px/)[1]);
-  const threadInset = Number(css.match(/\.astra-demo\s*\{[^}]*padding:\s*\d+px (\d+)px/)[1]);
   for (const viewport of [320, 360, 384, 412, 479]) {
-    const cardWidth = Math.min(280, viewport - 64);
-    const composerWidth = phoneWidth - 2 * (bezel + threadInset);
-    assert.ok(
-      cardWidth >= composerWidth,
-      `${viewport}px keeps the whole composer inside the centered card width`,
-    );
+    const cardWidth = Math.min(180, (viewport - 32 - 12) / 2);
+    const clusterWidth = 2 * cardWidth + 12;
+    assert.ok(clusterWidth <= viewport - 32);
+    assert.ok(cardWidth >= 138);
   }
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
 });
 
 test("the phone footer hides the install QR and shares the 16px content gutter", () => {

@@ -1316,18 +1316,96 @@
   }
 }
 @media (max-width: 29.999rem) {
+  .hero {
+    padding-block-end: 48px;
+  }
+  .hero-stage {
+    grid-template-columns: repeat(2, minmax(0, 180px));
+    grid-template-rows: auto 24px auto 16px auto auto;
+    column-gap: 12px;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  .hero-device {
+    grid-column: 1 / -1;
+    grid-row: 1 / 3;
+  }
+  .hero-right {
+    display: contents;
+  }
+  .float-today,
+  .hero-right .hero-float {
+    position: static;
+    display: block;
+    inline-size: 100%;
+    max-inline-size: none;
+    align-self: stretch;
+  }
+  .float-today {
+    grid-column: 1;
+    grid-row: 2 / 5;
+  }
+  .float-week {
+    grid-column: 2;
+    grid-row: 2 / 5;
+  }
+  .hero-right .float-reminder {
+    z-index: 4;
+    grid-column: 1 / -1;
+    grid-row: 4 / 6;
+    align-self: start;
+  }
+  .hero-phone > .composition-caption {
+    grid-column: 1 / -1;
+    grid-row: 6;
+    padding-block-start: 12px;
+  }
+  .hero-stage .product-card {
+    block-size: 100%;
+    gap: 8px;
+    padding: 12px;
+  }
+  .hero-stage .product-card h3,
+  .hero-stage .habit-name,
+  .hero-stage .product-caption,
+  .hero-stage .chart-day {
+    font-size: var(--fs-sm);
+    white-space: nowrap;
+  }
+  .float-today .product-card,
+  .float-week .product-card {
+    padding-block-end: 32px;
+  }
+  .float-today .product-top,
+  .float-today .habit-emoji,
+  .float-today .product-caption {
+    display: none;
+  }
+  .float-today .today-pager {
+    gap: 4px;
+    padding: 0;
+  }
+  .float-today .habit-row {
+    gap: 8px;
+    padding: 8px;
+  }
+  .float-today .status-ring {
+    inline-size: 16px;
+    block-size: 16px;
+  }
+  .hero-stage .week-chart {
+    block-size: 96px;
+    gap: 4px;
+    padding-block-start: 0;
+  }
+  .float-reminder .product-card {
+    padding-block-start: 24px;
+  }
   .hero-stage .demo-examples {
     display: none;
   }
-  .float-week {
-    justify-self: center;
-  }
-  .hero-float,
   .feature-secondary {
     max-inline-size: calc(100vw - 64px);
-  }
-  .hero-right .hero-float {
-    inline-size: min(280px, calc(100vw - 64px));
   }
 }
 @media (max-width: 23rem) {
