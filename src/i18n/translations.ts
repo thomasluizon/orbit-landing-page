@@ -2,7 +2,7 @@ export const LANGUAGES = ["en", "pt-BR"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
-  "hero.title": "Astra plans your routine.",
+  "hero.title": "Astra helps you find your way back to a routine.",
   "hero.platforms": "Android and web",
   "hero.ios": "iPhone waitlist",
   "ios.close": "Close waitlist",
@@ -48,7 +48,8 @@ const en = {
   "nav.label": "Main navigation",
   "language.switch": "EN. Switch to Portuguese",
   "header.cta": "Install Orbit",
-  "hero.subtitle": "Tell Astra what you want to change and review the plan before saving.",
+  "hero.subtitle":
+    "Tell her what you want to do. Astra makes a plan you can review, then puts it in your day.",
   "hero.cta": "Install Orbit",
   "hero.web": "Open Orbit",
   "ios.title": "Hear when Orbit reaches iPhone.",
@@ -85,7 +86,7 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
-  "hero.title": "A Astra organiza sua rotina.",
+  "hero.title": "A Astra ajuda você a retomar sua rotina.",
   "hero.platforms": "Android e web",
   "hero.ios": "Lista de espera do iPhone",
   "ios.close": "Fechar lista",
@@ -131,7 +132,8 @@ const ptBR: Record<TranslationKey, string> = {
   "nav.label": "Navegação principal",
   "language.switch": "pt-BR. Mudar para inglês",
   "header.cta": "Instalar Orbit",
-  "hero.subtitle": "Diga o que quer mudar e confira a proposta da Astra antes de salvar.",
+  "hero.subtitle":
+    "Conte o que você quer fazer. A Astra monta uma proposta para você conferir e colocar em prática.",
   "hero.cta": "Instalar Orbit",
   "hero.web": "Abrir Orbit",
   "ios.title": "Saiba quando o Orbit chegar ao iPhone.",
@@ -166,3 +168,206 @@ const ptBR: Record<TranslationKey, string> = {
 };
 
 export const translations: Record<Language, Record<TranslationKey, string>> = { en, "pt-BR": ptBR };
+
+const landingEn = {
+  "nav.features": "How it works",
+  "nav.pricing": "Plans",
+  "trust.approval": "You approve every change",
+  "trust.free": "Start with Free",
+  "product.today": "Today",
+  "product.week": "Your week",
+  "product.example": "Example routine",
+  "product.read": "Read",
+  "product.walk": "Walk",
+  "product.water": "Drink water",
+  "product.morning": "Morning",
+  "product.evening": "Evening",
+  "product.done": "Done",
+  "product.reminder": "Reminder",
+  "product.ready": "Time for your walk.",
+  "product.proactive": "A busy day? We can make room for your walk.",
+  "product.chart": "Example of habits completed each day, Monday through Sunday.",
+  "product.days": "M T W T F S S",
+  "product.approved": "Approved. Now in your day.",
+  "product.proposal": "Your plan",
+  "product.batch": "One request. Both habits.",
+  "phrase.start": "“I want to start walking.”",
+  "phrase.restart": "“I missed a day.”",
+  "connect.title": "You tell Astra. She puts it in your day.",
+  "connect.body":
+    "A conversation becomes a habit, with a schedule you approve. Open Orbit to see what is next.",
+  "features.title": "What Astra does for you",
+  "features.body": "Start with what is on your mind. Leave the setup to her.",
+  "features.start.title": "A place to start",
+  "features.start.body":
+    "“I want to walk more.” Astra turns that into a habit and suggests when to do it. You review before saving.",
+  "features.remember.title": "A nudge when you need it",
+  "features.remember.body":
+    "Set reminders for your habits. Astra can also check in and help you adjust when the day gets busy.",
+  "features.act.title": "Say it once",
+  "features.act.body":
+    "Move your walk and your reading to the evening in one request. Review the changes together.",
+  "features.restart.title": "A way back after a miss",
+  "features.restart.body":
+    "Tell Astra what got in the way. She helps you find the next step without turning a missed day into more work.",
+  "action.start": "Start free",
+  "remember.title": "A busy day can still have room for you.",
+  "remember.body":
+    "Astra notices when a routine needs attention. Ask her to find another time, then approve the change.",
+  "understand.title": "See what is working. Ask what to change.",
+  "understand.body":
+    "Your habits leave a trail. Ask Astra how things are going and use your progress to decide what comes next.",
+  "restart.title": "Missed a day? Start from here.",
+  "restart.body":
+    "You do not have to rebuild your routine. Tell Astra what you can manage today and review a smaller next step.",
+  "security.title": "Astra proposes. You decide.",
+  "security.body": "Every proposed change stays a proposal until you approve it.",
+  "security.approval.title": "Review before saving",
+  "security.approval.body": "See the habits and times Astra wants to change, all in one preview.",
+  "security.edit.title": "Change your mind",
+  "security.edit.body":
+    "Edit the proposal or reject it. A conversation does not commit you to a plan.",
+  "security.control.title": "Keep your own pace",
+  "security.control.body": "Mark a habit done with one tap. Everyday actions stay within reach.",
+  "security.privacy.title": "Your data has a way out",
+  "security.privacy.body": "Export your data or delete your account from your profile.",
+  "pricing.title": "Start free. Give Astra more room.",
+  "pricing.body": "Choose Free or Pro. Both give you a place to start your routine.",
+  "pricing.free.body": "For getting a routine started.",
+  "pricing.pro.body": "For more conversations with Astra.",
+  "pricing.free.astra": "Daily conversations with Astra",
+  "pricing.habits": "Habits with reminders",
+  "pricing.review": "Review every proposal",
+  "pricing.pro.astra": "A higher daily message limit",
+  "pricing.pro.adjust": "Help rescheduling your habits",
+  "pricing.pro.calendar": "Calendar sync",
+  "pricing.month": "per month",
+  "pricing.year": "per year",
+  "pricing.or": "or",
+  "pricing.recommended": "More with Astra",
+  "faq.title": "Before you start",
+  "faq.what.q": "What is Astra?",
+  "faq.what.a":
+    "Astra is the AI in Orbit. Tell her what you want to start or change. She can suggest a plan, help you adjust habits and talk through your progress.",
+  "faq.approval.q": "Does Astra change things on her own?",
+  "faq.approval.a":
+    "Astra shows a preview before changing your routine. You can approve, edit or reject it.",
+  "faq.miss.q": "What if I miss a day?",
+  "faq.miss.a":
+    "Open Orbit and start with today. You can ask Astra to help you adjust the routine instead of setting it up again.",
+  "faq.plans.q": "What changes with Pro?",
+  "faq.plans.a":
+    "Pro gives you more daily messages with Astra, help rescheduling habits and calendar sync. The current price for your language is shown above.",
+  "faq.platforms.q": "Where can I use Orbit?",
+  "faq.platforms.a":
+    "Orbit is available on Android and the web. Join the iPhone waitlist to hear when the iOS app is available.",
+  "final.title": "Your next step can start with a conversation.",
+  "final.body": "Tell Astra what you have in mind. Start with Free.",
+  "footer.description": "An AI that helps you keep a routine.",
+  "footer.qr": "Scan to install",
+  "footer.source": "Source code",
+} as const;
+
+export type LandingKey = keyof typeof landingEn;
+
+const landingPt: Record<LandingKey, string> = {
+  "nav.features": "Como funciona",
+  "nav.pricing": "Planos",
+  "trust.approval": "Você aprova cada mudança",
+  "trust.free": "Comece no Free",
+  "product.today": "Hoje",
+  "product.week": "Sua semana",
+  "product.example": "Rotina de exemplo",
+  "product.read": "Ler",
+  "product.walk": "Caminhar",
+  "product.water": "Beber água",
+  "product.morning": "De manhã",
+  "product.evening": "À noite",
+  "product.done": "Concluído",
+  "product.reminder": "Lembrete",
+  "product.ready": "Hora da caminhada.",
+  "product.proactive": "O dia apertou? Podemos achar um horário para a caminhada.",
+  "product.chart": "Exemplo de hábitos concluídos por dia, de segunda a domingo.",
+  "product.days": "S T Q Q S S D",
+  "product.approved": "Aprovado. Já está no seu dia.",
+  "product.proposal": "Sua proposta",
+  "product.batch": "Um pedido para os dois hábitos.",
+  "phrase.start": "“Quero começar a caminhar.”",
+  "phrase.restart": "“Perdi um dia.”",
+  "connect.title": "Você conta à Astra. Ela coloca no seu dia.",
+  "connect.body":
+    "Uma conversa vira um hábito, com os horários que você aprovar. Abra o Orbit para ver o que fazer agora.",
+  "features.title": "O que a Astra faz por você",
+  "features.body": "Comece pelo que você tem em mente. Deixe a organização com ela.",
+  "features.start.title": "Um jeito de começar",
+  "features.start.body":
+    "“Quero caminhar mais.” A Astra transforma isso em um hábito e sugere os horários. Você confere antes de salvar.",
+  "features.remember.title": "Uma ajuda para lembrar",
+  "features.remember.body":
+    "Defina lembretes para os hábitos. A Astra também pode puxar conversa e ajudar a ajustar o que apertou no dia.",
+  "features.act.title": "Peça de uma vez",
+  "features.act.body":
+    "Passe a caminhada e a leitura para a noite em um pedido. Confira as mudanças juntas.",
+  "features.restart.title": "Um jeito de retomar",
+  "features.restart.body":
+    "Conte à Astra o que atrapalhou. Ela ajuda você a dar o próximo passo sem transformar o dia perdido em mais trabalho.",
+  "action.start": "Começar grátis",
+  "remember.title": "Mesmo num dia cheio, cabe um momento seu.",
+  "remember.body":
+    "A Astra percebe quando um hábito precisa de atenção. Peça outro horário e aprove a mudança.",
+  "understand.title": "Veja o que funciona. Pergunte o que mudar.",
+  "understand.body":
+    "Seus hábitos deixam um histórico. Pergunte à Astra como está indo e use seu progresso para decidir o próximo passo.",
+  "restart.title": "Perdeu um dia? Retome daqui.",
+  "restart.body":
+    "Você não precisa montar a rotina de novo. Conte à Astra o que dá para fazer hoje e confira um próximo passo menor.",
+  "security.title": "A Astra propõe. Você decide.",
+  "security.body": "Cada mudança sugerida continua sendo uma proposta até você aprovar.",
+  "security.approval.title": "Confira antes de salvar",
+  "security.approval.body":
+    "Veja os hábitos e horários que a Astra quer mudar em uma única proposta.",
+  "security.edit.title": "Mude de ideia",
+  "security.edit.body": "Edite ou rejeite a proposta. Conversar não obriga você a seguir o plano.",
+  "security.control.title": "Siga no seu ritmo",
+  "security.control.body":
+    "Marque um hábito como concluído com um toque. As ações do dia continuam à mão.",
+  "security.privacy.title": "Seus dados vão com você",
+  "security.privacy.body": "Exporte seus dados ou exclua sua conta pelo perfil.",
+  "pricing.title": "Comece grátis. Converse mais com a Astra.",
+  "pricing.body": "Escolha Free ou Pro. Os dois ajudam você a começar sua rotina.",
+  "pricing.free.body": "Para dar os primeiros passos.",
+  "pricing.pro.body": "Para conversar mais com a Astra.",
+  "pricing.free.astra": "Conversas diárias com a Astra",
+  "pricing.habits": "Hábitos com lembretes",
+  "pricing.review": "Revise cada proposta",
+  "pricing.pro.astra": "Mais mensagens por dia",
+  "pricing.pro.adjust": "Ajuda para reagendar hábitos",
+  "pricing.pro.calendar": "Sincronização de calendário",
+  "pricing.month": "por mês",
+  "pricing.year": "por ano",
+  "pricing.or": "ou",
+  "pricing.recommended": "Mais com a Astra",
+  "faq.title": "Antes de começar",
+  "faq.what.q": "Quem é a Astra?",
+  "faq.what.a":
+    "A Astra é a IA do Orbit. Conte o que você quer começar ou mudar. Ela pode sugerir uma proposta, ajudar a ajustar hábitos e conversar sobre seu progresso.",
+  "faq.approval.q": "A Astra muda algo sozinha?",
+  "faq.approval.a":
+    "A Astra mostra uma proposta antes de mudar sua rotina. Você pode aprovar, editar ou rejeitar.",
+  "faq.miss.q": "E se eu perder um dia?",
+  "faq.miss.a":
+    "Abra o Orbit e comece por hoje. Você pode pedir ajuda à Astra para ajustar a rotina sem montar tudo de novo.",
+  "faq.plans.q": "O que muda no Pro?",
+  "faq.plans.a":
+    "O Pro oferece mais mensagens diárias com a Astra, ajuda para reagendar hábitos e sincronização de calendário. O preço está na seção de planos.",
+  "faq.platforms.q": "Onde posso usar o Orbit?",
+  "faq.platforms.a":
+    "O Orbit está disponível no Android e na web. Entre na lista do iPhone para saber quando o app para iOS estiver disponível.",
+  "final.title": "Seu próximo passo pode começar numa conversa.",
+  "final.body": "Conte à Astra o que você tem em mente. Comece no Free.",
+  "footer.description": "Uma IA que ajuda você a manter a rotina.",
+  "footer.qr": "Escaneie para instalar",
+  "footer.source": "Código-fonte",
+};
+
+export const landingCopy = { en: landingEn, "pt-BR": landingPt };

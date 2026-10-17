@@ -137,21 +137,19 @@ for (const language of ["en", "pt-BR"]) {
 
 test("changing the motion preference finishes an in-flight replay", () => {
   const h = harness();
-  assert.equal(h.timers.size, 1, "the first example plays on load");
+  h.chips[1].listeners.get("click")();
+  assert.equal(h.timers.size, 1, "a selected example plays on request");
   h.motion.matches = true;
   h.motion.change();
   assert.equal(h.timers.size, 0);
   assert.equal(h.elements.get("demo-response").style.visibility, "visible");
 });
 
-test("chips are keyboard buttons above a separate decorative composer", () => {
+test("example chips are keyboard buttons and no decorative input impersonates a control", () => {
   const chip = nodes.find((node) => Object.hasOwn(attributes(node), "data-demo"));
   assert.equal(chip.name, "button");
   assert.ok(!chip.attributes.some(({ name }) => name === "tabindex" || name === "disabled"));
-  const composer = nodes.find((node) => attributes(node).class === "demo-composer");
-  assert.equal(attributes(composer)["aria-hidden"], "true");
-  assert.ok(!composer.children.some((node) => node.name === "button" || node.name === "input"));
-  assert.match(source, /data-i18n="demo.placeholder"/);
+  assert.ok(!nodes.some((node) => attributes(node).class === "demo-composer"));
 });
 
 for (const language of ["en", "pt-BR"]) {
@@ -203,10 +201,33 @@ for (const language of ["en", "pt-BR"]) {
 
 test("actions during a replay clear its timer before announcing the result", () => {
   const h = harness();
+  h.chips[0].listeners.get("click")();
   assert.equal(h.timers.size, 1);
   assert.ok(h.elements.get("demo-approve")?.listeners.has("click"));
   h.elements.get("demo-approve").listeners.get("click")();
   assert.equal(h.timers.size, 0);
   assert.equal(h.elements.get("demo-response").style.visibility, "visible");
   assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
+});
+
+test("approval lands the accepted habit and edited schedule on Today; rejection never does", () => {
+  const h = harness("pt-BR", true);
+  const today = h.elements.get("demo-today");
+  assert.ok(today, "the conversation must render the Today destination");
+  assert.equal(today.hidden, true);
+  h.elements.get("demo-edit").listeners.get("click")();
+  h.elements.get("demo-approve").listeners.get("click")();
+  assert.equal(today.hidden, false);
+  assert.equal(h.elements.get("demo-today-habit").textContent, h.strings["demo.start.habit"]);
+  assert.equal(
+    h.elements.get("demo-today-repeat").textContent,
+    h.strings["demo.start.alternateRepeat"],
+  );
+  h.chips[2].listeners.get("click")();
+  assert.equal(today.hidden, true);
+  h.elements.get("demo-approve").listeners.get("click")();
+  assert.equal(h.elements.get("demo-today-second").hidden, false);
+  h.chips[0].listeners.get("click")();
+  h.elements.get("demo-reject").listeners.get("click")();
+  assert.equal(today.hidden, true);
 });

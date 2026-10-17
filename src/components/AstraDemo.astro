@@ -1,4 +1,5 @@
 ---
+import Copy from "./Copy.astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import PillButton from "./PillButton.astro";
 import { translations } from "../i18n/translations";
@@ -9,7 +10,7 @@ const en = translations.en;
   <div class="demo-heading">
     <AstraGlyph />
     <h2 id="demo-title" class="t-row" translate="no">Astra</h2>
-    <span class="t-meta" data-i18n="demo.example">{en["demo.example"]}</span>
+    <span class="product-caption" data-i18n="demo.example">{en["demo.example"]}</span>
   </div>
   <div class="demo-exchange" aria-live="polite" aria-atomic="true" aria-busy="false">
     <p id="demo-request" class="demo-request t-body" data-i18n="demo.start.request">
@@ -20,7 +21,7 @@ const en = translations.en;
         {en["demo.start.reply"]}
       </p>
       <div id="demo-preview" class="demo-preview" data-state="proposed">
-        <p class="demo-proposed t-meta" data-i18n="demo.proposed">{en["demo.proposed"]}</p>
+        <p class="demo-proposed product-caption" data-i18n="demo.proposed">{en["demo.proposed"]}</p>
         <div class="demo-habits">
           <div class="demo-habit">
             <p id="demo-habit" class="t-row" data-i18n="demo.start.habit">
@@ -46,7 +47,7 @@ const en = translations.en;
           <PillButton id="demo-edit" variant="ghost" size="sm"
             ><span data-i18n="demo.edit">{en["demo.edit"]}</span></PillButton
           >
-          <PillButton id="demo-approve" size="sm"
+          <PillButton id="demo-approve" variant="ghost" size="sm"
             ><span data-i18n="demo.approve">{en["demo.approve"]}</span></PillButton
           >
         </div>
@@ -55,7 +56,30 @@ const en = translations.en;
       <p id="demo-announcement" class="sr-only"></p>
     </div>
   </div>
+  <div id="demo-today" class="demo-today" hidden>
+    <p class="product-caption"><Copy name="product.approved" /></p>
+    <h3><Copy name="product.today" /></h3>
+    <div class="habit-row">
+      <span class="habit-emoji" aria-hidden="true">🚶</span><div>
+        <p id="demo-today-habit" class="habit-name"></p><p
+          id="demo-today-repeat"
+          class="product-caption"
+        >
+        </p>
+      </div><span class="status-ring" aria-hidden="true"></span>
+    </div>
+    <div id="demo-today-second" class="habit-row" hidden>
+      <span class="habit-emoji" aria-hidden="true">📖</span><div>
+        <p class="habit-name" data-i18n="demo.move.secondHabit">{en["demo.move.secondHabit"]}</p><p
+          id="demo-today-second-repeat"
+          class="product-caption"
+        >
+        </p>
+      </div><span class="status-ring" aria-hidden="true"></span>
+    </div>
+  </div>
   <div class="demo-input-area">
+    <p class="product-caption" data-i18n="demo.choose">{en["demo.choose"]}</p>
     <div
       class="demo-examples"
       role="group"
@@ -74,10 +98,6 @@ const en = translations.en;
           </button>
         ))
       }
-    </div>
-    <div class="demo-composer" aria-hidden="true">
-      <AstraGlyph />
-      <span class="t-secondary" data-i18n="demo.placeholder">{en["demo.placeholder"]}</span>
     </div>
   </div>
 </section>

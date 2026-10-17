@@ -8,6 +8,8 @@ const exchange = demo?.querySelector<HTMLElement>(".demo-exchange");
 const response = document.getElementById("demo-response");
 const second = document.getElementById("demo-second");
 const preview = document.getElementById("demo-preview");
+const today = document.getElementById("demo-today");
+const todaySecond = document.getElementById("demo-today-second");
 const result = document.getElementById("demo-result");
 const announcement = document.getElementById("demo-announcement");
 const chips = demo?.querySelectorAll<HTMLButtonElement>("[data-demo]");
@@ -39,6 +41,7 @@ function play(example: Example) {
   window.clearTimeout(pending);
   current = example;
   edited = false;
+  if (today) today.hidden = true;
   if (preview) preview.hidden = false;
   if (result) result.hidden = true;
   clearAnnouncement();
@@ -62,6 +65,16 @@ function finish(approved: boolean) {
   setCopy("demo-result", approved ? `demo.${current}.approved` : "demo.rejected");
   if (result) result.hidden = false;
   if (preview) preview.hidden = true;
+  if (today) today.hidden = !approved;
+  if (todaySecond) todaySecond.hidden = current !== "move";
+  if (approved) {
+    setCopy("demo-today-habit", `demo.${current}.habit`);
+    const schedule: TranslationKey = edited
+      ? `demo.${current}.alternateRepeat`
+      : `demo.${current}.repeat`;
+    setCopy("demo-today-repeat", schedule);
+    setCopy("demo-today-second-repeat", schedule);
+  }
   clearAnnouncement();
   chips?.forEach((chip) => {
     if (chip.dataset.demo === current) chip.focus();
@@ -87,4 +100,7 @@ motion.addEventListener("change", () => {
   window.clearTimeout(pending);
   showResponse();
 });
-if (demo) play("start");
+if (demo) {
+  if (motion.matches) play("start");
+  else showResponse();
+}

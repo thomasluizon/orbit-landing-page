@@ -1,6 +1,7 @@
 ---
 import PillButton from "./PillButton.astro";
 import LanguageToggle from "./LanguageToggle.astro";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
@@ -14,11 +15,17 @@ const { googlePlayUrl } = Astro.props;
     <a href="/" class="brand" aria-label="Orbit" translate="no"
       ><span class="brand-lockup" aria-hidden="true" set:html={orbitLockup} /></a
     >
+    <div class="header-links">
+      <a href="#features"><Copy name="nav.features" /></a>
+      <a href="#pricing"><Copy name="nav.pricing" /></a>
+    </div>
     <div class="header-actions">
-      <LanguageToggle /><PillButton
+      <LanguageToggle />
+      <PillButton
         href={googlePlayUrl}
         variant="ghost"
         size="sm"
+        class="header-install"
         external
         analyticsEvent="header_app_cta_clicked"
         analyticsSurface="header"

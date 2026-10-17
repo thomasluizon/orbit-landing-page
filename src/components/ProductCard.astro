@@ -1,0 +1,193 @@
+---
+import { Bell, Check, ChevronLeft, ChevronRight, ArrowUpRight } from "@lucide/astro";
+import AstraGlyph from "./AstraGlyph.astro";
+import Copy from "./Copy.astro";
+import { landingCopy } from "../i18n/translations";
+interface Props {
+  kind: "today" | "week" | "reminder" | "restart";
+}
+const { kind } = Astro.props;
+---
+
+<div class:list={["product-card", `product-${kind}`]} data-mock="true">
+  {
+    kind === "today" && (
+      <>
+        <div class="product-top">
+          <>
+            <span class="product-caption">
+              <Copy name="product.example" />
+            </span>
+            <span translate="no">Orbit</span>
+          </>
+        </div>
+        <div class="today-pager">
+          <>
+            <ChevronLeft size={20} />
+            <h3>
+              <Copy name="product.today" />
+            </h3>
+            <ChevronRight size={20} />
+          </>
+        </div>
+        <div class="proactive-line">
+          <>
+            <AstraGlyph />
+            <p>
+              <Copy name="product.proactive" />
+            </p>
+          </>
+        </div>
+        <div class="habit-row">
+          <>
+            <span class="habit-emoji" aria-hidden="true">
+              🚶
+            </span>
+            <div>
+              <>
+                <p class="habit-name">
+                  <Copy name="product.walk" />
+                </p>
+                <p class="product-caption">
+                  <Copy name="product.morning" />
+                </p>
+              </>
+            </div>
+            <span class="status-ring" aria-hidden="true" />
+          </>
+        </div>
+        <div class="habit-row">
+          <>
+            <span class="habit-emoji" aria-hidden="true">
+              📖
+            </span>
+            <div>
+              <>
+                <p class="habit-name">
+                  <Copy name="product.read" />
+                </p>
+                <p class="product-caption">
+                  <Copy name="product.evening" />
+                </p>
+              </>
+            </div>
+            <span class="status-ring" aria-hidden="true" />
+          </>
+        </div>
+        <div class="habit-row">
+          <>
+            <span class="habit-emoji" aria-hidden="true">
+              💧
+            </span>
+            <div>
+              <>
+                <p class="habit-name">
+                  <Copy name="product.water" />
+                </p>
+                <p class="product-caption">
+                  <Copy name="product.done" />
+                </p>
+              </>
+            </div>
+            <span class="status-ring is-done" aria-hidden="true">
+              <Check size={16} />
+            </span>
+          </>
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "week" && (
+      <>
+        <div class="product-top">
+          <>
+            <h3>
+              <Copy name="product.week" />
+            </h3>
+            <ArrowUpRight size={20} />
+          </>
+        </div>
+        <p class="product-caption">
+          <Copy name="product.example" />
+        </p>
+        <div
+          class="week-chart"
+          role="img"
+          aria-label={landingCopy.en["product.chart"]}
+          data-copy-label-en={landingCopy.en["product.chart"]}
+          data-copy-label-pt={landingCopy["pt-BR"]["product.chart"]}
+        >
+          {[46, 74, 58, 90, 62, 100, 78].map((height) => (
+            <span style={`--bar-height: ${height}%`} />
+          ))}
+        </div>
+        <div class="chart-days" aria-hidden="true">
+          <Copy name="product.days" />
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "reminder" && (
+      <>
+        <div class="product-top">
+          <>
+            <span class="product-icon">
+              <Bell size={20} />
+            </span>
+            <span class="product-caption">
+              <Copy name="product.reminder" />
+            </span>
+            <span translate="no">Orbit</span>
+          </>
+        </div>
+        <h3>
+          <Copy name="product.ready" />
+        </h3>
+        <p class="product-caption">
+          <Copy name="product.example" />
+        </p>
+      </>
+    )
+  }
+  {
+    kind === "restart" && (
+      <>
+        <div class="product-top">
+          <>
+            <AstraGlyph />
+            <span translate="no">Astra</span>
+            <span class="product-caption">
+              <Copy name="product.example" />
+            </span>
+          </>
+        </div>
+        <p class="sample-message">
+          <Copy name="phrase.restart" />
+        </p>
+        <p class="product-reply" data-i18n="demo.restart.reply">
+          Let's pick it back up tonight.
+        </p>
+        <div class="habit-row">
+          <>
+            <span class="habit-emoji" aria-hidden="true">
+              🚶
+            </span>
+            <div>
+              <>
+                <p class="habit-name">
+                  <Copy name="product.walk" />
+                </p>
+                <p class="product-caption">
+                  <Copy name="product.evening" />
+                </p>
+              </>
+            </div>
+            <span class="status-ring" aria-hidden="true" />
+          </>
+        </div>
+      </>
+    )
+  }
+</div>

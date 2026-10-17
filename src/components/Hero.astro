@@ -1,6 +1,8 @@
 ---
 import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
+import ProductCard from "./ProductCard.astro";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
@@ -10,12 +12,11 @@ const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<section id="hero" class="hero">
+<section id="hero" class="hero" data-section="hero">
   <div class="hero-copy">
     <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
-    <p class="hero-description t-secondary" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
+    <p class="hero-description" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
-  <AstraDemo />
   <div class="hero-controls">
     <div class="hero-actions">
       <PillButton
@@ -33,16 +34,28 @@ const en = translations.en;
         data-analytics-surface="hero">{en["hero.web"]}</a
       >
     </div>
-    <p class="hero-meta t-meta">
-      <span data-i18n="hero.platforms">{en["hero.platforms"]}</span>
-      <a
+    <p class="hero-meta">
+      <span data-i18n="hero.platforms">{en["hero.platforms"]}</span><a
         href="#ios"
         id="ios-trigger"
         class="text-link"
         aria-haspopup="dialog"
         aria-controls="ios"
-        data-i18n="hero.ios">{en["hero.ios"]}</a
-      >
+        data-i18n="hero.ios">{en["hero.ios"]}</a>
     </p>
+  </div>
+  <div class="hero-stage" id="hero-stage">
+    <div class="hero-float float-today" data-hero-float><ProductCard kind="today" /></div>
+    <div class="hero-device">
+      <div class="device-speaker" aria-hidden="true"></div><AstraDemo /><div
+        class="device-home"
+        aria-hidden="true"
+      >
+      </div>
+    </div>
+    <div class="hero-float float-week" data-hero-float><ProductCard kind="week" /></div>
+    <div class="hero-float float-reminder" data-hero-float><ProductCard kind="reminder" /></div>
+    <p class="hero-phrase phrase-start" data-hero-float><Copy name="phrase.start" /></p>
+    <p class="hero-phrase phrase-restart" data-hero-float><Copy name="phrase.restart" /></p>
   </div>
 </section>

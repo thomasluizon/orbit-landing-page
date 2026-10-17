@@ -23,3 +23,14 @@ export function offersFor(language: PriceLanguage) {
     })),
   ];
 }
+
+export function formatPrice(language: PriceLanguage, period: "monthly" | "yearly" | "free") {
+  const plan = plans[language];
+  const amount = period === "free" ? 0 : plan[period] / 100;
+  return new Intl.NumberFormat(plan.locale, {
+    style: "currency",
+    currency: plan.currency,
+    minimumFractionDigits: amount % 1 ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
