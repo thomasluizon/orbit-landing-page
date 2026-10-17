@@ -4,7 +4,7 @@ import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "today" | "week" | "reminder" | "restart";
+  kind: "today" | "week" | "reminder" | "restart" | "walk";
 }
 const { kind } = Astro.props;
 ---
@@ -157,25 +157,29 @@ const { kind } = Astro.props;
         <p class="product-reply" data-i18n="demo.restart.reply">
           Let's pick it back up tonight.
         </p>
-        <div class="habit-row">
-          <>
-            <span class="habit-emoji" aria-hidden="true">
-              🚶
-            </span>
-            <div>
-              <>
-                <p class="habit-name">
-                  <Copy name="product.walk" />
-                </p>
-                <p class="product-caption">
-                  <Copy name="product.evening" />
-                </p>
-              </>
-            </div>
-            <span class="status-ring" aria-hidden="true" />
-          </>
-        </div>
       </>
+    )
+  }
+  {
+    kind === "walk" && (
+      <div class="habit-row">
+        <>
+          <span class="habit-emoji" aria-hidden="true">
+            🚶
+          </span>
+          <div>
+            <>
+              <p class="habit-name">
+                <Copy name="product.walk" />
+              </p>
+              <p class="product-caption">
+                <Copy name="product.evening" />
+              </p>
+            </>
+          </div>
+          <span class="status-ring" aria-hidden="true" />
+        </>
+      </div>
     )
   }
 </div>

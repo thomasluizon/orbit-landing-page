@@ -4,7 +4,6 @@
 .landing-shell {
   --landing-content: 1072px;
   --landing-narrow: 896px;
-  --landing-panel: 640px;
   --landing-gutter: 24px;
   --landing-section-gap: 160px;
   padding-block-start: 64px;
@@ -684,50 +683,52 @@
   text-align: center;
 }
 .feature-art {
+  position: relative;
   display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 24px;
-  inline-size: min(var(--landing-panel), 100%);
-  padding: 32px;
+  align-items: center;
+  inline-size: 100%;
+  block-size: 440px;
+  padding: 48px;
   border-radius: var(--radius-sheet);
   background: var(--color-bg-card);
 }
 .feature-art > .product-card {
-  inline-size: 100%;
-  max-inline-size: 440px;
+  inline-size: 440px;
+  justify-self: start;
 }
-.feature-art-busy {
-  justify-items: start;
-}
-.feature-art-busy > .product-today {
-  max-inline-size: 400px;
-}
-.feature-reminder {
-  inline-size: min(232px, 100%);
+.feature-art-progress > .product-week {
   justify-self: end;
 }
-@media (min-width: 48rem) {
-  .feature-art-busy {
-    grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
-    column-gap: 0;
-    row-gap: 16px;
-    align-content: start;
-  }
-  .feature-art-busy > .product-today {
-    grid-column: 1;
-    grid-row: 1 / span 6;
-    grid-template-rows: subgrid;
-  }
-  .feature-reminder {
-    grid-column: 2;
-    grid-row: 5 / span 2;
-    align-self: start;
-    justify-self: start;
-    position: relative;
-    inset-inline-start: -48px;
-    inline-size: 232px;
-  }
+.feature-art-busy > .product-today {
+  gap: 12px;
+  padding: 16px;
+}
+.feature-art-busy > .product-today > .product-top {
+  display: none;
+}
+.feature-art-busy .today-pager {
+  padding-block: 0;
+}
+.feature-art .habit-row {
+  gap: 12px;
+  padding: 8px 12px;
+}
+.feature-art .habit-emoji {
+  inline-size: 32px;
+  block-size: 32px;
+  font-size: var(--fs-base);
+}
+.feature-reminder,
+.feature-return {
+  position: absolute;
+  inset-inline-end: -40px;
+  inset-block-end: 48px;
+  inline-size: 296px;
+}
+.feature-art-progress > .sample-message {
+  position: absolute;
+  inset-inline-start: -40px;
+  inset-block-start: 48px;
 }
 .security-grid .feature-card {
   min-block-size: 200px;
@@ -990,6 +991,33 @@
   .landing-shell {
     --landing-gutter: 16px;
     --landing-section-gap: 96px;
+  }
+  .feature-art {
+    block-size: auto;
+    min-block-size: 440px;
+    padding: 24px;
+    gap: 24px;
+    padding-block-end: 96px;
+  }
+  .feature-art > .product-card {
+    inline-size: 100%;
+  }
+  .feature-art-busy,
+  .feature-art-restart {
+    padding-block-end: 192px;
+  }
+  .feature-reminder,
+  .feature-return {
+    inset-inline-end: -16px;
+    inset-block-end: 24px;
+    inline-size: min(296px, 100%);
+  }
+  .feature-art-progress > .sample-message {
+    inset-inline-start: -16px;
+    inset-block-start: 24px;
+  }
+  .feature-art-progress > .product-week {
+    margin-block-start: 64px;
   }
   .feature-grid .feature-card {
     padding: 24px;

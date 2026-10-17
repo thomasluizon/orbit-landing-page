@@ -170,7 +170,6 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   for (const [name, width] of [
     ["content", 1072],
     ["narrow", 896],
-    ["panel", 640],
   ]) {
     assert.match(css, new RegExp(`--landing-${name}:\\s*${width}px`));
   }
@@ -180,18 +179,23 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
   assert.match(
     css,
-    /\.feature-art\s*\{[^}]*inline-size:\s*min\(var\(--landing-panel\), 100%\);[^}]*padding:\s*32px/,
-  );
-  assert.doesNotMatch(
-    css,
-    /\.section\[data-section="details"\] \.feature-art\s*\{[^}]*inline-size:\s*100%/,
+    /\.feature-art\s*\{[^}]*inline-size:\s*100%;[^}]*block-size:\s*440px;[^}]*padding:\s*48px/,
   );
   const busy = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-busy"),
   );
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
-  assert.match(css, /\.feature-art-busy > \.product-today\s*\{[^}]*grid-template-rows:\s*subgrid/);
-  assert.match(css, /\.feature-reminder\s*\{[^}]*grid-row:\s*5 \/ span 2/);
+  assert.match(css, /\.feature-art > \.product-card\s*\{[^}]*inline-size:\s*440px/);
+  assert.match(css, /\.feature-art-progress > \.product-week\s*\{[^}]*justify-self:\s*end/);
+  assert.match(css, /\.feature-reminder,\s*\.feature-return\s*\{[^}]*inset-inline-end:\s*-40px/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.feature-reminder,\s*\.feature-return\s*\{[^}]*inset-inline-end:\s*-16px/);
+  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
+  assert.match(rows, /class="feature-art feature-art-progress"/);
+  assert.match(
+    rows,
+    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-return"[\s\S]*kind="walk"/,
+  );
 });
 
 test("example disclosure belongs once below each composition, outside the product surfaces", async () => {

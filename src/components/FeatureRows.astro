@@ -41,7 +41,7 @@ const { appUrl } = Astro.props;
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
       <div class="feature-composition">
-        <div class="feature-art">
+        <div class="feature-art feature-art-progress">
           <ProductCard kind="week" /><p class="sample-message" data-reveal>
             <Copy name="product.progressRequest" />
           </p>
@@ -60,7 +60,10 @@ const { appUrl } = Astro.props;
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
       <div class="feature-composition">
-        <div class="feature-art"><ProductCard kind="restart" /></div>
+        <div class="feature-art feature-art-restart">
+          <ProductCard kind="restart" />
+          <div class="feature-return" data-reveal><ProductCard kind="walk" /></div>
+        </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
     </div>
