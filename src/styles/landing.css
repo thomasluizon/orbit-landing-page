@@ -759,8 +759,39 @@
   block-size: 16px;
   flex-shrink: 0;
 }
-.security-grid .feature-card {
-  min-block-size: 200px;
+.promise-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+  padding: 32px;
+  border-radius: var(--radius-xl);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+.promise-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  color: var(--color-fg-2);
+}
+.promise-copy {
+  display: grid;
+  gap: 16px;
+}
+.promise-copy h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 500;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+}
+.promise-copy p {
+  font-size: var(--fs-base);
+  color: var(--color-fg-2);
+  line-height: var(--lh-body);
 }
 .pricing-grid {
   display: grid;
@@ -1029,6 +1060,9 @@
   .faq-list summary {
     font-size: var(--fs-lg);
   }
+  .promise-copy h3 {
+    font-size: var(--fs-lg);
+  }
   .feature-art {
     block-size: auto;
     min-block-size: 440px;
@@ -1203,9 +1237,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
   .feature-card {
-    min-block-size: 0;
-  }
-  .security-grid .feature-card {
     min-block-size: 0;
   }
   .feature-art .product-card {

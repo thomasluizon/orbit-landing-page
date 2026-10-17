@@ -279,3 +279,26 @@ test("the week composition answers the person's request with Astra's line then h
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
 });
+
+test("promise cards pair a leading icon with title and body instead of repeating feature tiles", () => {
+  const nodes = descendants(components.get("Security"));
+  const card = nodes.find((node) => node.name === "article");
+  assert.equal(attributes(card).class, "promise-card");
+  const icon = descendants(card).find((node) => attributes(node).class === "promise-icon");
+  const copy = descendants(card).find((node) => attributes(node).class === "promise-copy");
+  assert.ok(icon);
+  assert.ok(descendants(copy).some((node) => node.name === "h3"));
+  assert.ok(descendants(copy).some((node) => node.name === "p"));
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /\.promise-card\s*\{[^}]*grid-template-columns:\s*48px minmax\(0, 1fr\);[^}]*gap:\s*24px;[^}]*padding:\s*32px/,
+  );
+  assert.match(css, /\.promise-icon\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px/);
+  assert.match(css, /\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/);
+  assert.match(css, /\.promise-copy p\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(
+    css.slice(css.indexOf("@media (max-width: 47.999rem)")),
+    /\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-lg\)/,
+  );
+});
