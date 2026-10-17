@@ -20,7 +20,13 @@ const { appUrl } = Astro.props;
           >
             <Copy name="remember.body" />
           </p>
-        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        </div><PillButton
+          href={appUrl}
+          variant="ghost"
+          size="md"
+          analyticsEvent="hero_app_cta_clicked"
+          analyticsSurface="details"><Copy name="action.start" /></PillButton
+        >
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-busy">
@@ -46,7 +52,13 @@ const { appUrl } = Astro.props;
           >
             <Copy name="understand.body" />
           </p>
-        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        </div><PillButton
+          href={appUrl}
+          variant="ghost"
+          size="md"
+          analyticsEvent="hero_app_cta_clicked"
+          analyticsSurface="progress"><Copy name="action.start" /></PillButton
+        >
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-progress">
@@ -72,7 +84,13 @@ const { appUrl } = Astro.props;
           <SentenceTitle id="restart-title" name="restart.title" /><p class="section-description">
             <Copy name="restart.body" />
           </p>
-        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        </div><PillButton
+          href={appUrl}
+          variant="ghost"
+          size="md"
+          analyticsEvent="hero_app_cta_clicked"
+          analyticsSurface="restart"><Copy name="action.start" /></PillButton
+        >
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-restart">

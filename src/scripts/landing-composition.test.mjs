@@ -282,19 +282,47 @@ test("How it works lands on the feature grid at the retained 96px offset", async
   assert.match(css, /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*96px/);
 });
 
-test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
+test("the feature grid closes with one primary action and the feature rows use ghost actions", () => {
   const gridAction = descendants(components.get("Features")).find(
     (node) => node.name === "PillButton",
   );
-  assert.equal(
-    gridAction,
-    undefined,
-    "the grid cannot repeat the next feature row's Start free action",
+  assert.ok(gridAction, "the grid has a closing Start free action");
+  assert.equal(attributes(gridAction).variant, "primary");
+  assert.equal(attributes(gridAction).class, "feature-grid-action");
+  assert.equal(attributes(gridAction).href, "appUrl");
+  assert.equal(attributes(gridAction).analyticsEvent, "hero_app_cta_clicked");
+  assert.equal(attributes(gridAction).analyticsSurface, "features");
+  assert.ok(descendants(gridAction).some((node) => attributes(node).name === "action.start"));
+  const rows = descendants(components.get("FeatureRows")).filter(
+    (node) => node.name === "PillButton",
   );
-  assert.equal(
-    descendants(components.get("FeatureRows")).filter((node) => node.name === "PillButton").length,
-    3,
+  assert.equal(rows.length, 3);
+  for (const row of rows) {
+    assert.equal(attributes(row).variant, "ghost");
+    assert.equal(attributes(row).analyticsEvent, attributes(gridAction).analyticsEvent);
+    assert.equal(attributes(row).href, "appUrl");
+    assert.ok(descendants(row).some((node) => attributes(node).name === "action.start"));
+  }
+  assert.deepEqual(
+    rows.map((node) => attributes(node).analyticsSurface),
+    ["details", "progress", "restart"],
   );
+  const featureEntry = descendants(page).find((node) => node.name === "Features");
+  assert.equal(attributes(featureEntry).appUrl, "appUrl");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.feature-grid-action\s*\{[^}]*justify-self:\s*center/);
+  assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px/);
+});
+
+test("the recommended plan keeps its canonical inset ring and selected tint", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /\.plan-pro\s*\{[^}]*background:\s*var\(--color-primary-dim\);[^}]*box-shadow:\s*inset 0 0 0 1\.5px var\(--color-primary\)/,
+  );
+});
+
+test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /--landing-section-gap:\s*160px/);
   assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*--landing-section-gap:\s*96px/);

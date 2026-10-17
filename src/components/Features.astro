@@ -1,6 +1,11 @@
 ---
 import FeatureVignette from "./FeatureVignette.astro";
 import Copy from "./Copy.astro";
+import PillButton from "./PillButton.astro";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
 const features = ["start", "remember", "act", "restart"] as const;
 ---
 
@@ -27,5 +32,13 @@ const features = ["start", "remember", "act", "restart"] as const;
         ))
       }
     </div>
+    <PillButton
+      href={appUrl}
+      variant="primary"
+      size="md"
+      class="feature-grid-action"
+      analyticsEvent="hero_app_cta_clicked"
+      analyticsSurface="features"><Copy name="action.start" /></PillButton
+    >
   </div>
 </section>
