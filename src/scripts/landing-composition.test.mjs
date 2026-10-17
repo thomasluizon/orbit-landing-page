@@ -140,23 +140,28 @@ test("How it works lands on the feature grid at the retained 96px offset", async
   assert.equal(attributes(sections[2]).id, "features");
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /scroll-margin-block-start:\s*96px/);
-  assert.match(css, /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*80px/);
   assert.match(
     css,
-    /@media \(max-width: 47\.999rem\)[\s\S]*\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*64px/,
+    /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*calc\(var\(--landing-section-gap\) - 32px\)/,
   );
 });
 
-test("neighboring accent actions have a viewport of separation and the grid action is neutral", () => {
+test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
   const gridAction = descendants(components.get("Features")).find(
     (node) => node.name === "PillButton",
   );
   assert.equal(attributes(gridAction).variant, "ghost");
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.feature-row\s*\{[^}]*min-block-size:\s*calc\(100svh \+ 96px\)/);
+  assert.match(css, /--landing-section-gap:\s*160px/);
+  assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*--landing-section-gap:\s*96px/);
   assert.match(
     css,
-    /\.section\[data-section="security"\],\s*\.section\[data-section="faq"\]\s*\{[^}]*min-block-size:\s*100svh/,
+    /\.section,\s*\.final-section\s*\{[^}]*padding-block:\s*var\(--landing-section-gap\) 0/,
+  );
+  assert.doesNotMatch(css, /min-block-size:[^;}]*svh/);
+  assert.doesNotMatch(
+    readFileSync("src/scripts/landing-motion.ts", "utf8"),
+    /trigger:\s*(?:row|composition)|pinSpacing:\s*true/,
   );
 });
 

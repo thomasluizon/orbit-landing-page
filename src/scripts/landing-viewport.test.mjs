@@ -184,9 +184,16 @@ test("marketing paragraphs use the body role and feature titles have the referen
 });
 
 test("section grids follow their headings without oversized empty bands", () => {
-  assert.match(css, /\.section\s*\{\s*padding-block:\s*64px;/);
+  assert.match(
+    css,
+    /\.section,\s*\.final-section\s*\{\s*padding-block:\s*var\(--landing-section-gap\) 0;/,
+  );
   assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px;/);
-  assert.match(css, /\.section-heading\s*\{[^}]*gap:\s*16px;/);
+  for (const selector of ["section-heading", "feature-copy"]) {
+    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*gap:\\s*24px;`));
+  }
+  assert.match(css, /\.feature-row\s*\{[^}]*gap:\s*32px/);
+  assert.match(css, /\.final-section \.section-inner\s*\{[^}]*gap:\s*24px/);
   assert.doesNotMatch(css, /min-block-size:\s*(?:280|300|480)px/);
   assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
@@ -242,7 +249,7 @@ test("compact hero cards overlap only the input area and grow the composition in
   assert.match(mobile, /\.float-week\s*\{[^}]*grid-row:\s*1 \/ 3/);
   assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2/);
   assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
-  assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
+  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px var\(--landing-section-gap\)/);
   assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);
   assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
   assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
