@@ -131,10 +131,10 @@
 }
 .hero-stage {
   --hero-device-width: 360px;
-  --hero-card-gap: 24px;
+  --hero-device-bezel: 12px;
   --hero-card-width: min(
     296px,
-    calc(50% - var(--hero-device-width) / 2 - var(--hero-card-gap) - 16px)
+    calc(50% - var(--hero-device-width) / 2 + var(--hero-device-bezel) - 16px)
   );
   position: relative;
   display: grid;
@@ -154,7 +154,7 @@
   z-index: 2;
   inline-size: var(--hero-device-width);
   block-size: auto;
-  padding: 10px;
+  padding: var(--hero-device-bezel);
   border-radius: 56px;
   background: var(--color-bg-elev);
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
@@ -164,7 +164,7 @@
   display: flex;
   flex-direction: column;
   block-size: auto;
-  border-radius: 46px;
+  border-radius: calc(56px - var(--hero-device-bezel));
   background: var(--color-bg);
   overflow: clip;
 }
@@ -353,13 +353,13 @@
   inline-size: var(--hero-card-width);
 }
 .float-today {
-  inset-inline-end: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
+  inset-inline-end: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-start: 128px;
 }
 .hero-right {
   position: absolute;
   z-index: 3;
-  inset-inline-start: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
+  inset-inline-start: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-start: 128px;
   display: grid;
   gap: 64px;
@@ -380,11 +380,11 @@
   max-inline-size: var(--hero-card-width);
 }
 .phrase-start {
-  inset-inline-end: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
+  inset-inline-end: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-end: 128px;
 }
 .phrase-restart {
-  inset-inline-start: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
+  inset-inline-start: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-start: 48px;
 }
 .product-card {

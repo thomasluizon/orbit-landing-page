@@ -158,9 +158,12 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(hero, /class="device-home"/);
   assert.match(hero, /class="device-screen"/);
   assert.match(css, /\.hero-device\s*\{[^}]*block-size:\s*auto/);
-  assert.match(css, /\.hero-device\s*\{[^}]*padding:\s*10px/);
+  assert.match(css, /\.hero-device\s*\{[^}]*padding:\s*var\(--hero-device-bezel\)/);
   assert.match(css, /\.hero-device\s*\{[^}]*border-radius:\s*56px/);
-  assert.match(css, /\.device-screen\s*\{[^}]*border-radius:\s*46px/);
+  assert.match(
+    css,
+    /\.device-screen\s*\{[^}]*border-radius:\s*calc\(56px - var\(--hero-device-bezel\)\)/,
+  );
   assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
 });
 
@@ -219,14 +222,14 @@ test("outlined feature icon tiles use the requested 40px geometry", () => {
   assert.match(tile, /var\(--radius-md\)/);
 });
 
-test("wide hero cards and their motion stay outside the phone with a 24px clearance", () => {
+test("wide hero cards overlap exactly the phone bezel and never the conversation", () => {
   assert.match(css, /--hero-device-width:\s*360px/);
-  assert.match(css, /--hero-card-gap:\s*24px/);
+  assert.match(css, /--hero-device-bezel:\s*12px/);
   for (const selector of ["float-today", "phrase-start"]) {
     assert.match(
       css,
       new RegExp(
-        `\\.${selector}\\s*\\{[^}]*inset-inline-end:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 \\+ var\\(--hero-card-gap\\)\\)`,
+        `\\.${selector}\\s*\\{[^}]*inset-inline-end:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 - var\\(--hero-device-bezel\\)\\)`,
       ),
     );
   }
@@ -234,7 +237,7 @@ test("wide hero cards and their motion stay outside the phone with a 24px cleara
     assert.match(
       css,
       new RegExp(
-        `\\.${selector}\\s*\\{[^}]*inset-inline-start:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 \\+ var\\(--hero-card-gap\\)\\)`,
+        `\\.${selector}\\s*\\{[^}]*inset-inline-start:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 - var\\(--hero-device-bezel\\)\\)`,
       ),
     );
   }
@@ -244,6 +247,9 @@ test("wide hero cards and their motion stay outside the phone with a 24px cleara
   assert.equal((hero.match(/data-hero-side="left"/g) ?? []).length, 2);
   assert.equal((hero.match(/data-hero-side="right"/g) ?? []).length, 3);
   assert.doesNotMatch(css, /50% \+ 156px/);
+  assert.match(css, /\.hero-float\s*\{[^}]*z-index:\s*3/);
+  assert.match(css, /\.hero-device\s*\{[^}]*z-index:\s*2/);
+  assert.doesNotMatch(css, /--hero-card-gap/);
 });
 
 test("compact hero cards overlap only the input area and grow the composition in flow", () => {
