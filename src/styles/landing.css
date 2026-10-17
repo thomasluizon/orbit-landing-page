@@ -1255,15 +1255,15 @@
   }
 }
 @media (width < 38.625rem) {
+  .trust-fact dd {
+    display: none;
+  }
+}
+@media (width < 24.875rem) {
   .trust-content {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;
-    gap: 16px;
-  }
-}
-@media (max-width: 24.999rem) {
-  .trust-fact dt {
-    font-size: var(--fs-lg);
+    gap: 12px;
   }
 }
 @media (max-width: 23rem) {

@@ -208,55 +208,34 @@ test("the header opens Orbit while the hero has only its install action", async 
   }
 });
 
-test("the trust strip gives each of its three facts a heading and a caption", () => {
+test("the trust strip keeps three compact values and hides captions below 618px", () => {
   const trust = descendants(components.get("TrustStrip"));
   assert.equal(trust.filter((node) => node.name === "dt").length, 3);
   assert.equal(trust.filter((node) => node.name === "dd").length, 3);
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.trust-strip\s*\{[^}]*padding-inline:\s*var\(--landing-gutter\)/);
-  const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
-  assert.equal(rules.length, 2, "trust facts stack only below their measured minimum width");
-  assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(rules[0][1], /gap:\s*12px/);
-  const stacked = css.slice(
-    css.indexOf("@media (width < 38.625rem)"),
-    css.indexOf("@media (max-width: 24.999rem)"),
-  );
-  assert.match(stacked, /\.trust-content\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
-  assert.match(stacked, /\.trust-content\s*\{[^}]*justify-items:\s*center/);
-  assert.match(stacked, /\.trust-content\s*\{[^}]*gap:\s*16px/);
-  assert.equal(rules[1][1], stacked.match(/\.trust-content\s*\{([^}]+)\}/)[1]);
   assert.match(
     css,
-    /\.trust-fact dt\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-2xl\)/,
+    /\.trust-content\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\);[^}]*gap:\s*12px/,
   );
-  assert.match(
-    css,
-    /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\);[^}]*color:\s*var\(--color-fg-3\)/,
-  );
-  assert.match(rules[0][1], /inline-size:\s*min\(var\(--landing-content\), 100%\)/);
-  assert.match(rules[0][1], /padding-block:\s*32px/);
-  assert.match(
-    rules[0][1],
-    /inset 0 1px 0 var\(--color-hairline\),\s*inset 0 -1px 0 var\(--color-hairline\)/,
-  );
-  assert.doesNotMatch(css.match(/\.trust-strip\s*\{([^}]+)\}/)[1], /shadow|border/);
-  const narrow = css.slice(css.indexOf("@media (max-width: 24.999rem)"));
-  assert.match(narrow, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-xl\)/);
-  assert.match(css, /\.trust-fact dt\s*\{[^}]*white-space:\s*nowrap/);
-  assert.match(css, /\.trust-fact dd\s*\{[^}]*white-space:\s*nowrap/);
   const compact = css.slice(
-    css.indexOf("@media (max-width: 39.999rem)"),
     css.indexOf("@media (width < 38.625rem)"),
+    css.indexOf("@media (width < 24.875rem)"),
   );
-  assert.match(compact, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
+  assert.match(compact, /\.trust-fact dd\s*\{[^}]*display:\s*none/);
   assert.doesNotMatch(compact, /\.trust-content/);
-  assert.match(css, /\.trust-fact dt\s*\{[^}]*font-weight:\s*500/);
+  const stacked = css.slice(css.indexOf("@media (width < 24.875rem)"));
+  assert.match(
+    stacked,
+    /\.trust-content\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*justify-items:\s*center;[^}]*gap:\s*12px/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 39.999rem\)\s*\{\s*\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-sm\)/,
+  );
+  assert.doesNotMatch(css, /@media \(max-width: 24.999rem\)[^{]*\{\s*\.trust-fact dt/);
 });
 
-test("the measured trust copy determines the smallest whole-pixel stacking breakpoint", () => {
+test("the measured values fit three columns from 398px and captions fit from 618px", () => {
   const measurements = [
     ["trust.free.title", ["Free to start", 84.448], ["Comece grátis", 96.95]],
     ["trust.free.caption", ["Pro adds more Astra", 111.504], ["O Pro libera mais Astra", 124.692]],
@@ -274,6 +253,7 @@ test("the measured trust copy determines the smallest whole-pixel stacking break
     ],
   ];
   const widths = [];
+  const titleWidths = [];
   for (const [key, en, pt] of measurements) {
     for (const [lang, [text, width]] of [
       ["en", en],
@@ -284,16 +264,19 @@ test("the measured trust copy determines the smallest whole-pixel stacking break
         text,
       );
       widths.push(width);
+      if (!key.endsWith(".caption")) titleWidths.push(width);
     }
   }
   const gutter = 16;
   const gap = 12;
   const columnAt = (viewport) => (viewport - gutter * 2 - gap * 2) / 3;
-  for (const viewport of [400, 412]) assert.ok(widths.some((width) => width > columnAt(viewport)));
-  const breakpoint = Math.ceil(Math.max(...widths) * 3 + gutter * 2 + gap * 2);
-  assert.equal(breakpoint, 618);
-  assert.ok(widths.every((width) => width <= columnAt(breakpoint)));
-  assert.ok(widths.some((width) => width > columnAt(breakpoint - 1)));
+  const breakpoint = Math.ceil(Math.max(...titleWidths) * 3 + gutter * 2 + gap * 2);
+  assert.equal(breakpoint, 398);
+  assert.ok(titleWidths.every((width) => width <= columnAt(breakpoint)));
+  assert.ok(titleWidths.some((width) => width > columnAt(breakpoint - 1)));
+  for (const viewport of [398, 412, 617])
+    assert.ok(titleWidths.every((width) => width <= columnAt(viewport)));
+  assert.equal(Math.ceil(Math.max(...widths) * 3 + gutter * 2 + gap * 2), 618);
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(
     css,
