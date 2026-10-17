@@ -273,7 +273,7 @@ export type LandingKey = keyof typeof landingEn;
 const landingPt: Record<LandingKey, string> = {
   "nav.features": "Como funciona",
   "nav.pricing": "Planos",
-  "trust.free.title": "Comece grátis",
+  "trust.free.title": "Plano grátis",
   "trust.free.caption": "Mais com o Pro",
   "trust.approval.title": "Você aprova",
   "trust.approval.caption": "Mudanças da Astra",
