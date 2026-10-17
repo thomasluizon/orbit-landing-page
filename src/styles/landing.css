@@ -626,7 +626,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
-  gap: 8px;
+  gap: 12px;
   inline-size: min(var(--landing-content), 100%);
   padding-block: 32px;
   margin-inline: auto;
@@ -650,6 +650,7 @@
   font-size: var(--fs-xs);
   line-height: var(--lh-body);
   color: var(--color-fg-3);
+  white-space: nowrap;
 }
 .feature-grid,
 .security-grid {
@@ -1463,6 +1464,11 @@
   }
 }
 @media (max-width: 39.999rem) {
+  .trust-fact dt {
+    font-size: var(--fs-sm);
+  }
+}
+@media (width < 38.625rem) {
   .trust-content {
     grid-template-columns: minmax(0, 1fr);
     justify-items: center;

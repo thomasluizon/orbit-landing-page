@@ -148,11 +148,11 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.trust-strip\s*\{[^}]*padding-inline:\s*var\(--landing-gutter\)/);
   const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
-  assert.equal(rules.length, 2, "trust facts stack below 640px and use three columns above");
+  assert.equal(rules.length, 2, "trust facts stack only below their measured minimum width");
   assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(rules[0][1], /gap:\s*8px/);
+  assert.match(rules[0][1], /gap:\s*12px/);
   const stacked = css.slice(
-    css.indexOf("@media (max-width: 39.999rem)"),
+    css.indexOf("@media (width < 38.625rem)"),
     css.indexOf("@media (max-width: 24.999rem)"),
   );
   assert.match(stacked, /\.trust-content\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
@@ -179,6 +179,59 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
   assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-xl\)/);
   assert.match(css, /\.trust-fact dt\s*\{[^}]*white-space:\s*nowrap/);
+  assert.match(css, /\.trust-fact dd\s*\{[^}]*white-space:\s*nowrap/);
+  const compact = css.slice(
+    css.indexOf("@media (max-width: 39.999rem)"),
+    css.indexOf("@media (width < 38.625rem)"),
+  );
+  assert.match(compact, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
+  assert.doesNotMatch(compact, /\.trust-content/);
+  assert.match(css, /\.trust-fact dt\s*\{[^}]*font-weight:\s*500/);
+});
+
+test("the measured trust copy determines the smallest whole-pixel stacking breakpoint", () => {
+  const measurements = [
+    ["trust.free.title", ["Free to start", 84.448], ["Comece grátis", 96.95]],
+    ["trust.free.caption", ["Pro adds more Astra", 111.504], ["O Pro libera mais Astra", 124.692]],
+    ["trust.approval.title", ["You approve", 83.314], ["Você aprova", 82.936]],
+    [
+      "trust.approval.caption",
+      ["every change Astra proposes", 158.988],
+      ["cada mudança que a Astra propõe", 187.26],
+    ],
+    ["hero.platforms", ["Android and web", 113.722], ["Android e web", 96.236]],
+    [
+      "trust.platforms.caption",
+      ["iPhone waitlist open", 110.484],
+      ["lista do iPhone aberta", 118.572],
+    ],
+  ];
+  const widths = [];
+  for (const [key, en, pt] of measurements) {
+    for (const [lang, [text, width]] of [
+      ["en", en],
+      ["pt-BR", pt],
+    ]) {
+      assert.equal(
+        { ...copyTables.translations[lang], ...copyTables.landingCopy[lang] }[key],
+        text,
+      );
+      widths.push(width);
+    }
+  }
+  const gutter = 16;
+  const gap = 12;
+  const columnAt = (viewport) => (viewport - gutter * 2 - gap * 2) / 3;
+  for (const viewport of [400, 412]) assert.ok(widths.some((width) => width > columnAt(viewport)));
+  const breakpoint = Math.ceil(Math.max(...widths) * 3 + gutter * 2 + gap * 2);
+  assert.equal(breakpoint, 618);
+  assert.ok(widths.every((width) => width <= columnAt(breakpoint)));
+  assert.ok(widths.some((width) => width > columnAt(breakpoint - 1)));
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    new RegExp(`@media \\(width < ${breakpoint / 16}rem\\)\\s*\\{\\s*\\.trust-content`),
+  );
 });
 
 test("the trust strip renders the approved checkable facts in both locales", () => {
