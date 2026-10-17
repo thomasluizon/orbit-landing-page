@@ -218,11 +218,17 @@ test("the complete local script graph stays inside the raw byte budget", () => {
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
 });
 
-test("the built Pro plan separates its annual price words and names the Pro trial", () => {
+test("the built billing control defaults to monthly and keeps annual arithmetic out of its resting view", () => {
   const pro = html.match(/<article class="plan-card plan-pro">([\s\S]*?)<\/article>/)?.[1];
   assert.ok(pro);
-  const annual = pro.match(/<p class="plan-annual">([\s\S]*?)<\/p>/)?.[1];
-  assert.equal(annual.replace(/<[^>]+>/g, "").trim(), "or $69.99 per year");
+  const group = html.match(/<div[^>]*role="radiogroup"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+  assert.ok(group);
+  assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
+  assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
+  assert.match(pro, /data-price="monthly"/);
+  assert.doesNotMatch(pro, /data-price="yearly"/);
+  assert.match(pro, /data-annual-equivalent[^>]*hidden/);
+  assert.doesNotMatch(pro, /or \$69\.99 per year/);
   const action = pro.match(/<a\b[^>]*href="[^"]*\/upgrade"[^>]*>([\s\S]*?)<\/a>/)?.[1];
   assert.match(action, /data-copy-en="Try Pro" data-copy-pt="Testar Pro"/);
   assert.match(pro, /Try Pro free for 7 days/);

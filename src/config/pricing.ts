@@ -24,9 +24,17 @@ export function offersFor(language: PriceLanguage) {
   ];
 }
 
-export function formatPrice(language: PriceLanguage, period: "monthly" | "yearly" | "free") {
+export function formatPrice(
+  language: PriceLanguage,
+  period: "monthly" | "yearly" | "free" | "monthlyEquivalent",
+) {
   const plan = plans[language];
-  const amount = period === "free" ? 0 : plan[period] / 100;
+  const amount =
+    period === "free"
+      ? 0
+      : period === "monthlyEquivalent"
+        ? plan.yearly / 12 / 100
+        : plan[period] / 100;
   return new Intl.NumberFormat(plan.locale, {
     style: "currency",
     currency: plan.currency,

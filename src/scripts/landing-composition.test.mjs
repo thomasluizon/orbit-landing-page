@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
+import ts from "typescript";
 import { parse } from "@astrojs/compiler";
 
 const attributes = (node) =>
@@ -411,4 +413,249 @@ test("feature demonstrations use compact rhythm and trim only their primary prod
   const product = readFileSync("src/components/ProductCard.astro", "utf8");
   assert.match(product, /!compact && \(\s*<div class="habit-row"/);
   assert.doesNotMatch(css.match(/\.feature-art\s*\{([^}]+)\}/)[1], /min-|block-size/);
+});
+
+test("billing has a monthly default radio group and one configured Pro price", () => {
+  const entry = readFileSync("src/pages/index.astro", "utf8");
+  assert.ok(
+    entry.indexOf('import "../scripts/i18n"') < entry.indexOf('import "../scripts/pricing"'),
+    "billing mounts after initial locale selection",
+  );
+  const pricing = descendants(components.get("Pricing"));
+  const group = pricing.find((node) => attributes(node).role === "radiogroup");
+  assert.ok(group);
+  const options = descendants(group).filter((node) => attributes(node).role === "radio");
+  assert.deepEqual(
+    options.map((node) => attributes(node)["data-billing-period"]),
+    ["monthly", "yearly"],
+  );
+  assert.deepEqual(
+    options.map((node) => attributes(node)["aria-checked"]),
+    ["true", "false"],
+  );
+  assert.deepEqual(
+    options.map((node) => attributes(node).tabindex),
+    ["0", "-1"],
+  );
+  const pro = pricing.find((node) => attributes(node).class === "plan-card plan-pro");
+  assert.equal(descendants(pro).filter((node) => attributes(node)["data-price"]).length, 1);
+  assert.ok(
+    descendants(pro).some(
+      (node) =>
+        Object.hasOwn(attributes(node), "data-annual-equivalent") &&
+        Object.hasOwn(attributes(node), "hidden"),
+    ),
+  );
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /\.billing-option\s*\{[^}]*padding:\s*4px 8px;[^}]*font-size:\s*var\(--fs-sm\)/,
+  );
+  assert.match(
+    css,
+    /\.billing-option\[aria-checked="true"\]\s*\{[^}]*background:\s*var\(--color-bg-hover\);[^}]*box-shadow:\s*inset 0 0 0 2px var\(--color-primary\)/,
+  );
+  assert.match(css, /\.billing-option:focus-visible\s*\{[^}]*outline:/);
+});
+
+function billingHarness(language = "en") {
+  const pricing = descendants(components.get("Pricing"));
+  const group = pricing.find((node) => attributes(node).role === "radiogroup");
+  const element = (node) => {
+    const attrs = attributes(node);
+    const listeners = new Map();
+    return {
+      attributes: attrs,
+      dataset: Object.fromEntries(
+        Object.entries(attrs)
+          .filter(([name]) => name.startsWith("data-"))
+          .map(([name, value]) => [
+            name.slice(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()),
+            value,
+          ]),
+      ),
+      textContent: "",
+      hidden: Object.hasOwn(attrs, "hidden"),
+      tabIndex: Number(attrs.tabindex),
+      focused: false,
+      setAttribute(name, value) {
+        this.attributes[name] = value;
+      },
+      addEventListener(name, callback) {
+        listeners.set(name, callback);
+      },
+      click() {
+        listeners.get("click")();
+      },
+      focus() {
+        this.focused = true;
+      },
+      key(key) {
+        const event = {
+          key,
+          prevented: false,
+          preventDefault() {
+            this.prevented = true;
+          },
+        };
+        listeners.get("keydown")(event);
+        return event;
+      },
+    };
+  };
+  const options = descendants(group)
+    .filter((node) => attributes(node).role === "radio")
+    .map(element);
+  const fields = Object.fromEntries(
+    ["data-pro-price", "data-plan-period", "data-annual-equivalent"].map((name) => [
+      name,
+      element(pricing.find((node) => Object.hasOwn(attributes(node), name))),
+    ]),
+  );
+  const free = element(pricing.find((node) => attributes(node)["data-price"] === "free"));
+  const listeners = new Map();
+  const toggle = {
+    addEventListener: (name, callback) => listeners.set(`toggle:${name}`, callback),
+    setAttribute() {},
+  };
+  const document = {
+    cookie: `orbit_lang=${language}`,
+    documentElement: {},
+    getElementById: (id) => (id === "lang-toggle" ? toggle : null),
+    querySelectorAll: (selector) =>
+      selector === "[data-price]" ? [free, fields["data-pro-price"]] : [],
+    querySelector(selector) {
+      if (selector === "[data-billing-control]") return { querySelectorAll: () => options };
+      return fields[selector.slice(1, -1)] ?? null;
+    },
+  };
+  const context = vm.createContext({
+    document,
+    window: {
+      addEventListener: (name, callback) => listeners.set(name, callback),
+      dispatchEvent: (event) => listeners.get(event.type)?.(),
+    },
+    navigator: { language: language === "pt-BR" ? "pt-BR" : "en-US" },
+    environment: { DEV: false },
+    CustomEvent: class {
+      constructor(type) {
+        this.type = type;
+      }
+    },
+    Intl,
+  });
+  const modules = new Map();
+  function require(path) {
+    if (modules.has(path)) return modules.get(path);
+    const code = ts.transpileModule(
+      readFileSync(`src/scripts/${path}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
+      {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      },
+    ).outputText;
+    const exports = {};
+    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(exports, require);
+    modules.set(path, exports);
+    return exports;
+  }
+  const prices = require("../config/pricing");
+  const { landingCopy } = require("../i18n/translations");
+  for (const field of Object.values(fields)) {
+    for (const [name, value] of Object.entries(field.dataset)) {
+      if (value.startsWith("landingCopy"))
+        field.dataset[name] = vm.runInNewContext(value, { landingCopy });
+    }
+  }
+  require("./i18n");
+  require("./pricing");
+  return {
+    options,
+    fields,
+    free,
+    prices,
+    landingCopy,
+    changeLanguage(language) {
+      while (document.documentElement.lang !== language) listeners.get("toggle:click")();
+    },
+  };
+}
+
+test("billing switches one Pro price and configured arithmetic in both locales while Free stays outside the control", () => {
+  for (const language of ["en", "pt-BR"]) {
+    const h = billingHarness(language);
+    const price = h.fields["data-pro-price"];
+    const unit = h.fields["data-plan-period"];
+    const equivalent = h.fields["data-annual-equivalent"];
+    const copy = h.landingCopy[language];
+    const freeBefore = h.free.textContent;
+    assert.equal(price.textContent, h.prices.formatPrice(language, "monthly"));
+    assert.equal(unit.textContent, copy["pricing.month"]);
+    assert.equal(equivalent.hidden, true);
+    h.options[1].click();
+    assert.equal(price.textContent, h.prices.formatPrice(language, "yearly"));
+    assert.equal(price.dataset.price, "yearly");
+    assert.equal(unit.textContent, copy["pricing.year"]);
+    assert.equal(equivalent.hidden, false);
+    assert.equal(h.free.textContent, freeBefore);
+    const annual = h.prices.offersFor(language).find((offer) => offer.name === "Orbit Pro yearly");
+    const expected = new Intl.NumberFormat(language === "en" ? "en-US" : "pt-BR", {
+      style: "currency",
+      currency: annual.priceCurrency,
+      minimumFractionDigits: (annual.price / 12) % 1 ? 2 : 0,
+      maximumFractionDigits: 2,
+    }).format(annual.price / 12);
+    assert.equal(h.prices.formatPrice(language, "monthlyEquivalent"), expected);
+    assert.equal(equivalent.textContent, copy["pricing.equivalent"].replace("{price}", expected));
+    h.options[0].click();
+    assert.equal(price.textContent, h.prices.formatPrice(language, "monthly"));
+    assert.equal(equivalent.hidden, true);
+    assert.equal(h.free.textContent, freeBefore);
+    assert.equal(
+      h.prices.formatPrice(language, "free"),
+      new Intl.NumberFormat(language === "en" ? "en-US" : "pt-BR", {
+        style: "currency",
+        currency: annual.priceCurrency,
+        maximumFractionDigits: 0,
+      }).format(0),
+    );
+  }
+});
+
+test("billing arrows wrap selection and focus, Home and End select endpoints, and Tab stays native", () => {
+  const h = billingHarness();
+  for (const key of ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"]) {
+    h.options[0].click();
+    assert.equal(h.options[0].key(key).prevented, true);
+    assert.equal(h.options[1].attributes["aria-checked"], "true");
+    assert.equal(h.options[1].focused, true);
+    assert.equal(h.options[1].tabIndex, 0);
+    assert.equal(h.options[0].tabIndex, -1);
+    assert.equal(h.options[1].key(key).prevented, true);
+    assert.equal(h.options[0].attributes["aria-checked"], "true");
+    assert.equal(h.options[0].focused, true);
+  }
+  h.options[0].key("End");
+  assert.equal(h.options[1].attributes["aria-checked"], "true");
+  h.options[1].key("Home");
+  assert.equal(h.options[0].attributes["aria-checked"], "true");
+  assert.equal(h.options[0].key("Tab").prevented, false);
+});
+
+test("the selected billing period survives language changes with price, unit and equivalent together", () => {
+  const h = billingHarness();
+  h.options[1].click();
+  for (const language of ["pt-BR", "en"]) {
+    h.changeLanguage(language);
+    assert.equal(h.fields["data-pro-price"].textContent, h.prices.formatPrice(language, "yearly"));
+    assert.equal(h.fields["data-plan-period"].textContent, h.landingCopy[language]["pricing.year"]);
+    assert.equal(
+      h.fields["data-annual-equivalent"].textContent,
+      h.landingCopy[language]["pricing.equivalent"].replace(
+        "{price}",
+        h.prices.formatPrice(language, "monthlyEquivalent"),
+      ),
+    );
+    assert.equal(h.fields["data-annual-equivalent"].hidden, false);
+    assert.equal(h.options[1].attributes["aria-checked"], "true");
+  }
 });
