@@ -266,10 +266,20 @@ test("compact hero cards overlap only the input area and grow the composition in
   assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2 \/ 4/);
   assert.match(mobile, /\.hero-right\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
   assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
-  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px var\(--landing-section-gap\)/);
+  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
   assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);
   assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
   assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
+});
+
+test("the hero, trust strip and feature heading share the compact reference transition", () => {
+  assert.match(css, /\.hero-stage\s*\{[^}]*padding-block-end:\s*64px/);
+  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
+  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*24px 16px/);
+  assert.match(css, /\.trust-strip \+ \.section\s*\{[^}]*padding-block-start:\s*96px/);
+  assert.match(css, /#features \.section-heading\s*\{[^}]*gap:\s*16px/);
+  assert.match(css, /\.section-title\s*\{[^}]*font-size:\s*var\(--fs-4xl\)/);
+  assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px/);
 });
 
 test("below 480px every floating card keeps viewport gutters and a vertical overlap", () => {

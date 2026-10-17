@@ -79,7 +79,7 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 24px;
-  padding-block: 96px var(--landing-section-gap);
+  padding-block: 96px 96px;
 }
 .hero-copy {
   display: grid;
@@ -140,6 +140,7 @@
   display: grid;
   place-items: center;
   inline-size: 100%;
+  padding-block-end: 64px;
   isolation: isolate;
 }
 .hero-phone {
@@ -556,7 +557,7 @@
   padding-block: var(--landing-section-gap) 0;
 }
 .trust-strip + .section {
-  padding-block-start: calc(var(--landing-section-gap) - 32px);
+  padding-block-start: 96px;
 }
 .section-inner {
   display: grid;
@@ -569,6 +570,9 @@
   justify-items: center;
   gap: 24px;
   text-align: center;
+}
+#features .section-heading {
+  gap: 16px;
 }
 .section-title {
   font-family: var(--font-display);
@@ -598,7 +602,7 @@
   justify-self: center;
 }
 .trust-strip {
-  padding: 32px 16px;
+  padding: 24px 16px;
   box-shadow:
     inset 0 1px 0 var(--color-hairline),
     inset 0 -1px 0 var(--color-hairline);

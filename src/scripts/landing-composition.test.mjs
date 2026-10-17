@@ -118,7 +118,7 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   assert.equal(trust.filter((node) => node.name === "dt").length, 3);
   assert.equal(trust.filter((node) => node.name === "dd").length, 3);
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*32px 16px/);
+  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*24px 16px/);
   const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
   assert.equal(rules.length, 1, "all viewports keep the same three-column layout");
   assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
@@ -157,10 +157,7 @@ test("How it works lands on the feature grid at the retained 96px offset", async
   assert.equal(attributes(sections[2]).id, "features");
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /scroll-margin-block-start:\s*96px/);
-  assert.match(
-    css,
-    /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*calc\(var\(--landing-section-gap\) - 32px\)/,
-  );
+  assert.match(css, /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*96px/);
 });
 
 test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
