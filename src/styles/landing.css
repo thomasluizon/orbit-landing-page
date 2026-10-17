@@ -152,7 +152,7 @@
 }
 .hero-products {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 296px), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 16px;
   inline-size: 100%;
@@ -347,12 +347,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-block-size: 48px;
-  padding-inline: 16px 8px;
-  padding-block: 8px;
-  border-radius: 24px;
+  min-block-size: calc(48 * var(--mock-unit));
+  padding-inline: calc(16 * var(--mock-unit)) 8px;
+  padding-block: calc(8 * var(--mock-unit));
+  border-radius: calc(24 * var(--mock-unit));
   box-shadow: inset 0 0 0 1px var(--color-border-control);
-  font-size: var(--fs-base);
+  font-size: calc(16 * var(--mock-unit));
   color: var(--color-fg-3);
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
@@ -360,17 +360,24 @@
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  inline-size: 32px;
-  block-size: 32px;
+  inline-size: calc(32 * var(--mock-unit));
+  block-size: calc(32 * var(--mock-unit));
   border-radius: var(--radius-full);
   background: var(--color-fg-2);
   color: var(--color-bg);
+}
+.demo-send svg {
+  inline-size: calc(16 * var(--mock-unit));
+  block-size: calc(16 * var(--mock-unit));
 }
 .hero-float {
   pointer-events: none;
   inline-size: 100%;
 }
 .hero-phrase {
+  grid-column: 1 / -1;
+  order: 1;
+  justify-self: center;
   inline-size: fit-content;
   max-inline-size: 100%;
   overflow-wrap: normal;
@@ -1054,6 +1061,11 @@
     color: var(--color-fg-1);
   }
 }
+@media (min-width: 40rem) {
+  .hero-products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (min-width: 64rem) {
   .hero-stage,
   .hero-products {
@@ -1080,6 +1092,11 @@
     align-self: start;
     gap: 32px;
     padding-block-start: 48px;
+  }
+  .hero-phrase {
+    grid-column: auto;
+    order: 0;
+    justify-self: start;
   }
   .hero-left {
     grid-column: 1;
@@ -1278,6 +1295,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   [data-hero-float],
+  [data-hero-column],
   [data-reveal] {
     transform: none !important;
     opacity: 1 !important;

@@ -267,7 +267,7 @@ test("below the side-column threshold every product follows the centered phone i
   );
   assert.match(
     base,
-    /\.hero-products\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(min\(100%, 296px\), 1fr\)\);[^}]*gap:\s*16px/,
+    /\.hero-products\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*gap:\s*16px/,
   );
   assert.match(base, /\.hero-side\s*\{[^}]*display:\s*contents/);
   assert.match(base, /\.hero-phone\s*\{[^}]*inline-size:\s*min\(343px, 100%\)/);
@@ -744,4 +744,36 @@ test("cards keep 24px padding, list rows keep 16px, and section groups follow th
   assert.ok(gap("feature-row") >= 2 * gap("feature-copy"));
   assert.match(css, /--landing-section-gap:\s*96px/);
   assert.doesNotMatch(css, /--landing-section-gap:\s*160px/);
+});
+
+test("the flowing hero caps at two columns and keeps phrase chips after the product cards", () => {
+  const base = css.match(/^\.hero-products\s*\{([^}]+)\}/m)[1];
+  assert.match(base, /grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.doesNotMatch(base, /auto-fit|auto-fill/);
+  const two = css.slice(
+    css.indexOf("@media (min-width: 40rem)"),
+    css.indexOf("@media (min-width: 64rem)"),
+  );
+  assert.match(
+    two,
+    /\.hero-products\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(css, /\.hero-phrase\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*order:\s*1/);
+  const wide = css.slice(css.indexOf("@media (min-width: 67.5rem)"));
+  assert.match(wide, /\.hero-phrase\s*\{[^}]*grid-column:\s*auto;[^}]*order:\s*0/);
+  for (let width = 320; width < 1080; width++) {
+    const columns = width < 640 ? 1 : 2;
+    const gap = width >= 1024 ? 32 : 16;
+    assert.ok((width - 32 - gap * (columns - 1)) / columns >= Math.min(296, width - 32));
+  }
+});
+
+test("the composer and send control use the same screen scale as the other mock controls", () => {
+  const composer = css.match(/^\.demo-composer\s*\{([^}]+)\}/m)[1];
+  assert.match(composer, /min-block-size:\s*calc\(48 \* var\(--mock-unit\)\)/);
+  assert.match(composer, /font-size:\s*calc\(16 \* var\(--mock-unit\)\)/);
+  const send = css.match(/^\.demo-send\s*\{([^}]+)\}/m)[1];
+  assert.match(send, /inline-size:\s*calc\(32 \* var\(--mock-unit\)\)/);
+  assert.match(send, /block-size:\s*calc\(32 \* var\(--mock-unit\)\)/);
+  assert.match(css, /\.demo-send svg\s*\{[^}]*inline-size:\s*calc\(16 \* var\(--mock-unit\)\)/);
 });
