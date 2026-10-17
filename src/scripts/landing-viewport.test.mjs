@@ -388,3 +388,25 @@ test("wide hero side stacks start 48px below the phone and separate the phrase f
   assert.match(css, /\.hero-week-stack\s*\{[^}]*display:\s*grid;[^}]*gap:\s*12px/);
   assert.match(css, /\.hero-week-stack > \.hero-phrase\s*\{[^}]*position:\s*static/);
 });
+
+test("hero phrases keep intrinsic one-line width without recalculating the stage width inside a card", () => {
+  const phrase = css.match(/^\.hero-phrase\s*\{([^}]+)\}/m)[1];
+  assert.doesNotMatch(phrase, /max-inline-size:\s*var\(--hero-card-width\)/);
+  assert.match(phrase, /inline-size:\s*max-content/);
+  assert.match(phrase, /max-inline-size:\s*none/);
+  assert.match(phrase, /flex-shrink:\s*0/);
+  assert.match(phrase, /white-space:\s*nowrap/);
+  assert.match(phrase, /overflow-wrap:\s*normal/);
+  assert.match(phrase, /font-size:\s*var\(--fs-sm\)/);
+  assert.match(phrase, /padding:\s*12px 16px/);
+  for (const [, declarations] of css.matchAll(/[^{}]*\.hero-phrase[^{}]*\{([^}]+)\}/g)) {
+    assert.doesNotMatch(declarations, /max-inline-size:\s*var\(--hero-card-width\)/);
+    for (const [, value] of declarations.matchAll(/(?<![-\w])inline-size:\s*([^;]+)/g))
+      assert.equal(value.trim(), "max-content");
+    for (const [, value] of declarations.matchAll(/font-size:\s*([^;]+)/g))
+      assert.equal(value.trim(), "var(--fs-sm)");
+    for (const [, value] of declarations.matchAll(/padding:\s*([^;]+)/g))
+      assert.equal(value.trim(), "12px 16px");
+  }
+  assert.match(css, /\.hero-week-stack\s*\{[^}]*grid-template-columns:\s*auto;[^}]*gap:\s*12px/);
+});
