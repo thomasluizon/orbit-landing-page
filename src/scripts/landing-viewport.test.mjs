@@ -529,7 +529,15 @@ test("phone controls follow the screen-to-390 scale and keep one trailing action
   const examples = css.match(/\.demo-examples\s*\{([^}]+)\}/)[1];
   assert.match(examples, /overflow-x:\s*auto;/);
   assert.match(examples, /padding-block:\s*16px;/, "the scrollport contains the taller targets");
-  assert.match(examples, /margin-block:\s*-12px;/, "extra scroll padding keeps chip placement");
+  const margin = examples.match(/margin-block:\s*(-?\d+)px(?:\s+(-?\d+)px)?;/);
+  assert.ok(margin, "the chip row offsets its scroll padding with a block margin");
+  assert.equal(Number(margin[1]), -12, "extra scroll padding keeps chip placement above the row");
+  const inputArea = css.match(/\.demo-input-area\s*\{([^}]+)\}/)[1];
+  const areaGap = Number(inputArea.match(/gap:\s*(\d+)px;/)[1]);
+  const chipToComposer = 16 + areaGap + Number(margin[2] ?? margin[1]);
+  assert.ok(chipToComposer >= 24, `the chip row keeps ${chipToComposer}px above the composer, at least 24`);
+  const home = css.match(/\.device-home\s*\{([^}]+)\}/)[1];
+  assert.match(home, /pointer-events:\s*none;/, "the decorative home bar never takes a tap from the composer target");
   const language = css.match(/\.language-toggle\s*\{([^}]+)\}/)[1];
   assert.match(language, /block-size:\s*40px/);
   assert.match(language, /padding-inline:\s*12px/);

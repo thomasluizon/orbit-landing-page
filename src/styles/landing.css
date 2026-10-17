@@ -215,6 +215,7 @@
   margin-inline: auto;
   border-radius: var(--radius-full);
   background: var(--color-fg-2);
+  pointer-events: none;
 }
 .astra-demo {
   --mock-unit: calc(100cqi / 390);
@@ -312,7 +313,7 @@
   display: flex;
   gap: calc(8 * var(--mock-unit));
   padding-block: 16px;
-  margin-block: -12px;
+  margin-block: -12px -4px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
