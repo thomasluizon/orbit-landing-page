@@ -43,12 +43,14 @@ const { appUrl } = Astro.props;
       <article class="plan-card plan-pro">
         <div class="plan-name">
           <h3 translate="no">Pro</h3><span class="plan-badge"
-            ><Copy name="pricing.recommended" /></span>
+            ><Copy name="pricing.recommended" /></span
+          >
         </div>
         <p class="plan-description"><Copy name="pricing.pro.body" /></p>
         <p class="plan-price">
           <span class="price-value" data-price="monthly">{formatPrice("en", "monthly")}</span><span
-            class="plan-period"><Copy name="pricing.month" /></span>
+            class="plan-period"><Copy name="pricing.month" /></span
+          >
         </p>
         <p class="plan-annual">
           <Copy name="pricing.or" />
