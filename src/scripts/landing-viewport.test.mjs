@@ -140,3 +140,13 @@ test("the server-rendered hero reserves its pin travel before deferred motion mo
   assert.match(motion, /pinSpacing:\s*false/);
   assert.doesNotMatch(motion, /pinReparent:\s*true|scrollTo\(|location\.hash/);
 });
+
+test("hero cards stay opaque before and after their scroll travel", () => {
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  const floatingCards = motion.slice(
+    motion.indexOf("cards.forEach"),
+    motion.indexOf('media.add("(prefers', motion.indexOf("cards.forEach")),
+  );
+  assert.doesNotMatch(floatingCards, /opacity:\s*0(?:\.|\b)|autoAlpha:\s*0/);
+  assert.doesNotMatch(css, /\.(?:hero-float|hero-phrase)\s*\{[^}]*opacity:\s*0/);
+});

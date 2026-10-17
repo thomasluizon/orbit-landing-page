@@ -38,8 +38,8 @@ export function mountLandingMotion() {
       cards.forEach((card, index) => {
         timeline.fromTo(
           card,
-          { x: index % 2 ? -48 : 48, y: 64, opacity: 0.25 },
-          { x: 0, y: 0, opacity: 1, duration: 1, ease: "none" },
+          { x: index % 2 ? -48 : 48, y: 64 },
+          { x: 0, y: 0, duration: 1, ease: "none" },
           index * 0.08,
         );
       });
