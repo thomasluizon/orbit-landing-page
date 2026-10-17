@@ -1,0 +1,41 @@
+---
+import { ShieldCheck, SlidersHorizontal, CircleCheck, Download } from "@lucide/astro";
+import Copy from "./Copy.astro";
+const promises = [
+  { key: "approval", Icon: ShieldCheck },
+  { key: "edit", Icon: SlidersHorizontal },
+  { key: "control", Icon: CircleCheck },
+  { key: "privacy", Icon: Download },
+] as const;
+---
+
+<section class="section" data-section="security" aria-labelledby="security-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="security-title" class="section-title"><Copy name="security.title" /></h2><p
+        class="section-description"
+      >
+        <Copy name="security.body" />
+      </p>
+    </div>
+    <div class="security-grid">
+      {
+        promises.map(({ key, Icon }) => (
+          <article class="feature-card">
+            <>
+              <span class="feature-icon" data-reveal>
+                <Icon size={24} />
+              </span>
+              <h3>
+                <Copy name={`security.${key}.title`} />
+              </h3>
+              <p>
+                <Copy name={`security.${key}.body`} />
+              </p>
+            </>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
