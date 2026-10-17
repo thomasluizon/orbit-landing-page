@@ -182,3 +182,11 @@ test("section grids follow their headings without oversized empty bands", () => 
   assert.doesNotMatch(css, /min-block-size:\s*(?:280|300|480)px/);
   assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
+
+test("outlined feature icon tiles use the requested 40px geometry", () => {
+  const tile = css.match(/\.feature-icon\s*\{([^}]+)\}/)[1];
+  assert.match(tile, /inline-size:\s*40px/);
+  assert.match(tile, /block-size:\s*40px/);
+  assert.match(tile, /var\(--color-hairline-strong\)/);
+  assert.match(tile, /var\(--radius-md\)/);
+});

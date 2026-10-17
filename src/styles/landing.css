@@ -560,8 +560,8 @@
 .feature-icon {
   display: grid;
   place-items: center;
-  inline-size: 56px;
-  block-size: 56px;
+  inline-size: 40px;
+  block-size: 40px;
   border-radius: var(--radius-md);
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
   color: var(--color-fg-2);
@@ -616,17 +616,6 @@
 }
 .security-grid .feature-card {
   min-block-size: 200px;
-  grid-template-columns: 56px minmax(0, 1fr);
-  column-gap: 24px;
-}
-.security-grid .feature-icon {
-  grid-row: span 2;
-}
-.security-grid .feature-card h3 {
-  font-size: var(--fs-xl);
-}
-.security-grid .feature-card p {
-  grid-column: 2;
 }
 .pricing-grid {
   display: grid;
@@ -929,15 +918,6 @@
   }
   .plan-card {
     padding: 24px;
-  }
-  .security-grid .feature-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .security-grid .feature-icon {
-    grid-row: auto;
-  }
-  .security-grid .feature-card p {
-    grid-column: auto;
   }
 }
 @media (max-width: 40rem) {
