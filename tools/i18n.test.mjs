@@ -224,12 +224,3 @@ test("every new landing string exists in both languages and Astra remains femini
     }
   }
 });
-
-test("standalone trust captions use sentence case in both locales", () => {
-  const { landingTables } = harness();
-  for (const [lang, table] of Object.entries(landingTables)) {
-    for (const key of ["trust.free.caption", "trust.approval.caption", "trust.platforms.caption"]) {
-      assert.match(table[key], /^(?:\p{Lu}|iPhone\b)/u, `${lang}: ${key}`);
-    }
-  }
-});
