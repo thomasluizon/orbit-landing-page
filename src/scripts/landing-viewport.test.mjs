@@ -113,7 +113,7 @@ test("the static layout scrolls vertically and keeps product content visible bef
   for (const [, declarations] of css.matchAll(/\.hero\s*\{([^}]+)\}/g)) {
     assert.doesNotMatch(declarations, /grid-template-columns:(?!\s*minmax\(0, 1fr\))/);
   }
-  assert.match(css, /inline-size:\s*min\(400px, 100%\)/);
+  assert.match(css, /inline-size:\s*360px/);
 });
 
 test("every scroll driver is preference scoped and reveals only transform and opacity", () => {
@@ -156,7 +156,12 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(hero, /class="device-status" aria-hidden="true"/);
   assert.match(hero, /data-mock>9:41/);
   assert.match(hero, /class="device-home"/);
-  assert.match(css, /\.hero-device\s*\{[^}]*aspect-ratio:\s*20\s*\/\s*41/);
+  assert.match(hero, /class="device-screen"/);
+  assert.match(css, /\.hero-device\s*\{[^}]*block-size:\s*700px/);
+  assert.match(css, /\.hero-device\s*\{[^}]*padding:\s*10px/);
+  assert.match(css, /\.hero-device\s*\{[^}]*border-radius:\s*56px/);
+  assert.match(css, /\.device-screen\s*\{[^}]*border-radius:\s*46px/);
+  assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
 });
 
 test("marketing paragraphs use the body role and grid titles stay at 22px at every width", () => {
@@ -189,4 +194,18 @@ test("outlined feature icon tiles use the requested 40px geometry", () => {
   assert.match(tile, /block-size:\s*40px/);
   assert.match(tile, /var\(--color-hairline-strong\)/);
   assert.match(tile, /var\(--radius-md\)/);
+});
+
+test("the compact hero keeps two overlapping cards around a 280 by 540 phone", () => {
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*block-size:\s*540px/);
+  assert.match(mobile, /\.float-today,\s*\.hero-phrase\s*\{\s*display:\s*none/);
+  assert.match(mobile, /\.float-week\s*\{[^}]*inset-block-end:\s*100px/);
+  assert.match(mobile, /\.float-reminder\s*\{[^}]*inset-block-start:\s*200px/);
+  assert.match(mobile, /\.hero-float\s*\{[^}]*inline-size:\s*232px/);
+  assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
+  assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
+  assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);
+  assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
 });

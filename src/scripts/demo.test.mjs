@@ -145,11 +145,16 @@ test("changing the motion preference finishes an in-flight replay", () => {
   assert.equal(h.elements.get("demo-response").style.visibility, "visible");
 });
 
-test("example chips are keyboard buttons and no decorative input impersonates a control", () => {
+test("example chips are keyboard buttons and the composer opens Orbit as a real link", () => {
   const chip = nodes.find((node) => Object.hasOwn(attributes(node), "data-demo"));
   assert.equal(chip.name, "button");
   assert.ok(!chip.attributes.some(({ name }) => name === "tabindex" || name === "disabled"));
-  assert.ok(!nodes.some((node) => attributes(node).class === "demo-composer"));
+  const composer = nodes.find((node) => attributes(node).class === "demo-composer");
+  assert.ok(composer, "the conversation needs its composer entry point");
+  assert.equal(composer.name, "a");
+  assert.equal(attributes(composer).href, "appUrl");
+  assert.ok(!nodes.some((node) => node.name === "input"));
+  assert.match(source, /data-i18n="demo.composer"/);
 });
 
 for (const language of ["en", "pt-BR"]) {

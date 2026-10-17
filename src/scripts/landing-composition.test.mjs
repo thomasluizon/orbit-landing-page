@@ -102,7 +102,12 @@ test("the header opens Orbit while the hero has only its install action", async 
   assert.equal(attributes(action).href, "appUrl");
   assert.equal(attributes(action).variant, "secondary");
   assert.equal(attributes(action).analyticsEvent, "header_app_cta_clicked");
-  assert.equal(descendants(sections[0]).filter((node) => node.name === "a").length, 0);
+  assert.equal(
+    descendants(sections[0]).filter(
+      (node) => node.name === "a" && attributes(node).class !== "demo-composer",
+    ).length,
+    0,
+  );
   for (const name of ["Faq", "Footer"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }
