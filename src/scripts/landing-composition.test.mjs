@@ -126,7 +126,9 @@ test("feature copy precedes its centered product composition", () => {
   assert.equal(rows.length, 3);
   for (const row of rows) {
     assert.deepEqual(
-      row.children.filter((node) => node.name === "div").map((node) => attributes(node).class),
+      row.children
+        .filter((node) => node.name === "div")
+        .map((node) => attributes(node).class.split(" ")[0]),
       ["feature-copy", "feature-art"],
     );
   }
@@ -156,4 +158,33 @@ test("neighboring accent actions have a viewport of separation and the grid acti
     css,
     /\.section\[data-section="security"\],\s*\.section\[data-section="faq"\]\s*\{[^}]*min-block-size:\s*100svh/,
   );
+});
+
+test("grids, pricing, FAQ and product panels share their container system", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  for (const [name, width] of [
+    ["content", 1072],
+    ["narrow", 896],
+    ["panel", 640],
+  ]) {
+    assert.match(css, new RegExp(`--landing-${name}:\\s*${width}px`));
+  }
+  assert.match(css, /\.section-inner\s*\{[^}]*inline-size:\s*min\(var\(--landing-content\)/);
+  assert.match(css, /\.pricing-grid\s*\{[^}]*max-inline-size:\s*var\(--landing-content\)/);
+  assert.match(css, /\.faq-list\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
+  assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
+  assert.match(
+    css,
+    /\.feature-art\s*\{[^}]*inline-size:\s*min\(var\(--landing-panel\), 100%\);[^}]*padding:\s*32px/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.section\[data-section="details"\] \.feature-art\s*\{[^}]*inline-size:\s*100%/,
+  );
+  const busy = descendants(components.get("FeatureRows")).find((node) =>
+    attributes(node).class?.includes("feature-art-busy"),
+  );
+  assert.ok(busy, "the busy-day panel owns the overlapping composition");
+  assert.match(css, /\.feature-art-busy > \.product-today\s*\{[^}]*grid-template-rows:\s*subgrid/);
+  assert.match(css, /\.feature-reminder\s*\{[^}]*grid-row:\s*5 \/ span 2/);
 });

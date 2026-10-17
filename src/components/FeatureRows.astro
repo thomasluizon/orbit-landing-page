@@ -18,8 +18,10 @@ const { appUrl } = Astro.props;
           <Copy name="remember.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
-      <div class="feature-art">
-        <ProductCard kind="today" /><div data-reveal><ProductCard kind="reminder" /></div>
+      <div class="feature-art feature-art-busy">
+        <ProductCard kind="today" /><div class="feature-reminder" data-reveal>
+          <ProductCard kind="reminder" />
+        </div>
       </div>
     </div>
   </div>
