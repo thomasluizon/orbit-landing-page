@@ -535,9 +535,16 @@ test("phone controls follow the screen-to-390 scale and keep one trailing action
   const inputArea = css.match(/\.demo-input-area\s*\{([^}]+)\}/)[1];
   const areaGap = Number(inputArea.match(/gap:\s*(\d+)px;/)[1]);
   const chipToComposer = 16 + areaGap + Number(margin[2] ?? margin[1]);
-  assert.ok(chipToComposer >= 24, `the chip row keeps ${chipToComposer}px above the composer, at least 24`);
+  assert.ok(
+    chipToComposer >= 24,
+    `the chip row keeps ${chipToComposer}px above the composer, at least 24`,
+  );
   const home = css.match(/\.device-home\s*\{([^}]+)\}/)[1];
-  assert.match(home, /pointer-events:\s*none;/, "the decorative home bar never takes a tap from the composer target");
+  assert.match(
+    home,
+    /pointer-events:\s*none;/,
+    "the decorative home bar never takes a tap from the composer target",
+  );
   const language = css.match(/\.language-toggle\s*\{([^}]+)\}/)[1];
   assert.match(language, /block-size:\s*40px/);
   assert.match(language, /padding-inline:\s*12px/);
