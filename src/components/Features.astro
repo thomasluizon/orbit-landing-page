@@ -1,11 +1,11 @@
 ---
-import { MessageCircle, Bell, ListChecks, RotateCcw } from "@lucide/astro";
+import OutlineIcon from "./OutlineIcon.astro";
 import Copy from "./Copy.astro";
 const features = [
-  { key: "start", Icon: MessageCircle },
-  { key: "remember", Icon: Bell },
-  { key: "act", Icon: ListChecks },
-  { key: "restart", Icon: RotateCcw },
+  { key: "start", icon: "message-circle" },
+  { key: "remember", icon: "bell" },
+  { key: "act", icon: "list-check" },
+  { key: "restart", icon: "restore" },
 ] as const;
 ---
 
@@ -17,17 +17,17 @@ const features = [
     </div>
     <div class="feature-grid">
       {
-        features.map(({ key, Icon }) => (
+        features.map(({ key, icon }) => (
           <article class="feature-card">
-            <span class="feature-icon" data-reveal>
-              <Icon size={24} />
-            </span>
-            <h3>
-              <Copy name={`features.${key}.title`} />
-            </h3>
-            <p>
-              <Copy name={`features.${key}.body`} />
-            </p>
+            <OutlineIcon name={icon} />
+            <div class="feature-card-copy">
+              <h3>
+                <Copy name={`features.${key}.title`} />
+              </h3>
+              <p>
+                <Copy name={`features.${key}.body`} />
+              </p>
+            </div>
           </article>
         ))
       }

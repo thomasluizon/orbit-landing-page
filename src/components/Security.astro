@@ -1,12 +1,12 @@
 ---
-import { ShieldCheck, SlidersHorizontal, CircleCheck, Download } from "@lucide/astro";
+import OutlineIcon from "./OutlineIcon.astro";
 import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 const promises = [
-  { key: "approval", Icon: ShieldCheck },
-  { key: "edit", Icon: SlidersHorizontal },
-  { key: "control", Icon: CircleCheck },
-  { key: "privacy", Icon: Download },
+  { key: "approval", icon: "shield-check" },
+  { key: "edit", icon: "adjustments-horizontal" },
+  { key: "control", icon: "circle-check" },
+  { key: "privacy", icon: "download" },
 ] as const;
 ---
 
@@ -19,12 +19,10 @@ const promises = [
     </div>
     <div class="security-grid">
       {
-        promises.map(({ key, Icon }) => (
+        promises.map(({ key, icon }) => (
           <article class="promise-card">
             <>
-              <span class="promise-icon" data-reveal>
-                <Icon size={24} />
-              </span>
+              <OutlineIcon name={icon} />
               <div class="promise-copy">
                 <h3>
                   <Copy name={`security.${key}.title`} />

@@ -349,26 +349,39 @@ test("the compact week composition pairs Astra's line with one chart", () => {
   assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
 });
 
-test("promise cards pair a leading icon with title and body instead of repeating feature tiles", () => {
-  const nodes = descendants(components.get("Security"));
-  const card = nodes.find((node) => node.name === "article");
-  assert.equal(attributes(card).class, "promise-card");
-  const icon = descendants(card).find((node) => attributes(node).class === "promise-icon");
-  const copy = descendants(card).find((node) => attributes(node).class === "promise-copy");
-  assert.ok(icon);
-  assert.ok(descendants(copy).some((node) => node.name === "h3"));
-  assert.ok(descendants(copy).some((node) => node.name === "p"));
+test("feature and promise grids share an icon-above-copy anatomy and content-sized cards", () => {
+  for (const name of ["Features", "Security"]) {
+    const card = descendants(components.get(name)).find((node) => node.name === "article");
+    const icon = descendants(card).find((node) => node.name === "OutlineIcon");
+    assert.ok(icon, `${name} uses a Tabler outline`);
+    const copy = descendants(card).find((node) => attributes(node).class?.endsWith("-copy"));
+    assert.ok(descendants(copy).some((node) => node.name === "h3"));
+    assert.ok(descendants(copy).some((node) => node.name === "p"));
+  }
   const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.feature-card,\s*\.promise-card\s*\{[^}]*gap:\s*24px;[^}]*padding:\s*32px/);
+  assert.match(css, /\.feature-card-copy,\s*\.promise-copy\s*\{[^}]*gap:\s*12px/);
   assert.match(
     css,
-    /\.promise-card\s*\{[^}]*grid-template-columns:\s*48px minmax\(0, 1fr\);[^}]*gap:\s*24px;[^}]*padding:\s*32px/,
+    /\.feature-card h3,\s*\.promise-copy h3\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-3xl\);[^}]*font-weight:\s*500/,
   );
-  assert.match(css, /\.promise-icon\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px/);
-  assert.match(css, /\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/);
-  assert.match(css, /\.promise-copy p\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(css, /\.feature-card p,\s*\.promise-copy p\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.doesNotMatch(
+    css,
+    /\.(?:feature|promise)-card\s*\{[^}]*(?:min-block-size|grid-template-columns):/,
+  );
+  const mobile = css.slice(
+    css.indexOf("@media (max-width: 47.999rem)"),
+    css.indexOf("@media (max-width: 40rem)"),
+  );
+  assert.match(mobile, /\.feature-card,\s*\.promise-card\s*\{[^}]*padding:\s*24px/);
   assert.match(
-    css.slice(css.indexOf("@media (max-width: 47.999rem)")),
-    /\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-lg\)/,
+    mobile,
+    /\.feature-card h3,\s*\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/,
+  );
+  assert.match(
+    mobile,
+    /\.feature-grid,\s*\.security-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*gap:\s*16px/,
   );
 });
 

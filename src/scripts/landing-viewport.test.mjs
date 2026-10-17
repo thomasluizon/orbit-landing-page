@@ -183,7 +183,7 @@ test("the hero conversation starts below its header and sizes the phone around t
 test("marketing paragraphs use the body role and feature titles have the reference weight", () => {
   for (const selector of [
     "section-description",
-    "feature-card p",
+    "promise-copy p",
     "plan-description",
     "plan-card li",
     "footer-brand p",
@@ -191,12 +191,6 @@ test("marketing paragraphs use the body role and feature titles have the referen
     const declarations = css.match(new RegExp(`\\.${selector}\\s*\\{([^}]+)\\}`))[1];
     assert.match(declarations, /font-size:\s*var\(--fs-base\)/, selector);
   }
-  assert.match(css, /\.feature-grid \.feature-card h3\s*\{[^}]*font-size:\s*var\(--fs-3xl\)/);
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-grid \.feature-card h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/);
-  assert.match(css, /\.feature-grid \.feature-card\s*\{[^}]*padding:\s*28px/);
-  assert.match(mobile, /\.feature-grid \.feature-card\s*\{[^}]*padding:\s*24px/);
-  assert.match(mobile, /\.feature-grid,\s*\.security-grid\s*\{[^}]*gap:\s*16px/);
 });
 
 test("section grids follow their headings without oversized empty bands", () => {
@@ -214,12 +208,21 @@ test("section grids follow their headings without oversized empty bands", () => 
   assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
 
-test("outlined feature icon tiles use the requested 40px geometry", () => {
-  const tile = css.match(/\.feature-icon\s*\{([^}]+)\}/)[1];
-  assert.match(tile, /inline-size:\s*40px/);
-  assert.match(tile, /block-size:\s*40px/);
-  assert.match(tile, /var\(--color-hairline-strong\)/);
-  assert.match(tile, /var\(--radius-md\)/);
+test("feature and promise icons are bare 24px Tabler outlines without tiles", () => {
+  const icon = readFileSync("src/components/OutlineIcon.astro", "utf8");
+  assert.match(icon, /width="24"/);
+  assert.match(icon, /height="24"/);
+  assert.match(icon, /stroke-width="1.5"/);
+  assert.match(icon, /fill="none"/);
+  assert.match(icon, /aria-hidden="true"/);
+  for (const name of ["Features", "Security"]) {
+    const source = readFileSync(`src/components/${name}.astro`, "utf8");
+    assert.doesNotMatch(source, /@lucide|class="(?:feature|promise)-icon"/);
+    assert.match(source, /<OutlineIcon name=\{icon\}/);
+  }
+  const glyph = css.match(/\.card-icon\s*\{([^}]+)\}/)[1];
+  assert.match(glyph, /color:\s*var\(--color-fg-2\)/);
+  assert.doesNotMatch(glyph, /border|background|shadow|padding/);
 });
 
 test("wide hero cards overlap exactly the phone bezel and never the conversation", () => {
