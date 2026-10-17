@@ -1150,6 +1150,21 @@
     --landing-gutter: 16px;
     --landing-section-gap: 96px;
   }
+  .hero-copy {
+    gap: 24px;
+    padding-inline: 16px;
+  }
+  .hero .t-hero {
+    font-size: var(--fs-3xl);
+    line-height: 1.1;
+    max-inline-size: 380px;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .section-title,
+  .feature-copy .section-title {
+    font-size: var(--fs-2xl);
+  }
   .feature-section {
     padding-block-start: 64px;
   }
@@ -1290,22 +1305,11 @@
     padding-block-start: 64px;
     gap: 24px;
   }
-  .hero-copy {
-    gap: 24px;
-    padding-inline: 16px;
-  }
-  .hero .t-hero {
-    font-size: var(--fs-3xl);
-    max-inline-size: 18ch;
-  }
   .hero-actions {
     gap: 24px;
   }
   .section-inner {
     gap: 32px;
-  }
-  .section-title {
-    font-size: var(--fs-3xl);
   }
   .feature-grid,
   .security-grid,
@@ -1448,17 +1452,11 @@
   .brand-lockup svg {
     inline-size: 64px;
   }
-  .hero .t-hero {
-    font-size: var(--fs-3xl);
-  }
   .demo-preview-actions {
     gap: 12px;
   }
   .demo-chip {
     padding-inline: 8px;
-  }
-  .section-title {
-    font-size: var(--fs-2xl);
   }
 }
 @media (prefers-reduced-motion: no-preference) and (min-width: 56rem) and (min-height: 46rem) {

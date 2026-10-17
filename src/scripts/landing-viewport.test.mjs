@@ -443,3 +443,32 @@ test("the hero reserves side-stack heights and keeps card travel above the trust
   assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
   assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
 });
+
+test("below 768px the 34px hero leads every 28px section heading without word breaks", () => {
+  const mobile = css.slice(
+    css.indexOf("@media (max-width: 47.999rem)"),
+    css.indexOf("@media (max-width: 40rem)"),
+  );
+  assert.match(
+    mobile,
+    /\.hero \.t-hero\s*\{[^}]*font-size:\s*var\(--fs-3xl\);[^}]*line-height:\s*1\.1;[^}]*max-inline-size:\s*380px/,
+  );
+  assert.match(
+    mobile,
+    /\.hero \.t-hero\s*\{[^}]*overflow-wrap:\s*normal;[^}]*word-break:\s*normal/,
+  );
+  assert.match(
+    mobile,
+    /\.section-title,\s*\.feature-copy \.section-title\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/,
+  );
+  assert.match(mobile, /\.hero-copy\s*\{[^}]*gap:\s*24px;[^}]*padding-inline:\s*16px/);
+  const narrower = css.slice(css.indexOf("@media (max-width: 40rem)"));
+  assert.doesNotMatch(narrower, /\.(?:t-hero|section-title)\s*\{[^}]*font-size:/);
+  assert.doesNotMatch(narrower, /\.t-hero\s*\{[^}]*max-inline-size:/);
+  assert.match(css, /\.hero\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.hero-copy\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.hero-pin-range\s*\{[^}]*padding-block-start:\s*8px/);
+  const global = readFileSync("src/styles/global.css", "utf8");
+  assert.match(global, /\.t-hero\s*\{[^}]*font-family:\s*var\(--font-display\)/);
+  assert.match(global, /--font-display:\s*var\(--font-space-grotesk\)/);
+});
