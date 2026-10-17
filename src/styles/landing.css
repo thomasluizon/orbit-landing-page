@@ -128,6 +128,12 @@
   inline-size: min(1040px, 100%);
 }
 .hero-stage {
+  --hero-device-width: 360px;
+  --hero-card-gap: 24px;
+  --hero-card-width: min(
+    296px,
+    calc(50% - var(--hero-device-width) / 2 - var(--hero-card-gap) - 16px)
+  );
   position: relative;
   display: grid;
   place-items: center;
@@ -145,7 +151,7 @@
 .hero-device {
   position: relative;
   z-index: 2;
-  inline-size: 360px;
+  inline-size: var(--hero-device-width);
   block-size: 700px;
   padding: 10px;
   border-radius: 56px;
@@ -335,20 +341,20 @@
   pointer-events: none;
   position: absolute;
   z-index: 3;
-  inline-size: 296px;
+  inline-size: var(--hero-card-width);
 }
 .float-today {
-  inset-inline-end: calc(50% + 156px);
+  inset-inline-end: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
   inset-block-start: 128px;
 }
 .hero-right {
   position: absolute;
   z-index: 3;
-  inset-inline-start: calc(50% + 156px);
+  inset-inline-start: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
   inset-block-start: 128px;
   display: grid;
   gap: 64px;
-  inline-size: 296px;
+  inline-size: var(--hero-card-width);
 }
 .hero-right .hero-float {
   position: relative;
@@ -362,13 +368,14 @@
   border-radius: var(--radius-sm);
   background: var(--color-bg-elev);
   z-index: 3;
+  max-inline-size: var(--hero-card-width);
 }
 .phrase-start {
-  inset-inline-end: calc(50% + 156px);
+  inset-inline-end: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
   inset-block-end: 128px;
 }
 .phrase-restart {
-  inset-inline-start: calc(50% + 156px);
+  inset-inline-start: calc(50% + var(--hero-device-width) / 2 + var(--hero-card-gap));
   inset-block-start: 48px;
 }
 .product-card {
@@ -929,9 +936,36 @@
   .hero .t-hero {
     font-size: var(--fs-4xl);
   }
-  .hero-float,
-  .hero-right {
-    inline-size: 256px;
+  .hero-stage .product-card {
+    padding: 12px;
+  }
+  .hero-stage .product-top {
+    gap: 8px;
+  }
+  .float-today .habit-row {
+    gap: 8px;
+    padding: 8px;
+  }
+  .float-today .habit-emoji {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+  .float-today .habit-name {
+    font-size: var(--fs-sm);
+  }
+  .float-today .status-ring {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+  .float-reminder .product-top > :last-child {
+    display: none;
+  }
+  .hero-stage .product-card h3 {
+    font-size: var(--fs-base);
+  }
+  .hero-phrase {
+    padding: 8px;
+    font-size: var(--fs-xs);
   }
   .trust-content {
     gap: 24px;
@@ -977,16 +1011,43 @@
     padding-block-end: 48px;
   }
   .hero-stage {
-    min-block-size: 600px;
+    grid-template-rows: auto 144px auto auto;
+    min-block-size: 0;
     align-items: start;
+  }
+  .hero-phone {
+    display: contents;
+  }
+  .hero-phone > .composition-caption {
+    grid-column: 1;
+    grid-row: 4;
+    padding-block-start: 16px;
   }
   .hero-device {
     inline-size: 280px;
-    block-size: 540px;
+    min-block-size: 540px;
+    block-size: auto;
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  .device-screen {
+    min-block-size: 520px;
+    block-size: auto;
   }
   .astra-demo {
     gap: 12px;
     padding: 8px;
+    min-block-size: min-content;
+  }
+  .demo-thread {
+    flex: none;
+    overflow: visible;
+  }
+  .demo-exchange {
+    margin-block-start: 0;
+  }
+  .demo-input-area {
+    margin-block-start: auto;
   }
   .demo-preview {
     gap: 8px;
@@ -1005,22 +1066,27 @@
     display: none;
   }
   .hero-right {
-    display: contents;
-  }
-  .hero-float {
-    inline-size: 232px;
+    position: static;
+    display: grid;
+    grid-column: 1;
+    grid-row: 2 / 4;
+    grid-template-rows: 112px auto;
+    gap: 0;
+    inline-size: min(440px, calc(100% - 32px));
+    align-self: start;
   }
   .hero-right .hero-float {
-    position: absolute;
-    inline-size: 232px;
+    position: static;
+    inline-size: min(232px, 100%);
+    grid-column: 1;
   }
   .float-week {
-    inset-inline-start: max(16px, calc(50% - 164px));
-    inset-block-end: 100px;
+    grid-row: 1 / 3;
+    justify-self: start;
   }
   .float-reminder {
-    inset-inline-end: max(16px, calc(50% - 164px));
-    inset-block-start: 200px;
+    grid-row: 2;
+    justify-self: end;
   }
   .hero-stage .product-card {
     gap: 12px;

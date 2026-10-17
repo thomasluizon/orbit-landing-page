@@ -113,7 +113,7 @@ test("the static layout scrolls vertically and keeps product content visible bef
   for (const [, declarations] of css.matchAll(/\.hero\s*\{([^}]+)\}/g)) {
     assert.doesNotMatch(declarations, /grid-template-columns:(?!\s*minmax\(0, 1fr\))/);
   }
-  assert.match(css, /inline-size:\s*360px/);
+  assert.match(css, /--hero-device-width:\s*360px/);
 });
 
 test("every scroll driver is preference scoped and reveals only transform and opacity", () => {
@@ -199,13 +199,48 @@ test("outlined feature icon tiles use the requested 40px geometry", () => {
   assert.match(tile, /var\(--radius-md\)/);
 });
 
-test("the compact hero keeps two overlapping cards around a 280 by 540 phone", () => {
+test("wide hero cards and their motion stay outside the phone with a 24px clearance", () => {
+  assert.match(css, /--hero-device-width:\s*360px/);
+  assert.match(css, /--hero-card-gap:\s*24px/);
+  for (const selector of ["float-today", "phrase-start"]) {
+    assert.match(
+      css,
+      new RegExp(
+        `\\.${selector}\\s*\\{[^}]*inset-inline-end:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 \\+ var\\(--hero-card-gap\\)\\)`,
+      ),
+    );
+  }
+  for (const selector of ["hero-right", "phrase-restart"]) {
+    assert.match(
+      css,
+      new RegExp(
+        `\\.${selector}\\s*\\{[^}]*inset-inline-start:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 \\+ var\\(--hero-card-gap\\)\\)`,
+      ),
+    );
+  }
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.match(motion, /x:\s*card\.dataset\.heroSide === "left" \? -48 : 48/);
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  assert.equal((hero.match(/data-hero-side="left"/g) ?? []).length, 2);
+  assert.equal((hero.match(/data-hero-side="right"/g) ?? []).length, 3);
+  assert.doesNotMatch(css, /50% \+ 156px/);
+});
+
+test("compact hero cards overlap only the input area and grow the composition in flow", () => {
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*block-size:\s*540px/);
+  assert.match(
+    mobile,
+    /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*min-block-size:\s*540px;\s*block-size:\s*auto/,
+  );
+  assert.match(mobile, /\.hero-stage\s*\{[^}]*grid-template-rows:\s*auto 144px auto auto/);
+  assert.match(mobile, /\.hero-device\s*\{[^}]*grid-row:\s*1 \/ 3/);
+  assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static;[^}]*grid-row:\s*2 \/ 4/);
+  assert.match(mobile, /\.demo-thread\s*\{[^}]*flex:\s*none;[^}]*overflow:\s*visible/);
+  assert.match(mobile, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
   assert.match(mobile, /\.float-today,\s*\.hero-phrase\s*\{\s*display:\s*none/);
-  assert.match(mobile, /\.float-week\s*\{[^}]*inset-block-end:\s*100px/);
-  assert.match(mobile, /\.float-reminder\s*\{[^}]*inset-block-start:\s*200px/);
-  assert.match(mobile, /\.hero-float\s*\{[^}]*inline-size:\s*232px/);
+  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
+  assert.match(mobile, /\.float-week\s*\{[^}]*grid-row:\s*1 \/ 3/);
+  assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2/);
   assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
   assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
   assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);

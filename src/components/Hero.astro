@@ -31,7 +31,9 @@ const en = translations.en;
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
-      <div class="hero-float float-today" data-hero-float><ProductCard kind="today" /></div>
+      <div class="hero-float float-today" data-hero-float data-hero-side="left">
+        <ProductCard kind="today" />
+      </div>
       <div class="hero-phone">
         <div class="hero-device">
           <div class="device-screen">
@@ -49,11 +51,19 @@ const en = translations.en;
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
       <div class="hero-right">
-        <div class="hero-float float-week" data-hero-float><ProductCard kind="week" /></div>
-        <div class="hero-float float-reminder" data-hero-float><ProductCard kind="reminder" /></div>
+        <div class="hero-float float-week" data-hero-float data-hero-side="right">
+          <ProductCard kind="week" />
+        </div>
+        <div class="hero-float float-reminder" data-hero-float data-hero-side="right">
+          <ProductCard kind="reminder" />
+        </div>
       </div>
-      <p class="hero-phrase phrase-start" data-hero-float><Copy name="phrase.start" /></p>
-      <p class="hero-phrase phrase-restart" data-hero-float><Copy name="phrase.restart" /></p>
+      <p class="hero-phrase phrase-start" data-hero-float data-hero-side="left">
+        <Copy name="phrase.start" />
+      </p>
+      <p class="hero-phrase phrase-restart" data-hero-float data-hero-side="right">
+        <Copy name="phrase.restart" />
+      </p>
     </div>
   </div>
 </section>
