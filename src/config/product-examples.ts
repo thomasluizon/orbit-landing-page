@@ -12,9 +12,9 @@ export const exampleWeek = exampleDays.map(({ done, total }) => Math.round((done
 export const exampleMonth = Array.from({ length: 30 }, (_, index) => exampleWeek[index % 7]);
 
 const linkedHabits = [
-  { habit: "walk", emoji: "🚶", streak: 12 },
-  { habit: "run", emoji: "🏃", streak: 9 },
-  { habit: "stretch", emoji: "🧘", streak: 14 },
+  { habit: "walk", streak: 12 },
+  { habit: "run", streak: 9 },
+  { habit: "stretch", streak: 14 },
 ] as const;
 
 export const exampleGoal = {

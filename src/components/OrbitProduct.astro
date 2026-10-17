@@ -1,87 +1,29 @@
 ---
-import {
-  Check,
-  ChevronRight,
-  ListChecks,
-  Snowflake,
-  WifiOff,
-  Monitor,
-  Smartphone,
-  Download,
-  Trash2,
-  RefreshCw,
-} from "@lucide/astro";
+import { Check, ChevronRight, Snowflake, Download, Trash2, Trophy } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import { exampleMonth } from "../config/product-examples";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "steps" | "calendar" | "agenda" | "progress" | "widget" | "offline" | "devices" | "privacy";
+  kind: "calendar" | "progress" | "privacy" | "achievements";
 }
 const { kind } = Astro.props;
 const cells = Array.from({ length: 42 }, (_, index) => index - 4);
 ---
 
-<div class:list={["product-block", "orbit-product", `orbit-${kind}`]} data-mock="true">
-  {
-    kind === "steps" && (
-      <>
-        <div class="orbit-list-row">
-          <ListChecks size={20} aria-hidden="true" />
-          <div class="orbit-row-copy">
-            <h3>
-              <Copy name="orbit.routine" />
-            </h3>
-            <span class="product-caption">
-              <Copy name="orbit.checklist" /> · 1/2
-            </span>
-          </div>
-          <span class="status-ring" aria-hidden="true" />
-        </div>
-        <div class="orbit-child-row">
-          <>
-            <Check size={16} aria-hidden="true" />
-            <Copy name="product.water" />
-          </>
-        </div>
-        <div class="orbit-child-row">
-          <>
-            <span class="orbit-check" aria-hidden="true" />
-            <Copy name="product.stretch" />
-          </>
-        </div>
-        <div class="orbit-list-row">
-          <div class="orbit-row-copy">
-            <p class="habit-name">
-              <Copy name="product.walk" />
-            </p>
-            <span class="product-caption">
-              <Copy name="orbit.overdue" />
-            </span>
-          </div>
-          <span class="status-ring orbit-overdue-ring" aria-hidden="true" />
-        </div>
-        <div class="orbit-list-row">
-          <div class="orbit-row-copy">
-            <p class="habit-name">
-              <Copy name="orbit.avoid" />
-            </p>
-            <span class="product-caption">
-              <Copy name="orbit.bad" />
-            </span>
-          </div>
-          <span class="orbit-bad-mark" aria-hidden="true">
-            −
-          </span>
-        </div>
-      </>
-    )
-  }
+<div
+  class:list={["product-block", "orbit-product", `orbit-${kind}`]}
+  data-mock="true"
+  data-product-kind={kind}
+>
   {
     kind === "calendar" && (
       <>
         <h3>
           <Copy name="orbit.calendar" />
         </h3>
+        <p class="product-caption">
+          <Copy name="orbit.google" />
+        </p>
         <p class="orbit-month-title">
           <Copy name="orbit.august" />
         </p>
@@ -114,33 +56,6 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
               )}
             </span>
           ))}
-        </div>
-      </>
-    )
-  }
-  {
-    kind === "agenda" && (
-      <>
-        <h3>
-          <Copy name="orbit.agenda" />
-        </h3>
-        <div class="orbit-list-row">
-          <span class="product-caption">07:00</span>
-          <p class="habit-name">
-            <Copy name="product.walk" />
-          </p>
-          <span class="status-ring" aria-hidden="true" />
-        </div>
-        <div class="orbit-list-row">
-          <span class="product-caption">14:00</span>
-          <div class="orbit-row-copy">
-            <p class="habit-name">
-              <Copy name="orbit.appointment" />
-            </p>
-            <p class="product-caption">
-              <Copy name="orbit.google" />
-            </p>
-          </div>
         </div>
       </>
     )
@@ -193,85 +108,6 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
     )
   }
   {
-    kind === "widget" && (
-      <>
-        <div class="product-top">
-          <>
-            <span translate="no">Orbit</span>
-            <RefreshCw size={16} aria-hidden="true" />
-          </>
-        </div>
-        <h3>
-          <Copy name="product.today" />
-        </h3>
-        {(["walk", "read"] as const).map((habit, index) => (
-          <div class="orbit-list-row">
-            <span class:list={["status-ring", { "is-done": index === 0 }]} aria-hidden="true">
-              {index === 0 && <Check size={16} />}
-            </span>
-            <p class="habit-name">
-              <Copy name={`product.${habit}`} />
-            </p>
-          </div>
-        ))}
-      </>
-    )
-  }
-  {
-    kind === "offline" && (
-      <>
-        <div class="orbit-list-row">
-          <>
-            <WifiOff size={20} aria-hidden="true" />
-            <h3>
-              <Copy name="orbit.offline" />
-            </h3>
-          </>
-        </div>
-        <div class="orbit-list-row">
-          <>
-            <span class="status-ring is-done" aria-hidden="true">
-              <Check size={16} />
-            </span>
-            <Copy name="product.water" />
-          </>
-        </div>
-        <p class="product-caption">
-          <Copy name="orbit.pending" />
-        </p>
-      </>
-    )
-  }
-  {
-    kind === "devices" && (
-      <>
-        <h3>
-          <Copy name="orbit.account" />
-        </h3>
-        <div class="orbit-device-pair">
-          {(["android", "web"] as const).map((platform) => (
-            <div class="orbit-device-panel">
-              {platform === "web" ? (
-                <Monitor size={24} aria-hidden="true" />
-              ) : (
-                <Smartphone size={24} aria-hidden="true" />
-              )}
-              <p>
-                <Copy name={`orbit.${platform}`} />
-              </p>
-              <span class="status-ring is-done" aria-hidden="true">
-                <Check size={16} />
-              </span>
-              <span class="product-caption">
-                <Copy name="product.read" />
-              </span>
-            </div>
-          ))}
-        </div>
-      </>
-    )
-  }
-  {
     kind === "privacy" && (
       <>
         <div class="orbit-list-row">
@@ -291,6 +127,32 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
             </span>
             <ChevronRight size={16} aria-hidden="true" />
           </>
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "achievements" && (
+      <>
+        <div class="orbit-list-row">
+          <Trophy size={24} aria-hidden="true" />
+          <h3>
+            <Copy name="orbit.achievements" />
+          </h3>
+          <span class="status-ring is-done" aria-hidden="true">
+            <Check size={16} />
+          </span>
+        </div>
+        <div class="orbit-wrapped">
+          <p translate="no">Orbit Wrapped</p>
+          <p class="product-caption">
+            <Copy name="orbit.wrapped" />
+          </p>
+          <div class="orbit-wrapped-bars" aria-hidden="true">
+            {exampleMonth.slice(-7).map((value) => (
+              <span style={`--bar-height: ${value}%`} />
+            ))}
+          </div>
         </div>
       </>
     )

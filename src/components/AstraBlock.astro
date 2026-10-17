@@ -9,11 +9,10 @@ import {
 } from "../config/product-examples";
 import { landingCopy, translations, type LandingKey, type Language } from "../i18n/translations";
 interface Props {
-  kind: "metrics" | "habits" | "breakdown" | "goal";
+  kind: "metrics" | "breakdown" | "goal";
   interactive?: boolean;
-  embedded?: boolean;
 }
-const { kind, interactive = false, embedded = false } = Astro.props;
+const { kind, interactive = false } = Astro.props;
 const dateKeys = exampleWeek.map((_, index) => `blocks.metrics.date${index}` as LandingKey);
 const completion = Math.round(
   exampleWeek.reduce((sum, value) => sum + value, 0) / exampleWeek.length,
@@ -30,7 +29,7 @@ function doneLabel(language: Language, index: number) {
   <div
     class:list={["product-block", `block-${kind}`]}
     data-example-block={interactive ? kind : undefined}
-    data-embedded={embedded || undefined}
+    data-product-kind={kind}
   >
     {
       kind === "metrics" && (
@@ -128,29 +127,6 @@ function doneLabel(language: Language, index: number) {
       )
     }
     {
-      kind === "habits" && (
-        <>
-          <h3>
-            <Copy name="blocks.habits.title" />
-          </h3>
-          <div class="block-habit-list">
-            <HabitRow habit="walk" timing="morning" interactive={interactive} />
-            <HabitRow habit="read" interactive={interactive} />
-          </div>
-          {interactive && (
-            <p
-              class="product-caption"
-              role="status"
-              aria-live="polite"
-              data-example-count
-              data-template-en={landingCopy.en["blocks.habits.count"]}
-              data-template-pt={landingCopy["pt-BR"]["blocks.habits.count"]}
-            />
-          )}
-        </>
-      )
-    }
-    {
       kind === "breakdown" && (
         <>
           <h3>
@@ -207,26 +183,8 @@ function doneLabel(language: Language, index: number) {
             <h4 class="product-caption">
               <Copy name="blocks.goal.linked" />
             </h4>
-            {exampleGoal.habits.map(({ habit, emoji, streak }) => (
-              <div class="goal-habit">
-                <span aria-hidden="true">{emoji}</span>
-                <p class="habit-name">
-                  <Copy name={`product.${habit}`} />
-                </p>
-                <span
-                  class="product-caption"
-                  data-copy-en={landingCopy.en["blocks.goal.days"].replace(
-                    "{days}",
-                    String(streak),
-                  )}
-                  data-copy-pt={landingCopy["pt-BR"]["blocks.goal.days"].replace(
-                    "{days}",
-                    String(streak),
-                  )}
-                >
-                  {landingCopy.en["blocks.goal.days"].replace("{days}", String(streak))}
-                </span>
-              </div>
+            {exampleGoal.habits.map(({ habit, streak }) => (
+              <HabitRow habit={habit} days={streak} />
             ))}
           </div>
         </>

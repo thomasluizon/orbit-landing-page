@@ -2,7 +2,7 @@
 import { Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import PillButton from "./PillButton.astro";
-import { formatPrice } from "../config/pricing";
+import { formatPrice, pricingFor } from "../config/pricing";
 import { landingCopy, translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
@@ -32,16 +32,16 @@ const { appUrl } = Astro.props;
         type="button"
         role="radio"
         data-billing-period="monthly"
-        aria-checked="true"
-        tabindex="0"><Copy name="pricing.monthly" /></button
+        aria-checked="false"
+        tabindex="-1"><Copy name="pricing.monthly" /></button
       >
       <button
         class="billing-option"
         type="button"
         role="radio"
         data-billing-period="yearly"
-        aria-checked="false"
-        tabindex="-1"><Copy name="pricing.annual" /></button
+        aria-checked="true"
+        tabindex="0"><Copy name="pricing.annual" /></button
       >
     </div>
     <div class="pricing-grid">
@@ -77,32 +77,13 @@ const { appUrl } = Astro.props;
           >
         </div>
         <p class="plan-description"><Copy name="pricing.pro.body" /></p>
-        <p class="plan-price" aria-live="polite" aria-atomic="true">
-          <span class="price-value" data-price="monthly" data-pro-price
-            >{formatPrice("en", "monthly")}</span
-          ><span
-            class="plan-period"
-            data-plan-period
-            data-month-en={landingCopy.en["pricing.month"]}
-            data-month-pt={landingCopy["pt-BR"]["pricing.month"]}
-            data-year-en={landingCopy.en["pricing.year"]}
-            data-year-pt={landingCopy["pt-BR"]["pricing.year"]}><Copy name="pricing.month" /></span
-          >
-        </p>
-        <p
-          class="plan-annual"
-          data-annual-equivalent
-          data-template-en={landingCopy.en["pricing.equivalent"]}
-          data-template-pt={landingCopy["pt-BR"]["pricing.equivalent"]}
-          hidden
-        >
-          {
-            landingCopy.en["pricing.equivalent"].replace(
-              "{price}",
-              formatPrice("en", "monthlyEquivalent"),
-            )
-          }
-        </p>
+        <div class="plan-cost" aria-live="polite" aria-atomic="true">
+          <p class="plan-price">
+            <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
+          </p>
+          <p class="plan-annual" data-annual-equivalent>{pricingFor("en", "yearly").equivalent}</p>
+          <p class="plan-saving" data-annual-saving>{pricingFor("en", "yearly").saving}</p>
+        </div>
         <ul>
           {
             (["pricing.pro.astra", "pricing.pro.adjust", "pricing.pro.calendar"] as const).map(

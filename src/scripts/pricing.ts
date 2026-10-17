@@ -1,25 +1,22 @@
-import { formatPrice } from "../config/pricing";
+import { pricingFor } from "../config/pricing";
 
 function mountBillingControl() {
   const group = document.querySelector<HTMLElement>("[data-billing-control]");
   if (!group) return;
   const options = [...group.querySelectorAll<HTMLButtonElement>("[data-billing-period]")];
   const price = document.querySelector<HTMLElement>("[data-pro-price]");
-  const unit = document.querySelector<HTMLElement>("[data-plan-period]");
+  const saving = document.querySelector<HTMLElement>("[data-annual-saving]");
   const equivalent = document.querySelector<HTMLElement>("[data-annual-equivalent]");
-  if (!price || !unit || !equivalent) return;
-  let selected: "monthly" | "yearly" = "monthly";
+  if (!price || !saving || !equivalent) return;
+  let selected: "monthly" | "yearly" = "yearly";
   const render = () => {
     const language = document.documentElement.lang === "pt-BR" ? "pt-BR" : "en";
-    const suffix = language === "pt-BR" ? "Pt" : "En";
-    price.dataset.price = selected;
-    price.textContent = formatPrice(language, selected);
-    unit.textContent = unit.dataset[`${selected === "monthly" ? "month" : "year"}${suffix}`] ?? "";
+    const display = pricingFor(language, selected);
+    price.textContent = display.primary;
     equivalent.hidden = selected === "monthly";
-    equivalent.textContent = (equivalent.dataset[`template${suffix}`] ?? "").replace(
-      "{price}",
-      formatPrice(language, "monthlyEquivalent"),
-    );
+    saving.hidden = selected === "monthly";
+    equivalent.textContent = display.equivalent;
+    saving.textContent = display.saving;
     options.forEach((option) => {
       const active = option.dataset.billingPeriod === selected;
       option.setAttribute("aria-checked", String(active));

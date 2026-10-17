@@ -1,14 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-import TrustStrip from "../components/TrustStrip.astro";
 import FeatureRows from "../components/FeatureRows.astro";
-import Security from "../components/Security.astro";
 import Pricing from "../components/Pricing.astro";
 import Faq from "../components/Faq.astro";
 import FinalCta from "../components/FinalCta.astro";
-import Features from "../components/Features.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
 import { translations } from "../i18n/translations";
@@ -22,15 +18,11 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbi
     <Header appUrl={appUrl} />
     <main id="main-content" tabindex="-1">
       <Hero googlePlayUrl={googlePlayUrl} appUrl={appUrl} />
-      <TrustStrip />
-      <Features appUrl={appUrl} />
-      <FeatureRows appUrl={appUrl} />
-      <Security />
+      <FeatureRows />
       <Pricing appUrl={appUrl} />
       <Faq />
-      <FinalCta appUrl={appUrl} />
+      <FinalCta appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
     </main>
-    <Footer appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
   </div>
   <IosWaitlist />
 </Layout>

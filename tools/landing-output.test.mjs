@@ -45,7 +45,11 @@ test("the built header lockup paints pale ink with only the moon in the accent",
 
 for (const [event, region, label] of [
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
-  ["hero_app_cta_clicked", /<footer\b[^>]*>[\s\S]*?<\/footer>/, "hero.web"],
+  [
+    "hero_app_cta_clicked",
+    /<section\b[^>]*data-section="final"[^>]*>[\s\S]*?<\/section>/,
+    "action.start",
+  ],
   [
     "hero_google_play_cta_clicked",
     /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
@@ -60,7 +64,11 @@ for (const [event, region, label] of [
     const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
-    assert.ok(anchor?.includes(`data-i18n="${label}"`));
+    assert.ok(
+      label === "action.start"
+        ? anchor?.includes('data-copy-en="Start free"')
+        : anchor?.includes(`data-i18n="${label}"`),
+    );
     const destination =
       event !== "hero_google_play_cta_clicked"
         ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
@@ -69,32 +77,15 @@ for (const [event, region, label] of [
   });
 }
 
-test("built free-start actions share the existing app event and retain their surface and variant", () => {
+test("the single closing free-start action keeps the existing app event and footer surface", () => {
   const event = 'data-analytics-event="hero_app_cta_clicked"';
-  assert.equal(html.split(event).length - 1, 5);
-  for (const name of ["features", "details", "progress", "restart"]) {
-    const section = html.match(
-      new RegExp(`<section\\b[^>]*data-section="${name}"[^>]*>([\\s\\S]*?)<\\/section>`),
-    )?.[1];
-    assert.ok(section, name);
-    const actions = [...section.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
-      .map(([tag]) => tag)
-      .filter((tag) => tag.includes(event));
-    assert.equal(actions.length, 1, name);
-    const [action] = actions;
-    const appUrl = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
-    assert.ok(action.includes(`href="${appUrl}"`));
-    assert.ok(action.includes(`data-analytics-surface="${name}"`));
-    assert.match(action, /data-copy-en="Start free" data-copy-pt="Começar grátis"/);
-    if (name === "features") {
-      assert.match(action, /\bbg-primary\b/);
-      assert.doesNotMatch(action, /\bbg-transparent\b/);
-    } else {
-      assert.match(action, /\bbg-transparent\b/);
-      assert.match(action, /shadow-\[inset_0_0_0_1\.5px_var\(--color-hairline-strong\)\]/);
-      assert.doesNotMatch(action, /\bbg-primary\b/);
-    }
-  }
+  assert.equal(html.split(event).length - 1, 1);
+  const action = [...html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
+    .map(([tag]) => tag)
+    .find((tag) => tag.includes(event));
+  assert.ok(action.includes('data-analytics-surface="footer"'));
+  assert.ok(action.includes('data-copy-en="Start free"'));
+  assert.ok(action.includes('data-copy-pt="Começar grátis"'));
 });
 
 test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
@@ -104,19 +95,7 @@ test("the built homepage follows the scrolling Astra composition with the origin
   assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
   assert.deepEqual(
     [...html.matchAll(/data-section="([^"]+)"/g)].map(([, name]) => name),
-    [
-      "hero",
-      "trust",
-      "features",
-      "details",
-      "progress",
-      "restart",
-      "security",
-      "pricing",
-      "faq",
-      "final",
-      "footer",
-    ],
+    ["hero", "trust", "features", "pricing", "faq", "final"],
   );
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
@@ -246,71 +225,38 @@ test("the complete local script graph stays inside the raw byte budget", () => {
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
 });
 
-test("the built billing control defaults to monthly and keeps annual arithmetic out of its resting view", () => {
+test("the built billing control leads with Annual and its daily price, monthly equivalent and saving", () => {
   const pro = html.match(/<article class="plan-card plan-pro">([\s\S]*?)<\/article>/)?.[1];
   assert.ok(pro);
   const group = html.match(/<div[^>]*role="radiogroup"[^>]*>([\s\S]*?)<\/div>/)?.[1];
-  assert.ok(group);
-  assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
-  assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
-  assert.match(pro, /data-price="monthly"/);
-  assert.doesNotMatch(pro, /data-price="yearly"/);
-  assert.match(pro, /data-annual-equivalent[^>]*hidden/);
-  assert.doesNotMatch(pro, /or \$69\.99 per year/);
-  const action = pro.match(/<a\b[^>]*href="[^"]*\/upgrade"[^>]*>([\s\S]*?)<\/a>/)?.[1];
-  assert.match(action, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
-  assert.match(pro, /data-copy-en="More Astra every day\. Free for 7 days\."/);
-  assert.match(pro, /data-copy-pt="Mais Astra todo dia\. Grátis por 7 dias\."/);
+  assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
+  assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
+  assert.match(pro, /data-pro-price[^>]*>[^<]+per day/);
+  assert.match(pro, /data-annual-equivalent[^>]*>[^<]+billed yearly/);
+  assert.match(pro, /data-annual-saving[^>]*>Save \d+%/);
+  assert.doesNotMatch(pro, /data-annual-(?:equivalent|saving)[^>]*hidden/);
+  assert.match(pro, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
 });
 
-test("multi-sentence section headings preserve full sentences in both locales", () => {
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(
-    css,
-    /@media \(min-width: 48rem\)\s*\{\s*\.heading-sentence\s*\{\s*display:\s*block/,
-  );
-  assert.match(css, /\.sentence-title\s*\{[^}]*text-wrap:\s*balance/);
-  const sentenceCount = (text) =>
-    text
-      .trim()
-      .split(/(?<=[.!?])\s+/u)
-      .filter(Boolean).length;
-  const headings = [...html.matchAll(/<h2\b[^>]*id="([a-z-]+-title)"[^>]*>([\s\S]*?)<\/h2>/g)];
-  assert.ok(headings.length >= 8);
-  const multiSentence = [];
-  for (const [heading, id, body] of headings) {
-    const sentences = [
-      ...heading.matchAll(
-        /<span class="heading-sentence" data-copy-en="([^"]+)" data-copy-pt="([^"]+)" aria-hidden="true">/g,
-      ),
-    ];
-    const englishLabel = heading.match(/aria-label="([^"]+)"/)?.[1] ?? body.replace(/<[^>]+>/g, "");
-    const portugueseLabel =
-      heading.match(/data-copy-label-pt="([^"]+)"/)?.[1] ??
-      body.match(/data-copy-pt="([^"]+)"/)?.[1] ??
-      "";
-    const count = Math.max(sentenceCount(englishLabel), sentenceCount(portugueseLabel));
-    if (count < 2) {
-      assert.equal(sentences.length, 0, `${id} holds one sentence and needs no sentence spans`);
-      continue;
-    }
-    multiSentence.push(id);
-    assert.equal(sentences.length, count, `${id} breaks only between complete sentences`);
-    for (const [, en, pt] of sentences) {
-      assert.match(en, /[.!?]$/);
-      assert.match(pt, /[.!?]$/);
-    }
-    assert.ok(heading.includes(`aria-label="${sentences.map(([, en]) => en).join(" ")}"`));
-    assert.ok(
-      heading.includes(`data-copy-label-pt="${sentences.map(([, , pt]) => pt).join(" ")}"`),
-    );
+test("the built examples contain exactly one product and one localized sentence each", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const rows = descendants(ast).filter((node) => attrs(node)["data-example-row"]);
+  assert.equal(rows.length, 7);
+  for (const [index, row] of rows.entries()) {
+    assert.equal(attrs(row)["data-card-side"], index % 2 ? "right" : "left");
+    const nodes = descendants(row);
+    assert.equal(nodes.filter((node) => attrs(node).class === "example-card").length, 1);
+    assert.equal(nodes.filter((node) => attrs(node).class === "example-sentence").length, 1);
+    assert.equal(nodes.filter((node) => attrs(node)["data-product-kind"]).length, 1);
+    assert.equal(nodes.filter((node) => node.name === "a").length, 0);
   }
-  assert.deepEqual(multiSentence, [
-    "remember-title",
-    "understand-title",
-    "restart-title",
-    "faq-title",
-  ]);
+  const cards = descendants(ast).filter((node) => attrs(node)["data-product-kind"]);
+  const kinds = cards.map((node) => attrs(node)["data-product-kind"]);
+  assert.equal(new Set(kinds).size, kinds.length);
 });
 
 test("built product examples carry the localized templates their controls consume", async () => {
@@ -323,18 +269,8 @@ test("built product examples carry the localized templates their controls consum
   const blocks = nodes.filter((node) => attrs(node)["data-example-block"]);
   assert.deepEqual(
     blocks.map((node) => attrs(node)["data-example-block"]),
-    ["habits", "metrics"],
+    ["metrics"],
   );
-  const habits = descendants(blocks[0]);
-  const logs = habits.filter((node) => Object.hasOwn(attrs(node), "data-example-log"));
-  assert.equal(logs.length, 2);
-  for (const button of logs) {
-    for (const name of ["data-log-en", "data-log-pt", "data-undo-en", "data-undo-pt"])
-      assert.ok(attrs(button)[name]);
-  }
-  const count = habits.find((node) => Object.hasOwn(attrs(node), "data-example-count"));
-  assert.equal(attrs(count)["data-template-en"], "{done} of {total} done");
-  assert.equal(attrs(count)["data-template-pt"], "{done} de {total} feitos");
   const breakdowns = nodes.filter((node) =>
     (attrs(node).class ?? "").split(/\s+/).includes("block-breakdown"),
   );

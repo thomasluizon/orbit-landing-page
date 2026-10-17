@@ -28,7 +28,7 @@ function installPostHogStub(): PostHog {
     firstScript.parentNode?.insertBefore(script, firstScript);
     queue.people = [] as unknown as MethodQueue;
     for (const [target, methods] of [
-      [queue, ["capture", "set_config"]],
+      [queue, ["capture", "set_config", "opt_in_capturing", "opt_out_capturing"]],
       [queue.people, ["set", "set_once"]],
     ] as const) {
       for (const method of methods) {
@@ -66,7 +66,12 @@ function startAnalytics() {
 if (analyticsKey) {
   window.addEventListener("orbit:analytics-consent-granted", () => {
     consentGranted = true;
+    if (analyticsStarted) window.posthog?.opt_in_capturing();
     startAnalytics();
+  });
+  window.addEventListener("orbit:analytics-consent-revoked", () => {
+    consentGranted = false;
+    window.posthog?.opt_out_capturing();
   });
   window.addEventListener(
     "load",

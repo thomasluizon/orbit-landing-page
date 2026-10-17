@@ -2,6 +2,7 @@
 import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
+import TrustStrip from "./TrustStrip.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import { Signal, Wifi, BatteryFull } from "@lucide/astro";
@@ -16,7 +17,7 @@ const en = translations.en;
 <section id="hero" class="hero" data-section="hero">
   <div class="hero-copy">
     <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
-    <p class="hero-description" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
+    <p class="hero-description" translate="no" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
   <div class="hero-controls">
     <div class="hero-actions">
@@ -25,7 +26,8 @@ const en = translations.en;
         size="md"
         external
         analyticsEvent="hero_google_play_cta_clicked"
-        analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
+        analyticsSurface="hero"
+        ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
     </div>
   </div>
@@ -45,29 +47,32 @@ const en = translations.en;
             <div class="device-home" aria-hidden="true"></div>
           </div>
         </div>
-        <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
       <div class="hero-products">
         <div class="hero-side hero-left" data-hero-column>
-          <div class="hero-float float-today" data-hero-float>
-            <ProductCard kind="today" />
-          </div>
           <p class="hero-phrase phrase-start" data-hero-float>
             <Copy name="phrase.start" />
           </p>
+          <div class="hero-float float-reminder" data-hero-float>
+            <ProductCard kind="reminder" />
+          </div>
+          <div class="hero-float float-today" data-hero-float>
+            <ProductCard kind="today" />
+          </div>
         </div>
         <div class="hero-side hero-right" data-hero-column>
+          <div class="hero-float float-insight" data-hero-float>
+            <ProductCard kind="insight" />
+          </div>
           <p class="hero-phrase phrase-restart" data-hero-float>
             <Copy name="phrase.restart" />
           </p>
           <div class="hero-float float-week" data-hero-float>
             <ProductCard kind="week" />
           </div>
-          <div class="hero-float float-reminder" data-hero-float>
-            <ProductCard kind="reminder" />
-          </div>
         </div>
       </div>
     </div>
   </div>
+  <TrustStrip />
 </section>

@@ -18,6 +18,8 @@ const attributes = (node) =>
 
 function harness(language = "en", reducedMotion = false) {
   const timers = new Map();
+  const listeners = new Map();
+  let nextTimer = 0;
   const elements = new Map();
   const chips = ["start", "restart", "move"].map((example) => ({
     dataset: { demo: example },
@@ -62,13 +64,19 @@ function harness(language = "en", reducedMotion = false) {
       this.change = callback;
     },
   };
+  const document = {
+    hidden: false,
+    getElementById: (id) => elements.get(id),
+    addEventListener: (name, callback) => listeners.set(name, callback),
+  };
   const context = vm.createContext({
-    document: { getElementById: (id) => elements.get(id) },
+    document,
     window: {
+      addEventListener: (name, callback) => listeners.set(name, callback),
       matchMedia: () => motion,
       setTimeout(callback) {
-        timers.set(timers.size + 1, callback);
-        return timers.size;
+        timers.set(++nextTimer, callback);
+        return nextTimer;
       },
       clearTimeout(id) {
         timers.delete(id);
@@ -88,7 +96,20 @@ function harness(language = "en", reducedMotion = false) {
   vm.runInContext(`(function(exports, require) { ${code} })`, context)({}, (path) =>
     path.endsWith("translations") ? table : { getLang: () => language },
   );
-  return { elements, chips, timers, motion, strings: table.translations[language] };
+  return {
+    elements,
+    chips,
+    timers,
+    motion,
+    document,
+    listeners,
+    strings: table.translations[language],
+    advance() {
+      const [id, callback] = timers.entries().next().value;
+      timers.delete(id);
+      callback();
+    },
+  };
 }
 
 for (const language of ["en", "pt-BR"]) {
@@ -235,4 +256,45 @@ test("approval lands the accepted habit and edited schedule on Today; rejection 
   h.chips[0].listeners.get("click")();
   h.elements.get("demo-reject").listeners.get("click")();
   assert.equal(today.hidden, true);
+});
+
+test("the calm loop approves into Today, resets the proposal and never steals focus", () => {
+  const h = harness();
+  assert.equal(h.elements.get("demo-today").hidden, true);
+  h.advance();
+  assert.equal(h.elements.get("demo-today").hidden, false);
+  assert.equal(h.elements.get("demo-today-habit").textContent, h.strings["demo.start.habit"]);
+  assert.equal(
+    h.chips.some((chip) => chip.focused),
+    false,
+  );
+  assert.equal(h.elements.get("exchange").attributes["aria-live"], "off");
+  h.advance();
+  assert.equal(h.elements.get("demo-today").hidden, true);
+  assert.equal(h.elements.get("demo-preview").hidden, false);
+  h.advance();
+  assert.equal(h.elements.get("demo-response").style.visibility, "visible");
+  h.elements.get("demo-playback").listeners.get("click")();
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.elements.get("demo-playback").attributes["aria-label"], h.strings["demo.resume"]);
+  h.elements.get("demo-playback").listeners.get("click")();
+  assert.equal(h.timers.size, 1);
+  h.elements.get("demo-edit").listeners.get("click")();
+  assert.equal(h.timers.size, 0, "a person's action takes over the loop");
+});
+
+test("the loop stops on hidden pages and reduced motion, and can resume only while visible", () => {
+  const h = harness();
+  h.document.hidden = true;
+  h.listeners.get("visibilitychange")();
+  assert.equal(h.timers.size, 0);
+  h.document.hidden = false;
+  h.listeners.get("visibilitychange")();
+  assert.equal(h.timers.size, 1);
+  h.motion.matches = true;
+  h.motion.change();
+  assert.equal(h.timers.size, 0);
+  assert.equal(h.elements.get("demo-playback").hidden, true);
+  h.listeners.get("pageshow")();
+  assert.equal(h.timers.size, 0);
 });

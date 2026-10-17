@@ -1,5 +1,5 @@
 ---
-import { ArrowUp } from "@lucide/astro";
+import { ArrowUp, Pause, Play } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import PillButton from "./PillButton.astro";
@@ -15,6 +15,17 @@ const en = translations.en;
   <div class="demo-heading">
     <AstraGlyph />
     <h2 id="demo-title" class="t-row" translate="no">Astra</h2>
+    <button
+      id="demo-playback"
+      class="demo-playback"
+      type="button"
+      aria-label={en["demo.pause"]}
+      data-i18n-label="demo.pause"
+      aria-pressed="false"
+    >
+      <Pause size={16} class="demo-pause-icon" aria-hidden="true" />
+      <Play size={16} class="demo-play-icon" aria-hidden="true" />
+    </button>
   </div>
   <div class="demo-thread">
     <div class="demo-exchange" aria-live="polite" aria-atomic="true" aria-busy="false">
@@ -73,14 +84,14 @@ const en = translations.en;
             class="product-caption"
           >
           </p>
-        </div><span class="status-ring" aria-hidden="true"></span>
+        </div><span class="habit-check" aria-hidden="true"><span class="status-ring"></span></span>
       </div>
       <div id="demo-today-second" class="habit-row" hidden>
         <span class="habit-emoji" aria-hidden="true">📖</span><div>
           <p class="habit-name" data-i18n="demo.move.secondHabit">
             {en["demo.move.secondHabit"]}
           </p><p id="demo-today-second-repeat" class="product-caption"></p>
-        </div><span class="status-ring" aria-hidden="true"></span>
+        </div><span class="habit-check" aria-hidden="true"><span class="status-ring"></span></span>
       </div>
     </div>
   </div>
@@ -105,7 +116,7 @@ const en = translations.en;
       }
     </div>
     <a class="demo-composer" href={appUrl}>
-      <span data-i18n="demo.composer">{en["demo.composer"]}</span>
+      <span translate="no" data-i18n="demo.composer">{en["demo.composer"]}</span>
       <span class="demo-send" aria-hidden="true"><ArrowUp size={16} /></span>
     </a>
   </div>

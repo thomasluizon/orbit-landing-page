@@ -5,20 +5,15 @@ import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "today" | "week" | "reminder";
+  kind: "today" | "week" | "reminder" | "insight";
 }
 const { kind } = Astro.props;
 ---
 
-<div class:list={["product-card", `product-${kind}`]} data-mock="true">
+<div class:list={["product-card", `product-${kind}`]} data-mock="true" data-product-kind={kind}>
   {
     kind === "today" && (
       <>
-        <div class="product-top">
-          <>
-            <span translate="no">Orbit</span>
-          </>
-        </div>
         <div class="today-pager">
           <>
             <ChevronLeft size={20} />
@@ -37,7 +32,6 @@ const { kind } = Astro.props;
           </>
         </div>
         <HabitRow habit="walk" timing="morning" />
-        <HabitRow habit="read" />
         <HabitRow habit="water" timing="done" />
       </>
     )
@@ -89,12 +83,24 @@ const { kind } = Astro.props;
             <span class="product-caption">
               <Copy name="product.reminder" />
             </span>
-            <span translate="no">Orbit</span>
           </>
         </div>
         <h3>
           <Copy name="product.ready" />
         </h3>
+      </>
+    )
+  }
+  {
+    kind === "insight" && (
+      <>
+        <div class="product-top">
+          <AstraGlyph />
+          <span translate="no">Astra</span>
+        </div>
+        <p>
+          <Copy name="product.insight" />
+        </p>
       </>
     )
   }

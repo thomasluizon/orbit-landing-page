@@ -1,14 +1,4 @@
-import { getLang } from "./i18n";
-
 const refreshers: (() => void)[] = [];
-
-function localized(element: HTMLElement, key: string) {
-  return element.dataset[`${key}${getLang() === "pt-BR" ? "Pt" : "En"}`] ?? "";
-}
-
-function fill(template: string, values: Record<string, string>) {
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? "");
-}
 
 function bindMetrics(block: HTMLElement) {
   const days = Array.from(block.querySelectorAll<HTMLButtonElement>("[data-metric-day]"));
@@ -65,31 +55,5 @@ function bindMetrics(block: HTMLElement) {
   render(selected);
 }
 
-function bindHabits(block: HTMLElement) {
-  const logs = Array.from(block.querySelectorAll<HTMLButtonElement>("[data-example-log]"));
-  const count = block.querySelector<HTMLElement>("[data-example-count]");
-  const render = () => {
-    for (const button of logs) {
-      const key = button.getAttribute("aria-pressed") === "true" ? "undo" : "log";
-      button.setAttribute("aria-label", localized(button, key));
-    }
-    if (count)
-      count.textContent = fill(localized(count, "template"), {
-        done: String(
-          logs.filter((button) => button.getAttribute("aria-pressed") === "true").length,
-        ),
-        total: String(logs.length),
-      });
-  };
-  for (const button of logs)
-    button.addEventListener("click", () => {
-      button.setAttribute("aria-pressed", String(button.getAttribute("aria-pressed") !== "true"));
-      render();
-    });
-  refreshers.push(render);
-  render();
-}
-
 document.querySelectorAll<HTMLElement>('[data-example-block="metrics"]').forEach(bindMetrics);
-document.querySelectorAll<HTMLElement>('[data-example-block="habits"]').forEach(bindHabits);
 window.addEventListener("orbit:language-changed", () => refreshers.forEach((refresh) => refresh()));

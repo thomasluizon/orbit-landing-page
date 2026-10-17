@@ -6,6 +6,8 @@ interface Props {
 const { name } = Astro.props;
 ---
 
-<span data-copy-en={landingCopy.en[name]} data-copy-pt={landingCopy["pt-BR"][name]}
-  >{landingCopy.en[name]}</span
+<span
+  translate={/\b(?:Orbit|Astra)\b/.test(landingCopy.en[name]) ? "no" : undefined}
+  data-copy-en={landingCopy.en[name]}
+  data-copy-pt={landingCopy["pt-BR"][name]}>{landingCopy.en[name]}</span
 >

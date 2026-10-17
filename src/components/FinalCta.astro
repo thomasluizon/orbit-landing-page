@@ -1,21 +1,66 @@
 ---
 import Copy from "./Copy.astro";
 import PillButton from "./PillButton.astro";
+import orbitMark from "../../public/brand/orbit-mark-16.svg?raw";
 interface Props {
   appUrl: string;
+  googlePlayUrl: string;
 }
-const { appUrl } = Astro.props;
+const { appUrl, googlePlayUrl } = Astro.props;
 ---
 
 <section class="final-section" data-section="final" aria-labelledby="final-title">
   <div class="section-inner">
-    <div class="section-heading">
-      <h2 id="final-title" class="section-title"><Copy name="final.title" /></h2><p
-        class="section-description"
-      >
-        <Copy name="final.body" />
-      </p>
+    <div class="closing-content">
+      <div class="closing-copy">
+        <div class="section-heading">
+          <h2 id="final-title" class="section-title"><Copy name="final.title" /></h2>
+          <p class="section-description"><Copy name="final.body" /></p>
+        </div>
+        <PillButton
+          href={appUrl}
+          size="sm"
+          analyticsEvent="hero_app_cta_clicked"
+          analyticsSurface="footer"><Copy name="action.start" /></PillButton
+        >
+      </div>
+      <a class="footer-qr" href={googlePlayUrl}>
+        <span class="footer-qr-code">
+          <img src="/orbit-install-qr.svg" width="240" height="240" loading="lazy" alt="" />
+          <span class="footer-qr-mark" aria-hidden="true" set:html={orbitMark} />
+        </span>
+        <Copy name="footer.qr" />
+      </a>
     </div>
-    <PillButton href={appUrl} size="sm"><Copy name="action.start" /></PillButton>
+    <footer class="closing-legal">
+      <div class="footer-links">
+        <a href={`${appUrl}/privacy`} class="text-link" data-i18n="footer.privacy">Privacy policy</a
+        >
+        <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">Terms</a>
+        <button
+          type="button"
+          class="text-link cookie-preferences"
+          id="cookie-preferences"
+          aria-controls="consent-banner"><Copy name="footer.cookies" /></button
+        >
+        <a href="https://github.com/thomasluizon/orbit-landing-page" class="text-link"
+          ><Copy name="footer.source" /></a
+        >
+        <a
+          href="#ios"
+          id="ios-trigger"
+          data-ios-trigger
+          class="text-link"
+          aria-haspopup="dialog"
+          aria-controls="ios"
+          data-i18n="hero.ios">iPhone waitlist</a
+        >
+      </div>
+      <p><Copy name="footer.controller" /></p>
+      <p>
+        <a class="text-link" href="mailto:contact@useorbit.org"><Copy name="footer.requests" /></a>
+      </p>
+      <span translate="no">© Orbit</span>
+    </footer>
   </div>
 </section>

@@ -37,7 +37,32 @@ export function mountLandingMotion() {
         },
       });
       columns.forEach((column, index) => {
-        timeline.fromTo(column, { y: 16 }, { y: 0, duration: 1, ease: "none" }, index * 0.08);
+        const cards = column.querySelectorAll<HTMLElement>("[data-hero-float]");
+        timeline.fromTo(
+          cards,
+          { y: 24, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1, ease: "none", stagger: 0.18 },
+          index * 0.08,
+        );
+      });
+    },
+  );
+  media.add(
+    "(prefers-reduced-motion: no-preference) and ((width < 67.5rem) or (height < 46rem))",
+    () => {
+      document.querySelectorAll<HTMLElement>("[data-hero-column]").forEach((column) => {
+        gsap.fromTo(
+          column.querySelectorAll<HTMLElement>("[data-hero-float]"),
+          { y: 24, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.28,
+            stagger: 0.18,
+            ease: "power1.out",
+            scrollTrigger: { trigger: column, start: "top 92%", once: true },
+          },
+        );
       });
     },
   );
