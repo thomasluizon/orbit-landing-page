@@ -327,7 +327,11 @@ test("below 480px the phone, both product cards and reminder form one flowing cl
     assert.ok(cardWidth >= 138);
   }
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
+  assert.match(
+    mobile,
+    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%/,
+  );
+  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*-16px/);
 });
 
 test("the phone footer hides the install QR and shares the 16px content gutter", () => {

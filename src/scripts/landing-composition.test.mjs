@@ -247,7 +247,7 @@ test("feature copy precedes its centered product composition", () => {
   }
 });
 
-test("feature product surfaces sit on the canvas and alternate within a centered 960px stage", () => {
+test("feature product surfaces alternate their overlap inside a centered 680px stage", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const art = css.match(/^\.feature-art\s*\{([^}]+)\}/m)[1];
   assert.doesNotMatch(art, /background|box-shadow|border(?:-radius)?:/);
@@ -258,24 +258,17 @@ test("feature product surfaces sit on the canvas and alternate within a centered
   assert.match(row, /gap:\s*32px/);
   assert.match(
     css,
-    /\.feature-composition\s*\{[^}]*inline-size:\s*min\(680px, 100%\);[^}]*justify-self:\s*start/,
+    /\.feature-composition\s*\{[^}]*inline-size:\s*min\(680px, 100%\);[^}]*justify-self:\s*center/,
   );
-  for (const [section, alignment] of [
-    ["progress", "end"],
-    ["restart", "center"],
-  ]) {
-    assert.match(
-      css,
-      new RegExp(
-        `\\[data-section="${section}"\\] \\.feature-composition\\s*\\{[^}]*justify-self:\\s*${alignment}`,
-      ),
-    );
-  }
+  assert.doesNotMatch(css, /\[data-section="(?:progress|restart)"\] \.feature-composition/);
+  assert.match(css, /\.feature-art-progress \.feature-primary\s*\{[^}]*justify-self:\s*end/);
+  assert.match(css, /\.feature-art-progress \.feature-secondary\s*\{[^}]*justify-self:\s*start/);
   const mobile = css.slice(
     css.indexOf("@media (max-width: 47.999rem)"),
     css.indexOf("@media (max-width: 40rem)"),
   );
-  assert.match(mobile, /\.feature-section \.feature-composition\s*\{[^}]*justify-self:\s*center/);
+  assert.match(mobile, /\.feature-composition\s*\{[^}]*inline-size:\s*100%/);
+  assert.match(mobile, /\.feature-art\s*\{[^}]*max-inline-size:\s*none/);
   assert.match(mobile, /--landing-gutter:\s*16px/);
   assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);
 });
@@ -330,7 +323,7 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
   const panel = css.match(/\.feature-art\s*\{([^}]+)\}/)[1];
   assert.match(panel, /max-inline-size:\s*680px/);
-  assert.match(panel, /padding:\s*48px/);
+  assert.match(panel, /padding:\s*0/);
   assert.doesNotMatch(panel, /(?:min-)?block-size:/);
   const busy = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-busy"),
@@ -338,23 +331,18 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
   assert.match(
     css,
-    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 48px auto;[^}]*inline-size:\s*400px;[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
+    /\.feature-stack\s*\{[^}]*inline-size:\s*calc\(440px \+ 280px - 48px\);[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
   );
-  assert.match(css, /\.feature-primary\s*\{[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(css, /\.feature-primary > \.product-card\s*\{[^}]*padding:\s*16px 16px 48px/);
+  assert.match(css, /\.feature-primary\s*\{[^}]*grid-area:\s*1 \/ 1;[^}]*inline-size:\s*440px/);
   assert.match(
     css,
-    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-row:\s*2 \/ 4;[^}]*justify-self:\s*end;[^}]*inset-inline-end:\s*48px;[^}]*inline-size:\s*240px/,
-  );
-  assert.match(
-    css,
-    /\.progress-reply\s*\{[^}]*justify-self:\s*start;[^}]*inset-inline-start:\s*48px;[^}]*inset-inline-end:\s*auto/,
+    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-area:\s*1 \/ 1;[^}]*justify-self:\s*end;[^}]*inline-size:\s*280px;[^}]*margin-block-start:\s*48px/,
   );
   for (const [selector, size] of [
     ["product-card h3", "lg"],
     ["product-reply", "base"],
     ["proactive-line", "base"],
-    ["product-caption", "sm"],
+    ["product-caption", "xs"],
   ]) {
     assert.match(
       css,
@@ -362,16 +350,12 @@ test("grids, pricing, FAQ and product panels share their container system", () =
     );
   }
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-art\s*\{[^}]*padding:\s*24px/);
+  assert.match(mobile, /\.feature-stack\s*\{[^}]*inline-size:\s*100%/);
   assert.match(
     mobile,
-    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto;[^}]*inline-size:\s*100%/,
+    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%/,
   );
-  assert.match(
-    mobile,
-    /\.feature-secondary\s*\{[^}]*inset-inline-end:\s*-8px;[^}]*inline-size:\s*min\(240px, calc\(100% \+ 16px\)\)/,
-  );
-  assert.match(mobile, /\.progress-reply\s*\{[^}]*inset-inline-start:\s*-8px/);
+  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*-16px/);
   const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
   assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(
@@ -387,6 +371,51 @@ test("grids, pricing, FAQ and product panels share their container system", () =
     assert.equal(attributes(children[0]).class, "feature-primary");
     assert.ok(attributes(children[1]).class.includes("feature-secondary"));
   }
+});
+
+test("feature compositions keep real product dimensions and never shrink their typography", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /\.feature-art \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*8px 16px/,
+  );
+  assert.match(
+    css,
+    /\.feature-art \.habit-emoji\s*\{[^}]*inline-size:\s*46px;[^}]*block-size:\s*46px/,
+  );
+  assert.match(
+    css,
+    /\.feature-art \.status-ring\s*\{[^}]*inline-size:\s*30px;[^}]*block-size:\s*30px/,
+  );
+  assert.match(css, /\.habit-name\s*\{[^}]*font-size:\s*var\(--fs-base\);[^}]*font-weight:\s*500/);
+  assert.match(
+    css,
+    /\.product-card\s*\{[^}]*padding:\s*24px;[^}]*border-radius:\s*var\(--radius-xl\)/,
+  );
+  assert.match(css, /\.progress-reply\s*\{[^}]*padding:\s*24px/);
+  const global = readFileSync("src/styles/global.css", "utf8");
+  const sizes = new Map(
+    [...global.matchAll(/--fs-([\w]+):\s*(\d+)px/g)].map(([, role, size]) => [role, Number(size)]),
+  );
+  for (const [, selector, declarations] of css.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
+    if (
+      !/\.(?:feature-(?:art|composition|stack|primary|secondary)|progress-reply|product-|habit-|status-ring|chart-|week-chart|proactive-line|sample-message)/.test(
+        selector,
+      )
+    )
+      continue;
+    assert.doesNotMatch(declarations, /scale\(|(?<![-\w])scale\s*:/, selector);
+    for (const [, literal, role] of declarations.matchAll(
+      /font-size:\s*(?:(\d+(?:\.\d+)?)px|var\(--fs-([\w]+)\))/g,
+    )) {
+      assert.ok((role ? sizes.get(role) : Number(literal)) >= 12, selector);
+    }
+  }
+  assert.doesNotMatch(
+    css,
+    /\.feature-(?:primary|secondary)[^{]*\{[^}]*(?:padding|inset-inline|max-inline-size:\s*calc\(100vw)/,
+  );
+  assert.doesNotMatch(css, /\.feature-art-busy \.habit-row \.product-caption/);
 });
 
 test("example disclosure belongs once below each composition, outside the product surfaces", async () => {
