@@ -132,7 +132,7 @@ test("the server-rendered hero reserves its pin travel before deferred motion mo
   const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
   assert.match(hero, /class="hero-pin-range">\s*<div class="hero-stage" id="hero-stage">/);
   const range = css.match(
-    /@media \(prefers-reduced-motion: no-preference\) and \(min-width: 56rem\) and \(min-height: 46rem\)\s*\{\s*\.hero-pin-range\s*\{([^}]+)\}/,
+    /@media \(prefers-reduced-motion: no-preference\) and \(min-width: 67\.5rem\) and \(min-height: 46rem\)\s*\{\s*\.hero-pin-range\s*\{([^}]+)\}/,
   );
   assert.ok(range, "static pin reservation uses the same motion and viewport conditions as GSAP");
   const distance = motion.match(/end:\s*"\+=(\d+)"/)[1];
@@ -225,58 +225,64 @@ test("feature and promise icons are bare 24px Tabler outlines without tiles", ()
   assert.doesNotMatch(glyph, /border|background|shadow|padding/);
 });
 
-test("wide hero cards overlap exactly the phone bezel and never the conversation", () => {
-  assert.match(css, /--hero-device-width:\s*360px/);
-  assert.match(css, /--hero-device-bezel:\s*12px/);
-  for (const selector of ["float-today", "phrase-start"]) {
-    assert.match(
-      css,
-      new RegExp(
-        `\\.${selector}\\s*\\{[^}]*inset-inline-end:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 - var\\(--hero-device-bezel\\)\\)`,
-      ),
-    );
+test("hero side columns fit only above their computed 1080px threshold", () => {
+  const wide = css.slice(css.indexOf("@media (min-width: 67.5rem)"));
+  assert.match(wide, /grid-template-columns:\s*296px 360px 296px/);
+  assert.match(wide, /column-gap:\s*32px/);
+  assert.match(wide, /inline-size:\s*min\(1016px, calc\(100% - 64px\)\)/);
+  const widths = [
+    ...wide.match(/grid-template-columns:\s*([\dpx ]+);/)[1].matchAll(/(\d+)px/g),
+  ].map(([, n]) => Number(n));
+  const gap = Number(wide.match(/column-gap:\s*(\d+)px/)[1]);
+  const gutter = Number(wide.match(/calc\(100% - (\d+)px\)/)[1]) / 2;
+  const threshold = widths.reduce((sum, width) => sum + width, 0) + 2 * gap + 2 * gutter;
+  assert.equal(threshold, 1080);
+  for (let viewport = 320; viewport <= 1920; viewport++) {
+    if (viewport >= threshold)
+      assert.ok(widths.reduce((sum, width) => sum + width, 0) + 2 * gap <= viewport - 2 * gutter);
   }
-  for (const selector of ["hero-right", "phrase-restart"]) {
-    assert.match(
-      css,
-      new RegExp(
-        `\\.${selector}\\s*\\{[^}]*inset-inline-start:\\s*calc\\(50% \\+ var\\(--hero-device-width\\) / 2 - var\\(--hero-device-bezel\\)\\)`,
-      ),
-    );
-  }
-  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.match(motion, /x:\s*card\.dataset\.heroSide === "left" \? -48 : 48/);
-  const hero = readFileSync("src/components/Hero.astro", "utf8");
-  assert.equal((hero.match(/data-hero-side="left"/g) ?? []).length, 2);
-  assert.equal((hero.match(/data-hero-side="right"/g) ?? []).length, 3);
-  assert.doesNotMatch(css, /50% \+ 156px/);
-  assert.match(css, /\.hero-float\s*\{[^}]*z-index:\s*3/);
-  assert.match(css, /\.hero-device\s*\{[^}]*z-index:\s*2/);
-  assert.doesNotMatch(css, /--hero-card-gap/);
+  assert.match(wide, /\.hero-phone\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*1/);
+  assert.match(wide, /\.hero-left\s*\{[^}]*grid-column:\s*1/);
+  assert.match(wide, /\.hero-right\s*\{[^}]*grid-column:\s*3/);
+  assert.match(wide, /\.hero-side\s*\{[^}]*gap:\s*32px;[^}]*padding-block-start:\s*48px/);
+  assert.doesNotMatch(
+    css,
+    /\.(?:hero-float|hero-phrase|hero-side|hero-left|hero-right|float-today|float-week|float-reminder|phrase-start|phrase-restart)[^{]*\{[^}]*(?:position:\s*(?:absolute|relative)|inset-|translate:|transform:|margin-block-start:\s*-)/,
+  );
 });
 
-test("compact hero cards overlap only the input area and grow the composition in flow", () => {
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*block-size:\s*auto/);
-  assert.match(mobile, /\.hero-stage\s*\{[^}]*grid-template-rows:\s*auto 32px auto auto/);
-  assert.match(mobile, /\.hero-device\s*\{[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static;[^}]*grid-row:\s*2 \/ 4/);
-  assert.match(mobile, /\.demo-thread\s*\{[^}]*flex:\s*none;[^}]*overflow:\s*visible/);
-  assert.match(css, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
-  assert.match(mobile, /\.float-today,\s*\.hero-phrase\s*\{\s*display:\s*none/);
-  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
-  assert.match(mobile, /\.float-week\s*\{[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2 \/ 4/);
-  assert.match(mobile, /\.hero-right\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
-  assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
-  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
-  assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);
-  assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
-  assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
+test("below the side-column threshold every product follows the centered phone in flow", () => {
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  const base = css.slice(0, css.indexOf("@media (min-width: 67.5rem)"));
+  assert.ok(hero.indexOf('class="hero-phone"') < hero.indexOf('class="hero-products"'));
+  assert.match(
+    base,
+    /\.hero-stage\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*gap:\s*16px/,
+  );
+  assert.match(
+    base,
+    /\.hero-products\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*repeat\(auto-fit, minmax\(min\(100%, 296px\), 1fr\)\);[^}]*gap:\s*16px/,
+  );
+  assert.match(base, /\.hero-side\s*\{[^}]*display:\s*contents/);
+  assert.match(base, /\.hero-phone\s*\{[^}]*inline-size:\s*min\(343px, 100%\)/);
+  assert.match(base, /\.hero-pin-range\s*\{[^}]*inline-size:\s*100%/);
+  assert.match(
+    base,
+    /\.hero-stage\s*\{[^}]*inline-size:\s*min\(var\(--landing-content\), calc\(100% - 32px\)\)/,
+  );
+  for (const width of [320, 375, 412, 768, 1000, 1024, 1079]) {
+    const available = width - 32;
+    const gap = width >= 1024 ? 32 : 16;
+    const columns = available >= 296 * 2 + gap ? 2 : 1;
+    assert.ok((available - gap * (columns - 1)) / columns >= Math.min(296, available));
+    assert.ok(Math.min(343, available) <= available);
+  }
+  assert.match(css, /@media \(min-width: 64rem\)\s*\{[^@]*\.hero-products\s*\{[^}]*gap:\s*32px/);
+  assert.doesNotMatch(base, /\.(?:hero-float|hero-phrase)[^{]*\{[^}]*display:\s*none/);
 });
 
 test("the hero, trust strip and feature heading share the compact reference transition", () => {
-  assert.match(css, /\.hero-stage\s*\{[^}]*padding-block-end:\s*64px/);
+  assert.match(css, /\.hero-stage\s*\{[^}]*padding-block-end:\s*32px/);
   assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
   assert.match(css, /\.trust-content\s*\{[^}]*padding-block:\s*32px/);
   assert.match(css, /\.trust-strip \+ \.section\s*\{[^}]*padding-block-start:\s*96px/);
@@ -285,53 +291,27 @@ test("the hero, trust strip and feature heading share the compact reference tran
   assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px/);
 });
 
-test("below 480px the phone, both product cards and reminder form one flowing cluster", () => {
-  const compact = css.slice(
-    css.indexOf("@media (max-width: 29.999rem)"),
-    css.indexOf("@media (max-width: 23rem)"),
+test("the hero moves whole side columns vertically without reducing any internal clearance", () => {
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  const columns = motion.slice(
+    motion.indexOf("columns.forEach"),
+    motion.indexOf('media.add("(prefers', motion.indexOf("columns.forEach")),
+  );
+  assert.match(motion, /querySelectorAll<HTMLElement>\("\[data-hero-column\]"\)/);
+  assert.match(motion, /min-width: 67.5rem/);
+  assert.match(columns, /\{ y: 16 \}/);
+  assert.match(columns, /\{ y: 0, duration: 1, ease: "none" \}/);
+  assert.doesNotMatch(columns, /\bx(?:Percent)?:|\.heroSide|scale:/);
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  assert.equal((hero.match(/data-hero-column/g) ?? []).length, 2);
+  assert.match(
+    hero,
+    /class="hero-side hero-left" data-hero-column[\s\S]*class="hero-float float-today"[\s\S]*class="hero-phrase phrase-start"/,
   );
   assert.match(
-    compact,
-    /\.hero-stage\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 180px\)\);[^}]*grid-template-rows:\s*auto 24px auto 16px auto auto;[^}]*column-gap:\s*12px;[^}]*padding:\s*0 16px/,
+    hero,
+    /class="hero-side hero-right" data-hero-column[\s\S]*class="hero-phrase phrase-restart"[\s\S]*class="hero-float float-week"[\s\S]*class="hero-float float-reminder"/,
   );
-  assert.match(compact, /\.hero-right\s*\{[^}]*display:\s*contents/);
-  assert.match(compact, /\.hero-device\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(
-    compact,
-    /\.float-today,\s*\.hero-right \.hero-float\s*\{[^}]*position:\s*static;[^}]*display:\s*block;[^}]*inline-size:\s*100%;[^}]*max-inline-size:\s*none/,
-  );
-  assert.match(compact, /\.float-today\s*\{[^}]*grid-column:\s*1;[^}]*grid-row:\s*2 \/ 5/);
-  assert.match(compact, /\.float-week\s*\{[^}]*grid-column:\s*2;[^}]*grid-row:\s*2 \/ 5/);
-  assert.match(
-    compact,
-    /\.hero-right \.float-reminder\s*\{[^}]*z-index:\s*4;[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*4 \/ 6/,
-  );
-  assert.match(
-    compact,
-    /\.hero-phone > \.composition-caption\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*6;[^}]*padding-block-start:\s*12px/,
-  );
-  assert.match(compact, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
-  assert.match(
-    compact,
-    /\.hero-stage \.product-card h3,\s*\.hero-stage \.habit-name,\s*\.hero-stage \.product-caption,\s*\.hero-stage \.chart-day\s*\{[^}]*font-size:\s*var\(--fs-sm\);[^}]*white-space:\s*nowrap/,
-  );
-  assert.match(
-    compact,
-    /\.float-today \.habit-emoji,\s*\.float-today \.product-caption\s*\{[^}]*display:\s*none/,
-  );
-  assert.match(compact, /\.hero-stage \.demo-examples\s*\{\s*display:\s*none/);
-  for (const viewport of [320, 360, 384, 412, 479]) {
-    const cardWidth = Math.min(180, (viewport - 32 - 12) / 2);
-    const clusterWidth = 2 * cardWidth + 12;
-    assert.ok(clusterWidth <= viewport - 32);
-    assert.ok(cardWidth >= 138);
-  }
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(
-    mobile,
-    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%/,
-  );
-  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*-16px/);
 });
 
 test("the phone footer hides the install QR and shares the 16px content gutter", () => {
@@ -394,72 +374,30 @@ test("the wide footer leads with a 240px marked QR while the hero sentence balan
   assert.doesNotMatch(css, /\.hero-description\s*\{[^}]*max-inline-size:\s*29ch/);
 });
 
-test("wide hero side stacks start 48px below the phone and separate the phrase from the chart", () => {
-  for (const selector of ["float-today", "hero-right"]) {
-    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*inset-block-start:\\s*48px`));
-  }
-  const hero = readFileSync("src/components/Hero.astro", "utf8");
-  assert.match(
-    hero,
-    /class="hero-week-stack">\s*<p class="hero-phrase phrase-restart"[\s\S]*class="hero-float float-week"/,
-  );
-  assert.match(css, /\.hero-week-stack\s*\{[^}]*display:\s*grid;[^}]*gap:\s*12px/);
-  assert.match(css, /\.hero-week-stack > \.hero-phrase\s*\{[^}]*position:\s*static/);
+test("pinned content starts 32px below the measured header bottom", () => {
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.match(motion, /document.getElementById\("site-header"\)/);
+  assert.match(motion, /getBoundingClientRect\(\).bottom/);
+  assert.match(motion, /start:\s*\(\) => `top \$\{[^}]*bottom[^}]*\+ 32\}px`/);
 });
 
-test("hero phrases keep intrinsic one-line width without recalculating the stage width inside a card", () => {
+test("hero phrases stay within their reserved column without touching another surface", () => {
   const phrase = css.match(/^\.hero-phrase\s*\{([^}]+)\}/m)[1];
-  assert.doesNotMatch(phrase, /max-inline-size:\s*var\(--hero-card-width\)/);
-  assert.match(phrase, /inline-size:\s*max-content/);
-  assert.match(phrase, /max-inline-size:\s*none/);
-  assert.match(phrase, /flex-shrink:\s*0/);
-  assert.match(phrase, /white-space:\s*nowrap/);
-  assert.match(phrase, /overflow-wrap:\s*normal/);
+  assert.match(phrase, /inline-size:\s*fit-content/);
+  assert.match(phrase, /max-inline-size:\s*100%/);
   assert.match(phrase, /font-size:\s*var\(--fs-sm\)/);
   assert.match(phrase, /padding:\s*12px 16px/);
-  for (const [, declarations] of css.matchAll(/[^{}]*\.hero-phrase[^{}]*\{([^}]+)\}/g)) {
-    assert.doesNotMatch(declarations, /max-inline-size:\s*var\(--hero-card-width\)/);
-    for (const [, value] of declarations.matchAll(/(?<![-\w])inline-size:\s*([^;]+)/g))
-      assert.equal(value.trim(), "max-content");
-    for (const [, value] of declarations.matchAll(/font-size:\s*([^;]+)/g))
-      assert.equal(value.trim(), "var(--fs-sm)");
-    for (const [, value] of declarations.matchAll(/padding:\s*([^;]+)/g))
-      assert.equal(value.trim(), "12px 16px");
-  }
-  assert.match(css, /\.hero-week-stack\s*\{[^}]*grid-template-columns:\s*auto;[^}]*gap:\s*12px/);
+  assert.match(phrase, /overflow-wrap:\s*normal/);
 });
 
-test("the hero reserves side-stack heights and keeps card travel above the trust strip", () => {
-  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  const floatingCards = motion.slice(
-    motion.indexOf("cards.forEach"),
-    motion.indexOf('media.add("(prefers', motion.indexOf("cards.forEach")),
-  );
-  const verticalTravel = [...floatingCards.matchAll(/\by:\s*(-?\d+)/g)].map(([, value]) =>
-    Number(value),
-  );
-  assert.equal(verticalTravel.length, 2);
-  assert.ok(
-    verticalTravel.every((value) => value <= 0),
-    "no card travels below its reserved resting position",
-  );
-  for (const selector of ["float-today", "hero-right"]) {
-    const rule = css.match(new RegExp(`^\\.${selector}\\s*\\{([^}]+)\\}`, "m"))[1];
-    assert.match(rule, /position:\s*relative/);
-    assert.match(rule, /grid-area:\s*1 \/ 1/);
-    assert.match(rule, /align-self:\s*start/);
-    assert.match(rule, /inset-block-start:\s*48px/);
-  }
-  assert.match(css, /\.hero-phone\s*\{[^}]*grid-area:\s*1 \/ 1/);
-  const reserve = Number(css.match(/\.hero-stage\s*\{[^}]*padding-block-end:\s*(\d+)px/)[1]);
-  const heroGap = Number(css.match(/\.hero\s*\{[^}]*padding-block:\s*\d+px (\d+)px/)[1]);
-  assert.ok(reserve >= 48, "the stage includes the side stacks' relative 48px offset");
-  assert.ok(reserve - 48 + heroGap >= 48, "the lowest card clears the trust rule by at least 48px");
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static/);
-  assert.match(mobile, /\.hero-right\s*\{[^}]*justify-self:\s*center/);
-  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
-  assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
+test("the hero reserves every side column and its vertical travel above the trust strip", () => {
+  const stage = css.match(/^\.hero-stage\s*\{([^}]+)\}/m)[1];
+  assert.match(stage, /padding-block-end:\s*32px/);
+  assert.match(stage, /margin-inline:\s*auto/);
+  const wide = css.slice(css.indexOf("@media (min-width: 67.5rem)"));
+  assert.match(wide, /\.hero-side\s*\{[^}]*grid-row:\s*1;[^}]*align-self:\s*start/);
+  assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
+  assert.ok(32 >= 16, "the stage reserves the full 16px vertical column travel");
 });
 
 test("below 768px the 34px hero leads every 28px section heading without word breaks", () => {

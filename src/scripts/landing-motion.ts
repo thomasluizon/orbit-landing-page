@@ -19,15 +19,16 @@ export function mountLandingMotion() {
     return () => lenis.destroy();
   });
   media.add(
-    "(prefers-reduced-motion: no-preference) and (min-width: 56rem) and (min-height: 46rem)",
+    "(prefers-reduced-motion: no-preference) and (min-width: 67.5rem) and (min-height: 46rem)",
     () => {
       const stage = document.getElementById("hero-stage");
       if (!stage) return;
-      const cards = stage.querySelectorAll<HTMLElement>("[data-hero-float]");
+      const header = document.getElementById("site-header");
+      const columns = stage.querySelectorAll<HTMLElement>("[data-hero-column]");
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: stage,
-          start: "top 96px",
+          start: () => `top ${(header?.getBoundingClientRect().bottom ?? 96) + 32}px`,
           end: "+=560",
           pin: true,
           pinSpacing: false,
@@ -35,13 +36,8 @@ export function mountLandingMotion() {
           invalidateOnRefresh: true,
         },
       });
-      cards.forEach((card, index) => {
-        timeline.fromTo(
-          card,
-          { x: card.dataset.heroSide === "left" ? -48 : 48, y: 0 },
-          { x: 0, y: 0, duration: 1, ease: "none" },
-          index * 0.08,
-        );
+      columns.forEach((column, index) => {
+        timeline.fromTo(column, { y: 16 }, { y: 0, duration: 1, ease: "none" }, index * 0.08);
       });
     },
   );

@@ -31,9 +31,6 @@ const en = translations.en;
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
-      <div class="hero-float float-today" data-hero-float data-hero-side="left">
-        <ProductCard kind="today" />
-      </div>
       <div class="hero-phone">
         <div class="hero-device">
           <div class="device-screen">
@@ -50,22 +47,27 @@ const en = translations.en;
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
-      <div class="hero-right">
-        <div class="hero-week-stack">
-          <p class="hero-phrase phrase-restart" data-hero-float data-hero-side="right">
+      <div class="hero-products">
+        <div class="hero-side hero-left" data-hero-column>
+          <div class="hero-float float-today" data-hero-float>
+            <ProductCard kind="today" />
+          </div>
+          <p class="hero-phrase phrase-start" data-hero-float>
+            <Copy name="phrase.start" />
+          </p>
+        </div>
+        <div class="hero-side hero-right" data-hero-column>
+          <p class="hero-phrase phrase-restart" data-hero-float>
             <Copy name="phrase.restart" />
           </p>
-          <div class="hero-float float-week" data-hero-float data-hero-side="right">
+          <div class="hero-float float-week" data-hero-float>
             <ProductCard kind="week" />
           </div>
-        </div>
-        <div class="hero-float float-reminder" data-hero-float data-hero-side="right">
-          <ProductCard kind="reminder" />
+          <div class="hero-float float-reminder" data-hero-float>
+            <ProductCard kind="reminder" />
+          </div>
         </div>
       </div>
-      <p class="hero-phrase phrase-start" data-hero-float data-hero-side="left">
-        <Copy name="phrase.start" />
-      </p>
     </div>
   </div>
 </section>
