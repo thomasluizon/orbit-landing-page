@@ -355,16 +355,24 @@
 }
 .float-today {
   inset-inline-end: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
-  inset-block-start: 128px;
+  inset-block-start: 48px;
 }
 .hero-right {
   position: absolute;
   z-index: 3;
   inset-inline-start: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
-  inset-block-start: 128px;
+  inset-block-start: 48px;
   display: grid;
   gap: 64px;
   inline-size: var(--hero-card-width);
+}
+.hero-week-stack {
+  display: grid;
+  gap: 12px;
+}
+.hero-week-stack > .hero-phrase {
+  position: static;
+  justify-self: start;
 }
 .hero-right .hero-float {
   position: relative;
@@ -1166,6 +1174,9 @@
     grid-template-rows: auto 32px auto auto;
     min-block-size: 0;
     align-items: start;
+  }
+  .hero-week-stack {
+    display: contents;
   }
   .hero-phone {
     display: contents;

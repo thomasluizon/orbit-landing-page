@@ -51,8 +51,13 @@ const en = translations.en;
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
       <div class="hero-right">
-        <div class="hero-float float-week" data-hero-float data-hero-side="right">
-          <ProductCard kind="week" />
+        <div class="hero-week-stack">
+          <p class="hero-phrase phrase-restart" data-hero-float data-hero-side="right">
+            <Copy name="phrase.restart" />
+          </p>
+          <div class="hero-float float-week" data-hero-float data-hero-side="right">
+            <ProductCard kind="week" />
+          </div>
         </div>
         <div class="hero-float float-reminder" data-hero-float data-hero-side="right">
           <ProductCard kind="reminder" />
@@ -60,9 +65,6 @@ const en = translations.en;
       </div>
       <p class="hero-phrase phrase-start" data-hero-float data-hero-side="left">
         <Copy name="phrase.start" />
-      </p>
-      <p class="hero-phrase phrase-restart" data-hero-float data-hero-side="right">
-        <Copy name="phrase.restart" />
       </p>
     </div>
   </div>

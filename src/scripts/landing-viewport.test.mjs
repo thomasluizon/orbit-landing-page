@@ -372,3 +372,16 @@ test("the wide footer leads with a 240px marked QR while the hero sentence balan
   );
   assert.doesNotMatch(css, /\.hero-description\s*\{[^}]*max-inline-size:\s*29ch/);
 });
+
+test("wide hero side stacks start 48px below the phone and separate the phrase from the chart", () => {
+  for (const selector of ["float-today", "hero-right"]) {
+    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*inset-block-start:\\s*48px`));
+  }
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  assert.match(
+    hero,
+    /class="hero-week-stack">\s*<p class="hero-phrase phrase-restart"[\s\S]*class="hero-float float-week"/,
+  );
+  assert.match(css, /\.hero-week-stack\s*\{[^}]*display:\s*grid;[^}]*gap:\s*12px/);
+  assert.match(css, /\.hero-week-stack > \.hero-phrase\s*\{[^}]*position:\s*static/);
+});
