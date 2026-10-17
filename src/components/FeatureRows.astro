@@ -1,0 +1,58 @@
+---
+import Copy from "./Copy.astro";
+import ProductCard from "./ProductCard.astro";
+import PillButton from "./PillButton.astro";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
+---
+
+<section class="section" data-section="details" aria-labelledby="remember-title">
+  <div class="section-inner">
+    <div class="feature-row">
+      <div class="feature-art">
+        <ProductCard kind="today" /><div data-reveal><ProductCard kind="reminder" /></div>
+      </div>
+      <div class="feature-copy">
+        <h2 id="remember-title" class="section-title"><Copy name="remember.title" /></h2><p
+          class="section-description"
+        >
+          <Copy name="remember.body" />
+        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section" data-section="progress" aria-labelledby="understand-title">
+  <div class="section-inner">
+    <div class="feature-row reverse">
+      <div class="feature-art">
+        <ProductCard kind="week" /><p class="sample-message" data-reveal>
+          <Copy name="product.batch" />
+        </p>
+      </div>
+      <div class="feature-copy">
+        <h2 id="understand-title" class="section-title"><Copy name="understand.title" /></h2><p
+          class="section-description"
+        >
+          <Copy name="understand.body" />
+        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section" data-section="restart" aria-labelledby="restart-title">
+  <div class="section-inner">
+    <div class="feature-row">
+      <div class="feature-art"><ProductCard kind="restart" /></div>
+      <div class="feature-copy">
+        <h2 id="restart-title" class="section-title"><Copy name="restart.title" /></h2><p
+          class="section-description"
+        >
+          <Copy name="restart.body" />
+        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+      </div>
+    </div>
+  </div>
+</section>
