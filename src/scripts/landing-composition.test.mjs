@@ -9,7 +9,6 @@ const componentNames = [
   "Hero",
   "AstraDemo",
   "TrustStrip",
-  "Connect",
   "Features",
   "FeatureRows",
   "Security",
@@ -44,7 +43,6 @@ test("the owning page follows Pierre's section order with Orbit product composit
     [
       "hero",
       "trust",
-      "connect",
       "features",
       "details",
       "progress",
@@ -57,6 +55,7 @@ test("the owning page follows Pierre's section order with Orbit product composit
     ],
   );
   assert.equal(nodes.filter((node) => node.name === "h1").length, 1);
+  assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
 });
 
 test("each section has at most one filled accent action, including the expanded Astra demo", () => {
@@ -126,4 +125,17 @@ test("feature copy precedes its centered product composition", () => {
       ["feature-copy", "feature-art"],
     );
   }
+});
+
+test("How it works lands on the feature grid at the retained 96px offset", async () => {
+  const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
+  assert.ok(descendants(header).some((node) => attributes(node).href === "#features"));
+  assert.equal(attributes(sections[2]).id, "features");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /scroll-margin-block-start:\s*96px/);
+  assert.match(css, /\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*80px/);
+  assert.match(
+    css,
+    /@media \(max-width: 47\.999rem\)[\s\S]*\.trust-strip \+ \.section\s*\{\s*padding-block-start:\s*64px/,
+  );
 });

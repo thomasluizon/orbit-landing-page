@@ -467,6 +467,9 @@
 .section {
   padding-block: 64px;
 }
+.trust-strip + .section {
+  padding-block-start: 80px;
+}
 .section-inner {
   display: grid;
   gap: 32px;
@@ -528,18 +531,6 @@
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
   color: var(--color-fg-2);
-}
-.connect-composition {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: center;
-}
-.connect-composition > .sample-message {
-  justify-self: stretch;
-}
-.connect-composition > .product-card {
-  inline-size: 100%;
 }
 .feature-grid,
 .security-grid {
@@ -884,20 +875,6 @@
   .trust-content {
     gap: 24px;
   }
-  .connect-composition {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    gap: 32px;
-  }
-  .connect-composition > .product-card {
-    max-inline-size: 440px;
-  }
-  .connect-composition > .sample-message {
-    justify-self: center;
-  }
-  .connect-composition > .product-reminder {
-    max-inline-size: 320px;
-  }
   .feature-card {
     padding: 24px;
   }
@@ -918,6 +895,11 @@
   }
   .plan-card {
     padding: 24px;
+  }
+}
+@media (max-width: 47.999rem) {
+  .trust-strip + .section {
+    padding-block-start: 64px;
   }
 }
 @media (max-width: 40rem) {

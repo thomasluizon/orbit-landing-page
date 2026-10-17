@@ -79,7 +79,6 @@ test("the built homepage follows the scrolling Astra composition with the origin
     [
       "hero",
       "trust",
-      "connect",
       "features",
       "details",
       "progress",

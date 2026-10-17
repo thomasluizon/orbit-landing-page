@@ -194,9 +194,6 @@ const landingEn = {
   "product.progressRequest": "How is my week going?",
   "phrase.start": "“I want to start walking.”",
   "phrase.restart": "“I missed a day.”",
-  "connect.title": "You tell Astra. She puts it in your day.",
-  "connect.body":
-    "A conversation becomes a habit, with a schedule you approve. Open Orbit to see what is next.",
   "features.title": "What Astra does for you",
   "features.body": "Start with what is on your mind. Leave the setup to her.",
   "features.start.title": "A place to start",
@@ -298,9 +295,6 @@ const landingPt: Record<LandingKey, string> = {
   "product.progressRequest": "Como está minha semana?",
   "phrase.start": "“Quero começar a caminhar.”",
   "phrase.restart": "“Perdi um dia.”",
-  "connect.title": "Você conta à Astra. Ela coloca no seu dia.",
-  "connect.body":
-    "Uma conversa vira um hábito, com os horários que você aprovar. Abra o Orbit para ver o que fazer agora.",
   "features.title": "O que a Astra faz por você",
   "features.body": "Comece pelo que você tem em mente. Deixe a organização com ela.",
   "features.start.title": "Um jeito de começar",
