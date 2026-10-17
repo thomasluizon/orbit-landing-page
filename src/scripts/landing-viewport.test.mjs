@@ -278,7 +278,7 @@ test("compact hero cards overlap only the input area and grow the composition in
 test("the hero, trust strip and feature heading share the compact reference transition", () => {
   assert.match(css, /\.hero-stage\s*\{[^}]*padding-block-end:\s*64px/);
   assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px 96px/);
-  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*24px 16px/);
+  assert.match(css, /\.trust-content\s*\{[^}]*padding-block:\s*32px/);
   assert.match(css, /\.trust-strip \+ \.section\s*\{[^}]*padding-block-start:\s*96px/);
   assert.match(css, /#features \.section-heading\s*\{[^}]*gap:\s*16px/);
   assert.match(css, /\.section-title\s*\{[^}]*font-size:\s*var\(--fs-4xl\)/);

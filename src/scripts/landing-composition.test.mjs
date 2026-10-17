@@ -137,18 +137,30 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   assert.equal(trust.filter((node) => node.name === "dt").length, 3);
   assert.equal(trust.filter((node) => node.name === "dd").length, 3);
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*24px 16px/);
+  assert.match(css, /\.trust-strip\s*\{[^}]*padding-inline:\s*var\(--landing-gutter\)/);
   const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
   assert.equal(rules.length, 1, "all viewports keep the same three-column layout");
   assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(rules[0][1], /gap:\s*8px/);
   assert.match(
     css,
-    /\.trust-fact dt\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-xl\)/,
+    /\.trust-fact dt\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-2xl\)/,
   );
-  assert.match(css, /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
+  assert.match(
+    css,
+    /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\);[^}]*color:\s*var\(--color-fg-3\)/,
+  );
+  assert.match(rules[0][1], /inline-size:\s*min\(var\(--landing-content\), 100%\)/);
+  assert.match(rules[0][1], /padding-block:\s*32px/);
+  assert.match(
+    rules[0][1],
+    /inset 0 1px 0 var\(--color-hairline\),\s*inset 0 -1px 0 var\(--color-hairline\)/,
+  );
+  assert.doesNotMatch(css.match(/\.trust-strip\s*\{([^}]+)\}/)[1], /shadow|border/);
+  const narrow = css.slice(css.indexOf("@media (max-width: 24.999rem)"));
+  assert.match(narrow, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
+  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-xl\)/);
   const copy = readFileSync("src/i18n/translations.ts", "utf8");
   for (const key of ["trust.free.title", "trust.approval.title", "hero.platforms"]) {
     const values = [

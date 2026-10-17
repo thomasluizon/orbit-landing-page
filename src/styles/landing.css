@@ -607,19 +607,20 @@
   color: var(--color-fg-2);
 }
 .trust-strip {
-  padding: 24px 16px;
-  box-shadow:
-    inset 0 1px 0 var(--color-hairline),
-    inset 0 -1px 0 var(--color-hairline);
+  padding-inline: var(--landing-gutter);
 }
 .trust-content {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: start;
   gap: 8px;
-  inline-size: min(var(--landing-narrow), 100%);
+  inline-size: min(var(--landing-content), 100%);
+  padding-block: 32px;
   margin-inline: auto;
   text-align: center;
+  box-shadow:
+    inset 0 1px 0 var(--color-hairline),
+    inset 0 -1px 0 var(--color-hairline);
 }
 .trust-fact {
   display: grid;
@@ -627,7 +628,7 @@
 }
 .trust-fact dt {
   font-family: var(--font-display);
-  font-size: var(--fs-xl);
+  font-size: var(--fs-2xl);
   font-weight: 500;
   line-height: var(--lh-row);
   white-space: nowrap;
@@ -635,7 +636,7 @@
 .trust-fact dd {
   font-size: var(--fs-xs);
   line-height: var(--lh-body);
-  color: var(--color-fg-2);
+  color: var(--color-fg-3);
 }
 .feature-grid,
 .security-grid {
@@ -1096,7 +1097,7 @@
     padding-block-start: 64px;
   }
   .trust-fact dt {
-    font-size: var(--fs-lg);
+    font-size: var(--fs-xl);
   }
   .faq-list summary {
     font-size: var(--fs-lg);
@@ -1375,6 +1376,11 @@
   }
   .feature-secondary {
     max-inline-size: calc(100vw - 64px);
+  }
+}
+@media (max-width: 24.999rem) {
+  .trust-fact dt {
+    font-size: var(--fs-lg);
   }
 }
 @media (max-width: 23rem) {
