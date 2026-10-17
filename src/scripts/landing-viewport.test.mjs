@@ -265,3 +265,18 @@ test("the phone footer hides the install QR and shares the 16px content gutter",
   const footer = readFileSync("src/components/Footer.astro", "utf8");
   assert.match(footer, /href=\{appUrl\}[\s\S]*data-i18n="hero.web"/);
 });
+
+test("FAQ questions stay prominent and the chevron aligns with the first wrapped line", () => {
+  const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
+  assert.match(summary, /font-size:\s*var\(--fs-xl\)/);
+  assert.match(summary, /padding:\s*24px/);
+  assert.match(summary, /align-items:\s*start/);
+  assert.match(summary, /line-height:\s*var\(--lh-row\)/);
+  assert.match(
+    css,
+    /\.faq-list summary svg\s*\{[^}]*margin-block-start:\s*calc\(\(1lh - 20px\) \/ 2\)/,
+  );
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
+  assert.doesNotMatch(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
+});
