@@ -3,7 +3,7 @@ export type Language = (typeof LANGUAGES)[number];
 
 const en = {
   "hero.title": "Astra helps you find your way back to a routine.",
-  "hero.platforms": "Android, web",
+  "hero.platforms": "App, web",
   "hero.ios": "iPhone waitlist",
   "ios.close": "Close waitlist",
   "demo.choose": "Try a request",
@@ -86,7 +86,7 @@ export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
   "hero.title": "A Astra ajuda você a retomar sua rotina.",
-  "hero.platforms": "Android, web",
+  "hero.platforms": "App, web",
   "hero.ios": "Lista de espera do iPhone",
   "ios.close": "Fechar lista",
   "demo.choose": "Experimente um pedido",
@@ -170,9 +170,9 @@ export const translations: Record<Language, Record<TranslationKey, string>> = { 
 const landingEn = {
   "nav.features": "How it works",
   "nav.pricing": "Plans",
-  "trust.free.title": "Start free",
+  "trust.free.title": "Free",
   "trust.free.caption": "More with Pro",
-  "trust.approval.title": "You approve",
+  "trust.approval.title": "Your call",
   "trust.approval.caption": "Astra's changes",
   "trust.platforms.caption": "iPhone waitlist open",
   "trust.free": "Start with Free",
@@ -273,9 +273,9 @@ export type LandingKey = keyof typeof landingEn;
 const landingPt: Record<LandingKey, string> = {
   "nav.features": "Como funciona",
   "nav.pricing": "Planos",
-  "trust.free.title": "Plano grátis",
+  "trust.free.title": "Grátis",
   "trust.free.caption": "Mais com o Pro",
-  "trust.approval.title": "Você aprova",
+  "trust.approval.title": "Seu aval",
   "trust.approval.caption": "Mudanças da Astra",
   "trust.platforms.caption": "Lista do iPhone aberta",
   "trust.free": "Comece no Free",

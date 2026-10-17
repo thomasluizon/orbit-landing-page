@@ -123,9 +123,13 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   assert.equal(rules.length, 1, "all viewports keep the same three-column layout");
   assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(rules[0][1], /gap:\s*8px/);
+  assert.match(
+    css,
+    /\.trust-fact dt\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-xl\)/,
+  );
+  assert.match(css, /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
-  assert.match(mobile, /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
+  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
   const copy = readFileSync("src/i18n/translations.ts", "utf8");
   for (const key of ["trust.free.title", "trust.approval.title", "hero.platforms"]) {
     const values = [

@@ -628,7 +628,7 @@
   white-space: nowrap;
 }
 .trust-fact dd {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-xs);
   line-height: var(--lh-body);
   color: var(--color-fg-2);
 }
@@ -1101,10 +1101,7 @@
     --landing-section-gap: 96px;
   }
   .trust-fact dt {
-    font-size: var(--fs-sm);
-  }
-  .trust-fact dd {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-lg);
   }
   .faq-list summary {
     font-size: var(--fs-lg);
