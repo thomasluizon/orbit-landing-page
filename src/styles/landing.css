@@ -1116,6 +1116,15 @@
     grid-column: 3;
   }
 }
+@media (width < 67.5rem) {
+  .landing-shell {
+    padding-block-start: 24px;
+  }
+  .site-header {
+    position: static;
+    padding-inline: var(--landing-gutter);
+  }
+}
 @media (max-width: 56rem) {
   .hero {
     padding-block-start: 96px;
@@ -1147,6 +1156,7 @@
   .landing-shell {
     --landing-gutter: 16px;
     --landing-section-gap: 96px;
+    padding-block-start: 16px;
   }
   .hero-copy {
     gap: 24px;
@@ -1177,6 +1187,7 @@
   }
   .feature-stack {
     inline-size: 100%;
+    gap: 16px;
   }
   .feature-primary,
   .feature-secondary {
@@ -1184,7 +1195,7 @@
     inline-size: 100%;
   }
   .feature-secondary {
-    margin-block-start: -16px;
+    margin-block-start: 0;
   }
   .promise-card {
     padding: 24px;

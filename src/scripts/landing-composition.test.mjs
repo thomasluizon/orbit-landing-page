@@ -500,7 +500,7 @@ test("grids, pricing, FAQ and product panels share their container system", () =
     mobile,
     /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%/,
   );
-  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*-16px/);
+  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*0/);
   const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
   assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(

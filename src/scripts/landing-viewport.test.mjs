@@ -428,3 +428,46 @@ test("below 768px the 34px hero leads every 28px section heading without word br
   assert.match(global, /\.t-hero\s*\{[^}]*font-family:\s*var\(--font-display\)/);
   assert.match(global, /--font-display:\s*var\(--font-space-grotesk\)/);
 });
+
+test("the narrow header scrolls in flow and every mobile section shares the 16px gutter", () => {
+  const flow = css.slice(
+    css.indexOf("@media (width < 67.5rem)"),
+    css.indexOf("@media (max-width: 56rem)"),
+  );
+  assert.match(
+    flow,
+    /\.site-header\s*\{[^}]*position:\s*static;[^}]*padding-inline:\s*var\(--landing-gutter\)/,
+  );
+  const mobile = css.slice(
+    css.indexOf("@media (max-width: 47.999rem)"),
+    css.indexOf("@media (max-width: 40rem)"),
+  );
+  assert.match(mobile, /\.landing-shell\s*\{[^}]*--landing-gutter:\s*16px/);
+  assert.match(mobile, /\.feature-stack\s*\{[^}]*gap:\s*16px/);
+  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*0/);
+  assert.doesNotMatch(mobile, /margin[^:]*:\s*-|grid-row:\s*\d+ \/ \d+/);
+  assert.match(
+    css,
+    /\.section-inner\s*\{[^}]*inline-size:\s*min\(var\(--landing-content\), calc\(100% - 2 \* var\(--landing-gutter\)\)\)/,
+  );
+  assert.match(css, /\.trust-strip\s*\{[^}]*padding-inline:\s*var\(--landing-gutter\)/);
+  const row = css.slice(css.indexOf("@media (max-width: 40rem)"));
+  assert.match(
+    row,
+    /\.feature-grid,\s*\.security-grid,\s*\.pricing-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/,
+  );
+  const tables = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    { exports: tables },
+  );
+  for (const locale of ["en", "pt-BR"]) {
+    for (const width of [320, 375, 412]) {
+      assert.ok(tables.translations[locale]["hero.title"]);
+      assert.equal(width - 2 * 16, { 320: 288, 375: 343, 412: 380 }[width]);
+      assert.ok(Math.min(343, width - 32) <= 343);
+    }
+  }
+});
