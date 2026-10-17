@@ -3,6 +3,7 @@ import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 import ProductCard from "./ProductCard.astro";
 import PillButton from "./PillButton.astro";
+import AstraGlyph from "./AstraGlyph.astro";
 interface Props {
   appUrl: string;
 }
@@ -42,9 +43,13 @@ const { appUrl } = Astro.props;
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-progress">
-          <ProductCard kind="week" /><p class="sample-message" data-reveal>
+          <p class="sample-message">
             <Copy name="product.progressRequest" />
           </p>
+          <div class="progress-reply" data-reveal>
+            <AstraGlyph /><p><Copy name="product.progressReply" /></p>
+          </div>
+          <ProductCard kind="week" />
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>
       </div>

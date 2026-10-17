@@ -246,3 +246,19 @@ test("each week bar and its localized weekday share one of seven equal columns",
   assert.match(css, /\.chart-day\s*\{[^}]*font-size:\s*var\(--fs-xs\);[^}]*text-align:\s*center/);
   assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
 });
+
+test("the week composition answers the person's request with Astra's line then her chart", () => {
+  const composition = descendants(components.get("FeatureRows")).find((node) =>
+    attributes(node).class?.includes("feature-art-progress"),
+  );
+  const children = composition.children.filter((node) => node.name);
+  assert.equal(attributes(children[0]).class, "sample-message");
+  assert.equal(attributes(children[1]).class, "progress-reply");
+  assert.ok(descendants(children[1]).some((node) => node.name === "AstraGlyph"));
+  assert.ok(
+    descendants(children[1]).some((node) => attributes(node).name === "product.progressReply"),
+  );
+  assert.equal(attributes(children[2]).kind, "week");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
+});
