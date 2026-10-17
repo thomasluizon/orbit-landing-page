@@ -1,0 +1,76 @@
+---
+import { Check } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import PillButton from "./PillButton.astro";
+import { formatPrice } from "../config/pricing";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
+---
+
+<section id="pricing" class="section" data-section="pricing" aria-labelledby="pricing-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2><p
+        class="section-description"
+      >
+        <Copy name="pricing.body" />
+      </p>
+    </div>
+    <div class="pricing-grid">
+      <article class="plan-card">
+        <div class="plan-name"><h3 translate="no">Free</h3></div>
+        <p class="plan-description"><Copy name="pricing.free.body" /></p>
+        <p class="plan-price">
+          <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
+        </p>
+        <p class="plan-annual"><Copy name="trust.free" /></p>
+        <ul>
+          {
+            (["pricing.free.astra", "pricing.habits", "pricing.review"] as const).map((name) => (
+              <li>
+                <>
+                  <Check size={16} />
+                  <Copy name={name} />
+                </>
+              </li>
+            ))
+          }
+        </ul>
+        <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
+      </article>
+      <article class="plan-card plan-pro">
+        <div class="plan-name">
+          <h3 translate="no">Pro</h3><span class="plan-badge"
+            ><Copy name="pricing.recommended" /></span>
+        </div>
+        <p class="plan-description"><Copy name="pricing.pro.body" /></p>
+        <p class="plan-price">
+          <span class="price-value" data-price="monthly">{formatPrice("en", "monthly")}</span><span
+            class="plan-period"><Copy name="pricing.month" /></span>
+        </p>
+        <p class="plan-annual">
+          <Copy name="pricing.or" />
+          <span data-price="yearly">{formatPrice("en", "yearly")}</span>
+          <Copy name="pricing.year" />
+        </p>
+        <ul>
+          {
+            (["pricing.pro.astra", "pricing.pro.adjust", "pricing.pro.calendar"] as const).map(
+              (name) => (
+                <li>
+                  <>
+                    <Check size={16} />
+                    <Copy name={name} />
+                  </>
+                </li>
+              ),
+            )
+          }
+        </ul>
+        <PillButton href={`${appUrl}/upgrade`}><Copy name="action.start" /></PillButton>
+      </article>
+    </div>
+  </div>
+</section>
