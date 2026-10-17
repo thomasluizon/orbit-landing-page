@@ -215,7 +215,7 @@ test("feature and promise icons are bare 24px Tabler outlines without tiles", ()
   assert.match(icon, /stroke-width="1.5"/);
   assert.match(icon, /fill="none"/);
   assert.match(icon, /aria-hidden="true"/);
-  for (const name of ["Features", "Security"]) {
+  for (const name of ["Security"]) {
     const source = readFileSync(`src/components/${name}.astro`, "utf8");
     assert.doesNotMatch(source, /@lucide|class="(?:feature|promise)-icon"/);
     assert.match(source, /<OutlineIcon name=\{icon\}/);

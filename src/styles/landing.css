@@ -663,9 +663,46 @@
   align-content: start;
   justify-items: start;
   gap: 24px;
-  padding: 32px;
   border-radius: var(--radius-xl);
   box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+.feature-card {
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  padding: 24px;
+}
+.promise-card {
+  padding: 32px;
+}
+.feature-vignette {
+  display: grid;
+  align-content: center;
+  inline-size: 100%;
+  min-block-size: 120px;
+  pointer-events: none;
+}
+.vignette-start,
+.vignette-restart {
+  display: grid;
+  gap: 12px;
+}
+.vignette-habits {
+  display: grid;
+  gap: 8px;
+}
+.vignette-astra {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  color: var(--color-fg-2);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+}
+.vignette-astra svg {
+  flex-shrink: 0;
+}
+.feature-vignette .product-reminder h3 {
+  font-size: var(--fs-base);
 }
 .card-icon {
   color: var(--color-fg-2);
@@ -675,7 +712,7 @@
   display: grid;
   gap: 12px;
 }
-.feature-card h3,
+.feature-card-copy h3,
 .promise-copy h3 {
   font-family: var(--font-display);
   font-size: var(--fs-3xl);
@@ -686,7 +723,7 @@
   word-break: normal;
   text-wrap: balance;
 }
-.feature-card p,
+.feature-card-copy p,
 .promise-copy p {
   max-inline-size: 45ch;
   font-size: var(--fs-base);
@@ -799,17 +836,20 @@
 .feature-art-busy .today-pager {
   padding-block: 0;
 }
-.feature-art .habit-row {
+.feature-art .habit-row,
+.feature-vignette .habit-row {
   gap: 12px;
   min-block-size: 68px;
   padding: 8px 16px;
 }
-.feature-art .habit-emoji {
+.feature-art .habit-emoji,
+.feature-vignette .habit-emoji {
   inline-size: 46px;
   block-size: 46px;
   font-size: var(--fs-xl);
 }
-.feature-art .status-ring {
+.feature-art .status-ring,
+.feature-vignette .status-ring {
   inline-size: 30px;
   block-size: 30px;
 }
@@ -1185,11 +1225,10 @@
   .feature-secondary {
     margin-block-start: -16px;
   }
-  .feature-card,
   .promise-card {
     padding: 24px;
   }
-  .feature-card h3,
+  .feature-card-copy h3,
   .promise-copy h3 {
     font-size: var(--fs-2xl);
   }

@@ -1,0 +1,47 @@
+---
+import AstraGlyph from "./AstraGlyph.astro";
+import Copy from "./Copy.astro";
+import HabitRow from "./HabitRow.astro";
+import ProductCard from "./ProductCard.astro";
+import { translations } from "../i18n/translations";
+interface Props {
+  kind: "start" | "remember" | "act" | "restart";
+}
+const { kind } = Astro.props;
+---
+
+<div class="feature-vignette" aria-hidden="true" data-mock="true">
+  {
+    kind === "start" && (
+      <div class="vignette-start">
+        <div class="vignette-astra">
+          <AstraGlyph />
+          <p data-i18n="demo.start.reply">{translations.en["demo.start.reply"]}</p>
+        </div>
+        <HabitRow habit="walk" timing="morning" />
+      </div>
+    )
+  }
+  {kind === "remember" && <ProductCard kind="reminder" />}
+  {
+    kind === "act" && (
+      <div class="vignette-habits">
+        <HabitRow habit="walk" />
+        <HabitRow habit="read" />
+      </div>
+    )
+  }
+  {
+    kind === "restart" && (
+      <div class="vignette-restart">
+        <p class="sample-message">
+          <Copy name="phrase.restart" />
+        </p>
+        <div class="vignette-astra">
+          <AstraGlyph />
+          <p data-i18n="demo.restart.reply">{translations.en["demo.restart.reply"]}</p>
+        </div>
+      </div>
+    )
+  }
+</div>

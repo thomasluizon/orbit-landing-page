@@ -1,7 +1,8 @@
 ---
-import { Bell, Check, ChevronLeft, ChevronRight, ArrowUpRight } from "@lucide/astro";
+import { Bell, ChevronLeft, ChevronRight, ArrowUpRight } from "@lucide/astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
+import HabitRow from "./HabitRow.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
   kind: "today" | "week" | "reminder" | "restart" | "walk";
@@ -36,64 +37,9 @@ const { kind, compact = false } = Astro.props;
             </p>
           </>
         </div>
-        <div class="habit-row">
-          <>
-            <span class="habit-emoji" aria-hidden="true">
-              🚶
-            </span>
-            <div>
-              <>
-                <p class="habit-name">
-                  <Copy name="product.walk" />
-                </p>
-                <p class="product-caption">
-                  <Copy name="product.morning" />
-                </p>
-              </>
-            </div>
-            <span class="status-ring" aria-hidden="true" />
-          </>
-        </div>
-        <div class="habit-row">
-          <>
-            <span class="habit-emoji" aria-hidden="true">
-              📖
-            </span>
-            <div>
-              <>
-                <p class="habit-name">
-                  <Copy name="product.read" />
-                </p>
-                <p class="product-caption">
-                  <Copy name="product.evening" />
-                </p>
-              </>
-            </div>
-            <span class="status-ring" aria-hidden="true" />
-          </>
-        </div>
-        {!compact && (
-          <div class="habit-row">
-            <>
-              <span class="habit-emoji" aria-hidden="true">
-                💧
-              </span>
-              <div>
-                <>
-                  <p class="habit-name">
-                    <Copy name="product.water" />
-                  </p>
-                  <p class="product-caption">
-                    <Copy name="product.done" />
-                  </p>
-                </>
-              </div>
-              <span class="status-ring is-done" aria-hidden="true">
-                <Check size={16} />
-              </span>
-            </>
-          </div>
-        )}
+        <HabitRow habit="walk" timing="morning" />
+        <HabitRow habit="read" />
+        {!compact && <HabitRow habit="water" timing="done" />}
       </>
     )
   }
@@ -171,26 +117,5 @@ const { kind, compact = false } = Astro.props;
       </>
     )
   }
-  {
-    kind === "walk" && (
-      <div class="habit-row">
-        <>
-          <span class="habit-emoji" aria-hidden="true">
-            🚶
-          </span>
-          <div>
-            <>
-              <p class="habit-name">
-                <Copy name="product.walk" />
-              </p>
-              <p class="product-caption">
-                <Copy name="product.evening" />
-              </p>
-            </>
-          </div>
-          <span class="status-ring" aria-hidden="true" />
-        </>
-      </div>
-    )
-  }
+  {kind === "walk" && <HabitRow habit="walk" />}
 </div>

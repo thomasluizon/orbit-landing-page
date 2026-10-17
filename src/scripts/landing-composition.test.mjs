@@ -377,15 +377,15 @@ test("feature compositions keep real product dimensions and never shrink their t
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(
     css,
-    /\.feature-art \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*8px 16px/,
+    /\.feature-art \.habit-row,\s*\.feature-vignette \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*8px 16px/,
   );
   assert.match(
     css,
-    /\.feature-art \.habit-emoji\s*\{[^}]*inline-size:\s*46px;[^}]*block-size:\s*46px/,
+    /\.feature-art \.habit-emoji,\s*\.feature-vignette \.habit-emoji\s*\{[^}]*inline-size:\s*46px;[^}]*block-size:\s*46px/,
   );
   assert.match(
     css,
-    /\.feature-art \.status-ring\s*\{[^}]*inline-size:\s*30px;[^}]*block-size:\s*30px/,
+    /\.feature-art \.status-ring,\s*\.feature-vignette \.status-ring\s*\{[^}]*inline-size:\s*30px;[^}]*block-size:\s*30px/,
   );
   assert.match(css, /\.habit-name\s*\{[^}]*font-size:\s*var\(--fs-base\);[^}]*font-weight:\s*500/);
   assert.match(
@@ -399,7 +399,7 @@ test("feature compositions keep real product dimensions and never shrink their t
   );
   for (const [, selector, declarations] of css.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
     if (
-      !/\.(?:feature-(?:art|composition|stack|primary|secondary)|progress-reply|product-|habit-|status-ring|chart-|week-chart|proactive-line|sample-message)/.test(
+      !/\.(?:feature-(?:art|composition|stack|primary|secondary|vignette)|vignette-|progress-reply|product-|habit-|status-ring|chart-|week-chart|proactive-line|sample-message)/.test(
         selector,
       )
     )
@@ -484,23 +484,26 @@ test("the compact week composition pairs Astra's line with one chart", () => {
   assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
 });
 
-test("feature and promise grids share an icon-above-copy anatomy and content-sized cards", () => {
+test("feature and promise grids keep their title and body roles above content-sized cards", () => {
   for (const name of ["Features", "Security"]) {
     const card = descendants(components.get(name)).find((node) => node.name === "article");
-    const icon = descendants(card).find((node) => node.name === "OutlineIcon");
-    assert.ok(icon, `${name} uses a Tabler outline`);
     const copy = descendants(card).find((node) => attributes(node).class?.endsWith("-copy"));
     assert.ok(descendants(copy).some((node) => node.name === "h3"));
     assert.ok(descendants(copy).some((node) => node.name === "p"));
   }
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.feature-card,\s*\.promise-card\s*\{[^}]*gap:\s*24px;[^}]*padding:\s*32px/);
+  assert.match(css, /\.feature-card,\s*\.promise-card\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.feature-card\s*\{[^}]*padding:\s*24px/);
+  assert.match(css, /\.promise-card\s*\{[^}]*padding:\s*32px/);
   assert.match(css, /\.feature-card-copy,\s*\.promise-copy\s*\{[^}]*gap:\s*12px/);
   assert.match(
     css,
-    /\.feature-card h3,\s*\.promise-copy h3\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-3xl\);[^}]*font-weight:\s*500/,
+    /\.feature-card-copy h3,\s*\.promise-copy h3\s*\{[^}]*font-family:\s*var\(--font-display\);[^}]*font-size:\s*var\(--fs-3xl\);[^}]*font-weight:\s*500/,
   );
-  assert.match(css, /\.feature-card p,\s*\.promise-copy p\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(
+    css,
+    /\.feature-card-copy p,\s*\.promise-copy p\s*\{[^}]*font-size:\s*var\(--fs-base\)/,
+  );
   assert.doesNotMatch(
     css,
     /\.(?:feature|promise)-card\s*\{[^}]*(?:min-block-size|grid-template-columns):/,
@@ -509,15 +512,56 @@ test("feature and promise grids share an icon-above-copy anatomy and content-siz
     css.indexOf("@media (max-width: 47.999rem)"),
     css.indexOf("@media (max-width: 40rem)"),
   );
-  assert.match(mobile, /\.feature-card,\s*\.promise-card\s*\{[^}]*padding:\s*24px/);
+  assert.match(mobile, /\.promise-card\s*\{[^}]*padding:\s*24px/);
   assert.match(
     mobile,
-    /\.feature-card h3,\s*\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/,
+    /\.feature-card-copy h3,\s*\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/,
   );
   assert.match(
     mobile,
     /\.feature-grid,\s*\.security-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);[^}]*gap:\s*16px/,
   );
+});
+
+test("each feature grid card introduces its promise with a decorative product vignette", async () => {
+  const card = descendants(components.get("Features")).find((node) => node.name === "article");
+  const children = card.children.filter((node) => node.name);
+  assert.equal(children[0].name, "FeatureVignette");
+  assert.equal(attributes(children[0]).kind, "key");
+  assert.equal(attributes(children[1]).class, "feature-card-copy");
+  const source = readFileSync("src/components/FeatureVignette.astro", "utf8");
+  const vignette = descendants((await parse(source)).ast);
+  const root = vignette.find((node) => attributes(node).class === "feature-vignette");
+  assert.equal(attributes(root)["aria-hidden"], "true");
+  for (const node of descendants(root)) {
+    assert.ok(
+      !["a", "button", "input", "select", "textarea", "summary", "PillButton"].includes(node.name),
+    );
+    assert.ok(!Object.hasOwn(attributes(node), "tabindex"));
+  }
+  assert.match(
+    source,
+    /kind === "start"[\s\S]*data-i18n="demo.start.reply"[\s\S]*<HabitRow habit="walk" timing="morning"/,
+  );
+  assert.match(source, /kind === "remember" && <ProductCard kind="reminder"/);
+  assert.match(source, /kind === "act"[\s\S]*<HabitRow habit="walk"[\s\S]*<HabitRow habit="read"/);
+  assert.match(
+    source,
+    /kind === "restart"[\s\S]*name="phrase.restart"[\s\S]*data-i18n="demo.restart.reply"/,
+  );
+  const row = descendants((await parse(readFileSync("src/components/HabitRow.astro", "utf8"))).ast);
+  assert.ok(row.some((node) => attributes(node).class === "habit-row"));
+  assert.ok(row.some((node) => attributes(node).class === "habit-emoji"));
+  assert.ok(row.some((node) => attributes(node).class === "habit-name"));
+  assert.ok(row.some((node) => attributes(node).class === "product-caption"));
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /\.feature-vignette\s*\{[^}]*min-block-size:\s*120px;[^}]*pointer-events:\s*none/,
+  );
+  assert.match(css, /\.vignette-astra\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
+  assert.match(css, /\.feature-card\s*\{[^}]*grid-template-rows:\s*subgrid/);
+  assert.doesNotMatch(css, /\.feature-card (?:h3|p)\s*[,\{]/);
 });
 
 test("feature demonstrations use compact rhythm and trim only their primary product content", () => {
@@ -532,7 +576,7 @@ test("feature demonstrations use compact rhythm and trim only their primary prod
   assert.equal((source.match(/class="section feature-section"/g) ?? []).length, 3);
   assert.match(source, /kind="today" compact/);
   const product = readFileSync("src/components/ProductCard.astro", "utf8");
-  assert.match(product, /!compact && \(\s*<div class="habit-row"/);
+  assert.match(product, /!compact && <HabitRow habit="water" timing="done"/);
   assert.doesNotMatch(css.match(/\.feature-art\s*\{([^}]+)\}/)[1], /min-|block-size/);
 });
 

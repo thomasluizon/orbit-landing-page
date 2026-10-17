@@ -1,0 +1,21 @@
+---
+import { Check } from "@lucide/astro";
+import Copy from "./Copy.astro";
+interface Props {
+  habit: "walk" | "read" | "water";
+  timing?: "morning" | "evening" | "done";
+}
+const { habit, timing = "evening" } = Astro.props;
+const emoji = { walk: "🚶", read: "📖", water: "💧" };
+---
+
+<div class="habit-row">
+  <span class="habit-emoji" aria-hidden="true">{emoji[habit]}</span>
+  <div>
+    <p class="habit-name"><Copy name={`product.${habit}`} /></p>
+    <p class="product-caption"><Copy name={`product.${timing}`} /></p>
+  </div>
+  <span class:list={["status-ring", { "is-done": timing === "done" }]} aria-hidden="true">
+    {timing === "done" && <Check size={16} />}
+  </span>
+</div>

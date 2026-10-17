@@ -1,12 +1,7 @@
 ---
-import OutlineIcon from "./OutlineIcon.astro";
+import FeatureVignette from "./FeatureVignette.astro";
 import Copy from "./Copy.astro";
-const features = [
-  { key: "start", icon: "message-circle" },
-  { key: "remember", icon: "bell" },
-  { key: "act", icon: "list-check" },
-  { key: "restart", icon: "restore" },
-] as const;
+const features = ["start", "remember", "act", "restart"] as const;
 ---
 
 <section id="features" class="section" data-section="features" aria-labelledby="features-title">
@@ -17,9 +12,9 @@ const features = [
     </div>
     <div class="feature-grid">
       {
-        features.map(({ key, icon }) => (
+        features.map((key) => (
           <article class="feature-card">
-            <OutlineIcon name={icon} />
+            <FeatureVignette kind={key} />
             <div class="feature-card-copy">
               <h3>
                 <Copy name={`features.${key}.title`} />
