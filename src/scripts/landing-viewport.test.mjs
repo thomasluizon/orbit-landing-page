@@ -817,3 +817,25 @@ test("the seven metric bar columns never wrap or exceed their block at 320px", (
   }
   assert.match(css, /\.metric-bar-track\s*\{[^}]*block-size:\s*128px;[^}]*min-inline-size:\s*0/);
 });
+
+test("each metric day target fills its whole column, as the app BarChart does", () => {
+  const row = css.match(/^\.metric-bars\s*\{([^}]+)\}/m)[1];
+  assert.match(
+    row,
+    /(?:^|;|\s)gap:\s*0;/,
+    "adjacent day targets share an edge, with no dead gap between them",
+  );
+  const track = css.match(/^\.metric-bar-track\s*\{([^}]+)\}/m)[1];
+  assert.match(
+    track,
+    /padding-inline:\s*4px/,
+    "the visible bars keep their 8px visual gap inside the full-column targets",
+  );
+  const button = css.match(/^button\.metric-bar-track\s*\{([^}]+)\}/m)[1];
+  assert.doesNotMatch(
+    button,
+    /padding(?:-inline)?:\s*0(?:\s|;)/,
+    "the button keeps the track's inline inset",
+  );
+  assert.match(css, /button\.metric-bar-track:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
+});

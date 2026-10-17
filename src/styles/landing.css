@@ -1365,7 +1365,7 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   align-items: end;
-  gap: 8px;
+  gap: 0;
   padding-block-start: 96px;
   margin: 0;
   padding-inline: 0;
@@ -1379,10 +1379,11 @@
   justify-content: center;
   block-size: 128px;
   min-inline-size: 0;
+  padding-inline: 4px;
 }
 button.metric-bar-track {
   min-inline-size: 0;
-  padding: 0 4px;
+  padding-block: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -1390,7 +1391,7 @@ button.metric-bar-track {
 }
 button.metric-bar-track:focus-visible {
   outline: 2px solid var(--color-fg-1);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .metric-bar {
   inline-size: 100%;
