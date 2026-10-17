@@ -3,6 +3,7 @@ import githubIcon from "../assets/github.svg?raw";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
+import orbitMark from "../../public/brand/orbit-mark-16.svg?raw";
 interface Props {
   appUrl: string;
   googlePlayUrl: string;
@@ -44,9 +45,10 @@ const en = translations.en;
         </div>
       </div>
       <a class="footer-qr" href={googlePlayUrl}
-        ><img src="/orbit-install-qr.svg" width="128" height="128" loading="lazy" alt="" /><Copy
-          name="footer.qr"
-        /></a
+        ><span class="footer-qr-code">
+          <img src="/orbit-install-qr.svg" width="240" height="240" loading="lazy" alt="" />
+          <span class="footer-qr-mark" aria-hidden="true" set:html={orbitMark} />
+        </span><Copy name="footer.qr" /></a
       >
     </div>
     <div class="footer-bottom">

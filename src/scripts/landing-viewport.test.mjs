@@ -280,3 +280,23 @@ test("FAQ questions stay prominent and the chevron aligns with the first wrapped
   assert.match(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
   assert.doesNotMatch(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
 });
+
+test("the wide footer leads with a 240px marked QR while the hero sentence balances at 520px", () => {
+  const footer = readFileSync("src/components/Footer.astro", "utf8");
+  assert.match(footer, /class="footer-qr-code"/);
+  assert.match(footer, /src="\/orbit-install-qr.svg" width="240" height="240"/);
+  assert.match(footer, /class="footer-qr-mark"[^>]*aria-hidden="true"[^>]*set:html=\{orbitMark\}/);
+  assert.match(css, /\.footer-qr\s*\{[^}]*gap:\s*12px;[^}]*font-size:\s*var\(--fs-sm\)/);
+  assert.match(css, /\.footer-qr-code\s*\{[^}]*inline-size:\s*240px;[^}]*block-size:\s*240px/);
+  assert.match(
+    css,
+    /\.footer-qr-mark\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px;[^}]*background:\s*var\(--color-bg\)/,
+  );
+  assert.match(css, /\.footer-content\s*\{[^}]*align-items:\s*start/);
+  assert.doesNotMatch(css, /\.footer-qr\s*\{[^}]*padding:\s*8px/);
+  assert.match(
+    css,
+    /\.hero-description\s*\{[^}]*max-inline-size:\s*520px;[^}]*font-size:\s*var\(--fs-md\);[^}]*text-wrap:\s*balance/,
+  );
+  assert.doesNotMatch(css, /\.hero-description\s*\{[^}]*max-inline-size:\s*29ch/);
+});
