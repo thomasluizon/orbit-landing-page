@@ -1,8 +1,6 @@
 ---
-import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
-import PillButton from "./PillButton.astro";
 import {
   exampleWeek,
   exampleDays,
@@ -14,9 +12,8 @@ interface Props {
   kind: "metrics" | "habits" | "breakdown" | "goal";
   interactive?: boolean;
   embedded?: boolean;
-  assistant?: boolean;
 }
-const { kind, interactive = false, embedded = false, assistant = true } = Astro.props;
+const { kind, interactive = false, embedded = false } = Astro.props;
 const dateKeys = exampleWeek.map((_, index) => `blocks.metrics.date${index}` as LandingKey);
 const completion = Math.round(
   exampleWeek.reduce((sum, value) => sum + value, 0) / exampleWeek.length,
@@ -30,41 +27,10 @@ function doneLabel(language: Language, index: number) {
 ---
 
 <div class="astra-product" data-mock="true">
-  {
-    assistant && kind !== "goal" && (
-      <div class="vignette-astra">
-        <AstraGlyph size={16} />
-        <p>
-          <Copy
-            name={
-              kind === "metrics"
-                ? "product.progressReply"
-                : kind === "breakdown"
-                  ? "blocks.breakdown.reply"
-                  : "product.proactive"
-            }
-          />
-        </p>
-      </div>
-    )
-  }
   <div
     class:list={["product-block", `block-${kind}`]}
     data-example-block={interactive ? kind : undefined}
     data-embedded={embedded || undefined}
-    data-state={kind === "breakdown" ? "proposed" : undefined}
-    data-approved-en={interactive && kind === "breakdown"
-      ? landingCopy.en["blocks.breakdown.approved"]
-      : undefined}
-    data-approved-pt={interactive && kind === "breakdown"
-      ? landingCopy["pt-BR"]["blocks.breakdown.approved"]
-      : undefined}
-    data-rejected-en={interactive && kind === "breakdown"
-      ? landingCopy.en["blocks.breakdown.rejected"]
-      : undefined}
-    data-rejected-pt={interactive && kind === "breakdown"
-      ? landingCopy["pt-BR"]["blocks.breakdown.rejected"]
-      : undefined}
   >
     {
       kind === "metrics" && (
@@ -190,94 +156,23 @@ function doneLabel(language: Language, index: number) {
           <h3>
             <Copy name="blocks.breakdown.title" />
           </h3>
-          <div class="breakdown-proposal" data-breakdown-proposal>
+          <div class="breakdown-proposal">
             <p class="product-caption" data-i18n="demo.proposed">
               {translations.en["demo.proposed"]}
             </p>
             <div class="breakdown-list">
               {exampleBreakdown.map(({ habit, cadence }) => (
-                <div
-                  class="breakdown-row"
-                  data-frequency
-                  data-cadence={cadence}
-                  data-initial-cadence={cadence}
-                  data-daily-en={interactive ? landingCopy.en["blocks.breakdown.daily"] : undefined}
-                  data-daily-pt={
-                    interactive ? landingCopy["pt-BR"]["blocks.breakdown.daily"] : undefined
-                  }
-                  data-weekly-en={
-                    interactive ? landingCopy.en["blocks.breakdown.weekly"] : undefined
-                  }
-                  data-weekly-pt={
-                    interactive ? landingCopy["pt-BR"]["blocks.breakdown.weekly"] : undefined
-                  }
-                  role={interactive ? "group" : undefined}
-                  aria-label={interactive ? landingCopy.en[`blocks.breakdown.${habit}`] : undefined}
-                  data-copy-label-en={
-                    interactive ? landingCopy.en[`blocks.breakdown.${habit}`] : undefined
-                  }
-                  data-copy-label-pt={
-                    interactive ? landingCopy["pt-BR"][`blocks.breakdown.${habit}`] : undefined
-                  }
-                >
+                <div class="breakdown-row">
                   <span class="habit-name">
                     <Copy name={`blocks.breakdown.${habit}`} />
                   </span>
-                  {interactive ? (
-                    <PillButton variant="ghost" size="sm" class="frequency-control">
-                      <Copy name={`blocks.breakdown.${cadence}`} />
-                    </PillButton>
-                  ) : (
-                    <span class="product-caption">
-                      <Copy name={`blocks.breakdown.${cadence}`} />
-                    </span>
-                  )}
+                  <span class="product-caption">
+                    <Copy name={`blocks.breakdown.${cadence}`} />
+                  </span>
                 </div>
               ))}
             </div>
-            {interactive && (
-              <div class="block-actions">
-                <PillButton variant="ghost" size="sm" class="breakdown-reject">
-                  <span data-i18n="demo.reject">{translations.en["demo.reject"]}</span>
-                </PillButton>
-                <PillButton variant="ghost" size="sm" class="breakdown-edit">
-                  <span data-i18n="demo.edit">{translations.en["demo.edit"]}</span>
-                </PillButton>
-                <PillButton size="sm" class="breakdown-approve">
-                  <span data-i18n="demo.approve">{translations.en["demo.approve"]}</span>
-                </PillButton>
-              </div>
-            )}
           </div>
-          {interactive && (
-            <>
-              <p
-                class="product-caption"
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-                data-breakdown-status
-              />
-              <div class="block-habit-list" data-breakdown-result hidden>
-                {exampleBreakdown.map(({ habit, cadence }, index) => (
-                  <div class="breakdown-row">
-                    <div>
-                      <p class="habit-name">
-                        <Copy name={`blocks.breakdown.${habit}`} />
-                      </p>
-                      <p class="product-caption" data-result-frequency={index}>
-                        <Copy name={`blocks.breakdown.${cadence}`} />
-                      </p>
-                    </div>
-                    <span class="status-ring" aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
-              <PillButton variant="ghost" size="sm" class="breakdown-reset">
-                <Copy name="blocks.reset" />
-              </PillButton>
-            </>
-          )}
         </>
       )
     }

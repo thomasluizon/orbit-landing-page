@@ -402,10 +402,7 @@ test("below 768px the 34px hero leads every 28px section heading without word br
     mobile,
     /\.hero \.t-hero\s*\{[^}]*overflow-wrap:\s*normal;[^}]*word-break:\s*normal/,
   );
-  assert.match(
-    mobile,
-    /\.section-title,\s*\.feature-copy \.section-title\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/,
-  );
+  assert.match(mobile, /\.section-title\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/);
   assert.match(mobile, /\.hero-copy\s*\{[^}]*gap:\s*24px;[^}]*padding-inline:\s*16px/);
   const narrower = css.slice(css.indexOf("@media (max-width: 40rem)"));
   assert.doesNotMatch(narrower, /\.(?:t-hero|section-title)\s*\{[^}]*font-size:/);
@@ -433,7 +430,6 @@ test("the narrow header scrolls in flow and every mobile section shares the 16px
   );
   assert.match(mobile, /\.landing-shell\s*\{[^}]*--landing-gutter:\s*16px/);
   assert.match(mobile, /\.feature-stack\s*\{[^}]*gap:\s*16px/);
-  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*0/);
   assert.doesNotMatch(mobile, /margin[^:]*:\s*-|grid-row:\s*\d+ \/ \d+/);
   assert.match(
     css,
@@ -661,8 +657,8 @@ test("every inline Astra glyph keeps its asset viewBox and the native 16px drawi
     const viewBox = symbol.attributes.find((a) => a.name === "viewBox");
     assert.equal(viewBox.kind, "expression");
   }
-  const blocks = readFileSync("src/components/AstraBlock.astro", "utf8");
-  assert.match(blocks, /<AstraGlyph size=\{16\}/);
+  const demo = readFileSync("src/components/AstraDemo.astro", "utf8");
+  assert.match(demo, /<AstraGlyph/);
 });
 
 test("Orbit marks retain the canonical full asset frames", () => {
@@ -798,4 +794,26 @@ test("the composer and send control use the same screen scale as the other mock 
   assert.match(send, /inline-size:\s*calc\(32 \* var\(--mock-unit\)\)/);
   assert.match(send, /block-size:\s*calc\(32 \* var\(--mock-unit\)\)/);
   assert.match(css, /\.demo-send svg\s*\{[^}]*inline-size:\s*calc\(16 \* var\(--mock-unit\)\)/);
+});
+
+test("the seven metric bar columns never wrap or exceed their block at 320px", () => {
+  const rows = [...css.matchAll(/\.metric-bars(?:\[[^\]]+\])?\s*\{([^}]+)\}/g)];
+  assert.ok(rows.length);
+  for (const [, declarations] of rows) {
+    assert.match(
+      declarations,
+      /grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/,
+      "every metric row override must retain seven shrinkable columns",
+    );
+    assert.doesNotMatch(declarations, /flex-wrap:\s*wrap/);
+  }
+  const targets = [...css.matchAll(/(?:button)?\.metric-bar-track\s*\{([^}]+)\}/g)];
+  for (const [, declarations] of targets) {
+    assert.doesNotMatch(
+      declarations,
+      /min-(?:inline-size|width):\s*[1-9]\d*px/,
+      "fixed per-bar minimums cannot fit seven targets inside the compact card",
+    );
+  }
+  assert.match(css, /\.metric-bar-track\s*\{[^}]*block-size:\s*128px;[^}]*min-inline-size:\s*0/);
 });

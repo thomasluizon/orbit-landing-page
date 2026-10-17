@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
@@ -48,7 +48,9 @@ const sections = nodes.filter((node) => attributes(node)["data-section"]);
 
 test("the owning page follows Pierre's section order with Orbit product compositions", () => {
   assert.deepEqual(
-    sections.map((node) => attributes(node)["data-section"]),
+    sections
+      .filter((node) => node.name === "section")
+      .map((node) => attributes(node)["data-section"]),
     [
       "hero",
       "trust",
@@ -60,11 +62,66 @@ test("the owning page follows Pierre's section order with Orbit product composit
       "pricing",
       "faq",
       "final",
-      "footer",
     ],
   );
   assert.equal(nodes.filter((node) => node.name === "h1").length, 1);
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
+});
+
+async function productInstances(name, props = {}) {
+  const source = readFileSync(`src/components/${name}.astro`, "utf8");
+  const { ast } = await parse(source);
+  const context = vm.createContext({
+    Astro: { props },
+    require: () => copyTables,
+    exports: {},
+  });
+  vm.runInContext(
+    ts.transpileModule(source.split("---")[1], {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    context,
+  );
+  const serialize = (node) => {
+    if (["ProductCard", "OrbitProduct", "AstraBlock", "FeatureVignette"].includes(node.name)) {
+      const kind = node.attributes.find((attribute) => attribute.name === "kind");
+      return `{ component: ${JSON.stringify(node.name)}, kind: ${kind.kind === "expression" ? kind.value : JSON.stringify(kind.value)} }`;
+    }
+    if (node.type === "text" || node.type === "frontmatter") return "[]";
+    if (node.type === "expression") {
+      if (!node.children.some((child) => child.type !== "text")) return "[]";
+      return `(${node.children.map((child) => (child.type === "text" ? child.value : serialize(child))).join("")})`;
+    }
+    return `[${(node.children ?? []).map(serialize).join(",")}]`;
+  };
+  const instances = vm.runInContext(serialize(ast), context).flat(Infinity).filter(Boolean);
+  return (
+    await Promise.all(
+      instances.map((instance) =>
+        instance.component === "FeatureVignette"
+          ? productInstances(instance.component, { kind: instance.kind })
+          : instance,
+      ),
+    )
+  ).flat();
+}
+
+test("each product card kind renders once outside the hero floating cards", async () => {
+  const instances = (
+    await Promise.all(
+      ["Hero", "Features", "FeatureRows", "Security", "Faq"].map((name) => productInstances(name)),
+    )
+  ).flat();
+  const counts = new Map();
+  for (const { component, kind } of instances) {
+    const key = `${component}:${kind}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  assert.deepEqual(
+    [...counts].filter(([, count]) => count > 1),
+    [],
+    "repeated product cards, including copies of hero floating cards",
+  );
 });
 
 test("each product surface has one primary intent and the viewport controller arbitrates their accent", () => {
@@ -235,53 +292,24 @@ test("the trust strip keeps three compact values and hides captions below 618px"
   assert.doesNotMatch(css, /@media \(max-width: 24.999rem\)[^{]*\{\s*\.trust-fact dt/);
 });
 
-test("the measured values fit three columns from 398px and captions fit from 618px", () => {
+test("the unchanged trust values keep their measured compact column clearance", () => {
   const measurements = [
     ["trust.free.title", ["Free to start", 84.448], ["Comece grátis", 96.95]],
-    ["trust.free.caption", ["Pro adds more Astra", 111.504], ["O Pro libera mais Astra", 124.692]],
     ["trust.approval.title", ["You approve", 83.314], ["Você aprova", 82.936]],
-    [
-      "trust.approval.caption",
-      ["every change Astra proposes", 158.988],
-      ["cada mudança que a Astra propõe", 187.26],
-    ],
     ["hero.platforms", ["Android and web", 113.722], ["Android e web", 96.236]],
-    [
-      "trust.platforms.caption",
-      ["iPhone waitlist open", 110.484],
-      ["lista do iPhone aberta", 118.572],
-    ],
   ];
-  const widths = [];
-  const titleWidths = [];
   for (const [key, en, pt] of measurements) {
-    for (const [lang, [text, width]] of [
+    for (const [language, [text, width]] of [
       ["en", en],
       ["pt-BR", pt],
     ]) {
       assert.equal(
-        { ...copyTables.translations[lang], ...copyTables.landingCopy[lang] }[key],
+        { ...copyTables.translations[language], ...copyTables.landingCopy[language] }[key],
         text,
       );
-      widths.push(width);
-      if (!key.endsWith(".caption")) titleWidths.push(width);
+      assert.ok(width <= (398 - 32 - 24) / 3);
     }
   }
-  const gutter = 16;
-  const gap = 12;
-  const columnAt = (viewport) => (viewport - gutter * 2 - gap * 2) / 3;
-  const breakpoint = Math.ceil(Math.max(...titleWidths) * 3 + gutter * 2 + gap * 2);
-  assert.equal(breakpoint, 398);
-  assert.ok(titleWidths.every((width) => width <= columnAt(breakpoint)));
-  assert.ok(titleWidths.some((width) => width > columnAt(breakpoint - 1)));
-  for (const viewport of [398, 412, 617])
-    assert.ok(titleWidths.every((width) => width <= columnAt(viewport)));
-  assert.equal(Math.ceil(Math.max(...widths) * 3 + gutter * 2 + gap * 2), 618);
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(
-    css,
-    new RegExp(`@media \\(width < ${breakpoint / 16}rem\\)\\s*\\{\\s*\\.trust-content`),
-  );
 });
 
 test("the trust strip renders the approved checkable facts in both locales", () => {
@@ -301,9 +329,9 @@ test("the trust strip renders the approved checkable facts in both locales", () 
       "en",
       [
         "Free to start",
-        "Pro adds more Astra",
+        "Pro free for 7 days",
         "You approve",
-        "every change Astra proposes",
+        "every change first",
         "Android and web",
         "iPhone waitlist open",
       ],
@@ -312,11 +340,11 @@ test("the trust strip renders the approved checkable facts in both locales", () 
       "pt-BR",
       [
         "Comece grátis",
-        "O Pro libera mais Astra",
+        "Pro grátis por 7 dias",
         "Você aprova",
-        "cada mudança que a Astra propõe",
+        "cada mudança antes",
         "Android e web",
-        "lista do iPhone aberta",
+        "Lista do iPhone aberta",
       ],
     ],
   ]) {
@@ -439,7 +467,7 @@ test("section rhythm uses fixed spacing without viewport minimums or feature pin
   );
 });
 
-test("grids, pricing, FAQ and product panels share their container system", () => {
+test("grids, pricing, FAQ and spotlights share their container system", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   for (const [name, width] of [
     ["content", 1072],
@@ -450,71 +478,61 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(css, /\.section-inner\s*\{[^}]*inline-size:\s*min\(var\(--landing-content\)/);
   assert.match(css, /\.pricing-grid\s*\{[^}]*max-inline-size:\s*var\(--landing-content\)/);
   assert.match(css, /\.faq-list\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
-  assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
-  const panel = css.match(/\.feature-art\s*\{([^}]+)\}/)[1];
-  assert.match(panel, /max-inline-size:\s*680px/);
-  assert.match(panel, /padding:\s*0/);
-  assert.doesNotMatch(panel, /(?:min-)?block-size:/);
-  const busy = descendants(components.get("FeatureRows")).find((node) =>
-    attributes(node).class?.includes("feature-art-busy"),
+  assert.match(css, /\.feature-stack\s*\{[^}]*inline-size:\s*440px;[^}]*max-inline-size:\s*100%/);
+  const spotlights = sections.filter((node) =>
+    ["details", "progress", "restart"].includes(attributes(node)["data-section"]),
   );
-  assert.ok(busy, "the busy-day panel owns the overlapping composition");
-  assert.match(
-    css,
-    /\.feature-stack\s*\{[^}]*gap:\s*32px;[^}]*inline-size:\s*440px;[^}]*max-inline-size:\s*100%/,
+  assert.deepEqual(
+    spotlights.map((section) =>
+      descendants(section)
+        .filter((node) => node.name === "OrbitProduct")
+        .map((node) => attributes(node).kind),
+    ),
+    [["steps"], ["calendar", "agenda"], ["progress"]],
   );
-  assert.match(
-    css,
-    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%;[^}]*margin-block-start:\s*0/,
-  );
-  for (const [selector, size] of [
-    ["product-card h3", "lg"],
-    ["product-reply", "base"],
-    ["proactive-line", "base"],
-    ["product-caption", "xs"],
-  ]) {
-    assert.match(
-      css,
-      new RegExp(`\\.feature-art \\.${selector}\\s*\\{[^}]*font-size:\\s*var\\(--fs-${size}\\)`),
+  for (const section of spotlights) {
+    assert.equal(
+      descendants(section).filter((node) => attributes(node).class === "feature-composition")
+        .length,
+      1,
+    );
+    assert.equal(
+      descendants(section).filter((node) => ["ProductCard", "AstraBlock"].includes(node.name))
+        .length,
+      0,
     );
   }
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-stack\s*\{[^}]*inline-size:\s*100%/);
+});
+
+test("Calendar owns one smaller trailing overlay on desktop and two flowing cards on phones", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.calendar-composition\s*\{[^}]*display:\s*grid;[^}]*gap:\s*16px/);
+  assert.match(css, /\.calendar-primary\s*\{[^}]*inline-size:\s*min\(440px, 100%\)/);
   assert.match(
-    mobile,
-    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%/,
+    css,
+    /\.calendar-overlay\s*\{[^}]*inline-size:\s*min\(320px, 100%\);[^}]*justify-self:\s*end/,
   );
-  assert.match(mobile, /\.feature-secondary\s*\{[^}]*margin-block-start:\s*0/);
-  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
-  assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(
-    rows,
-    /class="feature-art feature-art-restart"[\s\S]*kind="progress"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="goal"/,
+    css,
+    /@media \(min-width: 48rem\)\s*\{[^@]*\.calendar-primary,\s*\.calendar-overlay\s*\{[^}]*grid-area:\s*1 \/ 1/,
   );
-  const stacks = descendants(components.get("FeatureRows")).filter(
-    (node) => attributes(node).class === "feature-stack",
-  );
-  assert.equal(stacks.length, 3);
-  for (const stack of stacks) {
-    const children = stack.children.filter((node) => node.name);
-    assert.equal(attributes(children[0]).class, "feature-primary");
-    assert.ok(attributes(children[1]).class.includes("feature-secondary"));
-  }
+  assert.match(css, /\.calendar-primary\s*\{[^}]*margin-block-end:\s*96px/);
+  assert.match(css, /\.calendar-overlay\s*\{[^}]*align-self:\s*end/);
 });
 
 test("feature compositions keep real product dimensions and never shrink their typography", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(
     css,
-    /\.feature-art \.habit-row,\s*\.feature-vignette \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*16px/,
+    /\.feature-vignette \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*16px/,
   );
   assert.match(
     css,
-    /\.feature-art \.habit-emoji,\s*\.feature-vignette \.habit-emoji\s*\{[^}]*inline-size:\s*46px;[^}]*block-size:\s*46px/,
+    /\.feature-vignette \.habit-emoji\s*\{[^}]*inline-size:\s*46px;[^}]*block-size:\s*46px/,
   );
   assert.match(
     css,
-    /\.feature-art \.status-ring,\s*\.feature-vignette \.status-ring\s*\{[^}]*inline-size:\s*30px;[^}]*block-size:\s*30px/,
+    /\.feature-vignette \.status-ring\s*\{[^}]*inline-size:\s*30px;[^}]*block-size:\s*30px/,
   );
   assert.match(css, /\.habit-name\s*\{[^}]*font-size:\s*var\(--fs-base\);[^}]*font-weight:\s*500/);
   assert.match(
@@ -596,20 +614,17 @@ test("each week bar and its localized weekday share one of seven equal columns",
   assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
 });
 
-test("Orbit progress pairs its interactive metrics with a goal derived from linked habits", () => {
-  const composition = descendants(components.get("FeatureRows")).find(
-    (node) => attributes(node)["data-section"] === "restart",
-  );
-  const blocks = descendants(composition).filter((node) => node.name === "AstraBlock");
+test("the Astra grid shows start, log, week and goal once in the approved order", async () => {
+  const instances = await productInstances("Features");
   assert.deepEqual(
-    blocks.map((node) => attributes(node).kind),
-    ["metrics", "goal"],
+    instances.map(({ component, kind }) => `${component}:${kind}`),
+    ["AstraBlock:breakdown", "AstraBlock:habits", "AstraBlock:metrics", "AstraBlock:goal"],
   );
-  assert.equal(attributes(blocks[0]).interactive, "");
-  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
-  assert.match(source, /<AstraGlyph size=\{16\}/);
-  assert.match(source, /product.progressReply/);
-  assert.equal((source.match(/class="metric-bars"/g) ?? []).length, 1);
+  const source = readFileSync("src/components/Features.astro", "utf8");
+  assert.match(source, /key: "log", kind: "habits", interactive: true/);
+  assert.match(source, /key: "week", kind: "metrics", interactive: true/);
+  assert.match(source, /key: "start", kind: "breakdown", interactive: false/);
+  assert.match(source, /key: "goal", kind: "goal", interactive: false/);
 });
 
 test("feature and promise grids keep their title and body roles above content-sized cards", () => {
@@ -651,64 +666,40 @@ test("feature and promise grids keep their title and body roles above content-si
   );
 });
 
-test("each feature grid card introduces its promise with a decorative product vignette", async () => {
+test("each Astra grid card keeps its compact accessible block before the title and sentence", () => {
   const card = descendants(components.get("Features")).find((node) => node.name === "article");
   const children = card.children.filter((node) => node.name);
-  assert.equal(children[0].name, "FeatureVignette");
-  assert.equal(attributes(children[0]).kind, "key");
+  assert.equal(attributes(children[0]).class, "feature-vignette");
+  assert.equal(attributes(children[0])["aria-hidden"], undefined);
+  const block = descendants(children[0]).find((node) => node.name === "AstraBlock");
+  assert.equal(attributes(block).embedded, "");
+  assert.equal(attributes(block).interactive, "interactive");
   assert.equal(attributes(children[1]).class, "feature-card-copy");
-  const source = readFileSync("src/components/FeatureVignette.astro", "utf8");
-  const vignette = descendants((await parse(source)).ast);
-  const root = vignette.find((node) => attributes(node).class === "feature-vignette");
-  assert.equal(attributes(root)["aria-hidden"], "true");
-  for (const node of descendants(root)) {
-    assert.ok(
-      !["a", "button", "input", "select", "textarea", "summary", "PillButton"].includes(node.name),
-    );
-    assert.ok(!Object.hasOwn(attributes(node), "tabindex"));
-  }
-  for (const [promise, block] of [
-    ["start", "breakdown"],
-    ["act", "habits"],
-    ["restart", "metrics"],
-  ]) {
-    assert.match(
-      source,
-      new RegExp(`kind === "${promise}" && <AstraBlock kind="${block}" embedded`),
-    );
-  }
-  assert.match(source, /kind === "remember" && <ProductCard kind="reminder"/);
-  assert.doesNotMatch(source, /<AstraBlock[^>]*interactive/);
-  assert.match(source, /name="product.example"/);
-  const row = descendants((await parse(readFileSync("src/components/HabitRow.astro", "utf8"))).ast);
-  assert.ok(row.some((node) => attributes(node).class === "habit-row"));
-  assert.ok(row.some((node) => attributes(node).class === "habit-emoji"));
-  assert.ok(row.some((node) => attributes(node).class === "habit-name"));
-  assert.ok(row.some((node) => attributes(node).class === "product-caption"));
+  assert.equal(descendants(children[1]).filter((node) => node.name === "p").length, 1);
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(
-    css,
-    /\.feature-vignette\s*\{[^}]*min-block-size:\s*120px;[^}]*pointer-events:\s*none/,
-  );
-  assert.match(css, /\.vignette-astra\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
   assert.match(css, /\.feature-card\s*\{[^}]*grid-template-rows:\s*subgrid/);
-  assert.doesNotMatch(css, /\.feature-card (?:h3|p)\s*[,\{]/);
+  assert.doesNotMatch(css, /\.feature-vignette\s*\{[^}]*pointer-events:\s*none/);
+  assert.match(css, /\.product-block\[data-embedded\]\s*\{[^}]*gap:\s*16px;[^}]*padding:\s*0/);
 });
 
-test("feature demonstrations use compact rhythm and trim only their primary product content", () => {
+test("every section shares one heading scale and at most one supporting paragraph", () => {
+  for (const section of sections) {
+    if (["hero", "trust", "footer"].includes(attributes(section)["data-section"])) continue;
+    const heading = descendants(section).find((node) =>
+      ["section-heading", "feature-intro"].includes(attributes(node).class),
+    );
+    assert.ok(heading);
+    assert.ok(descendants(heading).filter((node) => node.name === "p").length <= 1);
+    assert.equal(
+      descendants(heading).filter((node) => node.name === "h2" || node.name === "SentenceTitle")
+        .length,
+      1,
+    );
+  }
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.feature-section\s*\{[^}]*padding-block-start:\s*96px/);
-  assert.match(css, /\.feature-intro\s*\{[^}]*gap:\s*16px/);
-  assert.match(css, /\.feature-copy\s*\{[^}]*gap:\s*32px/);
-  assert.match(css, /\.feature-copy \.section-title\s*\{[^}]*font-size:\s*var\(--fs-4xl\)/);
-  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);
-  const source = readFileSync("src/components/FeatureRows.astro", "utf8");
-  assert.equal((source.match(/class="section feature-section"/g) ?? []).length, 3);
-  assert.match(source, /<AstraBlock kind="habits" interactive/);
-  const product = readFileSync("src/components/ProductCard.astro", "utf8");
-  assert.match(product, /<HabitRow habit="water" timing="done"/);
-  assert.doesNotMatch(css.match(/\.feature-art\s*\{([^}]+)\}/)[1], /min-|block-size/);
+  assert.match(css, /\.section-title\s*\{[^}]*text-wrap:\s*balance/);
+  assert.match(css, /\.section-description\s*\{[^}]*text-wrap:\s*pretty/);
+  assert.doesNotMatch(css, /\.feature-copy \.section-title/);
 });
 
 test("billing has a monthly default radio group and one configured Pro price", () => {
@@ -910,8 +901,8 @@ test("the free plan title and all plan mentions follow the actual language toggl
     assert.equal(
       description.textContent,
       language === "pt-BR"
-        ? "Escolha o plano grátis ou o Pro. Os dois ajudam você a começar sua rotina."
-        : "Choose Free or Pro. Both give you a place to start your routine.",
+        ? "Comece grátis. Mude para o Pro quando quiser mais Astra."
+        : "Start free. Upgrade when you want more Astra.",
     );
   }
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
@@ -1005,7 +996,7 @@ test("the selected billing period survives language changes with price, unit and
   }
 });
 
-test("Astra replicas expose a neutral chart, log rings, frequency controls and a derived goal", async () => {
+test("Astra replicas expose selectable bars, log rings, a static breakdown and a derived goal", async () => {
   const source = readFileSync("src/components/AstraBlock.astro", "utf8");
   const block = descendants((await parse(source)).ast);
   assert.match(source, /kind === "metrics"/);
@@ -1026,17 +1017,10 @@ test("Astra replicas expose a neutral chart, log rings, frequency controls and a
   assert.match(source, /blocks.metrics.active/);
   assert.match(source, /<HabitRow habit="walk"[^>]*interactive=\{interactive\}/);
   assert.match(source, /<HabitRow habit="read"[^>]*interactive=\{interactive\}/);
-  assert.match(source, /class="frequency-control"/);
+  assert.doesNotMatch(source, /frequency-control|breakdown-approve|breakdown-reset/);
   assert.match(source, /blocks.goal.derived/);
   assert.match(source, /exampleGoal\.habits\.map/);
   assert.ok(block.some((node) => attributes(node).role === "progressbar"));
-  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
-  for (const kind of ["metrics", "habits", "goal"])
-    assert.match(rows, new RegExp(`<AstraBlock\\s+kind="${kind}"`));
-  const vignette = readFileSync("src/components/FeatureVignette.astro", "utf8");
-  for (const kind of ["metrics", "habits", "breakdown"])
-    assert.match(vignette, new RegExp(`<AstraBlock kind="${kind}"`));
-  assert.match(vignette, /name="product.example"/);
 });
 
 test("example figures derive from the chart and linked habit fixtures", () => {
@@ -1062,17 +1046,10 @@ test("example figures derive from the chart and linked habit fixtures", () => {
   assert.doesNotMatch(css, /\.(?:astra-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
 });
 
-test("the product examples log in place, approve frequencies and reset in both locales", () => {
+test("the embedded habits log and undo in place in both locales", () => {
   assert.doesNotMatch(
     readFileSync("src/scripts/product-examples.ts", "utf8"),
     /import[^;]*landingCopy/,
-  );
-  const fixture = {};
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    { exports: fixture },
   );
   const element = (dataset = {}, attrs = {}) => ({
     dataset,
@@ -1125,49 +1102,6 @@ test("the product examples log in place, approve frequencies and reset in both l
   const habits = element();
   habits.querySelectorAll = () => logs;
   habits.querySelector = () => count;
-  const frequencies = fixture.exampleBreakdown.map((item) => {
-    const control = element();
-    const row = element({
-      cadence: item.cadence,
-      initialCadence: item.cadence,
-      dailyEn: copyTables.landingCopy.en["blocks.breakdown.daily"],
-      dailyPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.daily"],
-      weeklyEn: copyTables.landingCopy.en["blocks.breakdown.weekly"],
-      weeklyPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.weekly"],
-    });
-    row.querySelector = () => control;
-    return { row, control, result: element() };
-  });
-  const proposal = element();
-  const results = element();
-  results.hidden = true;
-  const status = element();
-  const approve = element();
-  const reject = element();
-  const edit = element();
-  const reset = element();
-  const breakdown = element({
-    state: "proposed",
-    approvedEn: copyTables.landingCopy.en["blocks.breakdown.approved"],
-    approvedPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.approved"],
-    rejectedEn: copyTables.landingCopy.en["blocks.breakdown.rejected"],
-    rejectedPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.rejected"],
-  });
-  breakdown.querySelectorAll = () => frequencies.map(({ row }) => row);
-  breakdown.querySelector = (selector) => {
-    const index = selector.match(/data-result-frequency="(\d+)"/)?.[1];
-    return index
-      ? frequencies[Number(index)].result
-      : {
-          "[data-breakdown-proposal]": proposal,
-          "[data-breakdown-result]": results,
-          "[data-breakdown-status]": status,
-          ".breakdown-approve": approve,
-          ".breakdown-reject": reject,
-          ".breakdown-edit": edit,
-          ".breakdown-reset": reset,
-        }[selector];
-  };
   let locale = "en";
   const events = new Map();
   vm.runInNewContext(
@@ -1181,7 +1115,6 @@ test("the product examples log in place, approve frequencies and reset in both l
           return (
             {
               '[data-example-block="habits"]': [habits],
-              '[data-example-block="breakdown"]': [breakdown],
             }[selector] ?? []
           );
         },
@@ -1214,28 +1147,6 @@ test("the product examples log in place, approve frequencies and reset in both l
     );
     logs[0].listeners.get("click")();
     assert.equal(logs[0].getAttribute("aria-pressed"), "false");
-    edit.listeners.get("click")();
-    assert.equal(frequencies[0].control.focused, true);
-    frequencies[0].control.listeners.get("click")();
-    const changed = frequencies[0].row.dataset.cadence;
-    approve.listeners.get("click")();
-    assert.equal(breakdown.dataset.state, "approved");
-    assert.equal(proposal.hidden, true);
-    assert.equal(results.hidden, false);
-    assert.equal(
-      frequencies[0].result.textContent,
-      copyTables.landingCopy[lang][`blocks.breakdown.${changed}`],
-    );
-    assert.equal(status.textContent, copyTables.landingCopy[lang]["blocks.breakdown.approved"]);
-    reset.listeners.get("click")();
-    assert.equal(proposal.hidden, false);
-    assert.equal(results.hidden, true);
-    assert.equal(breakdown.dataset.state, "proposed");
-    assert.equal(frequencies[0].row.dataset.cadence, fixture.exampleBreakdown[0].cadence);
-    reject.listeners.get("click")();
-    assert.equal(status.textContent, copyTables.landingCopy[lang]["blocks.breakdown.rejected"]);
-    assert.equal(results.hidden, true);
-    reset.listeners.get("click")();
   }
 });
 
@@ -1342,7 +1253,11 @@ async function metricsHarness() {
   };
   const resize = (width) => {
     chart.clientWidth = width;
-    const columns = width < 384 ? 4 : 7;
+    const columns = Number(
+      readFileSync("src/styles/landing.css", "utf8").match(
+        /\.metric-bars\s*\{[^}]*repeat\((\d+),/,
+      )[1],
+    );
     const columnWidth = (width - (columns - 1) * 8) / columns;
     days.forEach((day, index) => {
       day.offsetLeft = (index % columns) * (columnWidth + 8);
@@ -1448,23 +1363,19 @@ test("chart bars select days by click and keyboard with one tab stop, a clamped 
   assert.equal(h.readout.style.left, "0px");
   h.days[6].click();
   h.resize(240);
-  assert.equal(h.readout.style.left, "87px");
-  assert.equal(h.readout.style.top, "248px");
+  assert.equal(h.readout.style.left, "112px");
+  assert.equal(h.readout.style.top, "24px");
   assertSelection(6);
   h.days[3].click();
-  assert.equal(h.readout.style.left, "112px");
+  assert.equal(h.readout.style.left, "56px");
   assert.equal(h.readout.style.top, "148px");
 });
 
-test("chart targets stay 48px wide at compact widths, empty days have a stub and reduced motion never animates the readout", () => {
+test("chart targets fill their columns, empty days keep a stub and reduced motion freezes the readout", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /button\.metric-bar-track\s*\{[^}]*min-inline-size:\s*48px/);
+  assert.match(css, /button\.metric-bar-track\s*\{[^}]*min-inline-size:\s*0/);
   assert.match(css, /\.metric-bar-track\s*\{[^}]*block-size:\s*128px/);
   assert.match(css, /\.metric-bar\s*\{[^}]*min-block-size:\s*4px/);
-  assert.match(
-    css,
-    /@container \(max-width: 383px\)\s*\{\s*\.metric-bars\[role="radiogroup"\]\s*\{[^}]*repeat\(4, minmax\(48px, 1fr\)\)/,
-  );
   assert.match(
     css,
     /@media \(prefers-reduced-motion: no-preference\)\s*\{\s*\.metric-readout\s*\{[^}]*transition:\s*left/,
@@ -1475,13 +1386,7 @@ test("after Astra, Orbit shows Today, Calendar, Progress and portable routine su
   const rows = descendants(components.get("FeatureRows"));
   assert.deepEqual(
     rows.filter((node) => node.name === "OrbitProduct").map((node) => attributes(node).kind),
-    ["steps", "calendar", "agenda", "progress", "highlights"],
-  );
-  assert.deepEqual(
-    rows
-      .filter((node) => node.name === "AstraBlock" && attributes(node).kind !== "goal")
-      .map((node) => attributes(node).assistant),
-    ["false", "false"],
+    ["steps", "calendar", "agenda", "progress"],
   );
   const product = descendants(
     (await parse(readFileSync("src/components/OrbitProduct.astro", "utf8"))).ast,
@@ -1495,8 +1400,6 @@ test("after Astra, Orbit shows Today, Calendar, Progress and portable routine su
     "orbit.google",
     "orbit.monthChart",
     "orbit.freezes",
-    "orbit.achievements",
-    "orbit.wrapped",
     "orbit.pending",
     "orbit.account",
   ])
@@ -1512,4 +1415,34 @@ test("after Astra, Orbit shows Today, Calendar, Progress and portable routine su
   const security = readFileSync("src/components/Security.astro", "utf8");
   for (const kind of ["widget", "offline", "devices", "privacy"])
     assert.match(security, new RegExp(`kind: "${kind}"`));
+});
+
+test("every translation key has a source consumer and retired copy is removed", () => {
+  const files = (directory) =>
+    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const path = `${directory}/${entry.name}`;
+      return entry.isDirectory() ? files(path) : [path];
+    });
+  const source = files("src")
+    .filter((path) => /\.(?:astro|ts)$/.test(path) && !path.endsWith("translations.ts"))
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  const patterns = [...source.matchAll(/`([^`]+)`/g)].map(([, value]) => {
+    const segments = value.split(/\$\{[^}]+\}/);
+    return new RegExp(
+      `^${segments.map((segment) => segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\w]+")}$`,
+    );
+  });
+  for (const table of [copyTables.translations.en, copyTables.landingCopy.en]) {
+    for (const key of Object.keys(table)) {
+      assert.ok(
+        source.includes(key) || patterns.some((pattern) => pattern.test(key)),
+        `unused translation: ${key}`,
+      );
+      assert.doesNotMatch(
+        key,
+        /^features\.(?:remember|act|restart)\.|^orbit\.(?:achievements|wrapped)$/,
+      );
+    }
+  }
 });

@@ -533,22 +533,6 @@
   border-radius: var(--radius-md);
   background: var(--color-bg-well);
 }
-.sample-message {
-  justify-self: end;
-  padding: 12px 16px;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-field);
-  color: var(--color-fg-2);
-  font-size: var(--fs-base);
-  line-height: var(--lh-body);
-}
-.product-restart .product-top > :last-child {
-  margin-inline-start: 0;
-}
-.product-reply {
-  font-size: var(--fs-lg);
-  line-height: var(--lh-body);
-}
 .section,
 .final-section {
   padding-block: var(--landing-section-gap) 0;
@@ -578,6 +562,7 @@
   letter-spacing: -0.025em;
   line-height: var(--lh-tight);
   max-inline-size: 23ch;
+  text-wrap: balance;
 }
 .sentence-title {
   text-wrap: balance;
@@ -591,6 +576,7 @@
 }
 .section-description {
   max-inline-size: 55ch;
+  text-wrap: pretty;
   font-size: var(--fs-base);
   line-height: var(--lh-body);
   color: var(--color-fg-2);
@@ -660,21 +646,6 @@
   align-content: center;
   inline-size: 100%;
   min-block-size: 120px;
-  pointer-events: none;
-}
-.vignette-astra {
-  display: flex;
-  align-items: start;
-  gap: 12px;
-  color: var(--color-fg-2);
-  font-size: var(--fs-base);
-  line-height: var(--lh-body);
-}
-.vignette-astra svg {
-  flex-shrink: 0;
-}
-.feature-vignette .product-reminder h3 {
-  font-size: var(--fs-base);
 }
 .feature-card-copy,
 .promise-copy {
@@ -723,9 +694,6 @@
   justify-items: center;
   gap: 16px;
 }
-.feature-copy .section-title {
-  font-size: var(--fs-4xl);
-}
 .feature-composition {
   display: grid;
   justify-items: center;
@@ -753,52 +721,45 @@
   max-inline-size: 100%;
   justify-self: center;
 }
-.feature-primary,
-.feature-secondary {
+.calendar-composition {
   display: grid;
-  grid-area: auto;
   gap: 16px;
   inline-size: 100%;
-  margin-block-start: 0;
+  max-inline-size: 680px;
+  justify-self: center;
 }
-.feature-art .product-icon {
-  inline-size: 24px;
-  block-size: 24px;
+.calendar-primary {
+  inline-size: min(440px, 100%);
 }
-.feature-art .product-card h3 {
-  font-size: var(--fs-lg);
+.calendar-overlay {
+  inline-size: min(320px, 100%);
+  justify-self: end;
 }
-.feature-art .product-reply {
-  font-size: var(--fs-base);
+@media (min-width: 48rem) {
+  .calendar-composition {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .calendar-primary,
+  .calendar-overlay {
+    grid-area: 1 / 1;
+  }
+  .calendar-primary {
+    margin-block-end: 96px;
+  }
+  .calendar-overlay {
+    align-self: end;
+  }
 }
-.feature-art .proactive-line {
-  font-size: var(--fs-base);
-}
-.feature-art .product-caption {
-  font-size: var(--fs-xs);
-}
-.feature-art-busy .product-today {
-  gap: 12px;
-}
-.feature-art-busy .product-today > .product-top {
-  display: none;
-}
-.feature-art-busy .today-pager {
-  padding-block: 0;
-}
-.feature-art .habit-row,
 .feature-vignette .habit-row {
   gap: 12px;
   min-block-size: 68px;
   padding: 16px;
 }
-.feature-art .habit-emoji,
 .feature-vignette .habit-emoji {
   inline-size: 46px;
   block-size: 46px;
   font-size: var(--fs-xl);
 }
-.feature-art .status-ring,
 .feature-vignette .status-ring {
   inline-size: 30px;
   block-size: 30px;
@@ -1168,8 +1129,7 @@
     overflow-wrap: normal;
     word-break: normal;
   }
-  .section-title,
-  .feature-copy .section-title {
+  .section-title {
     font-size: var(--fs-2xl);
   }
   .feature-section {
@@ -1187,14 +1147,6 @@
   .feature-stack {
     inline-size: 100%;
     gap: 16px;
-  }
-  .feature-primary,
-  .feature-secondary {
-    grid-area: auto;
-    inline-size: 100%;
-  }
-  .feature-secondary {
-    margin-block-start: 0;
   }
   .promise-card {
     padding: 24px;
@@ -1315,8 +1267,7 @@
   .product-card,
   .hero-device,
   .demo-preview,
-  .habit-row,
-  .sample-message {
+  .habit-row {
     background: var(--color-bg-elev);
   }
 }
@@ -1369,6 +1320,7 @@
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
 }
 .product-block[data-embedded] {
+  gap: 16px;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -1383,9 +1335,6 @@
   position: relative;
   display: grid;
   gap: 8px;
-}
-.block-metrics {
-  container-type: inline-size;
 }
 .metric-readout {
   position: absolute;
@@ -1424,7 +1373,6 @@
   padding-block-end: 0;
   min-inline-size: 0;
   border: 0;
-  row-gap: 96px;
 }
 .metric-bar-track {
   display: flex;
@@ -1434,8 +1382,8 @@
   min-inline-size: 0;
 }
 button.metric-bar-track {
-  min-inline-size: 48px;
-  padding: 0 8px;
+  min-inline-size: 0;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -1459,11 +1407,6 @@ button.metric-bar-track:focus-visible {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-}
-@container (max-width: 383px) {
-  .metric-bars[role="radiogroup"] {
-    grid-template-columns: repeat(4, minmax(48px, 1fr));
-  }
 }
 @media (prefers-reduced-motion: no-preference) {
   .metric-readout {
@@ -1541,15 +1484,6 @@ button.metric-bar-track:focus-visible {
 .breakdown-row > div {
   display: grid;
   gap: 4px;
-}
-.block-actions {
-  display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.breakdown-reset {
-  justify-self: start;
 }
 .goal-title {
   font-family: var(--font-display);
@@ -1733,32 +1667,18 @@ button.metric-bar-track:focus-visible {
   background: var(--color-bg-well);
   color: var(--color-fg-3);
 }
-.orbit-month-chart,
-.orbit-wrapped-bars {
+.orbit-month-chart {
   display: flex;
   align-items: end;
   gap: 4px;
   block-size: 64px;
 }
-.orbit-month-chart > span,
-.orbit-wrapped-bars > span {
+.orbit-month-chart > span {
   flex: 1;
   block-size: var(--bar-height);
   min-block-size: 4px;
   border-radius: var(--radius-sm);
   background: var(--color-fg-2);
-}
-.orbit-wrapped {
-  display: grid;
-  gap: 8px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  background: var(--color-bg-well);
-}
-.orbit-wrapped > p:first-child {
-  font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  font-weight: 500;
 }
 .orbit-device-pair {
   display: grid;
@@ -1787,11 +1707,4 @@ button.metric-bar-track:focus-visible {
 .orbit-vignette .status-ring {
   inline-size: 24px;
   block-size: 24px;
-}
-.faq-example {
-  display: grid;
-  gap: 16px;
-  inline-size: min(440px, 100%);
-  margin-inline: auto;
-  padding-block: 24px;
 }

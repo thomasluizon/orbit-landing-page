@@ -5,7 +5,7 @@ import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "today" | "week" | "reminder" | "restart";
+  kind: "today" | "week" | "reminder";
 }
 const { kind } = Astro.props;
 ---
@@ -95,24 +95,6 @@ const { kind } = Astro.props;
         <h3>
           <Copy name="product.ready" />
         </h3>
-      </>
-    )
-  }
-  {
-    kind === "restart" && (
-      <>
-        <div class="product-top">
-          <>
-            <AstraGlyph />
-            <span translate="no">Astra</span>
-          </>
-        </div>
-        <p class="sample-message">
-          <Copy name="phrase.restart" />
-        </p>
-        <p class="product-reply" data-i18n="demo.restart.reply">
-          Let's pick it back up tonight.
-        </p>
       </>
     )
   }

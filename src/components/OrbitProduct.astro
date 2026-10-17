@@ -4,7 +4,6 @@ import {
   ChevronRight,
   ListChecks,
   Snowflake,
-  Trophy,
   WifiOff,
   Monitor,
   Smartphone,
@@ -16,16 +15,7 @@ import Copy from "./Copy.astro";
 import { exampleMonth } from "../config/product-examples";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind:
-    | "steps"
-    | "calendar"
-    | "agenda"
-    | "progress"
-    | "highlights"
-    | "widget"
-    | "offline"
-    | "devices"
-    | "privacy";
+  kind: "steps" | "calendar" | "agenda" | "progress" | "widget" | "offline" | "devices" | "privacy";
 }
 const { kind } = Astro.props;
 const cells = Array.from({ length: 42 }, (_, index) => index - 4);
@@ -198,32 +188,6 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
           {exampleMonth.map((value) => (
             <span style={`--bar-height: ${value}%`} />
           ))}
-        </div>
-      </>
-    )
-  }
-  {
-    kind === "highlights" && (
-      <>
-        <div class="orbit-list-row">
-          <Trophy size={24} aria-hidden="true" />
-          <h3>
-            <Copy name="orbit.achievements" />
-          </h3>
-          <span class="status-ring is-done" aria-hidden="true">
-            <Check size={16} />
-          </span>
-        </div>
-        <div class="orbit-wrapped">
-          <p translate="no">Orbit Wrapped</p>
-          <p class="product-caption">
-            <Copy name="orbit.wrapped" />
-          </p>
-          <div class="orbit-wrapped-bars" aria-hidden="true">
-            {exampleMonth.slice(-7).map((value) => (
-              <span style={`--bar-height: ${value}%`} />
-            ))}
-          </div>
         </div>
       </>
     )

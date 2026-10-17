@@ -1,7 +1,6 @@
 ---
 import { ChevronDown } from "@lucide/astro";
 import Copy from "./Copy.astro";
-import AstraBlock from "./AstraBlock.astro";
 import { translations } from "../i18n/translations";
 const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
 ---
@@ -37,14 +36,6 @@ const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
                   </a>
                 )}
               </p>
-              {key === "approval" && (
-                <div class="faq-example">
-                  <AstraBlock kind="breakdown" interactive />
-                  <p class="composition-caption">
-                    <Copy name="product.example" />
-                  </p>
-                </div>
-              )}
             </>
           </details>
         ))

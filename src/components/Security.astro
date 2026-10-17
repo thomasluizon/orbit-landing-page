@@ -20,7 +20,7 @@ const promises = [
     <div class="security-grid">
       {
         promises.map(({ key, kind }) => (
-          <article class="promise-card">
+          <article class="promise-card" data-reveal>
             <>
               <div class="orbit-vignette" aria-hidden="true">
                 <OrbitProduct kind={kind} />

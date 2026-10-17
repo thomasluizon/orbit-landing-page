@@ -90,65 +90,6 @@ function bindHabits(block: HTMLElement) {
   render();
 }
 
-function renderBreakdown(block: HTMLElement) {
-  block.querySelectorAll<HTMLElement>("[data-frequency]").forEach((row, index) => {
-    const text = localized(row, row.dataset.cadence ?? "daily");
-    const control = row.querySelector<HTMLButtonElement>(".frequency-control");
-    const result = block.querySelector<HTMLElement>(`[data-result-frequency="${index}"]`);
-    if (control) control.textContent = text;
-    if (result) result.textContent = text;
-  });
-  const state = block.dataset.state;
-  const status = block.querySelector<HTMLElement>("[data-breakdown-status]");
-  if (status)
-    status.textContent =
-      state === "approved" || state === "rejected" ? localized(block, state) : "";
-}
-
-function setBreakdownState(block: HTMLElement, state: "proposed" | "approved" | "rejected") {
-  block.dataset.state = state;
-  const proposal = block.querySelector<HTMLElement>("[data-breakdown-proposal]");
-  const result = block.querySelector<HTMLElement>("[data-breakdown-result]");
-  if (proposal) proposal.hidden = state !== "proposed";
-  if (result) result.hidden = state !== "approved";
-  renderBreakdown(block);
-  block
-    .querySelector<HTMLButtonElement>(
-      state === "proposed" ? ".frequency-control" : ".breakdown-reset",
-    )
-    ?.focus();
-}
-
-function bindBreakdown(block: HTMLElement) {
-  const rows = block.querySelectorAll<HTMLElement>("[data-frequency]");
-  rows.forEach((row) =>
-    row.querySelector<HTMLButtonElement>(".frequency-control")?.addEventListener("click", () => {
-      row.dataset.cadence = row.dataset.cadence === "daily" ? "weekly" : "daily";
-      renderBreakdown(block);
-    }),
-  );
-  for (const state of ["approved", "rejected"] as const) {
-    const selector = state === "approved" ? ".breakdown-approve" : ".breakdown-reject";
-    block
-      .querySelector<HTMLButtonElement>(selector)
-      ?.addEventListener("click", () => setBreakdownState(block, state));
-  }
-  block
-    .querySelector<HTMLButtonElement>(".breakdown-edit")
-    ?.addEventListener("click", () =>
-      rows[0]?.querySelector<HTMLButtonElement>(".frequency-control")?.focus(),
-    );
-  block.querySelector<HTMLButtonElement>(".breakdown-reset")?.addEventListener("click", () => {
-    rows.forEach((row) => {
-      row.dataset.cadence = row.dataset.initialCadence;
-    });
-    setBreakdownState(block, "proposed");
-  });
-  refreshers.push(() => renderBreakdown(block));
-  renderBreakdown(block);
-}
-
 document.querySelectorAll<HTMLElement>('[data-example-block="metrics"]').forEach(bindMetrics);
 document.querySelectorAll<HTMLElement>('[data-example-block="habits"]').forEach(bindHabits);
-document.querySelectorAll<HTMLElement>('[data-example-block="breakdown"]').forEach(bindBreakdown);
 window.addEventListener("orbit:language-changed", () => refreshers.forEach((refresh) => refresh()));
