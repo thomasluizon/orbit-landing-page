@@ -1,5 +1,6 @@
 ---
 import { ShieldCheck, SlidersHorizontal, CircleCheck, Download } from "@lucide/astro";
+import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 const promises = [
   { key: "approval", Icon: ShieldCheck },
@@ -12,9 +13,7 @@ const promises = [
 <section class="section" data-section="security" aria-labelledby="security-title">
   <div class="section-inner">
     <div class="section-heading">
-      <h2 id="security-title" class="section-title"><Copy name="security.title" /></h2><p
-        class="section-description"
-      >
+      <SentenceTitle id="security-title" name="security.title" /><p class="section-description">
         <Copy name="security.body" />
       </p>
     </div>

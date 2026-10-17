@@ -548,6 +548,16 @@
   line-height: var(--lh-tight);
   max-inline-size: 23ch;
 }
+.sentence-title {
+  text-wrap: balance;
+  max-inline-size: 100%;
+}
+@media (min-width: 48rem) {
+  .heading-sentence {
+    display: block;
+    white-space: nowrap;
+  }
+}
 .section-description {
   max-inline-size: 55ch;
   font-size: var(--fs-base);

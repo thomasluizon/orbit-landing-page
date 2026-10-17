@@ -1,4 +1,5 @@
 ---
+import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 import ProductCard from "./ProductCard.astro";
 import PillButton from "./PillButton.astro";
@@ -30,7 +31,7 @@ const { appUrl } = Astro.props;
   <div class="section-inner">
     <div class="feature-row">
       <div class="feature-copy">
-        <h2 id="understand-title" class="section-title"><Copy name="understand.title" /></h2><p
+        <SentenceTitle id="understand-title" name="understand.title" /><p
           class="section-description"
         >
           <Copy name="understand.body" />
@@ -48,9 +49,7 @@ const { appUrl } = Astro.props;
   <div class="section-inner">
     <div class="feature-row">
       <div class="feature-copy">
-        <h2 id="restart-title" class="section-title"><Copy name="restart.title" /></h2><p
-          class="section-description"
-        >
+        <SentenceTitle id="restart-title" name="restart.title" /><p class="section-description">
           <Copy name="restart.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>

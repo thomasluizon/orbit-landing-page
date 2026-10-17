@@ -228,3 +228,30 @@ test("the built Pro plan separates its annual price words and names the Pro tria
   assert.match(pro, /Try Pro free for 7 days/);
   assert.match(pro, /Teste o Pro grátis por 7 dias/);
 });
+
+test("multi-sentence section headings preserve full sentences in both locales", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /@media \(min-width: 48rem\)\s*\{\s*\.heading-sentence\s*\{\s*display:\s*block/,
+  );
+  assert.match(css, /\.sentence-title\s*\{[^}]*text-wrap:\s*balance/);
+  for (const id of ["pricing-title", "understand-title", "restart-title", "security-title"]) {
+    const heading = html.match(new RegExp(`<h2\\b[^>]*id="${id}"[^>]*>([\\s\\S]*?)<\\/h2>`))?.[0];
+    assert.ok(heading, id);
+    const sentences = [
+      ...heading.matchAll(
+        /<span class="heading-sentence" data-copy-en="([^"]+)" data-copy-pt="([^"]+)" aria-hidden="true">/g,
+      ),
+    ];
+    assert.equal(sentences.length, 2, `${id} breaks only between complete sentences`);
+    for (const [, en, pt] of sentences) {
+      assert.match(en, /[.!?]$/);
+      assert.match(pt, /[.!?]$/);
+    }
+    assert.ok(heading.includes(`aria-label="${sentences.map(([, en]) => en).join(" ")}"`));
+    assert.ok(
+      heading.includes(`data-copy-label-pt="${sentences.map(([, , pt]) => pt).join(" ")}"`),
+    );
+  }
+});

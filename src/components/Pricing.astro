@@ -1,5 +1,6 @@
 ---
 import { Check } from "@lucide/astro";
+import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 import PillButton from "./PillButton.astro";
 import { formatPrice } from "../config/pricing";
@@ -12,9 +13,7 @@ const { appUrl } = Astro.props;
 <section id="pricing" class="section" data-section="pricing" aria-labelledby="pricing-title">
   <div class="section-inner">
     <div class="section-heading">
-      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2><p
-        class="section-description"
-      >
+      <SentenceTitle id="pricing-title" name="pricing.title" /><p class="section-description">
         <Copy name="pricing.body" />
       </p>
     </div>
