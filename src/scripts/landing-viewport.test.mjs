@@ -586,3 +586,68 @@ test("visible primary actions share one accent and the phone approval has priori
     /\[data-primary-action\]\[data-accent-active="false"\]\s*\{[^}]*background-color:\s*var\(--color-bg-well\)/,
   );
 });
+
+test("every inline Astra glyph keeps its asset viewBox and the native 16px drawing", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const source = readFileSync("src/components/AstraGlyph.astro", "utf8");
+  const { ast } = await parse(source);
+  const nodes = (node) => [node, ...(node.children ?? []).flatMap(nodes)];
+  const inline = nodes(ast).find(
+    (node) => node.name === "svg" && node.attributes.some((a) => a.name === "viewBox"),
+  );
+  const attribute = inline.attributes.find((a) => a.name === "viewBox");
+  for (const size of [16, 20, 24, 48]) {
+    const asset = readFileSync(`public/brand/astra-mark${size === 16 ? "-16" : ""}.svg`, "utf8");
+    const expected = asset.match(/viewBox="([^"]+)"/)[1];
+    if (attribute.kind !== "expression") {
+      assert.equal(
+        attribute.value,
+        expected,
+        "inline viewBox must preserve the asset's orbital band and dot",
+      );
+      continue;
+    }
+    const context = vm.createContext({
+      Astro: { props: { size } },
+      exports: {},
+      require(path) {
+        assert.match(path, /^\.\.\/\.\.\/public\/brand\/astra-mark(?:-16)?\.svg\?raw$/);
+        return { default: readFileSync(path.replace("../../", "").replace("?raw", ""), "utf8") };
+      },
+    });
+    vm.runInContext(
+      ts.transpileModule(source.split("---")[1], {
+        compilerOptions: { module: ts.ModuleKind.CommonJS },
+      }).outputText,
+      context,
+    );
+    assert.equal(vm.runInContext(attribute.value, context), expected);
+    const mark = vm.runInContext("mark", context);
+    assert.deepEqual(
+      [...mark.paths.matchAll(/d="([^"]+)"/g)].map(([, d]) => d),
+      [...asset.matchAll(/d="([^"]+)"/g)].filter(([, d]) => d.startsWith("M")).map(([, d]) => d),
+    );
+  }
+  assert.match(source, /astra-mark-16\.svg\?raw/);
+  for (const symbol of nodes(ast).filter((node) => node.name === "symbol")) {
+    const viewBox = symbol.attributes.find((a) => a.name === "viewBox");
+    assert.equal(viewBox.kind, "expression");
+  }
+  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
+  assert.match(rows, /<AstraGlyph size=\{16\}/);
+});
+
+test("Orbit marks retain the canonical full asset frames", () => {
+  for (const [name, expected] of [
+    ["orbit-mark-accent", "0 0 1024 1024"],
+    ["orbit-mark-16", "0 0 16 16"],
+  ]) {
+    const asset = readFileSync(`public/brand/${name}.svg`, "utf8");
+    assert.equal(asset.match(/viewBox="([^"]+)"/)[1], expected);
+  }
+  for (const component of ["Header", "Footer"]) {
+    const source = readFileSync(`src/components/${component}.astro`, "utf8");
+    assert.match(source, /orbit-lockup\.svg\?raw/);
+    assert.doesNotMatch(source, /viewBox=/);
+  }
+});
