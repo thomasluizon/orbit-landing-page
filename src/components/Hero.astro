@@ -6,10 +6,9 @@ import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import { Signal, Wifi, BatteryFull } from "@lucide/astro";
 interface Props {
-  appUrl: string;
   googlePlayUrl: string;
 }
-const { appUrl, googlePlayUrl } = Astro.props;
+const { googlePlayUrl } = Astro.props;
 const en = translations.en;
 ---
 
@@ -27,24 +26,7 @@ const en = translations.en;
         analyticsEvent="hero_google_play_cta_clicked"
         analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
-      <a
-        class="text-link"
-        href={appUrl}
-        data-i18n="hero.web"
-        data-analytics-event="hero_app_cta_clicked"
-        data-analytics-surface="hero">{en["hero.web"]}</a
-      >
     </div>
-    <p class="hero-meta">
-      <span data-i18n="hero.platforms">{en["hero.platforms"]}</span><a
-        href="#ios"
-        id="ios-trigger"
-        class="text-link"
-        aria-haspopup="dialog"
-        aria-controls="ios"
-        data-i18n="hero.ios">{en["hero.ios"]}</a
-      >
-    </p>
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">

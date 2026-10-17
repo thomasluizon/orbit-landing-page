@@ -102,7 +102,7 @@ for (const tag of ["a", "button"]) {
       "small pill geometry meets the touch floor",
     );
   });
-  for (const variant of ["primary", "ghost"]) {
+  for (const variant of ["primary", "secondary", "ghost"]) {
     const label = `PillButton ${tag} ${variant}`;
     const control = () => compiledControl("src/components/PillButton.astro", tag, variant);
 

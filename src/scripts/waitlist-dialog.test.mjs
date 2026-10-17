@@ -8,7 +8,7 @@ import { parse } from "@astrojs/compiler";
 function harness(hash = "") {
   const listeners = new Map();
   const elements = new Map(
-    ["ios", "ios-trigger", "ios-close"].map((id) => [
+    ["ios", "ios-trigger", "ios-faq-trigger", "ios-close"].map((id) => [
       id,
       {
         open: false,
@@ -40,7 +40,10 @@ function harness(hash = "") {
     compilerOptions: { module: ts.ModuleKind.CommonJS },
   }).outputText;
   vm.runInNewContext(code, {
-    document: { getElementById: (id) => elements.get(id) },
+    document: {
+      getElementById: (id) => elements.get(id),
+      querySelectorAll: () => [elements.get("ios-trigger"), elements.get("ios-faq-trigger")],
+    },
     window: {
       location,
       history: {
@@ -53,6 +56,7 @@ function harness(hash = "") {
   return {
     dialog: elements.get("ios"),
     trigger: elements.get("ios-trigger"),
+    faqTrigger: elements.get("ios-faq-trigger"),
     close: elements.get("ios-close"),
     location,
     history,
@@ -84,6 +88,17 @@ test("the trigger opens repeatedly and history navigation synchronizes the modal
   assert.equal(h.dialog.open, true);
   h.dialog.close();
   assert.equal(h.trigger.focused, true);
+});
+
+test("the platform FAQ opens the same waitlist and receives focus again on close", () => {
+  const h = harness();
+  h.faqTrigger.listeners.get("click")({ preventDefault() {} });
+  assert.equal(h.dialog.open, true);
+  assert.deepEqual(h.history, ["#ios"]);
+  h.close.listeners.get("click")();
+  assert.equal(h.dialog.open, false);
+  assert.equal(h.faqTrigger.focused, true);
+  assert.equal(h.trigger.focused, false);
 });
 
 test("the owning dialog contains the unchanged real form, status, privacy and close control", async () => {

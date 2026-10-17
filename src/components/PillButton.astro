@@ -1,5 +1,5 @@
 ---
-type PillVariant = "primary" | "ghost";
+type PillVariant = "primary" | "secondary" | "ghost";
 type PillSize = "md" | "sm";
 
 interface Props {
@@ -33,6 +33,7 @@ const {
 const variantClasses: Record<PillVariant, string> = {
   primary:
     "bg-primary text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.96]",
+  secondary: "bg-fg-1 text-bg hover:bg-fg-2 active:bg-fg-3 active:scale-[0.96]",
   ghost:
     "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-hover active:scale-[0.96]",
 };

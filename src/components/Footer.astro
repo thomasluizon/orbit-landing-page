@@ -25,7 +25,22 @@ const en = translations.en;
               name="footer.source"
             /></a
           >
-          <a href={appUrl} class="text-link" data-i18n="hero.web">{en["hero.web"]}</a>
+          <a
+            href={appUrl}
+            class="text-link"
+            data-i18n="hero.web"
+            data-analytics-event="hero_app_cta_clicked"
+            data-analytics-surface="footer">{en["hero.web"]}</a
+          >
+          <a
+            href="#ios"
+            id="ios-trigger"
+            data-ios-trigger
+            class="text-link"
+            aria-haspopup="dialog"
+            aria-controls="ios"
+            data-i18n="hero.ios">{en["hero.ios"]}</a
+          >
         </div>
       </div>
       <a class="footer-qr" href={googlePlayUrl}

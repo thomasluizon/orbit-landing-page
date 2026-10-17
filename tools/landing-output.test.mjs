@@ -45,7 +45,7 @@ test("the built header lockup paints pale ink with only the moon in the accent",
 
 for (const [event, region, label] of [
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
-  ["hero_app_cta_clicked", /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/, "hero.web"],
+  ["hero_app_cta_clicked", /<footer\b[^>]*>[\s\S]*?<\/footer>/, "hero.web"],
   [
     "hero_google_play_cta_clicked",
     /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
@@ -62,7 +62,7 @@ for (const [event, region, label] of [
       .find((tag) => tag.includes(attribute));
     assert.ok(anchor?.includes(`data-i18n="${label}"`));
     const destination =
-      event === "hero_app_cta_clicked"
+      event !== "hero_google_play_cta_clicked"
         ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
         : "https://play.google.com/store/apps/details?id=org.useorbit.app";
     assert.ok(anchor.includes(`href="${destination}"`));

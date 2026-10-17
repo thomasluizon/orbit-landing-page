@@ -56,7 +56,7 @@
   align-items: center;
   gap: 12px;
 }
-.header-install {
+.header-open {
   white-space: nowrap;
 }
 .language-toggle {
@@ -107,15 +107,6 @@
   justify-content: center;
   gap: 24px;
 }
-.hero-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  color: var(--color-fg-3);
-  font-size: var(--fs-xs);
-}
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -128,9 +119,6 @@
   text-decoration-skip-ink: auto;
   transition: color var(--duration-hover-surface) var(--ease-standard);
   white-space: nowrap;
-}
-.hero-meta .text-link {
-  font-size: inherit;
 }
 .hero-pin-range {
   inline-size: min(1120px, 100%);
@@ -736,6 +724,10 @@
 .faq-list details[open] summary svg {
   transform: rotate(180deg);
 }
+.faq-list p .text-link {
+  display: flex;
+  inline-size: fit-content;
+}
 .faq-list details p {
   padding: 0 24px 24px;
   color: var(--color-fg-2);
@@ -1012,9 +1004,6 @@
   .hero-actions {
     gap: 24px;
   }
-  .hero-meta {
-    gap: 8px;
-  }
   .trust-content {
     display: grid;
     justify-content: center;
@@ -1086,11 +1075,6 @@
   }
   .hero .t-hero {
     font-size: var(--fs-3xl);
-  }
-  .hero-meta {
-    display: grid;
-    gap: 0;
-    justify-items: center;
   }
   .demo-preview {
     padding: 12px;

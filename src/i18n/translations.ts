@@ -46,7 +46,7 @@ const en = {
   skip: "Skip to content",
   "nav.label": "Main navigation",
   "language.switch": "EN. Switch to Portuguese",
-  "header.cta": "Install Orbit",
+  "header.cta": "Open Orbit",
   "hero.subtitle":
     "Tell her what you want to do. Astra makes a plan you can review, then puts it in your day.",
   "hero.cta": "Install Orbit",
@@ -129,7 +129,7 @@ const ptBR: Record<TranslationKey, string> = {
   skip: "Ir para o conteúdo",
   "nav.label": "Navegação principal",
   "language.switch": "pt-BR. Mudar para inglês",
-  "header.cta": "Instalar Orbit",
+  "header.cta": "Abrir Orbit",
   "hero.subtitle":
     "Conte o que você quer fazer. A Astra monta uma proposta para você conferir e colocar em prática.",
   "hero.cta": "Instalar Orbit",

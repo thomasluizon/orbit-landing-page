@@ -1,5 +1,5 @@
 const dialog = document.getElementById("ios") as HTMLDialogElement | null;
-const trigger = document.getElementById("ios-trigger");
+let trigger = document.getElementById("ios-trigger");
 const closeButton = document.getElementById("ios-close");
 
 function syncDialog() {
@@ -8,10 +8,13 @@ function syncDialog() {
   else if (window.location.hash !== "#ios" && dialog.open) dialog.close();
 }
 
-trigger?.addEventListener("click", (event) => {
-  event.preventDefault();
-  if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");
-  syncDialog();
+document.querySelectorAll<HTMLElement>("[data-ios-trigger]").forEach((entry) => {
+  entry.addEventListener("click", (event) => {
+    event.preventDefault();
+    trigger = entry;
+    if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");
+    syncDialog();
+  });
 });
 closeButton?.addEventListener("click", () => dialog?.close());
 dialog?.addEventListener("close", () => {

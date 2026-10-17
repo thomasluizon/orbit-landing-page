@@ -5,9 +5,9 @@ import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
-  googlePlayUrl: string;
+  appUrl: string;
 }
-const { googlePlayUrl } = Astro.props;
+const { appUrl } = Astro.props;
 ---
 
 <header id="site-header" class="site-header">
@@ -22,11 +22,10 @@ const { googlePlayUrl } = Astro.props;
     <div class="header-actions">
       <LanguageToggle />
       <PillButton
-        href={googlePlayUrl}
-        variant="ghost"
+        href={appUrl}
+        variant="secondary"
         size="sm"
-        class="header-install"
-        external
+        class="header-open"
         analyticsEvent="header_app_cta_clicked"
         analyticsSurface="header"
         ><span data-i18n="header.cta">{translations.en["header.cta"]}</span></PillButton

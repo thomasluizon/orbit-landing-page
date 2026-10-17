@@ -20,9 +20,9 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbi
 <Layout withAstraGlyph>
   <div class="landing-shell">
     <a href="#main-content" class="skip-to-content" data-i18n="skip">{translations.en.skip}</a>
-    <Header googlePlayUrl={googlePlayUrl} />
+    <Header appUrl={appUrl} />
     <main id="main-content" tabindex="-1">
-      <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
+      <Hero googlePlayUrl={googlePlayUrl} />
       <TrustStrip />
       <Connect />
       <Features appUrl={appUrl} />
