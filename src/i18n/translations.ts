@@ -2,6 +2,7 @@ export const LANGUAGES = ["en", "pt-BR"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
+  "plan.free": "Free",
   "hero.title": "Astra helps you find your way back to a routine.",
   "hero.platforms": "Android and web",
   "hero.ios": "iPhone waitlist",
@@ -85,6 +86,7 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
+  "plan.free": "Grátis",
   "hero.title": "A Astra ajuda você a retomar sua rotina.",
   "hero.platforms": "Android e web",
   "hero.ios": "Lista de espera do iPhone",
@@ -281,7 +283,7 @@ const landingPt: Record<LandingKey, string> = {
   "trust.approval.title": "Você aprova",
   "trust.approval.caption": "cada mudança que a Astra propõe",
   "trust.platforms.caption": "lista do iPhone aberta",
-  "trust.free": "Comece no Free",
+  "trust.free": "Comece no plano grátis",
   "product.today": "Hoje",
   "product.week": "Sua semana",
   "product.example": "Rotina de exemplo",
@@ -338,7 +340,7 @@ const landingPt: Record<LandingKey, string> = {
   "security.privacy.title": "Seus dados vão com você",
   "security.privacy.body": "Exporte seus dados ou exclua sua conta pelo perfil.",
   "pricing.title": "Comece grátis. Converse mais com a Astra.",
-  "pricing.body": "Escolha Free ou Pro. Os dois ajudam você a começar sua rotina.",
+  "pricing.body": "Escolha o plano grátis ou o Pro. Os dois ajudam você a começar sua rotina.",
   "pricing.free.body": "Para dar os primeiros passos.",
   "pricing.pro.body": "Mais conversas com a Astra. Teste o Pro grátis por 7 dias.",
   "pricing.pro.cta": "Testar Pro",
@@ -372,7 +374,7 @@ const landingPt: Record<LandingKey, string> = {
   "faq.platforms.a":
     "O Orbit está disponível no Android e na web. Entre na lista do iPhone para saber quando o app para iOS estiver disponível.",
   "final.title": "Seu próximo passo pode começar numa conversa.",
-  "final.body": "Conte à Astra o que você tem em mente. Comece no Free.",
+  "final.body": "Conte à Astra o que você tem em mente. Comece no plano grátis.",
   "footer.description": "Uma IA que ajuda você a manter a rotina.",
   "footer.qr": "Escaneie para instalar",
   "footer.source": "Código-fonte",

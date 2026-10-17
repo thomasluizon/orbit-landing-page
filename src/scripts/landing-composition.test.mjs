@@ -573,6 +573,9 @@ function billingHarness(language = "en") {
       setAttribute(name, value) {
         this.attributes[name] = value;
       },
+      getAttribute(name) {
+        return this.attributes[name] ?? null;
+      },
       addEventListener(name, callback) {
         listeners.set(name, callback);
       },
@@ -605,6 +608,15 @@ function billingHarness(language = "en") {
     ]),
   );
   const free = element(pricing.find((node) => attributes(node)["data-price"] === "free"));
+  const translated = pricing.filter((node) => attributes(node)["data-i18n"]).map(element);
+  const copied = pricing
+    .filter((node) => node.name === "Copy")
+    .map((node) => {
+      const field = element(node);
+      field.dataset.copyEn = copyTables.landingCopy.en[attributes(node).name];
+      field.dataset.copyPt = copyTables.landingCopy["pt-BR"][attributes(node).name];
+      return field;
+    });
   const listeners = new Map();
   const toggle = {
     addEventListener: (name, callback) => listeners.set(`toggle:${name}`, callback),
@@ -615,7 +627,11 @@ function billingHarness(language = "en") {
     documentElement: {},
     getElementById: (id) => (id === "lang-toggle" ? toggle : null),
     querySelectorAll: (selector) =>
-      selector === "[data-price]" ? [free, fields["data-pro-price"]] : [],
+      ({
+        "[data-price]": [free, fields["data-pro-price"]],
+        "[data-i18n]": translated,
+        "[data-copy-en]": copied,
+      })[selector] ?? [],
     querySelector(selector) {
       if (selector === "[data-billing-control]") return { querySelectorAll: () => options };
       return fields[selector.slice(1, -1)] ?? null;
@@ -666,11 +682,48 @@ function billingHarness(language = "en") {
     free,
     prices,
     landingCopy,
+    translated,
+    copied,
     changeLanguage(language) {
       while (document.documentElement.lang !== language) listeners.get("toggle:click")();
     },
   };
 }
+
+test("the free plan title and all plan mentions follow the actual language toggle", () => {
+  const h = billingHarness();
+  const title = h.translated.find((field) => field.getAttribute("data-i18n") === "plan.free");
+  assert.ok(title, "the free plan heading must use a localized plan name");
+  const description = h.copied.find((field) => field.attributes.name === "pricing.body");
+  const caption = h.copied.find((field) => field.attributes.name === "trust.free");
+  for (const language of ["en", "pt-BR", "en"]) {
+    h.changeLanguage(language);
+    assert.equal(title.textContent, language === "pt-BR" ? "Grátis" : "Free");
+    assert.equal(
+      caption.textContent,
+      language === "pt-BR" ? "Comece no plano grátis" : "Start with Free",
+    );
+    assert.equal(
+      description.textContent,
+      language === "pt-BR"
+        ? "Escolha o plano grátis ou o Pro. Os dois ajudam você a começar sua rotina."
+        : "Choose Free or Pro. Both give you a place to start your routine.",
+    );
+  }
+  assert.equal(
+    copyTables.landingCopy["pt-BR"]["final.body"],
+    "Conte à Astra o que você tem em mente. Comece no plano grátis.",
+  );
+  for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
+    for (const [key, value] of Object.entries(table)) assert.doesNotMatch(value, /\bFree\b/u, key);
+  }
+});
+
+test("localized application offers use the same free plan name", () => {
+  const h = billingHarness();
+  assert.equal(h.prices.offersFor("en")[0].name, "Orbit Free");
+  assert.equal(h.prices.offersFor("pt-BR")[0].name, "Orbit Grátis");
+});
 
 test("billing switches one Pro price and configured arithmetic in both locales while Free stays outside the control", () => {
   for (const language of ["en", "pt-BR"]) {

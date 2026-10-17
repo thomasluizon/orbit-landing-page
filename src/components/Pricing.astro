@@ -4,7 +4,7 @@ import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 import PillButton from "./PillButton.astro";
 import { formatPrice } from "../config/pricing";
-import { landingCopy } from "../i18n/translations";
+import { landingCopy, translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
 }
@@ -45,7 +45,9 @@ const { appUrl } = Astro.props;
     </div>
     <div class="pricing-grid">
       <article class="plan-card">
-        <div class="plan-name"><h3 translate="no">Free</h3></div>
+        <div class="plan-name">
+          <h3 translate="no" data-i18n="plan.free">{translations.en["plan.free"]}</h3>
+        </div>
         <p class="plan-description"><Copy name="pricing.free.body" /></p>
         <p class="plan-price">
           <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
