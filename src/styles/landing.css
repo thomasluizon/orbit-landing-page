@@ -311,12 +311,14 @@
 .demo-examples {
   display: flex;
   gap: calc(8 * var(--mock-unit));
-  padding-block: 4px;
+  padding-block: 16px;
+  margin-block: -12px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
 }
 .demo-chip {
+  position: relative;
   flex-shrink: 0;
   padding: calc(8 * var(--mock-unit)) calc(12 * var(--mock-unit));
   border-radius: calc(8 * var(--mock-unit));
@@ -343,6 +345,7 @@
   font-size: var(--fs-xl);
 }
 .demo-composer {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -355,6 +358,15 @@
   font-size: calc(16 * var(--mock-unit));
   color: var(--color-fg-3);
   transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.demo-chip::before,
+.demo-composer::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline: 0;
+  block-size: max(100%, 44px);
+  transform: translateY(-50%);
 }
 .demo-send {
   display: grid;

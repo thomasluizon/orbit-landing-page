@@ -505,7 +505,31 @@ test("phone controls follow the screen-to-390 scale and keep one trailing action
   assert.match(chip, /padding:\s*calc\(8 \* var\(--mock-unit\)\) calc\(12 \* var\(--mock-unit\)\)/);
   assert.match(chip, /border-radius:\s*calc\(8 \* var\(--mock-unit\)\)/);
   assert.match(chip, /white-space:\s*nowrap/);
-  assert.doesNotMatch(chip, /min-block-size:\s*48px/);
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selectors, body]) => ({
+    selectors: selectors.split(",").map((selector) => selector.trim()),
+    body,
+  }));
+  for (const selector of [".demo-chip", ".demo-composer"]) {
+    const target = rules.find((rule) =>
+      rule.selectors.some((value) => [`${selector}::before`, `${selector}::after`].includes(value)),
+    );
+    assert.ok(target, `${selector} has a hit-target pseudo-element`);
+    const control = rules.find((rule) => rule.selectors.includes(selector));
+    assert.match(control.body, /position:\s*relative;/, `${selector} anchors its own hit target`);
+    assert.match(target.body, /content:\s*"";/);
+    assert.match(target.body, /position:\s*absolute;/);
+    assert.match(target.body, /inset-block-start:\s*50%;/);
+    assert.match(target.body, /transform:\s*translateY\(-50%\);/);
+    const height = target.body.match(/block-size:\s*max\(100%,\s*(\d+(?:\.\d+)?)px\);/);
+    assert.ok(height, `${selector} has a fixed CSS-pixel floor independent of the mock scale`);
+    assert.ok(Number(height[1]) >= 44, `${selector} keeps at least a 44px hit target`);
+    assert.match(target.body, /inset-inline:\s*0(?:px)?;/, "no extension into neighboring targets");
+    assert.doesNotMatch(target.body, /pointer-events:\s*none;/);
+  }
+  const examples = css.match(/\.demo-examples\s*\{([^}]+)\}/)[1];
+  assert.match(examples, /overflow-x:\s*auto;/);
+  assert.match(examples, /padding-block:\s*16px;/, "the scrollport contains the taller targets");
+  assert.match(examples, /margin-block:\s*-12px;/, "extra scroll padding keeps chip placement");
   const language = css.match(/\.language-toggle\s*\{([^}]+)\}/)[1];
   assert.match(language, /block-size:\s*40px/);
   assert.match(language, /padding-inline:\s*12px/);
