@@ -158,3 +158,19 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(hero, /class="device-home"/);
   assert.match(css, /\.hero-device\s*\{[^}]*aspect-ratio:\s*20\s*\/\s*41/);
 });
+
+test("marketing paragraphs use the body role and grid titles stay at 22px at every width", () => {
+  for (const selector of [
+    "section-description",
+    "feature-card p",
+    "plan-description",
+    "plan-card li",
+    "footer-brand p",
+  ]) {
+    const declarations = css.match(new RegExp(`\\.${selector}\\s*\\{([^}]+)\\}`))[1];
+    assert.match(declarations, /font-size:\s*var\(--fs-base\)/, selector);
+  }
+  for (const [, declarations] of css.matchAll(/\.feature-card h3\s*\{([^}]+)\}/g)) {
+    assert.match(declarations, /font-size:\s*var\(--fs-xl\)/);
+  }
+});
