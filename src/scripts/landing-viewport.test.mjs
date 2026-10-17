@@ -113,7 +113,7 @@ test("the static layout scrolls vertically and keeps product content visible bef
   for (const [, declarations] of css.matchAll(/\.hero\s*\{([^}]+)\}/g)) {
     assert.doesNotMatch(declarations, /grid-template-columns:(?!\s*minmax\(0, 1fr\))/);
   }
-  assert.match(css, /inline-size:\s*min\(368px, 100%\)/);
+  assert.match(css, /inline-size:\s*min\(400px, 100%\)/);
 });
 
 test("every scroll driver is preference scoped and reveals only transform and opacity", () => {
@@ -149,4 +149,12 @@ test("hero cards stay opaque before and after their scroll travel", () => {
   );
   assert.doesNotMatch(floatingCards, /opacity:\s*0(?:\.|\b)|autoAlpha:\s*0/);
   assert.doesNotMatch(css, /\.(?:hero-float|hero-phrase)\s*\{[^}]*opacity:\s*0/);
+});
+
+test("the Astra conversation sits in a full phone with status chrome and a home indicator", () => {
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  assert.match(hero, /class="device-status" aria-hidden="true"/);
+  assert.match(hero, /data-mock>9:41/);
+  assert.match(hero, /class="device-home"/);
+  assert.match(css, /\.hero-device\s*\{[^}]*aspect-ratio:\s*20\s*\/\s*41/);
 });

@@ -4,6 +4,7 @@ import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import { Signal, Wifi, BatteryFull } from "@lucide/astro";
 interface Props {
   appUrl: string;
   googlePlayUrl: string;
@@ -49,11 +50,15 @@ const en = translations.en;
     <div class="hero-stage" id="hero-stage">
       <div class="hero-float float-today" data-hero-float><ProductCard kind="today" /></div>
       <div class="hero-device">
-        <div class="device-speaker" aria-hidden="true"></div><AstraDemo /><div
-          class="device-home"
-          aria-hidden="true"
-        >
+        <div class="device-status" aria-hidden="true">
+          <span data-mock>9:41</span>
+          <span class="device-speaker"></span>
+          <span class="device-status-icons"
+            ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+          >
         </div>
+        <AstraDemo />
+        <div class="device-home" aria-hidden="true"></div>
       </div>
       <div class="hero-float float-week" data-hero-float><ProductCard kind="week" /></div>
       <div class="hero-float float-reminder" data-hero-float><ProductCard kind="reminder" /></div>
