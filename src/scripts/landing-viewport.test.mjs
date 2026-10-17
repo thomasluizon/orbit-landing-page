@@ -212,3 +212,14 @@ test("the compact hero keeps two overlapping cards around a 280 by 540 phone", (
   assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
   assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
 });
+
+test("the phone footer hides the install QR and shares the 16px content gutter", () => {
+  const mobile = css.slice(
+    css.indexOf("@media (max-width: 47.999rem)"),
+    css.indexOf("@media (max-width: 40rem)"),
+  );
+  assert.match(mobile, /\.footer-qr\s*\{\s*display:\s*none/);
+  assert.match(mobile, /\.site-footer\s*\{\s*--landing-gutter:\s*16px/);
+  const footer = readFileSync("src/components/Footer.astro", "utf8");
+  assert.match(footer, /href=\{appUrl\}[\s\S]*data-i18n="hero.web"/);
+});

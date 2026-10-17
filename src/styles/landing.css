@@ -954,6 +954,12 @@
   }
 }
 @media (max-width: 47.999rem) {
+  .site-footer {
+    --landing-gutter: 16px;
+  }
+  .footer-qr {
+    display: none;
+  }
   .landing-shell {
     --landing-gutter: 16px;
   }
@@ -1119,9 +1125,6 @@
   .footer-content {
     grid-template-columns: minmax(0, 1fr);
     gap: 48px;
-  }
-  .footer-qr {
-    justify-items: start;
   }
   .footer-links {
     gap: 24px;
