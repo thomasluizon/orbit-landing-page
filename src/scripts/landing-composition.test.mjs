@@ -117,6 +117,23 @@ test("the trust strip gives each of its three facts a heading and a caption", ()
   const trust = descendants(components.get("TrustStrip"));
   assert.equal(trust.filter((node) => node.name === "dt").length, 3);
   assert.equal(trust.filter((node) => node.name === "dd").length, 3);
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.trust-strip\s*\{[^}]*padding:\s*32px 16px/);
+  const rules = [...css.matchAll(/\.trust-content\s*\{([^}]+)\}/g)];
+  assert.equal(rules.length, 1, "all viewports keep the same three-column layout");
+  assert.match(rules[0][1], /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(rules[0][1], /gap:\s*8px/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.trust-fact dt\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
+  assert.match(mobile, /\.trust-fact dd\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
+  const copy = readFileSync("src/i18n/translations.ts", "utf8");
+  for (const key of ["trust.free.title", "trust.approval.title", "hero.platforms"]) {
+    const values = [
+      ...copy.matchAll(new RegExp(`"${key.replaceAll(".", "\\.")}": "([^"]+)"`, "g")),
+    ];
+    assert.equal(values.length, 2);
+    for (const [, value] of values) assert.ok(value.split(/\s+/u).length <= 2, value);
+  }
 });
 
 test("feature copy precedes its centered product composition", () => {
