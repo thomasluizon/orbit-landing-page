@@ -345,19 +345,33 @@ test("the phone footer hides the install QR and shares the 16px content gutter",
   assert.match(footer, /href=\{appUrl\}[\s\S]*data-i18n="hero.web"/);
 });
 
-test("FAQ questions stay prominent and the chevron aligns with the first wrapped line", () => {
-  const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
-  assert.match(summary, /font-size:\s*var\(--fs-xl\)/);
-  assert.match(summary, /padding:\s*24px/);
-  assert.match(summary, /align-items:\s*start/);
-  assert.match(summary, /line-height:\s*var\(--lh-row\)/);
+test("the FAQ is one compact list with separators only between rows", () => {
+  const list = css.match(/\.faq-list\s*\{([^}]+)\}/)[1];
+  assert.match(list, /gap:\s*0/);
   assert.match(
     css,
-    /\.faq-list summary svg\s*\{[^}]*margin-block-start:\s*calc\(\(1lh - 20px\) \/ 2\)/,
+    /\.faq-list > details \+ details\s*\{[^}]*border-block-start:\s*1px solid var\(--color-hairline\)/,
   );
+  assert.doesNotMatch(css, /\.faq-list details\s*\{[^}]*(?:background|box-shadow|border-radius)/);
+  assert.doesNotMatch(css, /\.faq-list[^{}]*\{[^}]*border-block-end/);
+  const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
+  assert.match(summary, /font-size:\s*var\(--fs-base\)/);
+  assert.match(summary, /padding:\s*16px/);
+  assert.match(summary, /min-block-size:\s*64px/);
+  assert.match(summary, /border-radius:\s*var\(--radius-sm\)/);
+  assert.match(summary, /align-content:\s*center/);
+  assert.match(summary, /align-items:\s*start/);
+  assert.match(summary, /line-height:\s*var\(--lh-row\)/);
+  assert.match(summary, /transition:\s*background-color var\(--duration-hover-control\)/);
+  assert.match(
+    css,
+    /\.faq-list summary svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px;[^}]*margin-block-start:\s*calc\(\(1lh - 16px\) \/ 2\)/,
+  );
+  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*0 16px 16px/);
+  assert.match(css, /\.faq-list summary:hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/);
+  assert.match(css, /\.final-section\s*\{[^}]*padding-block-start:\s*64px/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
-  assert.match(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-lg\)/);
-  assert.doesNotMatch(mobile, /\.faq-list summary\s*\{[^}]*font-size:\s*var\(--fs-sm\)/);
+  assert.doesNotMatch(mobile, /\.faq-list summary\s*\{[^}]*font-size:/);
 });
 
 test("the wide footer leads with a 240px marked QR while the hero sentence balances at 520px", () => {

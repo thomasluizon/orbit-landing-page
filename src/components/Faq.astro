@@ -15,13 +15,13 @@ const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
         questions.map((key) => (
           <details name="orbit-questions">
             <>
-              <summary>
+              <summary aria-expanded="false" aria-controls={`faq-answer-${key}`}>
                 <>
                   <Copy name={`faq.${key}.q`} />
-                  <ChevronDown size={20} />
+                  <ChevronDown size={16} aria-hidden="true" focusable="false" />
                 </>
               </summary>
-              <p>
+              <p id={`faq-answer-${key}`}>
                 <Copy name={`faq.${key}.a`} />
                 {key === "platforms" && (
                   <a

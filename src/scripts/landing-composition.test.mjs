@@ -124,6 +124,70 @@ test("native FAQ disclosure and the original waitlist entry remain reachable", (
   );
 });
 
+test("FAQ disclosure updates aria-expanded and controls its own answer without replacing native behavior", () => {
+  const faq = descendants(components.get("Faq"));
+  const summary = faq.find((node) => node.name === "summary");
+  const answer = faq.find((node) => node.name === "p");
+  assert.equal(attributes(summary)["aria-expanded"], "false");
+  assert.equal(attributes(summary)["aria-controls"], attributes(answer).id);
+  const chevron = faq.find((node) => node.name === "ChevronDown");
+  assert.equal(attributes(chevron).size, "16");
+  assert.equal(attributes(chevron)["aria-hidden"], "true");
+  const source = readFileSync("src/components/Faq.astro", "utf8");
+  const keys = vm.runInNewContext(source.match(/const questions = (\[[^\]]+\])/)[1]);
+  const code = ts.transpileModule(readFileSync("src/scripts/faq.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  const entry = readFileSync("src/pages/index.astro", "utf8");
+  assert.match(entry, /import "\.\.\/scripts\/faq"/);
+  for (const initiallyOpen of [false, true]) {
+    const items = keys.map((key, index) => {
+      const control = {
+        attributes: {
+          "aria-expanded": "false",
+          "aria-controls": vm.runInNewContext(attributes(summary)["aria-controls"], { key }),
+        },
+        setAttribute(name, value) {
+          this.attributes[name] = value;
+        },
+      };
+      const listeners = new Map();
+      return {
+        open: initiallyOpen && index === 0,
+        control,
+        listeners,
+        answerId: vm.runInNewContext(attributes(answer).id, { key }),
+        querySelector(selector) {
+          assert.equal(selector, "summary");
+          return control;
+        },
+        addEventListener(name, callback) {
+          listeners.set(name, callback);
+        },
+      };
+    });
+    vm.runInNewContext(code, {
+      document: {
+        querySelectorAll(selector) {
+          assert.equal(selector, ".faq-list details");
+          return items;
+        },
+      },
+    });
+    assert.equal(new Set(items.map((item) => item.answerId)).size, keys.length);
+    for (const item of items) {
+      assert.equal(item.control.attributes["aria-controls"], item.answerId);
+      assert.equal(item.control.attributes["aria-expanded"], String(item.open));
+      assert.deepEqual([...item.listeners.keys()], ["toggle"]);
+      for (const open of [true, false]) {
+        item.open = open;
+        item.listeners.get("toggle")();
+        assert.equal(item.control.attributes["aria-expanded"], String(open));
+      }
+    }
+  }
+});
+
 test("the header opens Orbit while the hero has only its install action", async () => {
   const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
   const action = descendants(header).find((node) => node.name === "PillButton");
