@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
@@ -470,4 +470,119 @@ test("the narrow header scrolls in flow and every mobile section shares the 16px
       assert.ok(Math.min(343, width - 32) <= 343);
     }
   }
+});
+
+test("every landing pill uses the shared app geometry and only hero install is md", () => {
+  const pill = readFileSync("src/components/PillButton.astro", "utf8");
+  for (const [size, height, padding, font] of [
+    ["sm", 40, 18, 14],
+    ["md", 50, 26, 16],
+  ]) {
+    const classes = pill.match(new RegExp(`${size}:\\s*"([^"\\n]+)"`))[1];
+    assert.ok(classes.includes(`h-[${height}px]`));
+    assert.ok(classes.includes(`px-[${padding}px]`));
+    assert.ok(classes.includes(`text-[${font}px]`));
+    assert.doesNotMatch(classes, /min-h-|min-w-|size-/);
+  }
+  for (const file of readdirSync("src/components").filter((name) => name.endsWith(".astro"))) {
+    const source = readFileSync(`src/components/${file}`, "utf8");
+    for (const [tag] of source.matchAll(/<PillButton\b[^>]*>/g)) {
+      const size = tag.match(/size="([^"]+)"/)?.[1] ?? "sm";
+      assert.ok(["sm", "md"].includes(size), file);
+      assert.equal(size, file === "Hero.astro" ? "md" : "sm", file);
+      assert.doesNotMatch(tag, /class="[^"\n]*(?:min-h-|h-\[|py-|px-)/, file);
+    }
+  }
+});
+
+test("phone controls follow the screen-to-390 scale and keep one trailing action row", () => {
+  assert.match(css, /\.device-screen\s*\{[^}]*container-type:\s*inline-size/);
+  assert.match(css, /\.astra-demo\s*\{[^}]*--mock-unit:\s*calc\(100cqi \/ 390\)/);
+  const row = css.match(/\.demo-preview-actions\s*\{([^}]+)\}/)[1];
+  assert.match(row, /flex-wrap:\s*nowrap/);
+  assert.match(row, /justify-content:\s*flex-end/);
+  assert.match(row, /gap:\s*calc\(12 \* var\(--mock-unit\)\)/);
+  const button = css.match(/\.demo-preview-actions \.pill-sm\s*\{([^}]+)\}/)[1];
+  for (const [property, size] of [
+    ["block-size", 40],
+    ["padding-inline", 18],
+    ["font-size", 14],
+  ]) {
+    assert.match(button, new RegExp(`${property}:\\s*calc\\(${size} \\* var\\(--mock-unit\\)\\)`));
+  }
+  const demo = readFileSync("src/components/AstraDemo.astro", "utf8");
+  assert.match(demo, /id="demo-approve" variant="primary" size="sm"/);
+  const chip = css.match(/\.demo-chip\s*\{([^}]+)\}/)[1];
+  assert.match(chip, /padding:\s*calc\(8 \* var\(--mock-unit\)\) calc\(12 \* var\(--mock-unit\)\)/);
+  assert.match(chip, /border-radius:\s*calc\(8 \* var\(--mock-unit\)\)/);
+  assert.match(chip, /white-space:\s*nowrap/);
+  assert.doesNotMatch(chip, /min-block-size:\s*48px/);
+  const language = css.match(/\.language-toggle\s*\{([^}]+)\}/)[1];
+  assert.match(language, /block-size:\s*40px/);
+  assert.match(language, /padding-inline:\s*12px/);
+  assert.match(language, /font-size:\s*var\(--fs-sm\)/);
+  assert.match(language, /border-radius:\s*var\(--radius-md\)/);
+});
+
+test("visible primary actions share one accent and the phone approval has priority", () => {
+  const source = readFileSync("src/scripts/primary-actions.ts", "utf8");
+  const actions = ["install", "demo-approve", "features", "pro", "final"].map((id) => ({
+    id,
+    attrs: {},
+    setAttribute(name, value) {
+      this.attrs[name] = value;
+    },
+  }));
+  const observed = [];
+  let update;
+  vm.runInNewContext(
+    ts.transpileModule(source, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      document: {
+        querySelectorAll(selector) {
+          assert.equal(selector, "[data-primary-action]");
+          return actions;
+        },
+      },
+      IntersectionObserver: class {
+        constructor(callback) {
+          update = callback;
+        }
+        observe(action) {
+          observed.push(action);
+        }
+      },
+    },
+  );
+  assert.deepEqual(observed, actions);
+  for (let mask = 0; mask < 2 ** actions.length; mask++) {
+    update(
+      actions.map((target, index) => ({
+        target,
+        isIntersecting: Boolean(mask & (1 << index)),
+        intersectionRect: { width: 100, height: 40 },
+      })),
+    );
+    const active = actions.filter((action) => action.attrs["data-accent-active"] === "true");
+    assert.equal(active.length, mask ? 1 : 0);
+    if (mask & 2) assert.equal(active[0].id, "demo-approve");
+  }
+  update(
+    actions.map((target) => ({
+      target,
+      isIntersecting: true,
+      intersectionRect: { width: 0, height: 0 },
+    })),
+  );
+  assert.ok(actions.every((action) => action.attrs["data-accent-active"] === "false"));
+  const primitive = readFileSync("src/components/PillButton.astro", "utf8");
+  assert.match(primitive, /data-primary-action=\{variant === "primary"/);
+  assert.match(primitive, /import "\.\.\/scripts\/primary-actions"/);
+  const global = readFileSync("src/styles/global.css", "utf8");
+  assert.match(
+    global,
+    /\[data-primary-action\]\[data-accent-active="false"\]\s*\{[^}]*background-color:\s*var\(--color-bg-well\)/,
+  );
 });

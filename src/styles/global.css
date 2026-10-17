@@ -104,6 +104,26 @@
   transition-timing-function: var(--ease-standard);
 }
 
+.pill-sm::before {
+  content: "";
+  position: absolute;
+  inset-block: -4px;
+  inset-inline: 0;
+  border-radius: inherit;
+}
+[data-primary-action][data-accent-active="false"] {
+  background-color: var(--color-bg-well);
+  color: var(--color-fg-1);
+}
+[data-primary-action][data-accent-active="false"]:active {
+  background-color: var(--color-bg-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-primary-action][data-accent-active="false"]:hover {
+    background-color: var(--color-bg-hover);
+  }
+}
+
 html {
   color-scheme: dark;
   font-synthesis: none;

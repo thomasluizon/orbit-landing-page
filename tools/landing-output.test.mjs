@@ -128,7 +128,7 @@ test("the built homepage follows the scrolling Astra composition with the origin
   assert.match(html, /src="\/orbit-install-qr.svg"/);
 });
 
-test("the built proposal has three native neutral pill actions beneath the hero CTA", () => {
+test("the built proposal has one trailing row of two ghost actions and a filled approval", () => {
   const row = html.match(/<div class="demo-preview-actions">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(row);
   const buttons = [...row.matchAll(/<button\b([^>]+)>/g)].map(([, attributes]) => attributes);
@@ -137,7 +137,7 @@ test("the built proposal has three native neutral pill actions beneath the hero 
     assert.ok(buttons[index].includes(`id="demo-${action}"`));
     assert.ok(buttons[index].includes('type="button"'));
     assert.ok(buttons[index].includes("pill-sm"));
-    assert.ok(buttons[index].includes("bg-transparent"));
+    assert.ok(buttons[index].includes(index === 2 ? "bg-primary" : "bg-transparent"));
     assert.doesNotMatch(buttons[index], /\sdisabled(?:\s|=|$)|\stabindex="-1"/);
   }
 });

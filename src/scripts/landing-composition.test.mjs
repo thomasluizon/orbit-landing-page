@@ -67,16 +67,19 @@ test("the owning page follows Pierre's section order with Orbit product composit
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
 });
 
-test("each section has at most one filled accent action, including the expanded Astra demo", () => {
+test("each product surface has one primary intent and the viewport controller arbitrates their accent", () => {
   for (const section of sections) {
     const actions = descendants(section).filter(
       (node) => node.name === "PillButton" && (attributes(node).variant ?? "primary") === "primary",
     );
-    assert.ok(
-      actions.length <= 1,
-      `${attributes(section)["data-section"]} has ${actions.length} accent actions`,
-    );
+    assert.ok(actions.length <= (attributes(section)["data-section"] === "hero" ? 2 : 1));
   }
+  const demo = descendants(components.get("AstraDemo"));
+  const actions = demo.filter((node) => node.name === "PillButton");
+  assert.deepEqual(
+    actions.map((node) => attributes(node).variant),
+    ["ghost", "ghost", "primary"],
+  );
 });
 
 test("pricing actions stay at the bottom independently of list length and hug their labels", () => {

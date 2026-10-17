@@ -39,8 +39,8 @@ const variantClasses: Record<PillVariant, string> = {
 };
 
 const sizeClasses: Record<PillSize, string> = {
-  md: "min-h-[50px] px-[26px] text-[16px] gap-[9px]",
-  sm: "pill-sm min-h-[48px] px-[18px] text-[14px] gap-[7px]",
+  md: "pill-md h-[50px] px-[26px] text-[16px] gap-[9px]",
+  sm: "pill-sm h-[40px] px-[18px] text-[14px] gap-[7px]",
 };
 ---
 
@@ -52,10 +52,12 @@ const sizeClasses: Record<PillSize, string> = {
       rel={external ? "noopener noreferrer" : undefined}
       aria-label={ariaLabel}
       id={id}
+      data-primary-action={variant === "primary" || undefined}
+      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium disabled:cursor-not-allowed disabled:opacity-70",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -69,10 +71,12 @@ const sizeClasses: Record<PillSize, string> = {
       disabled={disabled}
       aria-label={ariaLabel}
       id={id}
+      data-primary-action={variant === "primary" || undefined}
+      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium disabled:cursor-not-allowed disabled:opacity-70",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -82,3 +86,7 @@ const sizeClasses: Record<PillSize, string> = {
     </button>
   )
 }
+
+<script>
+  import "../scripts/primary-actions";
+</script>

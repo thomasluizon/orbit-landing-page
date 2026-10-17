@@ -66,11 +66,11 @@
 .language-toggle {
   display: grid;
   place-items: center;
-  min-inline-size: 48px;
-  min-block-size: 48px;
-  border-radius: var(--radius-full);
+  block-size: 40px;
+  padding-inline: 12px;
+  border-radius: var(--radius-md);
   color: var(--color-fg-2);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-sm);
   cursor: pointer;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
@@ -169,6 +169,7 @@
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
 }
 .device-screen {
+  container-type: inline-size;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -214,6 +215,7 @@
   background: var(--color-fg-2);
 }
 .astra-demo {
+  --mock-unit: calc(100cqi / 390);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -283,16 +285,21 @@
 }
 .demo-preview-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  gap: calc(12 * var(--mock-unit));
   padding-block: 0;
 }
 .demo-preview-actions .pill-sm {
-  min-inline-size: 48px;
-  padding-inline: 8px;
-  font-size: var(--fs-xs);
+  min-inline-size: 0;
+  block-size: calc(40 * var(--mock-unit));
+  padding-inline: calc(18 * var(--mock-unit));
+  font-size: calc(14 * var(--mock-unit));
+  gap: calc(7 * var(--mock-unit));
+}
+.demo-preview-actions .pill-sm::before {
+  inset-block: calc(-4 * var(--mock-unit));
 }
 .demo-input-area {
   display: grid;
@@ -301,19 +308,20 @@
 }
 .demo-examples {
   display: flex;
-  gap: 8px;
+  gap: calc(8 * var(--mock-unit));
+  padding-block: 4px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
 }
 .demo-chip {
   flex-shrink: 0;
-  min-block-size: 48px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: calc(8 * var(--mock-unit)) calc(12 * var(--mock-unit));
+  border-radius: calc(8 * var(--mock-unit));
   box-shadow: inset 0 0 0 1px var(--color-hairline);
   background: var(--color-bg-card);
-  font-size: var(--fs-xs);
+  font-size: calc(14 * var(--mock-unit));
+  line-height: var(--lh-meta);
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
@@ -1301,12 +1309,6 @@
 @media (max-width: 23rem) {
   .brand-lockup svg {
     inline-size: 64px;
-  }
-  .demo-preview-actions {
-    gap: 12px;
-  }
-  .demo-chip {
-    padding-inline: 8px;
   }
 }
 @media (prefers-reduced-motion: no-preference) and (min-width: 67.5rem) and (min-height: 46rem) {

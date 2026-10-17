@@ -94,13 +94,12 @@ function stateDeclarations(css, state) {
 }
 
 for (const tag of ["a", "button"]) {
-  test(`small ${tag} pills retain a touch target at least 44px tall`, async () => {
+  test(`small ${tag} pills keep the app's 40px visible height and a separate 48px target`, async () => {
     const { css } = await compiledControl("src/components/PillButton.astro", tag, "ghost", "sm");
-    const heights = [...css.matchAll(/min-height:\s*(\d+)px/g)].map(([, height]) => Number(height));
-    assert.ok(
-      heights.some((height) => height >= 44),
-      "small pill geometry meets the touch floor",
-    );
+    assert.match(css, /height:\s*40px/);
+    assert.doesNotMatch(css, /min-height:\s*48px/);
+    const global = await readFile("src/styles/global.css", "utf8");
+    assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px/);
   });
   for (const variant of ["primary", "secondary", "ghost"]) {
     const label = `PillButton ${tag} ${variant}`;
