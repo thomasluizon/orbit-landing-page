@@ -14,9 +14,7 @@ const { appUrl } = Astro.props;
     <div class="feature-row">
       <div class="feature-copy">
         <div class="feature-intro">
-          <h2 id="remember-title" class="section-title"><Copy name="remember.title" /></h2><p
-            class="section-description"
-          >
+          <SentenceTitle id="remember-title" name="remember.title" /><p class="section-description">
             <Copy name="remember.body" />
           </p>
         </div><PillButton
@@ -60,7 +58,7 @@ const { appUrl } = Astro.props;
         <div class="feature-art">
           <div class="calendar-composition" data-reveal>
             <div class="calendar-primary"><OrbitProduct kind="calendar" /></div>
-            <div class="calendar-overlay"><OrbitProduct kind="agenda" /></div>
+            <div class="calendar-agenda"><OrbitProduct kind="agenda" /></div>
           </div>
         </div>
         <p class="composition-caption"><Copy name="product.example" /></p>

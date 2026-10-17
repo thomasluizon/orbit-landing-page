@@ -258,9 +258,9 @@ test("the built billing control defaults to monthly and keeps annual arithmetic 
   assert.match(pro, /data-annual-equivalent[^>]*hidden/);
   assert.doesNotMatch(pro, /or \$69\.99 per year/);
   const action = pro.match(/<a\b[^>]*href="[^"]*\/upgrade"[^>]*>([\s\S]*?)<\/a>/)?.[1];
-  assert.match(action, /data-copy-en="Try Pro" data-copy-pt="Testar Pro"/);
-  assert.match(pro, /Try Pro free for 7 days/);
-  assert.match(pro, /Teste o Pro grátis por 7 dias/);
+  assert.match(action, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
+  assert.match(pro, /data-copy-en="More Astra every day\. Free for 7 days\."/);
+  assert.match(pro, /data-copy-pt="Mais Astra todo dia\. Grátis por 7 dias\."/);
 });
 
 test("multi-sentence section headings preserve full sentences in both locales", () => {
@@ -270,15 +270,32 @@ test("multi-sentence section headings preserve full sentences in both locales", 
     /@media \(min-width: 48rem\)\s*\{\s*\.heading-sentence\s*\{\s*display:\s*block/,
   );
   assert.match(css, /\.sentence-title\s*\{[^}]*text-wrap:\s*balance/);
-  for (const id of ["pricing-title", "understand-title", "restart-title", "security-title"]) {
-    const heading = html.match(new RegExp(`<h2\\b[^>]*id="${id}"[^>]*>([\\s\\S]*?)<\\/h2>`))?.[0];
-    assert.ok(heading, id);
+  const sentenceCount = (text) =>
+    text
+      .trim()
+      .split(/(?<=[.!?])\s+/u)
+      .filter(Boolean).length;
+  const headings = [...html.matchAll(/<h2\b[^>]*id="([a-z-]+-title)"[^>]*>([\s\S]*?)<\/h2>/g)];
+  assert.ok(headings.length >= 8);
+  const multiSentence = [];
+  for (const [heading, id, body] of headings) {
     const sentences = [
       ...heading.matchAll(
         /<span class="heading-sentence" data-copy-en="([^"]+)" data-copy-pt="([^"]+)" aria-hidden="true">/g,
       ),
     ];
-    assert.equal(sentences.length, 2, `${id} breaks only between complete sentences`);
+    const englishLabel = heading.match(/aria-label="([^"]+)"/)?.[1] ?? body.replace(/<[^>]+>/g, "");
+    const portugueseLabel =
+      heading.match(/data-copy-label-pt="([^"]+)"/)?.[1] ??
+      body.match(/data-copy-pt="([^"]+)"/)?.[1] ??
+      "";
+    const count = Math.max(sentenceCount(englishLabel), sentenceCount(portugueseLabel));
+    if (count < 2) {
+      assert.equal(sentences.length, 0, `${id} holds one sentence and needs no sentence spans`);
+      continue;
+    }
+    multiSentence.push(id);
+    assert.equal(sentences.length, count, `${id} breaks only between complete sentences`);
     for (const [, en, pt] of sentences) {
       assert.match(en, /[.!?]$/);
       assert.match(pt, /[.!?]$/);
@@ -288,6 +305,12 @@ test("multi-sentence section headings preserve full sentences in both locales", 
       heading.includes(`data-copy-label-pt="${sentences.map(([, , pt]) => pt).join(" ")}"`),
     );
   }
+  assert.deepEqual(multiSentence, [
+    "remember-title",
+    "understand-title",
+    "restart-title",
+    "faq-title",
+  ]);
 });
 
 test("built product examples carry the localized templates their controls consume", async () => {
@@ -300,7 +323,7 @@ test("built product examples carry the localized templates their controls consum
   const blocks = nodes.filter((node) => attrs(node)["data-example-block"]);
   assert.deepEqual(
     blocks.map((node) => attrs(node)["data-example-block"]),
-    ["habits", "metrics", "breakdown"],
+    ["habits", "metrics"],
   );
   const habits = descendants(blocks[0]);
   const logs = habits.filter((node) => Object.hasOwn(attrs(node), "data-example-log"));
@@ -312,22 +335,14 @@ test("built product examples carry the localized templates their controls consum
   const count = habits.find((node) => Object.hasOwn(attrs(node), "data-example-count"));
   assert.equal(attrs(count)["data-template-en"], "{done} of {total} done");
   assert.equal(attrs(count)["data-template-pt"], "{done} de {total} feitos");
-  const breakdown = blocks[2];
-  for (const name of [
-    "data-approved-en",
-    "data-approved-pt",
-    "data-rejected-en",
-    "data-rejected-pt",
-  ])
-    assert.ok(attrs(breakdown)[name]);
-  const frequencies = descendants(breakdown).filter((node) =>
-    Object.hasOwn(attrs(node), "data-frequency"),
+  const breakdowns = nodes.filter((node) =>
+    (attrs(node).class ?? "").split(/\s+/).includes("block-breakdown"),
   );
-  assert.equal(frequencies.length, 3);
-  for (const row of frequencies) {
-    for (const name of ["data-daily-en", "data-daily-pt", "data-weekly-en", "data-weekly-pt"])
-      assert.ok(attrs(row)[name]);
-  }
+  assert.equal(breakdowns.length, 1);
+  assert.equal(
+    descendants(breakdowns[0]).filter((node) => ["button", "a"].includes(node.name)).length,
+    0,
+  );
   const frames = new Map(
     nodes
       .filter((node) => node.name === "symbol")

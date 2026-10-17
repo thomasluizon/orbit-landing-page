@@ -1,6 +1,7 @@
 ---
 import { ChevronDown } from "@lucide/astro";
 import Copy from "./Copy.astro";
+import SentenceTitle from "./SentenceTitle.astro";
 import { translations } from "../i18n/translations";
 const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
 ---
@@ -8,7 +9,7 @@ const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
 <section id="faq" class="section" data-section="faq" aria-labelledby="faq-title">
   <div class="section-inner">
     <div class="section-heading">
-      <h2 id="faq-title" class="section-title"><Copy name="faq.title" /></h2>
+      <SentenceTitle id="faq-title" name="faq.title" />
     </div>
     <div class="faq-list">
       {

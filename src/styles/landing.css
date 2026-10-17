@@ -724,30 +724,29 @@
 .calendar-composition {
   display: grid;
   gap: 16px;
+  justify-items: center;
   inline-size: 100%;
-  max-inline-size: 680px;
   justify-self: center;
 }
-.calendar-primary {
+.calendar-primary,
+.calendar-agenda {
   inline-size: min(440px, 100%);
 }
-.calendar-overlay {
-  inline-size: min(320px, 100%);
-  justify-self: end;
-}
 @media (min-width: 48rem) {
+  .feature-composition:has(.calendar-composition),
+  .feature-composition:has(.calendar-composition) .feature-art {
+    inline-size: min(792px, 100%);
+    max-inline-size: 792px;
+  }
   .calendar-composition {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 440px) minmax(0, 320px);
+    justify-content: center;
+    align-items: end;
+    column-gap: 32px;
   }
   .calendar-primary,
-  .calendar-overlay {
-    grid-area: 1 / 1;
-  }
-  .calendar-primary {
-    margin-block-end: 96px;
-  }
-  .calendar-overlay {
-    align-self: end;
+  .calendar-agenda {
+    inline-size: 100%;
   }
 }
 .feature-vignette .habit-row {

@@ -504,20 +504,30 @@ test("grids, pricing, FAQ and spotlights share their container system", () => {
   }
 });
 
-test("Calendar owns one smaller trailing overlay on desktop and two flowing cards on phones", () => {
+test("Calendar sets its agenda beside the calendar on desktop and below it on phones, never over it", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
+  const calendarRules = [...css.matchAll(/\.calendar-[a-z]+[^{]*\{([^}]+)\}/g)].map(
+    ([, declarations]) => declarations,
+  );
+  assert.ok(calendarRules.length >= 4);
+  for (const declarations of calendarRules) {
+    assert.doesNotMatch(declarations, /grid-area|margin|position:\s*absolute|inset|translate/);
+  }
   assert.match(css, /\.calendar-composition\s*\{[^}]*display:\s*grid;[^}]*gap:\s*16px/);
-  assert.match(css, /\.calendar-primary\s*\{[^}]*inline-size:\s*min\(440px, 100%\)/);
   assert.match(
     css,
-    /\.calendar-overlay\s*\{[^}]*inline-size:\s*min\(320px, 100%\);[^}]*justify-self:\s*end/,
+    /\.calendar-primary,\s*\.calendar-agenda\s*\{[^}]*inline-size:\s*min\(440px, 100%\)/,
   );
+  const desktop = css.slice(css.indexOf("@media (min-width: 48rem)", css.indexOf(".calendar-")));
   assert.match(
-    css,
-    /@media \(min-width: 48rem\)\s*\{[^@]*\.calendar-primary,\s*\.calendar-overlay\s*\{[^}]*grid-area:\s*1 \/ 1/,
+    desktop,
+    /\.calendar-composition\s*\{[^}]*grid-template-columns:\s*minmax\(0, 440px\) minmax\(0, 320px\);[^}]*align-items:\s*end;[^}]*column-gap:\s*32px/,
   );
-  assert.match(css, /\.calendar-primary\s*\{[^}]*margin-block-end:\s*96px/);
-  assert.match(css, /\.calendar-overlay\s*\{[^}]*align-self:\s*end/);
+  const markup = readFileSync("src/components/FeatureRows.astro", "utf8");
+  assert.match(
+    markup,
+    /<div class="calendar-primary"><OrbitProduct kind="calendar" \/><\/div>\s*<div class="calendar-agenda"><OrbitProduct kind="agenda" \/><\/div>/,
+  );
 });
 
 test("feature compositions keep real product dimensions and never shrink their typography", () => {
