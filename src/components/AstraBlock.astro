@@ -3,23 +3,35 @@ import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
 import PillButton from "./PillButton.astro";
-import { exampleWeek, exampleGoal, exampleBreakdown } from "../config/product-examples";
-import { landingCopy, translations, type LandingKey } from "../i18n/translations";
+import {
+  exampleWeek,
+  exampleDays,
+  exampleGoal,
+  exampleBreakdown,
+} from "../config/product-examples";
+import { landingCopy, translations, type LandingKey, type Language } from "../i18n/translations";
 interface Props {
   kind: "metrics" | "habits" | "breakdown" | "goal";
   interactive?: boolean;
   embedded?: boolean;
+  assistant?: boolean;
 }
-const { kind, interactive = false, embedded = false } = Astro.props;
+const { kind, interactive = false, embedded = false, assistant = true } = Astro.props;
 const dateKeys = exampleWeek.map((_, index) => `blocks.metrics.date${index}` as LandingKey);
 const completion = Math.round(
   exampleWeek.reduce((sum, value) => sum + value, 0) / exampleWeek.length,
 );
+function doneLabel(language: Language, index: number) {
+  const { done, total } = exampleDays[index];
+  return landingCopy[language]["blocks.metrics.done"]
+    .replace("{done}", String(done))
+    .replace("{total}", String(total));
+}
 ---
 
 <div class="astra-product" data-mock="true">
   {
-    kind !== "goal" && (
+    assistant && kind !== "goal" && (
       <div class="vignette-astra">
         <AstraGlyph size={16} />
         <p>
@@ -60,7 +72,7 @@ const completion = Math.round(
           <h3>
             <Copy name="blocks.metrics.title" />
           </h3>
-          <div class="metric-chart">
+          <div class="metric-chart" data-metric-chart>
             <div
               class="metric-readout"
               aria-live={interactive ? "polite" : undefined}
@@ -70,34 +82,55 @@ const completion = Math.round(
                 <span data-metric-readout={index} hidden={index !== exampleWeek.length - 1}>
                   <Copy name={dateKeys[index]} />
                   <strong>{value}%</strong>
-                </span>
-              ))}
-            </div>
-            <div class="metric-bars" aria-hidden="true">
-              {exampleWeek.map((value, index) => (
-                <span class="metric-bar-track">
                   <span
-                    class="metric-bar"
-                    data-metric-bar={index}
-                    data-selected={String(index === 6)}
-                    style={`--bar-height: ${value}%`}
-                  />
+                    data-copy-en={doneLabel("en", index)}
+                    data-copy-pt={doneLabel("pt-BR", index)}
+                  >
+                    {doneLabel("en", index)}
+                  </span>
                 </span>
               ))}
             </div>
-            {interactive && (
-              <input
-                type="range"
-                min="0"
-                max={exampleWeek.length - 1}
-                value={exampleWeek.length - 1}
-                step="1"
-                data-metric-day
-                aria-label={landingCopy.en["blocks.metrics.choose"]}
-                data-copy-label-en={landingCopy.en["blocks.metrics.choose"]}
-                data-copy-label-pt={landingCopy["pt-BR"]["blocks.metrics.choose"]}
-              />
-            )}
+            <fieldset
+              class="metric-bars"
+              role={interactive ? "radiogroup" : undefined}
+              aria-label={interactive ? landingCopy.en["blocks.metrics.choose"] : undefined}
+              data-copy-label-en={interactive ? landingCopy.en["blocks.metrics.choose"] : undefined}
+              data-copy-label-pt={
+                interactive ? landingCopy["pt-BR"]["blocks.metrics.choose"] : undefined
+              }
+              aria-hidden={!interactive || undefined}
+            >
+              {exampleWeek.map((value, index) =>
+                interactive ? (
+                  <button
+                    type="button"
+                    class="metric-bar-track"
+                    role="radio"
+                    data-metric-day={index}
+                    aria-checked={index === exampleWeek.length - 1}
+                    tabindex={index === exampleWeek.length - 1 ? 0 : -1}
+                    aria-label={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
+                    data-copy-label-en={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
+                    data-copy-label-pt={`${landingCopy["pt-BR"][dateKeys[index]]}, ${value}%, ${doneLabel("pt-BR", index)}`}
+                  >
+                    <span
+                      class="metric-bar"
+                      data-selected={String(index === exampleWeek.length - 1)}
+                      style={`--bar-height: ${value}%`}
+                    />
+                  </button>
+                ) : (
+                  <span class="metric-bar-track">
+                    <span
+                      class="metric-bar"
+                      data-selected={String(index === exampleWeek.length - 1)}
+                      style={`--bar-height: ${value}%`}
+                    />
+                  </span>
+                ),
+              )}
+            </fieldset>
             <div class="metric-dates product-caption">
               <>
                 <Copy name="blocks.metrics.date0" />

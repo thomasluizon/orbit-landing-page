@@ -214,23 +214,6 @@ test("section grids follow their headings without oversized empty bands", () => 
   assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
 
-test("feature and promise icons are bare 24px Tabler outlines without tiles", () => {
-  const icon = readFileSync("src/components/OutlineIcon.astro", "utf8");
-  assert.match(icon, /width="24"/);
-  assert.match(icon, /height="24"/);
-  assert.match(icon, /stroke-width="1.5"/);
-  assert.match(icon, /fill="none"/);
-  assert.match(icon, /aria-hidden="true"/);
-  for (const name of ["Security"]) {
-    const source = readFileSync(`src/components/${name}.astro`, "utf8");
-    assert.doesNotMatch(source, /@lucide|class="(?:feature|promise)-icon"/);
-    assert.match(source, /<OutlineIcon name=\{icon\}/);
-  }
-  const glyph = css.match(/\.card-icon\s*\{([^}]+)\}/)[1];
-  assert.match(glyph, /color:\s*var\(--color-fg-2\)/);
-  assert.doesNotMatch(glyph, /border|background|shadow|padding/);
-});
-
 test("hero side columns fit only above their computed 1080px threshold", () => {
   const wide = css.slice(css.indexOf("@media (min-width: 67.5rem)"));
   assert.match(wide, /grid-template-columns:\s*296px 360px 296px/);

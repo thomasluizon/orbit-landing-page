@@ -4,6 +4,8 @@ import Copy from "./Copy.astro";
 import ProductCard from "./ProductCard.astro";
 import PillButton from "./PillButton.astro";
 import AstraBlock from "./AstraBlock.astro";
+import OrbitProduct from "./OrbitProduct.astro";
+import AstraGlyph from "./AstraGlyph.astro";
 interface Props {
   appUrl: string;
 }
@@ -31,9 +33,15 @@ const { appUrl } = Astro.props;
       <div class="feature-composition">
         <div class="feature-art feature-art-busy">
           <div class="feature-stack">
-            <div class="feature-primary"><AstraBlock kind="habits" interactive /></div>
+            <div class="feature-primary">
+              <AstraBlock kind="habits" interactive assistant={false} /><OrbitProduct
+                kind="steps"
+              />
+            </div>
             <div class="feature-secondary feature-reminder" data-reveal>
-              <ProductCard kind="reminder" />
+              <ProductCard kind="reminder" /><div class="vignette-astra">
+                <AstraGlyph size={16} /><p><Copy name="product.proactive" /></p>
+              </div>
             </div>
           </div>
         </div>
@@ -64,10 +72,10 @@ const { appUrl } = Astro.props;
         <div class="feature-art feature-art-progress">
           <div class="feature-stack">
             <div class="feature-primary">
-              <AstraBlock kind="metrics" interactive />
+              <OrbitProduct kind="calendar" />
             </div>
             <div class="feature-secondary">
-              <AstraBlock kind="goal" />
+              <OrbitProduct kind="agenda" />
             </div>
           </div>
         </div>
@@ -95,9 +103,15 @@ const { appUrl } = Astro.props;
       <div class="feature-composition">
         <div class="feature-art feature-art-restart">
           <div class="feature-stack">
-            <div class="feature-primary"><ProductCard kind="restart" /></div>
+            <div class="feature-primary">
+              <OrbitProduct kind="progress" /><AstraBlock
+                kind="metrics"
+                interactive
+                assistant={false}
+              />
+            </div>
             <div class="feature-secondary feature-return" data-reveal>
-              <AstraBlock kind="breakdown" interactive />
+              <AstraBlock kind="goal" /><OrbitProduct kind="highlights" />
             </div>
           </div>
         </div>

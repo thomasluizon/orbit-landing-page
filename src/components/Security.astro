@@ -1,12 +1,12 @@
 ---
-import OutlineIcon from "./OutlineIcon.astro";
+import OrbitProduct from "./OrbitProduct.astro";
 import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 const promises = [
-  { key: "approval", icon: "shield-check" },
-  { key: "edit", icon: "adjustments-horizontal" },
-  { key: "control", icon: "circle-check" },
-  { key: "privacy", icon: "download" },
+  { key: "approval", kind: "widget" },
+  { key: "edit", kind: "offline" },
+  { key: "control", kind: "devices" },
+  { key: "privacy", kind: "privacy" },
 ] as const;
 ---
 
@@ -19,10 +19,12 @@ const promises = [
     </div>
     <div class="security-grid">
       {
-        promises.map(({ key, icon }) => (
+        promises.map(({ key, kind }) => (
           <article class="promise-card">
             <>
-              <OutlineIcon name={icon} />
+              <div class="orbit-vignette" aria-hidden="true">
+                <OrbitProduct kind={kind} />
+              </div>
               <div class="promise-copy">
                 <h3>
                   <Copy name={`security.${key}.title`} />

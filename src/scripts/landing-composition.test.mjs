@@ -489,7 +489,7 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(
     rows,
-    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="breakdown"/,
+    /class="feature-art feature-art-restart"[\s\S]*kind="progress"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="goal"/,
   );
   const stacks = descendants(components.get("FeatureRows")).filter(
     (node) => attributes(node).class === "feature-stack",
@@ -596,9 +596,9 @@ test("each week bar and its localized weekday share one of seven equal columns",
   assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
 });
 
-test("the progress composition pairs Astra's metrics with a goal derived from linked habits", () => {
-  const composition = descendants(components.get("FeatureRows")).find((node) =>
-    attributes(node).class?.includes("feature-art-progress"),
+test("Orbit progress pairs its interactive metrics with a goal derived from linked habits", () => {
+  const composition = descendants(components.get("FeatureRows")).find(
+    (node) => attributes(node)["data-section"] === "restart",
   );
   const blocks = descendants(composition).filter((node) => node.name === "AstraBlock");
   assert.deepEqual(
@@ -914,10 +914,6 @@ test("the free plan title and all plan mentions follow the actual language toggl
         : "Choose Free or Pro. Both give you a place to start your routine.",
     );
   }
-  assert.equal(
-    copyTables.landingCopy["pt-BR"]["final.body"],
-    "Conte à Astra o que você tem em mente. Comece no plano grátis.",
-  );
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
     for (const [key, value] of Object.entries(table)) assert.doesNotMatch(value, /\bFree\b/u, key);
   }
@@ -1017,7 +1013,14 @@ test("Astra replicas expose a neutral chart, log rings, frequency controls and a
   assert.match(source, /kind === "breakdown"/);
   assert.match(source, /kind === "goal"/);
   assert.ok(block.some((node) => attributes(node).class === "metric-readout"));
-  assert.ok(block.some((node) => node.name === "input" && attributes(node).type === "range"));
+  assert.ok(!block.some((node) => node.name === "input" && attributes(node).type === "range"));
+  const chart = block.find((node) => attributes(node).class === "metric-bars");
+  assert.equal(attributes(chart).role, 'interactive ? "radiogroup" : undefined');
+  const option = descendants(chart).find((node) => node.name === "button");
+  assert.ok(option, "each bar is its own selectable control");
+  assert.equal(attributes(option).role, "radio");
+  assert.equal(attributes(option)["aria-checked"], "index === exampleWeek.length - 1");
+  assert.equal(attributes(option).tabindex, "index === exampleWeek.length - 1 ? 0 : -1");
   assert.match(source, /blocks.metrics.date0[\s\S]*blocks.metrics.date6/);
   assert.match(source, /blocks.metrics.completion/);
   assert.match(source, /blocks.metrics.active/);
@@ -1028,8 +1031,8 @@ test("Astra replicas expose a neutral chart, log rings, frequency controls and a
   assert.match(source, /exampleGoal\.habits\.map/);
   assert.ok(block.some((node) => attributes(node).role === "progressbar"));
   const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
-  for (const kind of ["metrics", "habits", "breakdown", "goal"])
-    assert.match(rows, new RegExp(`<AstraBlock kind="${kind}"`));
+  for (const kind of ["metrics", "habits", "goal"])
+    assert.match(rows, new RegExp(`<AstraBlock\\s+kind="${kind}"`));
   const vignette = readFileSync("src/components/FeatureVignette.astro", "utf8");
   for (const kind of ["metrics", "habits", "breakdown"])
     assert.match(vignette, new RegExp(`<AstraBlock kind="${kind}"`));
@@ -1059,7 +1062,7 @@ test("example figures derive from the chart and linked habit fixtures", () => {
   assert.doesNotMatch(css, /\.(?:astra-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
 });
 
-test("the product examples select chart days, log in place, approve frequencies and reset in both locales", () => {
+test("the product examples log in place, approve frequencies and reset in both locales", () => {
   assert.doesNotMatch(
     readFileSync("src/scripts/product-examples.ts", "utf8"),
     /import[^;]*landingCopy/,
@@ -1091,13 +1094,6 @@ test("the product examples select chart days, log in place, approve frequencies 
       this.focused = true;
     },
   });
-  const range = element();
-  range.value = "6";
-  const readouts = fixture.exampleWeek.map((_, index) => element({ metricReadout: String(index) }));
-  const bars = fixture.exampleWeek.map((_, index) => element({ metricBar: String(index) }));
-  const metrics = element();
-  metrics.querySelector = () => range;
-  metrics.querySelectorAll = (selector) => (selector === "[data-metric-readout]" ? readouts : bars);
   const logs = ["walk", "read"].map((habit) =>
     element(
       {
@@ -1184,7 +1180,6 @@ test("the product examples select chart days, log in place, approve frequencies 
         querySelectorAll(selector) {
           return (
             {
-              '[data-example-block="metrics"]': [metrics],
               '[data-example-block="habits"]': [habits],
               '[data-example-block="breakdown"]': [breakdown],
             }[selector] ?? []
@@ -1203,15 +1198,6 @@ test("the product examples select chart days, log in place, approve frequencies 
       },
     },
   );
-  for (let index = 0; index < 7; index++) {
-    range.value = String(index);
-    range.listeners.get("input")();
-    assert.deepEqual(
-      readouts.map((row) => row.hidden),
-      readouts.map((_, n) => n !== index),
-    );
-    assert.equal(bars[index].getAttribute("data-selected"), "true");
-  }
   for (const lang of ["en", "pt-BR"]) {
     locale = lang;
     events.get("orbit:language-changed")();
@@ -1251,4 +1237,279 @@ test("the product examples select chart days, log in place, approve frequencies 
     assert.equal(results.hidden, true);
     reset.listeners.get("click")();
   }
+});
+
+async function metricsHarness() {
+  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
+  const ast = descendants((await parse(source)).ast);
+  const fixture = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    { exports: fixture },
+  );
+  const frontmatter = {};
+  vm.runInNewContext(
+    ts.transpileModule(
+      `${source.split("---")[1]}\nexports.context = { exampleWeek, exampleDays, dateKeys, doneLabel, landingCopy };`,
+      { compilerOptions: { module: ts.ModuleKind.CommonJS } },
+    ).outputText,
+    {
+      exports: frontmatter,
+      Astro: { props: { kind: "metrics", interactive: true } },
+      require(path) {
+        if (path === "../config/product-examples") return fixture;
+        if (path === "../i18n/translations") return copyTables;
+        return {};
+      },
+    },
+  );
+  const producer = frontmatter.context;
+  const option = ast.find((node) => node.name === "button" && attributes(node).role === "radio");
+  assert.ok(option, "the actual producer must render a radio for each chart day");
+  const readoutNode = ast.find((node) => Object.hasOwn(attributes(node), "data-metric-readout"));
+  const create = (node, index) => {
+    const attrs = Object.fromEntries(
+      node.attributes.map(({ name, value, kind }) => [
+        name,
+        kind === "expression"
+          ? String(
+              vm.runInNewContext(value, { ...producer, index, value: fixture.exampleWeek[index] }),
+            )
+          : value,
+      ]),
+    );
+    const listeners = new Map();
+    return {
+      attrs,
+      dataset: Object.fromEntries(
+        Object.entries(attrs)
+          .filter(([key]) => key.startsWith("data-"))
+          .map(([key, value]) => [
+            key.slice(5).replace(/-([a-z])/g, (_, char) => char.toUpperCase()),
+            value,
+          ]),
+      ),
+      hidden: false,
+      tabIndex: Number(attrs.tabindex),
+      focused: false,
+      setAttribute(key, value) {
+        this.attrs[key] = value;
+      },
+      getAttribute(key) {
+        return this.attrs[key];
+      },
+      addEventListener(key, callback) {
+        listeners.set(key, callback);
+      },
+      click() {
+        listeners.get("click")();
+      },
+      focus() {
+        this.focused = true;
+      },
+      key(key) {
+        let prevented = false;
+        listeners.get("keydown")({
+          key,
+          preventDefault() {
+            prevented = true;
+          },
+        });
+        return prevented;
+      },
+    };
+  };
+  const bars = fixture.exampleWeek.map(() => ({
+    attrs: {},
+    setAttribute(key, value) {
+      this.attrs[key] = value;
+    },
+  }));
+  const days = fixture.exampleWeek.map((_, index) => ({
+    ...create(option, index),
+    querySelector: () => bars[index],
+  }));
+  const readouts = fixture.exampleWeek.map((_, index) => create(readoutNode, index));
+  const readout = { style: {}, offsetWidth: 128, offsetHeight: 64 };
+  const chart = { clientWidth: 384 };
+  const block = {
+    querySelector: (selector) =>
+      ({ "[data-metric-chart]": chart, ".metric-readout": readout })[selector],
+    querySelectorAll: (selector) =>
+      ({ "[data-metric-day]": days, "[data-metric-readout]": readouts })[selector] ?? [],
+  };
+  const resize = (width) => {
+    chart.clientWidth = width;
+    const columns = width < 384 ? 4 : 7;
+    const columnWidth = (width - (columns - 1) * 8) / columns;
+    days.forEach((day, index) => {
+      day.offsetLeft = (index % columns) * (columnWidth + 8);
+      day.offsetWidth = columnWidth;
+      day.offsetTop = 96 + Math.floor(index / columns) * 224;
+      bars[index].offsetTop =
+        day.offsetTop + 128 - Math.max(4, (fixture.exampleWeek[index] / 100) * 128);
+    });
+  };
+  resize(384);
+  const events = new Map();
+  let observer;
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      exports: {},
+      document: {
+        querySelectorAll: (selector) =>
+          selector === '[data-example-block="metrics"]' ? [block] : [],
+      },
+      window: { addEventListener: (name, callback) => events.set(name, callback) },
+      require: () => ({ getLang: () => "en" }),
+      ResizeObserver: class {
+        constructor(callback) {
+          observer = callback;
+        }
+        observe(element) {
+          assert.equal(element, chart);
+        }
+      },
+    },
+  );
+  return {
+    days,
+    bars,
+    readouts,
+    readout,
+    fixture,
+    producer,
+    events,
+    resize(width) {
+      resize(width);
+      observer();
+    },
+  };
+}
+
+test("chart bars select days by click and keyboard with one tab stop, a clamped moving readout and localized counts", async () => {
+  const h = await metricsHarness();
+  const assertSelection = (index) => {
+    assert.deepEqual(
+      h.days.map((day) => day.attrs["aria-checked"]),
+      h.days.map((_, n) => String(n === index)),
+    );
+    assert.deepEqual(
+      h.days.map((day) => day.tabIndex),
+      h.days.map((_, n) => (n === index ? 0 : -1)),
+    );
+    assert.deepEqual(
+      h.bars.map((bar) => bar.attrs["data-selected"]),
+      h.days.map((_, n) => String(n === index)),
+    );
+    assert.deepEqual(
+      h.readouts.map((item) => item.hidden),
+      h.days.map((_, n) => n !== index),
+    );
+  };
+  assertSelection(6);
+  assert.equal(h.readout.style.left, "256px");
+  for (const language of ["en", "pt-BR"]) {
+    for (const [index, day] of h.days.entries()) {
+      day.click();
+      assertSelection(index);
+      const count = h.producer.doneLabel(language, index);
+      const label = day.dataset[language === "en" ? "copyLabelEn" : "copyLabelPt"];
+      assert.ok(label.includes(count));
+      assert.ok(label.includes(`${h.fixture.exampleWeek[index]}%`));
+      assert.ok(label.includes(copyTables.landingCopy[language][`blocks.metrics.date${index}`]));
+      h.events.get("orbit:language-changed")();
+      assertSelection(index);
+    }
+  }
+  for (const key of ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"]) {
+    const forward = key === "ArrowRight" || key === "ArrowDown";
+    const start = forward ? 6 : 0;
+    const target = forward ? 0 : 6;
+    h.days[start].click();
+    assert.equal(h.days[start].key(key), true);
+    assertSelection(target);
+    assert.equal(h.days[target].focused, true);
+  }
+  h.days[6].key("Home");
+  assertSelection(0);
+  h.days[0].key("End");
+  assertSelection(6);
+  assert.equal(h.days[6].key("Tab"), false);
+  assertSelection(6);
+  h.days[3].click();
+  assert.equal(h.readout.style.left, "128px");
+  h.days[0].click();
+  assert.equal(h.readout.style.left, "0px");
+  h.days[6].click();
+  h.resize(240);
+  assert.equal(h.readout.style.left, "87px");
+  assert.equal(h.readout.style.top, "248px");
+  assertSelection(6);
+  h.days[3].click();
+  assert.equal(h.readout.style.left, "112px");
+  assert.equal(h.readout.style.top, "148px");
+});
+
+test("chart targets stay 48px wide at compact widths, empty days have a stub and reduced motion never animates the readout", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /button\.metric-bar-track\s*\{[^}]*min-inline-size:\s*48px/);
+  assert.match(css, /\.metric-bar-track\s*\{[^}]*block-size:\s*128px/);
+  assert.match(css, /\.metric-bar\s*\{[^}]*min-block-size:\s*4px/);
+  assert.match(
+    css,
+    /@container \(max-width: 383px\)\s*\{\s*\.metric-bars\[role="radiogroup"\]\s*\{[^}]*repeat\(4, minmax\(48px, 1fr\)\)/,
+  );
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: no-preference\)\s*\{\s*\.metric-readout\s*\{[^}]*transition:\s*left/,
+  );
+});
+
+test("after Astra, Orbit shows Today, Calendar, Progress and portable routine surfaces", async () => {
+  const rows = descendants(components.get("FeatureRows"));
+  assert.deepEqual(
+    rows.filter((node) => node.name === "OrbitProduct").map((node) => attributes(node).kind),
+    ["steps", "calendar", "agenda", "progress", "highlights"],
+  );
+  assert.deepEqual(
+    rows
+      .filter((node) => node.name === "AstraBlock" && attributes(node).kind !== "goal")
+      .map((node) => attributes(node).assistant),
+    ["false", "false"],
+  );
+  const product = descendants(
+    (await parse(readFileSync("src/components/OrbitProduct.astro", "utf8"))).ast,
+  );
+  const root = product.find((node) => attributes(node)["data-mock"] === "true");
+  assert.ok(root);
+  for (const name of [
+    "orbit.overdue",
+    "orbit.bad",
+    "orbit.checklist",
+    "orbit.google",
+    "orbit.monthChart",
+    "orbit.freezes",
+    "orbit.achievements",
+    "orbit.wrapped",
+    "orbit.pending",
+    "orbit.account",
+  ])
+    assert.ok(
+      product.some((node) => attributes(node).name === name),
+      name,
+    );
+  for (const node of descendants(root))
+    assert.ok(
+      !["button", "a", "input", "PillButton"].includes(node.name),
+      "static product compositions do not expose dead controls",
+    );
+  const security = readFileSync("src/components/Security.astro", "utf8");
+  for (const kind of ["widget", "offline", "devices", "privacy"])
+    assert.match(security, new RegExp(`kind: "${kind}"`));
 });

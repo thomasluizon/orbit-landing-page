@@ -11,18 +11,58 @@ function fill(template: string, values: Record<string, string>) {
 }
 
 function bindMetrics(block: HTMLElement) {
-  const range = block.querySelector<HTMLInputElement>("[data-metric-day]");
-  if (!range) return;
-  const render = () => {
-    block.querySelectorAll<HTMLElement>("[data-metric-readout]").forEach((readout) => {
-      readout.hidden = readout.dataset.metricReadout !== range.value;
-    });
-    block.querySelectorAll<HTMLElement>("[data-metric-bar]").forEach((bar) => {
-      bar.setAttribute("data-selected", String(bar.dataset.metricBar === range.value));
-    });
+  const days = Array.from(block.querySelectorAll<HTMLButtonElement>("[data-metric-day]"));
+  const chart = block.querySelector<HTMLElement>("[data-metric-chart]");
+  const readout = block.querySelector<HTMLElement>(".metric-readout");
+  if (!days.length || !chart || !readout) return;
+  let selected = days.length - 1;
+  const position = () => {
+    const day = days[selected];
+    const bar = day.querySelector<HTMLElement>(".metric-bar");
+    const left = Math.max(
+      0,
+      Math.min(
+        day.offsetLeft + day.offsetWidth / 2 - readout.offsetWidth / 2,
+        chart.clientWidth - readout.offsetWidth,
+      ),
+    );
+    readout.style.left = `${left}px`;
+    readout.style.top = `${(bar?.offsetTop ?? day.offsetTop) - readout.offsetHeight - 8}px`;
   };
-  range.addEventListener("input", render);
-  render();
+  const render = (index: number, focus = false) => {
+    selected = index;
+    block.querySelectorAll<HTMLElement>("[data-metric-readout]").forEach((readout) => {
+      readout.hidden = Number(readout.dataset.metricReadout) !== selected;
+    });
+    days.forEach((day, index) => {
+      day.setAttribute("aria-checked", String(index === selected));
+      day.tabIndex = index === selected ? 0 : -1;
+      day
+        .querySelector<HTMLElement>(".metric-bar")
+        ?.setAttribute("data-selected", String(index === selected));
+    });
+    if (focus) days[selected].focus();
+    position();
+  };
+  days.forEach((day, index) => {
+    day.addEventListener("click", () => render(index));
+    day.addEventListener("keydown", (event) => {
+      const step = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[event.key];
+      if (step === undefined && event.key !== "Home" && event.key !== "End") return;
+      event.preventDefault();
+      render(
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? days.length - 1
+            : (index + step! + days.length) % days.length,
+        true,
+      );
+    });
+  });
+  new ResizeObserver(position).observe(chart);
+  refreshers.push(position);
+  render(selected);
 }
 
 function bindHabits(block: HTMLElement) {

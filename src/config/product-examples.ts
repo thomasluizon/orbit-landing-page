@@ -1,4 +1,15 @@
-export const exampleWeek = [100, 80, 66, 0, 100, 100, 100];
+export const exampleDays = [
+  { done: 5, total: 5 },
+  { done: 4, total: 5 },
+  { done: 2, total: 3 },
+  { done: 0, total: 3 },
+  { done: 3, total: 3 },
+  { done: 4, total: 4 },
+  { done: 5, total: 5 },
+];
+
+export const exampleWeek = exampleDays.map(({ done, total }) => Math.round((done / total) * 100));
+export const exampleMonth = Array.from({ length: 30 }, (_, index) => exampleWeek[index % 7]);
 
 const linkedHabits = [
   { habit: "walk", emoji: "🚶", streak: 12 },
