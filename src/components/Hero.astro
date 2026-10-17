@@ -32,18 +32,21 @@ const en = translations.en;
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
       <div class="hero-float float-today" data-hero-float><ProductCard kind="today" /></div>
-      <div class="hero-device">
-        <div class="device-screen">
-          <div class="device-status" aria-hidden="true">
-            <span data-mock>9:41</span>
-            <span class="device-speaker"></span>
-            <span class="device-status-icons"
-              ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
-            >
+      <div class="hero-phone">
+        <div class="hero-device">
+          <div class="device-screen">
+            <div class="device-status" aria-hidden="true">
+              <span data-mock>9:41</span>
+              <span class="device-speaker"></span>
+              <span class="device-status-icons"
+                ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+              >
+            </div>
+            <AstraDemo appUrl={appUrl} />
+            <div class="device-home" aria-hidden="true"></div>
           </div>
-          <AstraDemo appUrl={appUrl} />
-          <div class="device-home" aria-hidden="true"></div>
         </div>
+        <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
       <div class="hero-right">
         <div class="hero-float float-week" data-hero-float><ProductCard kind="week" /></div>

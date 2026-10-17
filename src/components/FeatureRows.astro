@@ -19,10 +19,13 @@ const { appUrl } = Astro.props;
           <Copy name="remember.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
-      <div class="feature-art feature-art-busy">
-        <ProductCard kind="today" /><div class="feature-reminder" data-reveal>
-          <ProductCard kind="reminder" />
+      <div class="feature-composition">
+        <div class="feature-art feature-art-busy">
+          <ProductCard kind="today" /><div class="feature-reminder" data-reveal>
+            <ProductCard kind="reminder" />
+          </div>
         </div>
+        <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
     </div>
   </div>
@@ -37,10 +40,13 @@ const { appUrl } = Astro.props;
           <Copy name="understand.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
-      <div class="feature-art">
-        <ProductCard kind="week" /><p class="sample-message" data-reveal>
-          <Copy name="product.progressRequest" />
-        </p>
+      <div class="feature-composition">
+        <div class="feature-art">
+          <ProductCard kind="week" /><p class="sample-message" data-reveal>
+            <Copy name="product.progressRequest" />
+          </p>
+        </div>
+        <p class="composition-caption"><Copy name="product.example" /></p>
       </div>
     </div>
   </div>
@@ -53,7 +59,10 @@ const { appUrl } = Astro.props;
           <Copy name="restart.body" />
         </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
-      <div class="feature-art"><ProductCard kind="restart" /></div>
+      <div class="feature-composition">
+        <div class="feature-art"><ProductCard kind="restart" /></div>
+        <p class="composition-caption"><Copy name="product.example" /></p>
+      </div>
     </div>
   </div>
 </section>

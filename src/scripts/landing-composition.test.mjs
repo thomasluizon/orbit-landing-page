@@ -129,7 +129,7 @@ test("feature copy precedes its centered product composition", () => {
       row.children
         .filter((node) => node.name === "div")
         .map((node) => attributes(node).class.split(" ")[0]),
-      ["feature-copy", "feature-art"],
+      ["feature-copy", "feature-composition"],
     );
   }
 });
@@ -187,4 +187,34 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
   assert.match(css, /\.feature-art-busy > \.product-today\s*\{[^}]*grid-template-rows:\s*subgrid/);
   assert.match(css, /\.feature-reminder\s*\{[^}]*grid-row:\s*5 \/ span 2/);
+});
+
+test("example disclosure belongs once below each composition, outside the product surfaces", async () => {
+  const card = (await parse(readFileSync("src/components/ProductCard.astro", "utf8"))).ast;
+  assert.ok(!descendants(card).some((node) => attributes(node).name === "product.example"));
+  assert.ok(
+    !descendants(components.get("AstraDemo")).some(
+      (node) => attributes(node)["data-i18n"] === "demo.example",
+    ),
+  );
+  assert.equal(
+    descendants(sections[0]).filter((node) => attributes(node).class === "composition-caption")
+      .length,
+    1,
+  );
+  const panels = descendants(components.get("FeatureRows")).filter(
+    (node) => attributes(node).class === "feature-composition",
+  );
+  assert.equal(panels.length, 3);
+  for (const panel of panels) {
+    const children = panel.children.filter((node) => node.name);
+    assert.ok(attributes(children[0]).class.includes("feature-art"));
+    assert.equal(attributes(children[1]).class, "composition-caption");
+    assert.equal(
+      descendants(children[1]).filter((node) => attributes(node).name === "product.example").length,
+      1,
+    );
+  }
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.composition-caption\s*\{[^}]*font-size:\s*var\(--fs-xs\)/);
 });

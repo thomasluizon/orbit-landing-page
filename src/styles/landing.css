@@ -135,6 +135,13 @@
   min-block-size: 760px;
   isolation: isolate;
 }
+.hero-phone {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
 .hero-device {
   position: relative;
   z-index: 2;
@@ -214,9 +221,6 @@
 }
 .demo-heading h2 {
   font-weight: 500;
-}
-.demo-heading > span {
-  margin-inline-start: auto;
 }
 .demo-heading svg {
   color: var(--color-fg-1);
@@ -518,6 +522,9 @@
   font-size: var(--fs-base);
   line-height: var(--lh-body);
 }
+.product-restart .product-top > :last-child {
+  margin-inline-start: 0;
+}
 .product-reply {
   font-size: var(--fs-lg);
   line-height: var(--lh-body);
@@ -654,6 +661,18 @@
   display: grid;
   justify-items: center;
   gap: 24px;
+  text-align: center;
+}
+.feature-composition {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  inline-size: 100%;
+}
+.composition-caption {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: var(--color-fg-3);
   text-align: center;
 }
 .feature-art {
