@@ -410,3 +410,36 @@ test("hero phrases keep intrinsic one-line width without recalculating the stage
   }
   assert.match(css, /\.hero-week-stack\s*\{[^}]*grid-template-columns:\s*auto;[^}]*gap:\s*12px/);
 });
+
+test("the hero reserves side-stack heights and keeps card travel above the trust strip", () => {
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  const floatingCards = motion.slice(
+    motion.indexOf("cards.forEach"),
+    motion.indexOf('media.add("(prefers', motion.indexOf("cards.forEach")),
+  );
+  const verticalTravel = [...floatingCards.matchAll(/\by:\s*(-?\d+)/g)].map(([, value]) =>
+    Number(value),
+  );
+  assert.equal(verticalTravel.length, 2);
+  assert.ok(
+    verticalTravel.every((value) => value <= 0),
+    "no card travels below its reserved resting position",
+  );
+  for (const selector of ["float-today", "hero-right"]) {
+    const rule = css.match(new RegExp(`^\\.${selector}\\s*\\{([^}]+)\\}`, "m"))[1];
+    assert.match(rule, /position:\s*relative/);
+    assert.match(rule, /grid-area:\s*1 \/ 1/);
+    assert.match(rule, /align-self:\s*start/);
+    assert.match(rule, /inset-block-start:\s*48px/);
+  }
+  assert.match(css, /\.hero-phone\s*\{[^}]*grid-area:\s*1 \/ 1/);
+  const reserve = Number(css.match(/\.hero-stage\s*\{[^}]*padding-block-end:\s*(\d+)px/)[1]);
+  const heroGap = Number(css.match(/\.hero\s*\{[^}]*padding-block:\s*\d+px (\d+)px/)[1]);
+  assert.ok(reserve >= 48, "the stage includes the side stacks' relative 48px offset");
+  assert.ok(reserve - 48 + heroGap >= 48, "the lowest card clears the trust rule by at least 48px");
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static/);
+  assert.match(mobile, /\.hero-right\s*\{[^}]*justify-self:\s*center/);
+  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
+  assert.match(mobile, /\.hero\s*\{[^}]*padding-block-end:\s*48px/);
+});

@@ -145,6 +145,7 @@
 }
 .hero-phone {
   position: relative;
+  grid-area: 1 / 1;
   z-index: 2;
   display: grid;
   justify-items: center;
@@ -354,11 +355,18 @@
   inline-size: var(--hero-card-width);
 }
 .float-today {
+  position: relative;
+  grid-area: 1 / 1;
+  justify-self: end;
+  align-self: start;
   inset-inline-end: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-start: 48px;
 }
 .hero-right {
-  position: absolute;
+  position: relative;
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: start;
   z-index: 3;
   inset-inline-start: calc(50% + var(--hero-device-width) / 2 - var(--hero-device-bezel));
   inset-block-start: 48px;
@@ -1216,6 +1224,7 @@
   .hero-right {
     position: static;
     display: grid;
+    justify-self: center;
     grid-column: 1;
     grid-row: 2 / 4;
     grid-template-rows: auto 32px auto;

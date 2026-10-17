@@ -38,7 +38,7 @@ export function mountLandingMotion() {
       cards.forEach((card, index) => {
         timeline.fromTo(
           card,
-          { x: card.dataset.heroSide === "left" ? -48 : 48, y: 64 },
+          { x: card.dataset.heroSide === "left" ? -48 : 48, y: 0 },
           { x: 0, y: 0, duration: 1, ease: "none" },
           index * 0.08,
         );
