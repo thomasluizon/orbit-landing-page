@@ -255,7 +255,7 @@ test("wide hero cards overlap exactly the phone bezel and never the conversation
 test("compact hero cards overlap only the input area and grow the composition in flow", () => {
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
   assert.match(mobile, /\.hero-device\s*\{[^}]*inline-size:\s*280px;\s*block-size:\s*auto/);
-  assert.match(mobile, /\.hero-stage\s*\{[^}]*grid-template-rows:\s*auto 144px auto auto/);
+  assert.match(mobile, /\.hero-stage\s*\{[^}]*grid-template-rows:\s*auto 32px auto auto/);
   assert.match(mobile, /\.hero-device\s*\{[^}]*grid-row:\s*1 \/ 3/);
   assert.match(mobile, /\.hero-right\s*\{[^}]*position:\s*static;[^}]*grid-row:\s*2 \/ 4/);
   assert.match(mobile, /\.demo-thread\s*\{[^}]*flex:\s*none;[^}]*overflow:\s*visible/);
@@ -263,12 +263,30 @@ test("compact hero cards overlap only the input area and grow the composition in
   assert.match(mobile, /\.float-today,\s*\.hero-phrase\s*\{\s*display:\s*none/);
   assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
   assert.match(mobile, /\.float-week\s*\{[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2/);
+  assert.match(mobile, /\.float-reminder\s*\{[^}]*grid-row:\s*2 \/ 4/);
+  assert.match(mobile, /\.hero-right\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
   assert.match(mobile, /\.hero-stage \.week-chart\s*\{[^}]*block-size:\s*96px/);
   assert.match(css, /\.hero\s*\{[^}]*padding-block:\s*96px var\(--landing-section-gap\)/);
   assert.match(css, /\.demo-composer\s*\{[^}]*min-block-size:\s*48px/);
   assert.match(css, /\.demo-composer\s*\{[^}]*font-size:\s*var\(--fs-base\)/);
   assert.match(css, /\.demo-send\s*\{[^}]*inline-size:\s*32px;\s*block-size:\s*32px/);
+});
+
+test("below 480px every floating card keeps viewport gutters and a vertical overlap", () => {
+  const compact = css.slice(css.indexOf("@media (max-width: 29.999rem)"));
+  assert.ok(compact, "the narrow viewport has its own clamp");
+  assert.match(
+    compact,
+    /\.hero-float,\s*\.feature-secondary\s*\{[^}]*max-inline-size:\s*calc\(100vw - 64px\)/,
+  );
+  assert.match(
+    compact,
+    /\.hero-right \.hero-float\s*\{[^}]*inline-size:\s*min\(280px, calc\(100vw - 64px\)\)/,
+  );
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.hero-right\s*\{[^}]*inline-size:\s*min\(440px, calc\(100% - 32px\)\)/);
+  assert.match(mobile, /\.hero-right \.hero-float\s*\{[^}]*position:\s*static/);
+  assert.match(mobile, /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
 });
 
 test("the phone footer hides the install QR and shares the 16px content gutter", () => {
