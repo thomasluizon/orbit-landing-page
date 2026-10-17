@@ -5,10 +5,9 @@ import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "today" | "week" | "reminder" | "restart" | "walk";
-  compact?: boolean;
+  kind: "today" | "week" | "reminder" | "restart";
 }
-const { kind, compact = false } = Astro.props;
+const { kind } = Astro.props;
 ---
 
 <div class:list={["product-card", `product-${kind}`]} data-mock="true">
@@ -39,7 +38,7 @@ const { kind, compact = false } = Astro.props;
         </div>
         <HabitRow habit="walk" timing="morning" />
         <HabitRow habit="read" />
-        {!compact && <HabitRow habit="water" timing="done" />}
+        <HabitRow habit="water" timing="done" />
       </>
     )
   }
@@ -117,5 +116,4 @@ const { kind, compact = false } = Astro.props;
       </>
     )
   }
-  {kind === "walk" && <HabitRow habit="walk" />}
 </div>

@@ -639,8 +639,8 @@ test("every inline Astra glyph keeps its asset viewBox and the native 16px drawi
     const viewBox = symbol.attributes.find((a) => a.name === "viewBox");
     assert.equal(viewBox.kind, "expression");
   }
-  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
-  assert.match(rows, /<AstraGlyph size=\{16\}/);
+  const blocks = readFileSync("src/components/AstraBlock.astro", "utf8");
+  assert.match(blocks, /<AstraGlyph size=\{16\}/);
 });
 
 test("Orbit marks retain the canonical full asset frames", () => {

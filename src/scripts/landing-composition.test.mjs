@@ -367,7 +367,7 @@ test("feature copy precedes its centered product composition", () => {
   }
 });
 
-test("feature product surfaces alternate their overlap inside a centered 680px stage", () => {
+test("feature product surfaces keep their full type in a centered stage without covering controls", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const art = css.match(/^\.feature-art\s*\{([^}]+)\}/m)[1];
   assert.doesNotMatch(art, /background|box-shadow|border(?:-radius)?:/);
@@ -381,8 +381,7 @@ test("feature product surfaces alternate their overlap inside a centered 680px s
     /\.feature-composition\s*\{[^}]*inline-size:\s*min\(680px, 100%\);[^}]*justify-self:\s*center/,
   );
   assert.doesNotMatch(css, /\[data-section="(?:progress|restart)"\] \.feature-composition/);
-  assert.match(css, /\.feature-art-progress \.feature-primary\s*\{[^}]*justify-self:\s*end/);
-  assert.match(css, /\.feature-art-progress \.feature-secondary\s*\{[^}]*justify-self:\s*start/);
+  assert.doesNotMatch(css, /\.feature-art-progress \.feature-(?:primary|secondary)\s*\{/);
   const mobile = css.slice(
     css.indexOf("@media (max-width: 47.999rem)"),
     css.indexOf("@media (max-width: 40rem)"),
@@ -479,12 +478,11 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
   assert.match(
     css,
-    /\.feature-stack\s*\{[^}]*inline-size:\s*calc\(440px \+ 280px - 48px\);[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
+    /\.feature-stack\s*\{[^}]*gap:\s*32px;[^}]*inline-size:\s*440px;[^}]*max-inline-size:\s*100%/,
   );
-  assert.match(css, /\.feature-primary\s*\{[^}]*grid-area:\s*1 \/ 1;[^}]*inline-size:\s*440px/);
   assert.match(
     css,
-    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-area:\s*1 \/ 1;[^}]*justify-self:\s*end;[^}]*inline-size:\s*280px;[^}]*margin-block-start:\s*48px/,
+    /\.feature-primary,\s*\.feature-secondary\s*\{[^}]*grid-area:\s*auto;[^}]*inline-size:\s*100%;[^}]*margin-block-start:\s*0/,
   );
   for (const [selector, size] of [
     ["product-card h3", "lg"],
@@ -508,7 +506,7 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(rows, /class="feature-art feature-art-progress"/);
   assert.match(
     rows,
-    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="walk"/,
+    /class="feature-art feature-art-restart"[\s\S]*kind="restart"[\s\S]*class="feature-secondary feature-return"[\s\S]*kind="breakdown"/,
   );
   const stacks = descendants(components.get("FeatureRows")).filter(
     (node) => attributes(node).class === "feature-stack",
@@ -540,7 +538,7 @@ test("feature compositions keep real product dimensions and never shrink their t
     css,
     /\.product-card\s*\{[^}]*padding:\s*24px;[^}]*border-radius:\s*var\(--radius-xl\)/,
   );
-  assert.match(css, /\.progress-reply\s*\{[^}]*padding:\s*24px/);
+  assert.match(css, /\.product-block\s*\{[^}]*padding:\s*24px/);
   const global = readFileSync("src/styles/global.css", "utf8");
   const sizes = new Map(
     [...global.matchAll(/--fs-([\w]+):\s*(\d+)px/g)].map(([, role, size]) => [role, Number(size)]),
@@ -615,21 +613,20 @@ test("each week bar and its localized weekday share one of seven equal columns",
   assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
 });
 
-test("the compact week composition pairs Astra's line with one chart", () => {
+test("the progress composition pairs Astra's metrics with a goal derived from linked habits", () => {
   const composition = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-progress"),
   );
-  const nodes = descendants(composition);
-  const primary = nodes.find((node) => attributes(node).class === "feature-primary");
-  assert.ok(primary, "the request and chart form the primary product card group");
-  const children = primary.children.filter((node) => node.name);
-  assert.equal(children.length, 1);
-  assert.equal(attributes(children[0]).kind, "week");
-  const reply = nodes.find((node) => attributes(node).class?.includes("progress-reply"));
-  assert.ok(descendants(reply).some((node) => node.name === "AstraGlyph"));
-  assert.ok(descendants(reply).some((node) => attributes(node).name === "product.progressReply"));
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.progress-reply svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px/);
+  const blocks = descendants(composition).filter((node) => node.name === "AstraBlock");
+  assert.deepEqual(
+    blocks.map((node) => attributes(node).kind),
+    ["metrics", "goal"],
+  );
+  assert.equal(attributes(blocks[0]).interactive, "");
+  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
+  assert.match(source, /<AstraGlyph size=\{16\}/);
+  assert.match(source, /product.progressReply/);
+  assert.equal((source.match(/class="metric-bars"/g) ?? []).length, 1);
 });
 
 test("feature and promise grids keep their title and body roles above content-sized cards", () => {
@@ -687,16 +684,19 @@ test("each feature grid card introduces its promise with a decorative product vi
     );
     assert.ok(!Object.hasOwn(attributes(node), "tabindex"));
   }
-  assert.match(
-    source,
-    /kind === "start"[\s\S]*data-i18n="demo.start.reply"[\s\S]*<HabitRow habit="walk" timing="morning"/,
-  );
+  for (const [promise, block] of [
+    ["start", "breakdown"],
+    ["act", "habits"],
+    ["restart", "metrics"],
+  ]) {
+    assert.match(
+      source,
+      new RegExp(`kind === "${promise}" && <AstraBlock kind="${block}" embedded`),
+    );
+  }
   assert.match(source, /kind === "remember" && <ProductCard kind="reminder"/);
-  assert.match(source, /kind === "act"[\s\S]*<HabitRow habit="walk"[\s\S]*<HabitRow habit="read"/);
-  assert.match(
-    source,
-    /kind === "restart"[\s\S]*name="phrase.restart"[\s\S]*data-i18n="demo.restart.reply"/,
-  );
+  assert.doesNotMatch(source, /<AstraBlock[^>]*interactive/);
+  assert.match(source, /name="product.example"/);
   const row = descendants((await parse(readFileSync("src/components/HabitRow.astro", "utf8"))).ast);
   assert.ok(row.some((node) => attributes(node).class === "habit-row"));
   assert.ok(row.some((node) => attributes(node).class === "habit-emoji"));
@@ -722,9 +722,9 @@ test("feature demonstrations use compact rhythm and trim only their primary prod
   assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);
   const source = readFileSync("src/components/FeatureRows.astro", "utf8");
   assert.equal((source.match(/class="section feature-section"/g) ?? []).length, 3);
-  assert.match(source, /kind="today" compact/);
+  assert.match(source, /<AstraBlock kind="habits" interactive/);
   const product = readFileSync("src/components/ProductCard.astro", "utf8");
-  assert.match(product, /!compact && <HabitRow habit="water" timing="done"/);
+  assert.match(product, /<HabitRow habit="water" timing="done"/);
   assert.doesNotMatch(css.match(/\.feature-art\s*\{([^}]+)\}/)[1], /min-|block-size/);
 });
 
@@ -1023,5 +1023,206 @@ test("the selected billing period survives language changes with price, unit and
     );
     assert.equal(h.fields["data-annual-equivalent"].hidden, false);
     assert.equal(h.options[1].attributes["aria-checked"], "true");
+  }
+});
+
+test("Astra replicas expose a neutral chart, log rings, frequency controls and a derived goal", async () => {
+  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
+  const block = descendants((await parse(source)).ast);
+  assert.match(source, /kind === "metrics"/);
+  assert.match(source, /kind === "habits"/);
+  assert.match(source, /kind === "breakdown"/);
+  assert.match(source, /kind === "goal"/);
+  assert.ok(block.some((node) => attributes(node).class === "metric-readout"));
+  assert.ok(block.some((node) => node.name === "input" && attributes(node).type === "range"));
+  assert.match(source, /blocks.metrics.date0[\s\S]*blocks.metrics.date6/);
+  assert.match(source, /blocks.metrics.completion/);
+  assert.match(source, /blocks.metrics.active/);
+  assert.match(source, /<HabitRow habit="walk"[^>]*interactive=\{interactive\}/);
+  assert.match(source, /<HabitRow habit="read"[^>]*interactive=\{interactive\}/);
+  assert.match(source, /class="frequency-control"/);
+  assert.match(source, /blocks.goal.derived/);
+  assert.match(source, /exampleGoal\.habits\.map/);
+  assert.ok(block.some((node) => attributes(node).role === "progressbar"));
+  const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
+  for (const kind of ["metrics", "habits", "breakdown", "goal"])
+    assert.match(rows, new RegExp(`<AstraBlock kind="${kind}"`));
+  const vignette = readFileSync("src/components/FeatureVignette.astro", "utf8");
+  for (const kind of ["metrics", "habits", "breakdown"])
+    assert.match(vignette, new RegExp(`<AstraBlock kind="${kind}"`));
+  assert.match(vignette, /name="product.example"/);
+});
+
+test("example figures derive from the chart and linked habit fixtures", () => {
+  const fixture = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    { exports: fixture },
+  );
+  assert.equal(fixture.exampleWeek.length, 7);
+  assert.equal(Math.round(fixture.exampleWeek.reduce((sum, point) => sum + point, 0) / 7), 78);
+  assert.equal(fixture.exampleWeek.filter((value) => value > 0).length, 6);
+  assert.equal(
+    fixture.exampleGoal.progress,
+    Math.min(...fixture.exampleGoal.habits.map((habit) => habit.streak)),
+  );
+  assert.equal(fixture.exampleGoal.progress, 9);
+  assert.equal(fixture.exampleGoal.target, 30);
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.metric-bar\s*\{[^}]*background:\s*var\(--color-fg-2\)/);
+  assert.match(css, /\.goal-progress-fill\s*\{[^}]*background:\s*var\(--color-primary\)/);
+  assert.doesNotMatch(css, /\.(?:astra-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
+});
+
+test("the product examples select chart days, log in place, approve frequencies and reset in both locales", () => {
+  const fixture = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    { exports: fixture },
+  );
+  const element = (dataset = {}, attrs = {}) => ({
+    dataset,
+    attrs,
+    hidden: false,
+    textContent: "",
+    listeners: new Map(),
+    focused: false,
+    setAttribute(key, value) {
+      this.attrs[key] = value;
+    },
+    getAttribute(key) {
+      return this.attrs[key];
+    },
+    addEventListener(key, callback) {
+      this.listeners.set(key, callback);
+    },
+    focus() {
+      this.focused = true;
+    },
+  });
+  const range = element();
+  range.value = "6";
+  const readouts = fixture.exampleWeek.map((_, index) => element({ metricReadout: String(index) }));
+  const bars = fixture.exampleWeek.map((_, index) => element({ metricBar: String(index) }));
+  const metrics = element();
+  metrics.querySelector = () => range;
+  metrics.querySelectorAll = (selector) => (selector === "[data-metric-readout]" ? readouts : bars);
+  const logs = ["walk", "read"].map((habit) => element({ habit }, { "aria-pressed": "false" }));
+  const count = element();
+  const habits = element();
+  habits.querySelectorAll = () => logs;
+  habits.querySelector = () => count;
+  const frequencies = fixture.exampleBreakdown.map((item) => {
+    const control = element();
+    const row = element({ cadence: item.cadence, initialCadence: item.cadence });
+    row.querySelector = () => control;
+    return { row, control, result: element() };
+  });
+  const proposal = element();
+  const results = element();
+  results.hidden = true;
+  const status = element();
+  const approve = element();
+  const reject = element();
+  const edit = element();
+  const reset = element();
+  const breakdown = element({ state: "proposed" });
+  breakdown.querySelectorAll = () => frequencies.map(({ row }) => row);
+  breakdown.querySelector = (selector) => {
+    const index = selector.match(/data-result-frequency="(\d+)"/)?.[1];
+    return index
+      ? frequencies[Number(index)].result
+      : {
+          "[data-breakdown-proposal]": proposal,
+          "[data-breakdown-result]": results,
+          "[data-breakdown-status]": status,
+          ".breakdown-approve": approve,
+          ".breakdown-reject": reject,
+          ".breakdown-edit": edit,
+          ".breakdown-reset": reset,
+        }[selector];
+  };
+  let locale = "en";
+  const events = new Map();
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      exports: {},
+      document: {
+        querySelectorAll(selector) {
+          return (
+            {
+              '[data-example-block="metrics"]': [metrics],
+              '[data-example-block="habits"]': [habits],
+              '[data-example-block="breakdown"]': [breakdown],
+            }[selector] ?? []
+          );
+        },
+      },
+      window: {
+        addEventListener(name, callback) {
+          events.set(name, callback);
+        },
+      },
+      require(path) {
+        if (path === "../i18n/translations") return copyTables;
+        if (path === "./i18n") return { getLang: () => locale };
+        throw Error(path);
+      },
+    },
+  );
+  for (let index = 0; index < 7; index++) {
+    range.value = String(index);
+    range.listeners.get("input")();
+    assert.deepEqual(
+      readouts.map((row) => row.hidden),
+      readouts.map((_, n) => n !== index),
+    );
+    assert.equal(bars[index].getAttribute("data-selected"), "true");
+  }
+  for (const lang of ["en", "pt-BR"]) {
+    locale = lang;
+    events.get("orbit:language-changed")();
+    for (const log of logs) {
+      log.attrs["aria-pressed"] = "false";
+    }
+    logs[0].listeners.get("click")();
+    assert.equal(logs[0].getAttribute("aria-pressed"), "true");
+    assert.equal(
+      count.textContent,
+      copyTables.landingCopy[lang]["blocks.habits.count"]
+        .replace("{done}", "1")
+        .replace("{total}", "2"),
+    );
+    logs[0].listeners.get("click")();
+    assert.equal(logs[0].getAttribute("aria-pressed"), "false");
+    edit.listeners.get("click")();
+    assert.equal(frequencies[0].control.focused, true);
+    frequencies[0].control.listeners.get("click")();
+    const changed = frequencies[0].row.dataset.cadence;
+    approve.listeners.get("click")();
+    assert.equal(breakdown.dataset.state, "approved");
+    assert.equal(proposal.hidden, true);
+    assert.equal(results.hidden, false);
+    assert.equal(
+      frequencies[0].result.textContent,
+      copyTables.landingCopy[lang][`blocks.breakdown.${changed}`],
+    );
+    assert.equal(status.textContent, copyTables.landingCopy[lang]["blocks.breakdown.approved"]);
+    reset.listeners.get("click")();
+    assert.equal(proposal.hidden, false);
+    assert.equal(results.hidden, true);
+    assert.equal(breakdown.dataset.state, "proposed");
+    assert.equal(frequencies[0].row.dataset.cadence, fixture.exampleBreakdown[0].cadence);
+    reject.listeners.get("click")();
+    assert.equal(status.textContent, copyTables.landingCopy[lang]["blocks.breakdown.rejected"]);
+    assert.equal(results.hidden, true);
+    reset.listeners.get("click")();
   }
 });

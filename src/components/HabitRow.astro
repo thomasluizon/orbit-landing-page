@@ -1,11 +1,13 @@
 ---
 import { Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
+import { landingCopy } from "../i18n/translations";
 interface Props {
   habit: "walk" | "read" | "water";
   timing?: "morning" | "evening" | "done";
+  interactive?: boolean;
 }
-const { habit, timing = "evening" } = Astro.props;
+const { habit, timing = "evening", interactive = false } = Astro.props;
 const emoji = { walk: "🚶", read: "📖", water: "💧" };
 ---
 
@@ -15,7 +17,27 @@ const emoji = { walk: "🚶", read: "📖", water: "💧" };
     <p class="habit-name"><Copy name={`product.${habit}`} /></p>
     <p class="product-caption"><Copy name={`product.${timing}`} /></p>
   </div>
-  <span class:list={["status-ring", { "is-done": timing === "done" }]} aria-hidden="true">
-    {timing === "done" && <Check size={16} />}
-  </span>
+  {
+    interactive ? (
+      <button
+        class="log-control"
+        type="button"
+        data-example-log
+        data-habit={habit}
+        aria-pressed="false"
+        aria-label={landingCopy.en["blocks.habits.log"].replace(
+          "{habit}",
+          landingCopy.en[`product.${habit}`],
+        )}
+      >
+        <span class="status-ring" aria-hidden="true">
+          <Check size={16} />
+        </span>
+      </button>
+    ) : (
+      <span class:list={["status-ring", { "is-done": timing === "done" }]} aria-hidden="true">
+        {timing === "done" && <Check size={16} />}
+      </span>
+    )
+  }
 </div>

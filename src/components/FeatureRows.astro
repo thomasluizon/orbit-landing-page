@@ -3,7 +3,7 @@ import SentenceTitle from "./SentenceTitle.astro";
 import Copy from "./Copy.astro";
 import ProductCard from "./ProductCard.astro";
 import PillButton from "./PillButton.astro";
-import AstraGlyph from "./AstraGlyph.astro";
+import AstraBlock from "./AstraBlock.astro";
 interface Props {
   appUrl: string;
 }
@@ -31,7 +31,7 @@ const { appUrl } = Astro.props;
       <div class="feature-composition">
         <div class="feature-art feature-art-busy">
           <div class="feature-stack">
-            <div class="feature-primary"><ProductCard kind="today" compact /></div>
+            <div class="feature-primary"><AstraBlock kind="habits" interactive /></div>
             <div class="feature-secondary feature-reminder" data-reveal>
               <ProductCard kind="reminder" />
             </div>
@@ -64,10 +64,10 @@ const { appUrl } = Astro.props;
         <div class="feature-art feature-art-progress">
           <div class="feature-stack">
             <div class="feature-primary">
-              <ProductCard kind="week" />
+              <AstraBlock kind="metrics" interactive />
             </div>
-            <div class="feature-secondary progress-reply" data-reveal>
-              <AstraGlyph size={16} /><p><Copy name="product.progressReply" /></p>
+            <div class="feature-secondary">
+              <AstraBlock kind="goal" />
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ const { appUrl } = Astro.props;
           <div class="feature-stack">
             <div class="feature-primary"><ProductCard kind="restart" /></div>
             <div class="feature-secondary feature-return" data-reveal>
-              <ProductCard kind="walk" />
+              <AstraBlock kind="breakdown" interactive />
             </div>
           </div>
         </div>

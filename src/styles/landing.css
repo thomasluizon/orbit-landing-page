@@ -636,19 +636,11 @@
 }
 .feature-vignette {
   display: grid;
+  gap: 24px;
   align-content: center;
   inline-size: 100%;
   min-block-size: 120px;
   pointer-events: none;
-}
-.vignette-start,
-.vignette-restart {
-  display: grid;
-  gap: 12px;
-}
-.vignette-habits {
-  display: grid;
-  gap: 8px;
 }
 .vignette-astra {
   display: flex;
@@ -739,41 +731,22 @@
 .feature-stack {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  inline-size: calc(440px + 280px - 48px);
-  max-inline-size: 100%;
-  justify-self: center;
-  isolation: isolate;
-}
-.feature-primary {
-  display: grid;
-  gap: 16px;
-  grid-area: 1 / 1;
-  align-self: start;
-  justify-self: start;
+  gap: 32px;
   inline-size: 440px;
   max-inline-size: 100%;
+  justify-self: center;
 }
+.feature-primary,
 .feature-secondary {
-  position: relative;
-  z-index: 2;
-  grid-area: 1 / 1;
-  align-self: start;
-  justify-self: end;
-  inline-size: 280px;
-  margin-block-start: 48px;
-}
-.feature-art-progress .feature-primary {
-  justify-self: end;
-}
-.feature-art-progress .feature-secondary {
-  justify-self: start;
+  display: grid;
+  grid-area: auto;
+  gap: 16px;
+  inline-size: 100%;
+  margin-block-start: 0;
 }
 .feature-art .product-icon {
   inline-size: 24px;
   block-size: 24px;
-}
-.feature-art .week-chart {
-  block-size: 96px;
 }
 .feature-art .product-card h3 {
   font-size: var(--fs-lg);
@@ -812,23 +785,6 @@
 .feature-vignette .status-ring {
   inline-size: 30px;
   block-size: 30px;
-}
-.progress-reply {
-  display: flex;
-  align-items: start;
-  gap: 12px;
-  padding: 24px;
-  border-radius: var(--radius-xl);
-  background: var(--color-bg);
-  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
-  color: var(--color-fg-2);
-  font-size: var(--fs-base);
-  line-height: var(--lh-body);
-}
-.progress-reply svg {
-  inline-size: 16px;
-  block-size: 16px;
-  flex-shrink: 0;
 }
 .pricing-grid {
   display: grid;
@@ -1368,4 +1324,201 @@
 .faq-list summary:active,
 .footer-qr:active {
   background: var(--color-bg-hover);
+}
+
+.astra-product {
+  display: grid;
+  gap: 16px;
+  inline-size: 100%;
+}
+.product-block {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  padding: 24px;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+}
+.product-block[data-embedded] {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.product-block h3 {
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  line-height: var(--lh-row);
+}
+.metric-chart {
+  display: grid;
+  gap: 8px;
+}
+.metric-readout {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  color: var(--color-fg-2);
+}
+.metric-readout > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.metric-readout strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: 500;
+  color: var(--color-fg-1);
+}
+.metric-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  gap: 8px;
+  block-size: 128px;
+}
+.metric-bar-track {
+  display: flex;
+  align-items: end;
+  block-size: 100%;
+}
+.metric-bar {
+  inline-size: 100%;
+  block-size: var(--bar-height);
+  border-radius: var(--radius-sm);
+  background: var(--color-fg-2);
+}
+.metric-bar[data-selected="true"] {
+  background: var(--color-fg-1);
+}
+.metric-chart input {
+  inline-size: 100%;
+  min-block-size: 48px;
+  margin: 0;
+  padding: 4px 8px;
+  accent-color: var(--color-fg-1);
+  cursor: pointer;
+}
+.metric-dates {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.metric-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.metric-figures > div {
+  display: grid;
+  gap: 8px;
+}
+.metric-figures dt {
+  color: var(--color-fg-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.metric-figures dd,
+.goal-figure {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.block-habit-list,
+.breakdown-list,
+.goal-habits {
+  display: grid;
+  gap: 8px;
+}
+.log-control {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  inline-size: 48px;
+  block-size: 48px;
+  margin-inline-start: auto;
+  padding: 8px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.log-control .status-ring {
+  inline-size: 30px;
+  block-size: 30px;
+  margin-inline-start: 0;
+}
+.log-control .status-ring svg {
+  display: none;
+}
+.log-control[aria-pressed="true"] .status-ring {
+  background: var(--color-status-done);
+  color: var(--color-bg);
+  box-shadow: none;
+}
+.log-control[aria-pressed="true"] .status-ring svg {
+  display: block;
+}
+.breakdown-proposal {
+  display: grid;
+  gap: 24px;
+}
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+.breakdown-row > div {
+  display: grid;
+  gap: 4px;
+}
+.block-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.breakdown-reset {
+  justify-self: start;
+}
+.goal-title {
+  font-family: var(--font-display);
+}
+.goal-progress {
+  block-size: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-well);
+  overflow: clip;
+}
+.goal-progress-fill {
+  display: block;
+  inline-size: var(--goal-progress);
+  block-size: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+.goal-habit {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+.goal-habit > :last-child {
+  white-space: nowrap;
+}
+.log-control:active {
+  background: var(--color-bg-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .log-control:hover {
+    background: var(--color-bg-hover);
+  }
 }
