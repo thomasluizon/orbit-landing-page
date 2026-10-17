@@ -53,8 +53,8 @@ const { appUrl } = Astro.props;
           >
         </p>
         <p class="plan-annual">
-          <Copy name="pricing.or" />
-          <span data-price="yearly">{formatPrice("en", "yearly")}</span>
+          <Copy name="pricing.or" />{" "}
+          <span data-price="yearly">{formatPrice("en", "yearly")}</span>{" "}
           <Copy name="pricing.year" />
         </p>
         <ul>
@@ -71,7 +71,7 @@ const { appUrl } = Astro.props;
             )
           }
         </ul>
-        <PillButton href={`${appUrl}/upgrade`}><Copy name="action.start" /></PillButton>
+        <PillButton href={`${appUrl}/upgrade`}><Copy name="pricing.pro.cta" /></PillButton>
       </article>
     </div>
   </div>

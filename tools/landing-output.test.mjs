@@ -217,3 +217,14 @@ test("the complete local script graph stays inside the raw byte budget", () => {
   }
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
 });
+
+test("the built Pro plan separates its annual price words and names the Pro trial", () => {
+  const pro = html.match(/<article class="plan-card plan-pro">([\s\S]*?)<\/article>/)?.[1];
+  assert.ok(pro);
+  const annual = pro.match(/<p class="plan-annual">([\s\S]*?)<\/p>/)?.[1];
+  assert.equal(annual.replace(/<[^>]+>/g, "").trim(), "or $69.99 per year");
+  const action = pro.match(/<a\b[^>]*href="[^"]*\/upgrade"[^>]*>([\s\S]*?)<\/a>/)?.[1];
+  assert.match(action, /data-copy-en="Try Pro" data-copy-pt="Testar Pro"/);
+  assert.match(pro, /Try Pro free for 7 days/);
+  assert.match(pro, /Teste o Pro grátis por 7 dias/);
+});
