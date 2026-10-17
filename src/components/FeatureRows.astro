@@ -10,20 +10,22 @@ interface Props {
 const { appUrl } = Astro.props;
 ---
 
-<section class="section" data-section="details" aria-labelledby="remember-title">
+<section class="section feature-section" data-section="details" aria-labelledby="remember-title">
   <div class="section-inner">
     <div class="feature-row">
       <div class="feature-copy">
-        <h2 id="remember-title" class="section-title"><Copy name="remember.title" /></h2><p
-          class="section-description"
-        >
-          <Copy name="remember.body" />
-        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        <div class="feature-intro">
+          <h2 id="remember-title" class="section-title"><Copy name="remember.title" /></h2><p
+            class="section-description"
+          >
+            <Copy name="remember.body" />
+          </p>
+        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-busy">
           <div class="feature-stack">
-            <div class="feature-primary"><ProductCard kind="today" /></div>
+            <div class="feature-primary"><ProductCard kind="today" compact /></div>
             <div class="feature-secondary feature-reminder" data-reveal>
               <ProductCard kind="reminder" />
             </div>
@@ -34,21 +36,22 @@ const { appUrl } = Astro.props;
     </div>
   </div>
 </section>
-<section class="section" data-section="progress" aria-labelledby="understand-title">
+<section class="section feature-section" data-section="progress" aria-labelledby="understand-title">
   <div class="section-inner">
     <div class="feature-row">
       <div class="feature-copy">
-        <SentenceTitle id="understand-title" name="understand.title" /><p
-          class="section-description"
-        >
-          <Copy name="understand.body" />
-        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        <div class="feature-intro">
+          <SentenceTitle id="understand-title" name="understand.title" /><p
+            class="section-description"
+          >
+            <Copy name="understand.body" />
+          </p>
+        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-progress">
           <div class="feature-stack">
             <div class="feature-primary">
-              <p class="sample-message"><Copy name="product.progressRequest" /></p>
               <ProductCard kind="week" />
             </div>
             <div class="feature-secondary progress-reply" data-reveal>
@@ -61,13 +64,15 @@ const { appUrl } = Astro.props;
     </div>
   </div>
 </section>
-<section class="section" data-section="restart" aria-labelledby="restart-title">
+<section class="section feature-section" data-section="restart" aria-labelledby="restart-title">
   <div class="section-inner">
     <div class="feature-row">
       <div class="feature-copy">
-        <SentenceTitle id="restart-title" name="restart.title" /><p class="section-description">
-          <Copy name="restart.body" />
-        </p><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
+        <div class="feature-intro">
+          <SentenceTitle id="restart-title" name="restart.title" /><p class="section-description">
+            <Copy name="restart.body" />
+          </p>
+        </div><PillButton href={appUrl} size="md"><Copy name="action.start" /></PillButton>
       </div>
       <div class="feature-composition">
         <div class="feature-art feature-art-restart">

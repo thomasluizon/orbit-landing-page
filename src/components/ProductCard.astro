@@ -5,8 +5,9 @@ import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
   kind: "today" | "week" | "reminder" | "restart" | "walk";
+  compact?: boolean;
 }
-const { kind } = Astro.props;
+const { kind, compact = false } = Astro.props;
 ---
 
 <div class:list={["product-card", `product-${kind}`]} data-mock="true">
@@ -71,26 +72,28 @@ const { kind } = Astro.props;
             <span class="status-ring" aria-hidden="true" />
           </>
         </div>
-        <div class="habit-row">
-          <>
-            <span class="habit-emoji" aria-hidden="true">
-              💧
-            </span>
-            <div>
-              <>
-                <p class="habit-name">
-                  <Copy name="product.water" />
-                </p>
-                <p class="product-caption">
-                  <Copy name="product.done" />
-                </p>
-              </>
-            </div>
-            <span class="status-ring is-done" aria-hidden="true">
-              <Check size={16} />
-            </span>
-          </>
-        </div>
+        {!compact && (
+          <div class="habit-row">
+            <>
+              <span class="habit-emoji" aria-hidden="true">
+                💧
+              </span>
+              <div>
+                <>
+                  <p class="habit-name">
+                    <Copy name="product.water" />
+                  </p>
+                  <p class="product-caption">
+                    <Copy name="product.done" />
+                  </p>
+                </>
+              </div>
+              <span class="status-ring is-done" aria-hidden="true">
+                <Check size={16} />
+              </span>
+            </>
+          </div>
+        )}
       </>
     )
   }

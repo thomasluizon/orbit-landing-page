@@ -223,8 +223,8 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.match(css, /\.faq-list\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
   assert.match(css, /\.header-content\s*\{[^}]*max-inline-size:\s*var\(--landing-narrow\)/);
   const panel = css.match(/\.feature-art\s*\{([^}]+)\}/)[1];
-  assert.match(panel, /max-inline-size:\s*760px/);
-  assert.match(panel, /padding:\s*64px/);
+  assert.match(panel, /max-inline-size:\s*680px/);
+  assert.match(panel, /padding:\s*48px/);
   assert.doesNotMatch(panel, /(?:min-)?block-size:/);
   const busy = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-busy"),
@@ -232,17 +232,17 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   assert.ok(busy, "the busy-day panel owns the overlapping composition");
   assert.match(
     css,
-    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 48px auto;[^}]*inline-size:\s*440px;[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
+    /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 48px auto;[^}]*inline-size:\s*400px;[^}]*max-inline-size:\s*100%;[^}]*justify-self:\s*center/,
   );
   assert.match(css, /\.feature-primary\s*\{[^}]*grid-row:\s*1 \/ 3/);
-  assert.match(css, /\.feature-primary > \.product-card\s*\{[^}]*padding-block-end:\s*64px/);
+  assert.match(css, /\.feature-primary > \.product-card\s*\{[^}]*padding:\s*16px 16px 48px/);
   assert.match(
     css,
-    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-row:\s*2 \/ 4;[^}]*justify-self:\s*end;[^}]*inset-inline-end:\s*64px;[^}]*inline-size:\s*280px/,
+    /\.feature-secondary\s*\{[^}]*z-index:\s*2;[^}]*grid-row:\s*2 \/ 4;[^}]*justify-self:\s*end;[^}]*inset-inline-end:\s*48px;[^}]*inline-size:\s*240px/,
   );
   assert.match(
     css,
-    /\.progress-reply\s*\{[^}]*justify-self:\s*start;[^}]*inset-inline-start:\s*64px;[^}]*inset-inline-end:\s*auto/,
+    /\.progress-reply\s*\{[^}]*justify-self:\s*start;[^}]*inset-inline-start:\s*48px;[^}]*inset-inline-end:\s*auto/,
   );
   for (const [selector, size] of [
     ["product-card h3", "lg"],
@@ -263,7 +263,7 @@ test("grids, pricing, FAQ and product panels share their container system", () =
   );
   assert.match(
     mobile,
-    /\.feature-secondary\s*\{[^}]*inset-inline-end:\s*-8px;[^}]*inline-size:\s*min\(280px, calc\(100% \+ 16px\)\)/,
+    /\.feature-secondary\s*\{[^}]*inset-inline-end:\s*-8px;[^}]*inline-size:\s*min\(240px, calc\(100% \+ 16px\)\)/,
   );
   assert.match(mobile, /\.progress-reply\s*\{[^}]*inset-inline-start:\s*-8px/);
   const rows = readFileSync("src/components/FeatureRows.astro", "utf8");
@@ -332,7 +332,7 @@ test("each week bar and its localized weekday share one of seven equal columns",
   assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
 });
 
-test("the week composition answers the person's request with Astra's line then her chart", () => {
+test("the compact week composition pairs Astra's line with one chart", () => {
   const composition = descendants(components.get("FeatureRows")).find((node) =>
     attributes(node).class?.includes("feature-art-progress"),
   );
@@ -340,8 +340,8 @@ test("the week composition answers the person's request with Astra's line then h
   const primary = nodes.find((node) => attributes(node).class === "feature-primary");
   assert.ok(primary, "the request and chart form the primary product card group");
   const children = primary.children.filter((node) => node.name);
-  assert.equal(attributes(children[0]).class, "sample-message");
-  assert.equal(attributes(children[1]).kind, "week");
+  assert.equal(children.length, 1);
+  assert.equal(attributes(children[0]).kind, "week");
   const reply = nodes.find((node) => attributes(node).class?.includes("progress-reply"));
   assert.ok(descendants(reply).some((node) => node.name === "AstraGlyph"));
   assert.ok(descendants(reply).some((node) => attributes(node).name === "product.progressReply"));
@@ -370,4 +370,20 @@ test("promise cards pair a leading icon with title and body instead of repeating
     css.slice(css.indexOf("@media (max-width: 47.999rem)")),
     /\.promise-copy h3\s*\{[^}]*font-size:\s*var\(--fs-lg\)/,
   );
+});
+
+test("feature demonstrations use compact rhythm and trim only their primary product content", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(css, /\.feature-section\s*\{[^}]*padding-block-start:\s*96px/);
+  assert.match(css, /\.feature-intro\s*\{[^}]*gap:\s*16px/);
+  assert.match(css, /\.feature-copy\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.feature-copy \.section-title\s*\{[^}]*font-size:\s*var\(--fs-4xl\)/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);
+  const source = readFileSync("src/components/FeatureRows.astro", "utf8");
+  assert.equal((source.match(/class="section feature-section"/g) ?? []).length, 3);
+  assert.match(source, /kind="today" compact/);
+  const product = readFileSync("src/components/ProductCard.astro", "utf8");
+  assert.match(product, /!compact && \(\s*<div class="habit-row"/);
+  assert.doesNotMatch(css.match(/\.feature-art\s*\{([^}]+)\}/)[1], /min-|block-size/);
 });
