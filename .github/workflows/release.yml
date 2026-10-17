@@ -29,7 +29,7 @@ jobs:
     if: inputs.environment == 'production'
     name: Release production landing
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment:
       name: production
       url: https://useorbit.org/
@@ -138,27 +138,39 @@ jobs:
           }
           if (!live) throw new Error("Render deploy did not go live before the timeout");
 
-          // Layout.astro writes <meta name="orbit-build" content="<RENDER_GIT_COMMIT>">, so a page proves which build serves it.
+          const verificationStarted = performance.now();
+          const verificationDeadline = verificationStarted + 300_000;
+
           async function servedCommit(origin) {
-            const response = await fetch(`${origin}/`, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
+            const url = new URL("/", origin);
+            url.searchParams.set("orbit-verify", crypto.randomUUID());
+            const remaining = Math.max(1, Math.ceil(verificationDeadline - performance.now()));
+            const response = await fetch(url, {
+              redirect: "manual",
+              cache: "no-store",
+              signal: AbortSignal.timeout(Math.min(15_000, remaining)),
+            });
             if (response.status !== 200) return { status: response.status, commit: null };
             const html = await response.text();
             return { status: 200, commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null };
           }
 
           async function requireServedCommit(origin) {
-            let serves = false;
-            for (let attempt = 0; attempt < 6 && !serves; attempt++) {
+            while (performance.now() < verificationDeadline) {
               try {
                 const result = await servedCommit(origin);
-                serves = result.status === 200 && result.commit === sha;
-                if (!serves) console.log(`${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
+                if (result.status === 200 && result.commit === sha && performance.now() <= verificationDeadline) {
+                  console.log(`${origin} serves ${sha} after ${Math.round(performance.now() - verificationStarted)} ms`);
+                  return;
+                }
+                console.log(`${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
               } catch (error) {
                 console.log(`${origin} check failed: ${error.message}`);
               }
-              if (!serves) await sleep(5_000);
+              const remaining = verificationDeadline - performance.now();
+              if (remaining > 0) await sleep(Math.min(5_000, remaining));
             }
-            if (!serves) throw new Error(`${origin}/ does not serve ${sha}`);
+            throw new Error(`${origin}/ does not serve ${sha} within 300000 ms of Render going live`);
           }
 
           await requireServedCommit(serviceOrigin);
@@ -195,7 +207,7 @@ jobs:
     if: inputs.environment == 'staging'
     name: Release staging landing
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     environment: staging
 
     steps:
@@ -310,26 +322,42 @@ jobs:
           }
           if (!live) throw new Error("Render deploy did not go live before the timeout");
 
-          // Layout.astro writes <meta name="orbit-build" content="<RENDER_GIT_COMMIT>">, so a page proves which build serves it.
+          const verificationStarted = performance.now();
+          const verificationDeadline = verificationStarted + 300_000;
+
           async function servedCommit(origin) {
-            const response = await fetch(`${origin}/`, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
+            const url = new URL("/", origin);
+            url.searchParams.set("orbit-verify", crypto.randomUUID());
+            const remaining = Math.max(1, Math.ceil(verificationDeadline - performance.now()));
+            const response = await fetch(url, {
+              redirect: "manual",
+              cache: "no-store",
+              signal: AbortSignal.timeout(Math.min(15_000, remaining)),
+            });
             if (response.status !== 200) return { status: response.status, commit: null };
             const html = await response.text();
             return { status: 200, commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null };
           }
 
-          let renderServes = false;
-          for (let attempt = 0; attempt < 6 && !renderServes; attempt++) {
-            try {
-              const result = await servedCommit(serviceOrigin);
-              renderServes = result.status === 200 && result.commit === sha;
-              if (!renderServes) console.log(`${serviceOrigin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
-            } catch (error) {
-              console.log(`${serviceOrigin} check failed: ${error.message}`);
+          async function requireServedCommit(origin) {
+            while (performance.now() < verificationDeadline) {
+              try {
+                const result = await servedCommit(origin);
+                if (result.status === 200 && result.commit === sha && performance.now() <= verificationDeadline) {
+                  console.log(`${origin} serves ${sha} after ${Math.round(performance.now() - verificationStarted)} ms`);
+                  return;
+                }
+                console.log(`${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`);
+              } catch (error) {
+                console.log(`${origin} check failed: ${error.message}`);
+              }
+              const remaining = verificationDeadline - performance.now();
+              if (remaining > 0) await sleep(Math.min(5_000, remaining));
             }
-            if (!renderServes) await sleep(5_000);
+            throw new Error(`${origin}/ does not serve ${sha} within 300000 ms of Render going live`);
           }
-          if (!renderServes) throw new Error(`${serviceOrigin} does not serve ${sha}`);
+
+          await requireServedCommit(serviceOrigin);
 
           const deployment = await jsonRequest(githubUrl, {
             method: "POST",

@@ -32,10 +32,11 @@ function harness(environment, respond) {
   const requests = [];
   const sleeps = [];
   const logs = [];
+  let timeout;
   const advance = (milliseconds) => (elapsed += milliseconds);
   const fetch = async (url, options) => {
-    requests.push({ url: String(url), options, elapsed });
-    const result = respond({ url: new URL(url), elapsed, advance });
+    requests.push({ url: String(url), options, elapsed, timeout });
+    const result = respond({ url: new URL(url), elapsed, advance, timeout });
     if (result instanceof Error) throw result;
     const { commit = sha, status = 200, html } = result;
     const marker = layout
@@ -57,7 +58,12 @@ function harness(environment, respond) {
           sleeps.push(milliseconds);
           advance(milliseconds);
         },
-        AbortSignal,
+        {
+          timeout: (milliseconds) => {
+            timeout = milliseconds;
+            return AbortSignal.timeout(milliseconds);
+          },
+        },
         { log: (message) => logs.push(message) },
         { now: () => elapsed },
         crypto,
@@ -75,11 +81,101 @@ for (const environment of ["staging", "production"]) {
     assert.ok(clock.requests.every(({ options }) => options.redirect === "manual"));
   });
 
-  test(`${environment}: rejects a persistent build mismatch after six probes`, async () => {
+  test(`${environment}: rejects a persistent build mismatch at the five-minute ceiling`, async () => {
     const clock = harness(environment, () => ({ commit: previousSha }));
     await assert.rejects(clock.run(), /does not serve 6f1d7042/);
-    assert.equal(clock.requests.length, 6);
-    assert.equal(clock.elapsed(), 30_000);
+    assert.equal(clock.requests.length, 60);
+    assert.equal(clock.elapsed(), 300_000);
     assert.ok(clock.logs.every((message) => message.includes(previousSha)));
   });
+
+  test(`${environment}: accepts a build that appears after the old timeout`, async () => {
+    const clock = harness(environment, ({ elapsed }) => ({
+      commit: elapsed < 90_000 ? previousSha : sha,
+    }));
+    await clock.run();
+    assert.equal(clock.elapsed(), 90_000);
+    assert.ok(clock.sleeps.every((milliseconds) => milliseconds === 5_000));
+  });
+
+  test(`${environment}: bypasses cached HTML with a unique URL on every probe`, async () => {
+    const clock = harness(environment, ({ elapsed }) => ({
+      commit: elapsed < 10_000 ? previousSha : sha,
+    }));
+    await clock.run();
+    const urls = clock.requests.map(({ url }) => url);
+    assert.equal(new Set(urls).size, urls.length);
+    assert.ok(urls.every((url) => new URL(url).searchParams.get("orbit-verify")));
+    assert.ok(clock.requests.every(({ options }) => options.cache === "no-store"));
+  });
+
+  test(`${environment}: retries network errors, redirects and missing markers`, async () => {
+    const clock = harness(environment, ({ elapsed }) => {
+      if (elapsed === 0) return new Error("connection reset");
+      if (elapsed === 5_000) return { status: 302 };
+      if (elapsed === 10_000) return { html: "<html></html>" };
+      return {};
+    });
+    await clock.run();
+    assert.equal(clock.elapsed(), 15_000);
+    assert.match(clock.logs.join("\n"), /connection reset/);
+    assert.match(clock.logs.join("\n"), /HTTP 302/);
+    assert.match(clock.logs.join("\n"), /no build marker/);
+  });
+
+  for (const [failure, respond] of [
+    ["network error", () => new Error("connection reset")],
+    ["service error", () => ({ status: 503 })],
+    ["redirect", () => ({ status: 302 })],
+    ["missing marker", () => ({ html: "<html></html>" })],
+  ]) {
+    test(`${environment}: persistent ${failure} fails within the ceiling`, async () => {
+      const clock = harness(environment, respond);
+      await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+      assert.equal(clock.elapsed(), 300_000);
+    });
+  }
+
+  test(`${environment}: accepts the final probe before the ceiling`, async () => {
+    const clock = harness(environment, ({ elapsed }) => ({
+      commit: elapsed < 295_000 ? previousSha : sha,
+    }));
+    await clock.run();
+    assert.equal(clock.elapsed(), 295_000);
+  });
+
+  test(`${environment}: slow requests use the remaining deadline`, async () => {
+    const clock = harness(environment, ({ advance, timeout }) => {
+      advance(Math.min(13_000, timeout));
+      return new Error("request timed out");
+    });
+    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+    assert.equal(clock.elapsed(), 300_000);
+    assert.equal(clock.requests.at(-1).timeout, 12_000);
+    assert.ok(clock.requests.every(({ timeout }) => timeout <= 15_000));
+    assert.ok(clock.requests.every(({ elapsed, timeout }) => elapsed + timeout <= 300_000));
+  });
+
+  test(`${environment}: rejects a matching response completed after the deadline`, async () => {
+    const clock = harness(environment, ({ elapsed, advance }) => {
+      if (elapsed < 295_000) return { commit: previousSha };
+      advance(6_000);
+      return {};
+    });
+    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+    assert.equal(clock.elapsed(), 301_000);
+    assert.equal(clock.requests.at(-1).timeout, 5_000);
+  });
 }
+
+test("production: Render and public origins share one verification deadline", async () => {
+  const clock = harness("production", ({ url, elapsed }) => ({
+    commit: url.origin === serviceOrigin && elapsed >= 180_000 ? sha : previousSha,
+  }));
+  await assert.rejects(clock.run(), /https:\/\/useorbit.org.*does not serve/);
+  assert.equal(clock.elapsed(), 300_000);
+  assert.equal(
+    clock.requests.find(({ url }) => new URL(url).host === "useorbit.org").elapsed,
+    180_000,
+  );
+});
