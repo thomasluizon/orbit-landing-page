@@ -1416,22 +1416,22 @@ button.metric-bar-track:focus-visible {
   inset-block-start: 50%;
   inset-inline-start: 50%;
   inline-size: 440px;
-  translate: -50% -50%;
-  transform: scale(0.64);
+  /* One transform list: the CSS minifier drops a separate two-value translate beside transform. */
+  transform: translate(-50%, -50%) scale(0.64);
 }
 @container (width < 360px) {
   .example-app {
-    transform: scale(0.56);
+    transform: translate(-50%, -50%) scale(0.56);
   }
 }
 @container (width < 320px) {
   .example-app {
-    transform: scale(0.48);
+    transform: translate(-50%, -50%) scale(0.48);
   }
 }
 @container (width < 280px) {
   .example-app {
-    transform: scale(0.4);
+    transform: translate(-50%, -50%) scale(0.4);
   }
 }
 @media (min-width: 48rem) {

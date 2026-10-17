@@ -330,7 +330,7 @@ test("the trust strip renders the approved checkable facts in both locales", () 
     [
       "en",
       [
-        "Free to start",
+        "Free plan",
         "Pro free for 7 days",
         "You approve",
         "every change first",
@@ -341,12 +341,12 @@ test("the trust strip renders the approved checkable facts in both locales", () 
     [
       "pt-BR",
       [
-        "Grátis para começar",
+        "Plano grátis",
         "Pro grátis por 7 dias",
         "Você aprova",
         "cada mudança antes",
         "Android e web",
-        "Lista do iPhone aberta",
+        "Lista de espera do iPhone aberta",
       ],
     ],
   ]) {
@@ -591,8 +591,8 @@ test("the free plan title and all plan mentions follow the actual language toggl
     assert.equal(
       description.textContent,
       language === "pt-BR"
-        ? "Teste tudo do Pro grátis por 7 dias."
-        : "Try every Pro feature free for 7 days.",
+        ? "O plano anual sai mais barato por dia."
+        : "Annual costs less per day.",
     );
   }
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
