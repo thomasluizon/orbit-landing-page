@@ -289,6 +289,24 @@ test("below 480px every floating card keeps viewport gutters and a vertical over
   assert.match(mobile, /\.feature-stack\s*\{[^}]*grid-template-rows:\s*auto 32px auto/);
 });
 
+test("the narrow hero hides quick replies and centers the week card over the whole composer", () => {
+  const compact = css.slice(css.indexOf("@media (max-width: 29.999rem)"));
+  assert.match(compact, /\.hero-stage \.demo-examples\s*\{\s*display:\s*none/);
+  assert.match(compact, /\.float-week\s*\{[^}]*justify-self:\s*center/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  const phoneWidth = Number(mobile.match(/\.hero-device\s*\{[^}]*inline-size:\s*(\d+)px/)[1]);
+  const bezel = Number(css.match(/--hero-device-bezel:\s*(\d+)px/)[1]);
+  const threadInset = Number(css.match(/\.astra-demo\s*\{[^}]*padding:\s*\d+px (\d+)px/)[1]);
+  for (const viewport of [320, 360, 384, 412, 479]) {
+    const cardWidth = Math.min(280, viewport - 64);
+    const composerWidth = phoneWidth - 2 * (bezel + threadInset);
+    assert.ok(
+      cardWidth >= composerWidth,
+      `${viewport}px keeps the whole composer inside the centered card width`,
+    );
+  }
+});
+
 test("the phone footer hides the install QR and shares the 16px content gutter", () => {
   const mobile = css.slice(
     css.indexOf("@media (max-width: 47.999rem)"),

@@ -1289,6 +1289,12 @@
   }
 }
 @media (max-width: 29.999rem) {
+  .hero-stage .demo-examples {
+    display: none;
+  }
+  .float-week {
+    justify-self: center;
+  }
   .hero-float,
   .feature-secondary {
     max-inline-size: calc(100vw - 64px);
