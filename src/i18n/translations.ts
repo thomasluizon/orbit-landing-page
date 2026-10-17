@@ -201,13 +201,13 @@ const landingEn = {
   "features.start.title": "A place to start",
   "features.start.body":
     "“I want to walk more.” Astra turns that into a habit and suggests when to do it. You review before saving.",
-  "features.remember.title": "A nudge when you need it",
+  "features.remember.title": "A timely nudge",
   "features.remember.body":
     "Set reminders for your habits. Astra can also check in and help you adjust when the day gets busy.",
   "features.act.title": "Say it once",
   "features.act.body":
     "Move your walk and your reading to the evening in one request. Review the changes together.",
-  "features.restart.title": "A way back after a miss",
+  "features.restart.title": "Start again",
   "features.restart.body":
     "Tell Astra what got in the way. She helps you find the next step without turning a missed day into more work.",
   "action.start": "Start free",
@@ -299,16 +299,16 @@ const landingPt: Record<LandingKey, string> = {
   "phrase.restart": "“Perdi um dia.”",
   "features.title": "O que a Astra faz por você",
   "features.body": "Comece pelo que você tem em mente. Deixe a organização com ela.",
-  "features.start.title": "Um jeito de começar",
+  "features.start.title": "Para começar",
   "features.start.body":
     "“Quero caminhar mais.” A Astra transforma isso em um hábito e sugere os horários. Você confere antes de salvar.",
-  "features.remember.title": "Uma ajuda para lembrar",
+  "features.remember.title": "Na hora certa",
   "features.remember.body":
     "Defina lembretes para os hábitos. A Astra também pode puxar conversa e ajudar a ajustar o que apertou no dia.",
-  "features.act.title": "Peça de uma vez",
+  "features.act.title": "Peça uma vez",
   "features.act.body":
     "Passe a caminhada e a leitura para a noite em um pedido. Confira as mudanças juntas.",
-  "features.restart.title": "Um jeito de retomar",
+  "features.restart.title": "Recomece",
   "features.restart.body":
     "Conte à Astra o que atrapalhou. Ela ajuda você a dar o próximo passo sem transformar o dia perdido em mais trabalho.",
   "action.start": "Começar grátis",

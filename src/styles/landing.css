@@ -602,6 +602,12 @@
   box-shadow: inset 0 0 0 1px var(--color-hairline);
   min-block-size: 240px;
 }
+.feature-grid .feature-card {
+  padding: 28px;
+}
+.feature-grid .feature-card h3 {
+  font-size: var(--fs-3xl);
+}
 .feature-icon {
   display: grid;
   place-items: center;
@@ -893,6 +899,16 @@
   }
 }
 @media (max-width: 47.999rem) {
+  .feature-grid .feature-card {
+    padding: 24px;
+  }
+  .feature-grid .feature-card h3 {
+    font-size: var(--fs-2xl);
+  }
+  .feature-grid,
+  .security-grid {
+    gap: 16px;
+  }
   .hero {
     padding-block-end: 48px;
   }

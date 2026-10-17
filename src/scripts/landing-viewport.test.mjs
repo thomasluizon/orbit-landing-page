@@ -164,7 +164,7 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
 });
 
-test("marketing paragraphs use the body role and grid titles stay at 22px at every width", () => {
+test("marketing paragraphs use the body role and feature titles have the reference weight", () => {
   for (const selector of [
     "section-description",
     "feature-card p",
@@ -175,9 +175,12 @@ test("marketing paragraphs use the body role and grid titles stay at 22px at eve
     const declarations = css.match(new RegExp(`\\.${selector}\\s*\\{([^}]+)\\}`))[1];
     assert.match(declarations, /font-size:\s*var\(--fs-base\)/, selector);
   }
-  for (const [, declarations] of css.matchAll(/\.feature-card h3\s*\{([^}]+)\}/g)) {
-    assert.match(declarations, /font-size:\s*var\(--fs-xl\)/);
-  }
+  assert.match(css, /\.feature-grid \.feature-card h3\s*\{[^}]*font-size:\s*var\(--fs-3xl\)/);
+  const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
+  assert.match(mobile, /\.feature-grid \.feature-card h3\s*\{[^}]*font-size:\s*var\(--fs-2xl\)/);
+  assert.match(css, /\.feature-grid \.feature-card\s*\{[^}]*padding:\s*28px/);
+  assert.match(mobile, /\.feature-grid \.feature-card\s*\{[^}]*padding:\s*24px/);
+  assert.match(mobile, /\.feature-grid,\s*\.security-grid\s*\{[^}]*gap:\s*16px/);
 });
 
 test("section grids follow their headings without oversized empty bands", () => {
