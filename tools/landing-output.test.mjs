@@ -54,9 +54,9 @@ for (const [event, region, label] of [
 ]) {
   test(`the built ${event} keeps its action and destination`, () => {
     const attribute = `data-analytics-event="${event}"`;
-    assert.equal(html.split(attribute).length - 1, 1);
     const surface = html.match(region)?.[0];
     assert.ok(surface);
+    assert.equal(surface.split(attribute).length - 1, 1);
     const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
@@ -68,6 +68,34 @@ for (const [event, region, label] of [
     assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
+
+test("built free-start actions share the existing app event and retain their surface and variant", () => {
+  const event = 'data-analytics-event="hero_app_cta_clicked"';
+  assert.equal(html.split(event).length - 1, 5);
+  for (const name of ["features", "details", "progress", "restart"]) {
+    const section = html.match(
+      new RegExp(`<section\\b[^>]*data-section="${name}"[^>]*>([\\s\\S]*?)<\\/section>`),
+    )?.[1];
+    assert.ok(section, name);
+    const actions = [...section.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
+      .map(([tag]) => tag)
+      .filter((tag) => tag.includes(event));
+    assert.equal(actions.length, 1, name);
+    const [action] = actions;
+    const appUrl = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+    assert.ok(action.includes(`href="${appUrl}"`));
+    assert.ok(action.includes(`data-analytics-surface="${name}"`));
+    assert.match(action, /data-copy-en="Start free" data-copy-pt="Começar grátis"/);
+    if (name === "features") {
+      assert.match(action, /\bbg-primary\b/);
+      assert.doesNotMatch(action, /\bbg-transparent\b/);
+    } else {
+      assert.match(action, /\bbg-transparent\b/);
+      assert.match(action, /shadow-\[inset_0_0_0_1\.5px_var\(--color-hairline-strong\)\]/);
+      assert.doesNotMatch(action, /\bbg-primary\b/);
+    }
+  }
+});
 
 test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
   assert.match(html, /class="landing-shell"/);
