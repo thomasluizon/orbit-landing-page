@@ -24,6 +24,22 @@ const emoji = { walk: "🚶", read: "📖", water: "💧" };
         type="button"
         data-example-log
         data-habit={habit}
+        data-log-en={landingCopy.en["blocks.habits.log"].replace(
+          "{habit}",
+          landingCopy.en[`product.${habit}`],
+        )}
+        data-log-pt={landingCopy["pt-BR"]["blocks.habits.log"].replace(
+          "{habit}",
+          landingCopy["pt-BR"][`product.${habit}`],
+        )}
+        data-undo-en={landingCopy.en["blocks.habits.undo"].replace(
+          "{habit}",
+          landingCopy.en[`product.${habit}`],
+        )}
+        data-undo-pt={landingCopy["pt-BR"]["blocks.habits.undo"].replace(
+          "{habit}",
+          landingCopy["pt-BR"][`product.${habit}`],
+        )}
         aria-pressed="false"
         aria-label={landingCopy.en["blocks.habits.log"].replace(
           "{habit}",

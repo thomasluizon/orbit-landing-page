@@ -41,6 +41,18 @@ const completion = Math.round(
     data-example-block={interactive ? kind : undefined}
     data-embedded={embedded || undefined}
     data-state={kind === "breakdown" ? "proposed" : undefined}
+    data-approved-en={interactive && kind === "breakdown"
+      ? landingCopy.en["blocks.breakdown.approved"]
+      : undefined}
+    data-approved-pt={interactive && kind === "breakdown"
+      ? landingCopy["pt-BR"]["blocks.breakdown.approved"]
+      : undefined}
+    data-rejected-en={interactive && kind === "breakdown"
+      ? landingCopy.en["blocks.breakdown.rejected"]
+      : undefined}
+    data-rejected-pt={interactive && kind === "breakdown"
+      ? landingCopy["pt-BR"]["blocks.breakdown.rejected"]
+      : undefined}
   >
     {
       kind === "metrics" && (
@@ -127,7 +139,14 @@ const completion = Math.round(
             <HabitRow habit="read" interactive={interactive} />
           </div>
           {interactive && (
-            <p class="product-caption" role="status" aria-live="polite" data-example-count />
+            <p
+              class="product-caption"
+              role="status"
+              aria-live="polite"
+              data-example-count
+              data-template-en={landingCopy.en["blocks.habits.count"]}
+              data-template-pt={landingCopy["pt-BR"]["blocks.habits.count"]}
+            />
           )}
         </>
       )
@@ -149,6 +168,16 @@ const completion = Math.round(
                   data-frequency
                   data-cadence={cadence}
                   data-initial-cadence={cadence}
+                  data-daily-en={interactive ? landingCopy.en["blocks.breakdown.daily"] : undefined}
+                  data-daily-pt={
+                    interactive ? landingCopy["pt-BR"]["blocks.breakdown.daily"] : undefined
+                  }
+                  data-weekly-en={
+                    interactive ? landingCopy.en["blocks.breakdown.weekly"] : undefined
+                  }
+                  data-weekly-pt={
+                    interactive ? landingCopy["pt-BR"]["blocks.breakdown.weekly"] : undefined
+                  }
                   role={interactive ? "group" : undefined}
                   aria-label={interactive ? landingCopy.en[`blocks.breakdown.${habit}`] : undefined}
                   data-copy-label-en={

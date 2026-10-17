@@ -289,3 +289,64 @@ test("multi-sentence section headings preserve full sentences in both locales", 
     );
   }
 });
+
+test("built product examples carry the localized templates their controls consume", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const nodes = descendants(ast);
+  const blocks = nodes.filter((node) => attrs(node)["data-example-block"]);
+  assert.deepEqual(
+    blocks.map((node) => attrs(node)["data-example-block"]),
+    ["habits", "metrics", "breakdown"],
+  );
+  const habits = descendants(blocks[0]);
+  const logs = habits.filter((node) => Object.hasOwn(attrs(node), "data-example-log"));
+  assert.equal(logs.length, 2);
+  for (const button of logs) {
+    for (const name of ["data-log-en", "data-log-pt", "data-undo-en", "data-undo-pt"])
+      assert.ok(attrs(button)[name]);
+  }
+  const count = habits.find((node) => Object.hasOwn(attrs(node), "data-example-count"));
+  assert.equal(attrs(count)["data-template-en"], "{done} of {total} done");
+  assert.equal(attrs(count)["data-template-pt"], "{done} de {total} feitos");
+  const breakdown = blocks[2];
+  for (const name of [
+    "data-approved-en",
+    "data-approved-pt",
+    "data-rejected-en",
+    "data-rejected-pt",
+  ])
+    assert.ok(attrs(breakdown)[name]);
+  const frequencies = descendants(breakdown).filter((node) =>
+    Object.hasOwn(attrs(node), "data-frequency"),
+  );
+  assert.equal(frequencies.length, 3);
+  for (const row of frequencies) {
+    for (const name of ["data-daily-en", "data-daily-pt", "data-weekly-en", "data-weekly-pt"])
+      assert.ok(attrs(row)[name]);
+  }
+  const frames = new Map(
+    nodes
+      .filter((node) => node.name === "symbol")
+      .map((node) => [attrs(node).id, attrs(node).viewBox]),
+  );
+  const glyphs = nodes.filter(
+    (node) =>
+      node.name === "svg" &&
+      descendants(node).some(
+        (child) => child.name === "use" && attrs(child).href?.startsWith("#astra-mark"),
+      ),
+  );
+  assert.ok(glyphs.length > 0);
+  for (const glyph of glyphs) {
+    const use = descendants(glyph).find((node) => node.name === "use");
+    const name = attrs(use).href.slice(1);
+    const asset = readFileSync(`public/brand/${name}.svg`, "utf8");
+    const viewBox = asset.match(/viewBox="([^"]+)"/)[1];
+    assert.equal(attrs(glyph).viewBox, viewBox);
+    assert.equal(frames.get(name), viewBox);
+  }
+});

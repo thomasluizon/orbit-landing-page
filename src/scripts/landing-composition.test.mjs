@@ -1060,6 +1060,10 @@ test("example figures derive from the chart and linked habit fixtures", () => {
 });
 
 test("the product examples select chart days, log in place, approve frequencies and reset in both locales", () => {
+  assert.doesNotMatch(
+    readFileSync("src/scripts/product-examples.ts", "utf8"),
+    /import[^;]*landingCopy/,
+  );
   const fixture = {};
   vm.runInNewContext(
     ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
@@ -1094,14 +1098,47 @@ test("the product examples select chart days, log in place, approve frequencies 
   const metrics = element();
   metrics.querySelector = () => range;
   metrics.querySelectorAll = (selector) => (selector === "[data-metric-readout]" ? readouts : bars);
-  const logs = ["walk", "read"].map((habit) => element({ habit }, { "aria-pressed": "false" }));
-  const count = element();
+  const logs = ["walk", "read"].map((habit) =>
+    element(
+      {
+        habit,
+        logEn: copyTables.landingCopy.en["blocks.habits.log"].replace(
+          "{habit}",
+          copyTables.landingCopy.en[`product.${habit}`],
+        ),
+        logPt: copyTables.landingCopy["pt-BR"]["blocks.habits.log"].replace(
+          "{habit}",
+          copyTables.landingCopy["pt-BR"][`product.${habit}`],
+        ),
+        undoEn: copyTables.landingCopy.en["blocks.habits.undo"].replace(
+          "{habit}",
+          copyTables.landingCopy.en[`product.${habit}`],
+        ),
+        undoPt: copyTables.landingCopy["pt-BR"]["blocks.habits.undo"].replace(
+          "{habit}",
+          copyTables.landingCopy["pt-BR"][`product.${habit}`],
+        ),
+      },
+      { "aria-pressed": "false" },
+    ),
+  );
+  const count = element({
+    templateEn: copyTables.landingCopy.en["blocks.habits.count"],
+    templatePt: copyTables.landingCopy["pt-BR"]["blocks.habits.count"],
+  });
   const habits = element();
   habits.querySelectorAll = () => logs;
   habits.querySelector = () => count;
   const frequencies = fixture.exampleBreakdown.map((item) => {
     const control = element();
-    const row = element({ cadence: item.cadence, initialCadence: item.cadence });
+    const row = element({
+      cadence: item.cadence,
+      initialCadence: item.cadence,
+      dailyEn: copyTables.landingCopy.en["blocks.breakdown.daily"],
+      dailyPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.daily"],
+      weeklyEn: copyTables.landingCopy.en["blocks.breakdown.weekly"],
+      weeklyPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.weekly"],
+    });
     row.querySelector = () => control;
     return { row, control, result: element() };
   });
@@ -1113,7 +1150,13 @@ test("the product examples select chart days, log in place, approve frequencies 
   const reject = element();
   const edit = element();
   const reset = element();
-  const breakdown = element({ state: "proposed" });
+  const breakdown = element({
+    state: "proposed",
+    approvedEn: copyTables.landingCopy.en["blocks.breakdown.approved"],
+    approvedPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.approved"],
+    rejectedEn: copyTables.landingCopy.en["blocks.breakdown.rejected"],
+    rejectedPt: copyTables.landingCopy["pt-BR"]["blocks.breakdown.rejected"],
+  });
   breakdown.querySelectorAll = () => frequencies.map(({ row }) => row);
   breakdown.querySelector = (selector) => {
     const index = selector.match(/data-result-frequency="(\d+)"/)?.[1];

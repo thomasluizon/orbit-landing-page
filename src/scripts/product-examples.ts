@@ -1,10 +1,13 @@
-import { landingCopy, type LandingKey } from "../i18n/translations";
 import { getLang } from "./i18n";
 
 const refreshers: (() => void)[] = [];
 
-function fill(key: LandingKey, values: Record<string, string>) {
-  return landingCopy[getLang()][key].replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? "");
+function localized(element: HTMLElement, key: string) {
+  return element.dataset[`${key}${getLang() === "pt-BR" ? "Pt" : "En"}`] ?? "";
+}
+
+function fill(template: string, values: Record<string, string>) {
+  return template.replace(/\{(\w+)\}/g, (_, name: string) => values[name] ?? "");
 }
 
 function bindMetrics(block: HTMLElement) {
@@ -27,13 +30,11 @@ function bindHabits(block: HTMLElement) {
   const count = block.querySelector<HTMLElement>("[data-example-count]");
   const render = () => {
     for (const button of logs) {
-      const habit = `product.${button.dataset.habit}` as LandingKey;
-      const key =
-        button.getAttribute("aria-pressed") === "true" ? "blocks.habits.undo" : "blocks.habits.log";
-      button.setAttribute("aria-label", fill(key, { habit: landingCopy[getLang()][habit] }));
+      const key = button.getAttribute("aria-pressed") === "true" ? "undo" : "log";
+      button.setAttribute("aria-label", localized(button, key));
     }
     if (count)
-      count.textContent = fill("blocks.habits.count", {
+      count.textContent = fill(localized(count, "template"), {
         done: String(
           logs.filter((button) => button.getAttribute("aria-pressed") === "true").length,
         ),
@@ -51,19 +52,17 @@ function bindHabits(block: HTMLElement) {
 
 function renderBreakdown(block: HTMLElement) {
   block.querySelectorAll<HTMLElement>("[data-frequency]").forEach((row, index) => {
-    const key = `blocks.breakdown.${row.dataset.cadence}` as LandingKey;
+    const text = localized(row, row.dataset.cadence ?? "daily");
     const control = row.querySelector<HTMLButtonElement>(".frequency-control");
     const result = block.querySelector<HTMLElement>(`[data-result-frequency="${index}"]`);
-    if (control) control.textContent = landingCopy[getLang()][key];
-    if (result) result.textContent = landingCopy[getLang()][key];
+    if (control) control.textContent = text;
+    if (result) result.textContent = text;
   });
   const state = block.dataset.state;
   const status = block.querySelector<HTMLElement>("[data-breakdown-status]");
   if (status)
     status.textContent =
-      state === "approved" || state === "rejected"
-        ? landingCopy[getLang()][`blocks.breakdown.${state}`]
-        : "";
+      state === "approved" || state === "rejected" ? localized(block, state) : "";
 }
 
 function setBreakdownState(block: HTMLElement, state: "proposed" | "approved" | "rejected") {
