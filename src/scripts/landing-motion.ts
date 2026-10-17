@@ -30,6 +30,7 @@ export function mountLandingMotion() {
           start: "top 96px",
           end: "+=560",
           pin: true,
+          pinSpacing: false,
           scrub: 0.6,
           invalidateOnRefresh: true,
         },

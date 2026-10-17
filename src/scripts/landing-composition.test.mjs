@@ -75,7 +75,7 @@ test("the hero keeps copy and actions above the centered device", () => {
   const hero = sections[0];
   assert.deepEqual(
     hero.children.filter((node) => node.name === "div").map((node) => attributes(node).class),
-    ["hero-copy", "hero-controls", "hero-stage"],
+    ["hero-copy", "hero-controls", "hero-pin-range"],
   );
   const stage = descendants(hero).find((node) => attributes(node).id === "hero-stage");
   assert.ok(descendants(stage).some((node) => attributes(node).class === "hero-device"));

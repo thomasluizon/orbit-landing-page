@@ -132,11 +132,14 @@
 .hero-meta .text-link {
   font-size: inherit;
 }
+.hero-pin-range {
+  inline-size: min(1120px, 100%);
+}
 .hero-stage {
   position: relative;
   display: grid;
   place-items: center;
-  inline-size: min(1120px, 100%);
+  inline-size: 100%;
   margin-block-start: 0;
   padding-block: 0;
   isolation: isolate;
@@ -1091,6 +1094,11 @@
   }
   .feature-card h3 {
     font-size: var(--fs-2xl);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 56rem) and (min-height: 46rem) {
+  .hero-pin-range {
+    padding-block-end: 560px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

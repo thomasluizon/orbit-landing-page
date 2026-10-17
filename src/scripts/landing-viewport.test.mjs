@@ -126,3 +126,17 @@ test("every scroll driver is preference scoped and reveals only transform and op
   assert.match(source, /scrub:/);
   assert.doesNotMatch(source, /(?:^|[,{]\s*)(?:height|width|top|left|filter|clipPath):/m);
 });
+
+test("the server-rendered hero reserves its pin travel before deferred motion mounts", () => {
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.match(hero, /class="hero-pin-range">\s*<div class="hero-stage" id="hero-stage">/);
+  const range = css.match(
+    /@media \(prefers-reduced-motion: no-preference\) and \(min-width: 56rem\) and \(min-height: 46rem\)\s*\{\s*\.hero-pin-range\s*\{([^}]+)\}/,
+  );
+  assert.ok(range, "static pin reservation uses the same motion and viewport conditions as GSAP");
+  const distance = motion.match(/end:\s*"\+=(\d+)"/)[1];
+  assert.match(range[1], new RegExp(`padding-block-end:\\s*${distance}px;`));
+  assert.match(motion, /pinSpacing:\s*false/);
+  assert.doesNotMatch(motion, /pinReparent:\s*true|scrollTo\(|location\.hash/);
+});
