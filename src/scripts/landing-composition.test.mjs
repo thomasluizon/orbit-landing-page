@@ -375,7 +375,7 @@ test("feature product surfaces alternate their overlap inside a centered 680px s
   assert.match(row, /inline-size:\s*100%/);
   assert.match(row, /max-inline-size:\s*960px/);
   assert.match(row, /margin-inline:\s*auto/);
-  assert.match(row, /gap:\s*32px/);
+  assert.match(row, /gap:\s*64px/);
   assert.match(
     css,
     /\.feature-composition\s*\{[^}]*inline-size:\s*min\(680px, 100%\);[^}]*justify-self:\s*center/,
@@ -444,7 +444,7 @@ test("the recommended plan keeps its canonical inset ring and selected tint", ()
 
 test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /--landing-section-gap:\s*160px/);
+  assert.match(css, /--landing-section-gap:\s*96px/);
   assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*--landing-section-gap:\s*96px/);
   assert.match(
     css,
@@ -525,7 +525,7 @@ test("feature compositions keep real product dimensions and never shrink their t
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(
     css,
-    /\.feature-art \.habit-row,\s*\.feature-vignette \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*8px 16px/,
+    /\.feature-art \.habit-row,\s*\.feature-vignette \.habit-row\s*\{[^}]*min-block-size:\s*68px;[^}]*padding:\s*16px/,
   );
   assert.match(
     css,
@@ -642,7 +642,7 @@ test("feature and promise grids keep their title and body roles above content-si
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.feature-card,\s*\.promise-card\s*\{[^}]*gap:\s*24px/);
   assert.match(css, /\.feature-card\s*\{[^}]*padding:\s*24px/);
-  assert.match(css, /\.promise-card\s*\{[^}]*padding:\s*32px/);
+  assert.match(css, /\.promise-card\s*\{[^}]*padding:\s*24px/);
   assert.match(css, /\.feature-card-copy,\s*\.promise-copy\s*\{[^}]*gap:\s*12px/);
   assert.match(
     css,
@@ -716,7 +716,7 @@ test("feature demonstrations use compact rhythm and trim only their primary prod
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.feature-section\s*\{[^}]*padding-block-start:\s*96px/);
   assert.match(css, /\.feature-intro\s*\{[^}]*gap:\s*16px/);
-  assert.match(css, /\.feature-copy\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.feature-copy\s*\{[^}]*gap:\s*32px/);
   assert.match(css, /\.feature-copy \.section-title\s*\{[^}]*font-size:\s*var\(--fs-4xl\)/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
   assert.match(mobile, /\.feature-section\s*\{[^}]*padding-block-start:\s*64px/);

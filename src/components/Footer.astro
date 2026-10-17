@@ -10,6 +10,9 @@ interface Props {
 }
 const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
+const lockup = orbitLockup
+  .replace(/<title\b[^>]*>[\s\S]*?<\/title>/g, "")
+  .replace(/\saria-labelledby="[^"]*"/g, "");
 ---
 
 <footer class="site-footer" data-section="footer">
@@ -17,7 +20,7 @@ const en = translations.en;
     <div class="footer-content">
       <div class="footer-brand">
         <a href="/" class="brand" aria-label="Orbit" translate="no"
-          ><span class="brand-lockup" aria-hidden="true" set:html={orbitLockup} /></a
+          ><span class="brand-lockup" aria-hidden="true" set:html={lockup} /></a
         >
         <p><Copy name="footer.description" /></p>
         <div class="footer-links">

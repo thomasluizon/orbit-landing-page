@@ -168,7 +168,10 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
 });
 
 test("the hero conversation starts below its header and sizes the phone around the proposal", () => {
-  assert.match(css, /\.astra-demo\s*\{[^}]*gap:\s*24px;[^}]*padding:\s*12px 12px 16px/);
+  assert.match(
+    css,
+    /\.astra-demo\s*\{[^}]*gap:\s*calc\(24 \* var\(--mock-unit\)\);[^}]*padding:\s*calc\(16 \* var\(--mock-unit\)\)/,
+  );
   assert.match(css, /\.demo-exchange\s*\{[^}]*margin-block-start:\s*0/);
   assert.match(css, /\.demo-exchange\s*\{[^}]*gap:\s*16px/);
   assert.match(css, /\.demo-response\s*\{[^}]*gap:\s*12px/);
@@ -199,11 +202,14 @@ test("section grids follow their headings without oversized empty bands", () => 
     /\.section,\s*\.final-section\s*\{\s*padding-block:\s*var\(--landing-section-gap\) 0;/,
   );
   assert.match(css, /\.section-inner\s*\{[^}]*gap:\s*32px;/);
-  for (const selector of ["section-heading", "feature-copy"]) {
-    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*gap:\\s*24px;`));
+  for (const [selector, gap] of [
+    ["section-heading", 16],
+    ["feature-copy", 32],
+  ]) {
+    assert.match(css, new RegExp(`\\.${selector}\\s*\\{[^}]*gap:\\s*${gap}px;`));
   }
-  assert.match(css, /\.feature-row\s*\{[^}]*gap:\s*32px/);
-  assert.match(css, /\.final-section \.section-inner\s*\{[^}]*gap:\s*24px/);
+  assert.match(css, /\.feature-row\s*\{[^}]*gap:\s*64px/);
+  assert.match(css, /\.final-section \.section-inner\s*\{[^}]*gap:\s*32px/);
   assert.doesNotMatch(css, /min-block-size:\s*(?:280|300|480)px/);
   assert.match(css, /\.feature-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
@@ -335,7 +341,7 @@ test("the FAQ is one compact list with separators only between rows", () => {
   assert.doesNotMatch(css, /\.faq-list details\s*\{[^}]*(?:background|box-shadow|border-radius)/);
   assert.doesNotMatch(css, /\.faq-list[^{}]*\{[^}]*border-block-end/);
   const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
-  assert.match(summary, /font-size:\s*var\(--fs-base\)/);
+  assert.match(summary, /font-size:\s*var\(--fs-md\)/);
   assert.match(summary, /padding:\s*16px/);
   assert.match(summary, /min-block-size:\s*64px/);
   assert.match(summary, /border-radius:\s*var\(--radius-sm\)/);
@@ -347,7 +353,7 @@ test("the FAQ is one compact list with separators only between rows", () => {
     css,
     /\.faq-list summary svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px;[^}]*margin-block-start:\s*calc\(\(1lh - 16px\) \/ 2\)/,
   );
-  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*0 16px 16px/);
+  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*4px 16px 16px/);
   assert.match(css, /\.faq-list summary:hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/);
   assert.match(css, /\.final-section\s*\{[^}]*padding-block-start:\s*64px/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
@@ -366,7 +372,7 @@ test("the wide footer leads with a 240px marked QR while the hero sentence balan
     /\.footer-qr-mark\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px;[^}]*background:\s*var\(--color-bg\)/,
   );
   assert.match(css, /\.footer-content\s*\{[^}]*align-items:\s*start/);
-  assert.doesNotMatch(css, /\.footer-qr\s*\{[^}]*padding:\s*8px/);
+  assert.match(css, /\.footer-qr\s*\{[^}]*padding:\s*8px/);
   assert.match(
     css,
     /\.hero-description\s*\{[^}]*max-inline-size:\s*520px;[^}]*font-size:\s*var\(--fs-md\);[^}]*text-wrap:\s*balance/,
@@ -650,4 +656,92 @@ test("Orbit marks retain the canonical full asset frames", () => {
     assert.match(source, /orbit-lockup\.svg\?raw/);
     assert.doesNotMatch(source, /viewBox=/);
   }
+});
+
+test("every hover and press fill keeps at least 8px inline and 4px block clearance", () => {
+  const global = readFileSync("src/styles/global.css", "utf8");
+  const rules = [...(global + css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].flatMap(
+    ([, selectors, body]) =>
+      selectors.split(",").map((selector) => ({
+        selector: selector.trim(),
+        declarations: Object.fromEntries(
+          [...body.matchAll(/([\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [key, value]),
+        ),
+      })),
+  );
+  const pixels = (value) => {
+    if (value.startsWith("calc("))
+      return (Number(value.match(/calc\((-?\d+)/)[1]) * (320 - 32 - 24)) / 390;
+    return Number(value.replace("px", ""));
+  };
+  const fills = rules.filter(
+    ({ selector, declarations }) =>
+      /:(?:hover|active|focus-visible)\b/.test(selector) &&
+      (declarations.background || declarations["background-color"]),
+  );
+  assert.ok(fills.length >= 10);
+  for (const { selector } of fills) {
+    const base = selector.replace(/:(?:hover|active|focus-visible)\b/g, "");
+    if (base.startsWith("[data-primary-action]")) continue;
+    const style = Object.assign(
+      {},
+      ...rules.filter((rule) => rule.selector === base).map((rule) => rule.declarations),
+    );
+    const padding = (style.padding ?? "0").match(/calc\([^;]+?\)\)|[^\s]+/g).map(pixels);
+    const inline = style["padding-inline"]
+      ? style["padding-inline"].match(/calc\([^;]+?\)\)|[^\s]+/g).map(pixels)
+      : [padding[1] ?? padding[0], padding[3] ?? padding[1] ?? padding[0]];
+    const block = style["padding-block"]
+      ? [pixels(style["padding-block"])]
+      : [padding[0], padding[2] ?? padding[0]];
+    assert.ok(Math.min(...inline) >= 8, `${selector} must pad its fill inline`);
+    assert.ok(Math.min(...block) >= 4, `${selector} must pad its fill on the block axis`);
+    assert.ok(style["border-radius"], `${selector} needs its own fill radius`);
+  }
+  assert.doesNotMatch(
+    global + css,
+    /:focus(?!-visible)[^{]*\{[^}]*(?:outline|box-shadow|background)/,
+  );
+  assert.match(css, /\.brand\s*\{[^}]*padding:\s*4px 8px;[^}]*border-radius:\s*var\(--radius-md\)/);
+  for (const name of ["Header", "Footer"]) {
+    const source = readFileSync(`src/components/${name}.astro`, "utf8");
+    assert.match(source, /orbitLockup\s*\.replace\(/);
+    assert.match(source, /set:html=\{lockup\}/);
+    assert.doesNotMatch(source, /\btitle=/);
+  }
+});
+
+test("FAQ questions and answers share one inset with an 8px text gap and 16px bottom padding", () => {
+  assert.match(
+    css,
+    /\.faq-list details\[open\] summary\s*\{[^}]*min-block-size:\s*0;[^}]*padding-block-end:\s*4px/,
+  );
+  const answer = css.match(/\.faq-list details p\s*\{([^}]+)\}/)[1];
+  assert.match(answer, /padding:\s*4px 16px 16px/);
+  assert.match(answer, /font-size:\s*var\(--fs-base\)/);
+  assert.match(answer, /line-height:\s*var\(--lh-body\)/);
+  const global = readFileSync("src/styles/global.css", "utf8");
+  assert.match(global, /--lh-body:\s*1.55/);
+});
+
+test("cards keep 24px padding, list rows keep 16px, and section groups follow the 2x rhythm", () => {
+  for (const selector of ["product-card", "feature-card", "promise-card", "plan-card"]) {
+    for (const [, declarations] of css.matchAll(
+      new RegExp(`\\.${selector}\\s*\\{([^}]+)\\}`, "g"),
+    )) {
+      const padding = declarations.match(/(?<![-\w])padding:\s*([^;]+)/);
+      if (padding) assert.equal(padding[1], "24px", selector);
+    }
+  }
+  for (const [, declarations] of css.matchAll(/[^{}]*\.habit-row\s*\{([^}]+)\}/g)) {
+    const padding = declarations.match(/(?<![-\w])padding:\s*([^;]+)/);
+    if (padding) assert.equal(padding[1], "16px");
+  }
+  const gap = (selector) =>
+    Number(css.match(new RegExp(`\\.${selector}\\s*\\{[^}]*gap:\\s*(\\d+)px`))[1]);
+  assert.ok(gap("section-inner") >= 2 * gap("section-heading"));
+  assert.ok(gap("feature-copy") >= 2 * gap("feature-intro"));
+  assert.ok(gap("feature-row") >= 2 * gap("feature-copy"));
+  assert.match(css, /--landing-section-gap:\s*96px/);
+  assert.doesNotMatch(css, /--landing-section-gap:\s*160px/);
 });

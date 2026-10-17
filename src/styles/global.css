@@ -274,6 +274,7 @@ body {
   min-inline-size: 48px;
   min-block-size: 48px;
   margin-inline-start: auto;
+  padding: 4px 8px;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
