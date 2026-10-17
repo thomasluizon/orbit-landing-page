@@ -33,6 +33,13 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     {},
     JSON.stringify({ "@graph": [{ "@type": "SoftwareApplication", offers: {} }] }),
   );
+  const landingNode = element();
+  const chartLabel = element();
+  const displayedPrices = ["free", "monthly", "yearly"].map((period) => ({
+    ...element(),
+    dataset: { price: period },
+  }));
+  const languageEvents = [];
   const document = {
     cookie,
     documentElement: {},
@@ -40,6 +47,9 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     querySelectorAll: (selector) =>
       ({
         "[data-i18n]": [headline, continuation],
+        "[data-copy-en]": [landingNode],
+        "[data-copy-label-en]": [chartLabel],
+        "[data-price]": displayedPrices,
         "[data-i18n-placeholder]": [placeholder],
         "[data-i18n-content]": [description],
         "[data-i18n-label]": [nav],
@@ -51,6 +61,12 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     navigator: { language },
     environment: { DEV: false },
     Intl,
+    window: { dispatchEvent: (event) => languageEvents.push(event.type) },
+    CustomEvent: class {
+      constructor(type) {
+        this.type = type;
+      }
+    },
   });
   const modules = new Map();
   function require(path) {
@@ -64,6 +80,15 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     modules.set(path, exports);
     return exports;
   }
+  const landingTables = require("../i18n/translations").landingCopy;
+  landingNode.dataset = {
+    copyEn: landingTables.en["nav.features"],
+    copyPt: landingTables["pt-BR"]["nav.features"],
+  };
+  chartLabel.dataset = {
+    copyLabelEn: landingTables.en["product.chart"],
+    copyLabelPt: landingTables["pt-BR"]["product.chart"],
+  };
   const module = require("./i18n");
   return {
     module,
@@ -76,6 +101,11 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     description,
     nav,
     graph,
+    landingNode,
+    chartLabel,
+    displayedPrices,
+    landingTables,
+    languageEvents,
     tables: require("../i18n/translations").translations,
     prices: require("../config/pricing"),
   };
@@ -168,5 +198,29 @@ test("pt-BR demo repeat labels name every time of day with the same adverbial fo
   for (const key of repeatKeys) {
     const timeOfDay = tables["pt-BR"][key].split(" · ").at(-1);
     assert.match(timeOfDay, /^(?:De manhã|À tarde|À noite)$/u, key);
+  }
+});
+
+test("switching the real language toggle updates every landing copy attribute, chart name and configured price", () => {
+  const h = harness();
+  for (const lang of ["en", "pt-BR", "en"]) {
+    if (h.document.documentElement.lang !== lang) h.toggle.listeners.get("click")();
+    assert.equal(h.landingNode.textContent, h.landingTables[lang]["nav.features"]);
+    assert.equal(h.chartLabel.attributes["aria-label"], h.landingTables[lang]["product.chart"]);
+    for (const price of h.displayedPrices)
+      assert.equal(price.textContent, h.prices.formatPrice(lang, price.dataset.price));
+  }
+  assert.deepEqual(h.languageEvents, ["orbit:language-changed", "orbit:language-changed"]);
+});
+
+test("every new landing string exists in both languages and Astra remains feminine", () => {
+  const { landingTables } = harness();
+  assert.deepEqual(Object.keys(landingTables.en), Object.keys(landingTables["pt-BR"]));
+  for (const [lang, table] of Object.entries(landingTables)) {
+    for (const [key, value] of Object.entries(table)) {
+      assert.ok(value.length > 0, `${lang}: ${key}`);
+      assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
+      if (lang === "pt-BR") assert.doesNotMatch(value, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
+    }
   }
 });

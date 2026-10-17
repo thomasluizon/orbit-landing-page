@@ -101,4 +101,5 @@ document.getElementById("lang-toggle")?.addEventListener("click", () => {
   currentLang = currentLang === "en" ? "pt-BR" : "en";
   setLangCookie(currentLang);
   applyTranslations(currentLang);
+  window.dispatchEvent(new CustomEvent("orbit:language-changed"));
 });

@@ -1,16 +1,48 @@
 ---
+import githubIcon from "../assets/github.svg?raw";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
   appUrl: string;
+  googlePlayUrl: string;
 }
-const { appUrl } = Astro.props;
+const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<footer class="site-footer t-meta">
-  <a href={`${appUrl}/privacy`} class="text-link" data-i18n="footer.privacy"
-    >{en["footer.privacy"]}</a
-  >
-  <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">{en["footer.terms"]}</a>
-  <span translate="no">© Orbit</span>
+<footer class="site-footer" data-section="footer">
+  <div class="section-inner">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="/" class="brand" aria-label="Orbit" translate="no"
+          ><span class="brand-lockup" aria-hidden="true" set:html={orbitLockup} /></a
+        >
+        <p><Copy name="footer.description" /></p>
+        <div class="footer-links">
+          <a href="https://github.com/thomasluizon/orbit-landing-page" class="text-link"
+            ><span class="footer-social-icon" set:html={githubIcon} /><Copy
+              name="footer.source"
+            /></a
+          >
+          <a href={appUrl} class="text-link" data-i18n="hero.web">{en["hero.web"]}</a>
+        </div>
+      </div>
+      <a class="footer-qr" href={googlePlayUrl}
+        ><img src="/orbit-install-qr.svg" width="128" height="128" loading="lazy" alt="" /><Copy
+          name="footer.qr"
+        /></a
+      >
+    </div>
+    <div class="footer-bottom">
+      <span translate="no">© Orbit</span>
+      <div class="footer-links">
+        <a href={`${appUrl}/privacy`} class="text-link" data-i18n="footer.privacy"
+          >{en["footer.privacy"]}</a
+        ><a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms"
+          >{en["footer.terms"]}</a
+        >
+      </div>
+    </div>
+  </div>
 </footer>

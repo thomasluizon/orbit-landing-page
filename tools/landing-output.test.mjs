@@ -13,7 +13,8 @@ test("the built header lockup paints pale ink with only the moon in the accent",
   const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
   const lockup = header?.match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
   assert.ok(lockup, "the header must inline the lockup so currentColor resolves");
-  const css = readFileSync("src/styles/global.css", "utf8");
+  const css =
+    readFileSync("src/styles/global.css", "utf8") + readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.brand\s*\{[^}]*color:\s*var\(--color-fg-1\)/);
   assert.match(css, /--primary:\s*var\(--color-primary\)/);
   const token = (name) => css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]+)`))?.[1];
@@ -68,23 +69,39 @@ for (const [event, region, label] of [
   });
 }
 
-test("the homepage is one Astra composition with a dialog instead of retired sections", () => {
+test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
   assert.match(html, /class="landing-shell"/);
   assert.match(html, /id="astra-demo"/);
   assert.match(html, /<dialog[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
   assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
-  assert.doesNotMatch(
-    html,
-    /id="(?:pricing|platforms|faq|features)"|data-screen="today"|proof\.founder/,
+  assert.deepEqual(
+    [...html.matchAll(/data-section="([^"]+)"/g)].map(([, name]) => name),
+    [
+      "hero",
+      "trust",
+      "connect",
+      "features",
+      "details",
+      "progress",
+      "restart",
+      "security",
+      "pricing",
+      "faq",
+      "final",
+      "footer",
+    ],
   );
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
+  assert.match(html, /id="demo-today"[^>]*hidden/);
   for (const action of ["Approve", "Edit", "Reject"]) assert.ok(prose.includes(action));
   for (const example of ["start", "restart", "move"])
     assert.match(html, new RegExp(`data-demo="${example}"`));
+  assert.match(html, /<details name="orbit-questions">/);
+  assert.match(html, /src="\/orbit-install-qr.svg"/);
 });
 
-test("the built proposal has three native small pill actions with ghost actions first", () => {
+test("the built proposal has three native neutral pill actions beneath the hero CTA", () => {
   const row = html.match(/<div class="demo-preview-actions">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(row);
   const buttons = [...row.matchAll(/<button\b([^>]+)>/g)].map(([, attributes]) => attributes);
@@ -93,7 +110,7 @@ test("the built proposal has three native small pill actions with ghost actions 
     assert.ok(buttons[index].includes(`id="demo-${action}"`));
     assert.ok(buttons[index].includes('type="button"'));
     assert.ok(buttons[index].includes("pill-sm"));
-    assert.ok(buttons[index].includes(index === 2 ? "bg-primary" : "bg-transparent"));
+    assert.ok(buttons[index].includes("bg-transparent"));
     assert.doesNotMatch(buttons[index], /\sdisabled(?:\s|=|$)|\stabindex="-1"/);
   }
 });

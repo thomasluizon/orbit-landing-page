@@ -1,112 +1,128 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
-import {
-  assertLandingViewport,
-  assertLandingViewportMatrix,
-  LANDING_EXAMPLES,
-  LANDING_FALLBACK_VIEWPORTS,
-  LANDING_LANGUAGES,
-  LANDING_VIEWPORTS,
-} from "./landing-viewport.mjs";
+import vm from "node:vm";
+import ts from "typescript";
 
-function rectangle(name, left, top, right, bottom, interactive = false) {
-  return { name, left, top, right, bottom, width: right - left, height: bottom - top, interactive };
-}
+const css = readFileSync("src/styles/landing.css", "utf8");
+const code = readFileSync("src/scripts/scroll.ts", "utf8");
 
-function measurement(width = 320, height = 568, language = "en", example = "start") {
+function harness(reduced = false) {
+  const frames = [];
+  const listeners = new Map();
+  const preference = { matches: reduced };
+  const result = { imports: 0, mounts: 0, disposals: 0 };
+  let resolveImport;
+  const loaded = new Promise((resolve) => {
+    resolveImport = resolve;
+  });
+  const window = {
+    matchMedia: () => preference,
+    requestAnimationFrame: (callback) => frames.push(callback),
+    addEventListener: (name, callback) => listeners.set(name, callback),
+  };
+  const compiled = ts.transpileModule(code, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  vm.runInNewContext(compiled, {
+    window,
+    require() {
+      result.imports++;
+      return loaded;
+    },
+  });
   return {
-    language,
-    example,
-    width,
-    height,
-    scrollHeight: height,
-    scrollWidth: width,
-    headlineHeight: 56,
-    headlineLineHeight: 28,
-    busy: false,
-    composition: [
-      rectangle("copy", 0, 48, width, 160),
-      rectangle("demo", 0, 176, width, 320),
-      rectangle("controls", 0, 336, width, 440),
-    ],
-    elements: [
-      rectangle("language", width - 48, 0, width, 48, true),
-      rectangle("example", 16, 240, 96, 288, true),
-    ],
+    result,
+    preference,
+    listeners,
+    paint() {
+      frames.shift()();
+      frames.shift()();
+    },
+    async resolve() {
+      resolveImport({
+        mountLandingMotion() {
+          result.mounts++;
+          return () => result.disposals++;
+        },
+      });
+      await loaded;
+      await Promise.resolve();
+      await Promise.resolve();
+    },
   };
 }
 
-test("the geometry assertions accept contained content and separated targets", () => {
-  assert.doesNotThrow(() => assertLandingViewport(measurement()));
+test("motion loads once after paint and interaction, with page lifecycle cleanup", async () => {
+  const h = harness();
+  assert.equal(h.result.imports, 0);
+  h.paint();
+  assert.equal(h.result.imports, 0);
+  const pending = h.listeners.get("scroll")();
+  h.listeners.get("wheel")();
+  await Promise.resolve();
+  assert.equal(h.result.imports, 1);
+  await h.resolve();
+  await pending;
+  assert.equal(h.result.mounts, 1);
+  h.listeners.get("pagehide")();
+  assert.equal(h.result.disposals, 1);
+  await h.listeners.get("pageshow")({ persisted: true });
+  await h.resolve();
+  assert.equal(h.result.mounts, 2);
 });
 
-for (const [label, mutate, message] of [
-  ["vertical scroll", (sample) => sample.scrollHeight++, /scrolls vertically/],
-  ["horizontal scroll", (sample) => sample.scrollWidth++, /scrolls horizontally/],
-  ["three headline lines", (sample) => (sample.headlineHeight = 84), /at most two lines/],
-  ["a pending replay", (sample) => (sample.busy = true), /not finished/],
-  ["offscreen content", (sample) => sample.elements[0].right++, /outside the viewport/],
-  ["clipped content", (sample) => (sample.elements[1].clipped = true), /clips content/],
-  [
-    "colliding targets",
-    (sample) => sample.elements.push({ ...sample.elements[0], name: "other" }),
-    /overlaps/,
-  ],
-  [
-    "side by side regions",
-    (sample) => (sample.composition[1] = rectangle("demo", 160, 48, 320, 320)),
-    /above.*demo/,
-  ],
-  ["an off centre region", (sample) => (sample.composition[1].left = 48), /centred column/],
-]) {
-  test(`the geometry assertions reject ${label}`, () => {
-    const sample = measurement();
-    mutate(sample);
-    assert.throws(() => assertLandingViewport(sample), message);
-  });
-}
-
-test("a fallback viewport may scroll but keeps every target distinct", () => {
-  const sample = measurement(512, 300);
-  sample.scrollHeight = 334;
-  sample.elements.push(rectangle("open", 260, 280, 340, 328, true));
-  assert.throws(() => assertLandingViewport(sample), /scrolls vertically/);
-  assert.doesNotThrow(() => assertLandingViewport(sample, { allowScroll: true }));
-  sample.elements.push(rectangle("terms", 300, 300, 360, 340, true));
-  assert.throws(() => assertLandingViewport(sample, { allowScroll: true }), /terms overlaps open/);
+test("reduced motion imports nothing and never creates a scroll driver", async () => {
+  const h = harness(true);
+  h.paint();
+  for (const event of ["scroll", "wheel", "touchstart", "keydown"]) await h.listeners.get(event)();
+  assert.deepEqual(h.result, { imports: 0, mounts: 0, disposals: 0 });
 });
 
-test("a fallback viewport allows subpixel rounding at the document bottom", () => {
-  const sample = measurement(512, 300);
-  sample.scrollHeight = 334;
-  sample.elements.push(rectangle("shell", 0, 0, 512, 334.203125));
-  assert.doesNotThrow(() => assertLandingViewport(sample, { allowScroll: true }));
-  sample.elements.push(rectangle("footer", 0, 300, 512, 336));
-  assert.throws(
-    () => assertLandingViewport(sample, { allowScroll: true }),
-    /footer extends outside the viewport/,
-  );
+test("a reduced motion change during import cannot mount movement or prevent a later restart", async () => {
+  const h = harness();
+  h.paint();
+  const pending = h.listeners.get("scroll")();
+  h.preference.matches = true;
+  await h.resolve();
+  await pending;
+  assert.equal(h.result.mounts, 0);
+  h.preference.matches = false;
+  await h.listeners.get("scroll")();
+  assert.equal(h.result.mounts, 1);
 });
 
-test("the matrix requires every requested size, locale and example", () => {
-  const samples = [...LANDING_VIEWPORTS, ...LANDING_FALLBACK_VIEWPORTS].flatMap(([width, height]) =>
-    LANDING_LANGUAGES.flatMap((language) =>
-      LANDING_EXAMPLES.map((example) => {
-        const sample = measurement(width, height, language, example);
-        sample.composition = [
-          rectangle("copy", 0, 48, width, 96),
-          rectangle("demo", 0, 100, width, 200),
-          rectangle("controls", 0, 204, width, 260),
-        ];
-        return sample;
-      }),
-    ),
+test("a page left during import cannot mount a scroll driver", async () => {
+  const h = harness();
+  h.paint();
+  const pending = h.listeners.get("scroll")();
+  h.listeners.get("pagehide")();
+  await h.resolve();
+  await pending;
+  assert.equal(h.result.mounts, 0);
+});
+
+test("the static layout scrolls vertically and keeps product content visible before animation", () => {
+  assert.doesNotMatch(
+    css,
+    /(?:block-size|height):\s*100dvh|overflow(?:-y)?:\s*hidden|opacity:\s*0(?:;|\s*})|visibility:\s*hidden|dashed/,
   );
-  assert.equal(samples.length, 132);
-  assert.doesNotThrow(() => assertLandingViewportMatrix(samples));
-  assert.throws(
-    () => assertLandingViewportMatrix(samples.slice(1)),
-    /Missing viewport observation/,
-  );
-  assert.throws(() => assertLandingViewportMatrix([]), /Missing viewport observation/);
+  assert.match(css, /prefers-reduced-motion:\s*reduce/);
+  assert.match(css, /transform:\s*none\s*!important/);
+  assert.match(css, /opacity:\s*1\s*!important/);
+  for (const [, declarations] of css.matchAll(/\.hero\s*\{([^}]+)\}/g)) {
+    assert.doesNotMatch(declarations, /grid-template-columns:(?!\s*minmax\(0, 1fr\))/);
+  }
+  assert.match(css, /inline-size:\s*min\(368px, 100%\)/);
+});
+
+test("every scroll driver is preference scoped and reveals only transform and opacity", () => {
+  const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.equal((source.match(/media\.add\(/g) ?? []).length, 3);
+  assert.equal((source.match(/prefers-reduced-motion: no-preference/g) ?? []).length, 3);
+  assert.match(source, /media\.revert\(\)/);
+  assert.match(source, /lenis\.destroy\(\)/);
+  assert.match(source, /pin:\s*true/);
+  assert.match(source, /scrub:/);
+  assert.doesNotMatch(source, /(?:^|[,{]\s*)(?:height|width|top|left|filter|clipPath):/m);
 });

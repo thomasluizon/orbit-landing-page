@@ -4,6 +4,11 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import TrustStrip from "../components/TrustStrip.astro";
 import Connect from "../components/Connect.astro";
+import FeatureRows from "../components/FeatureRows.astro";
+import Security from "../components/Security.astro";
+import Pricing from "../components/Pricing.astro";
+import Faq from "../components/Faq.astro";
+import FinalCta from "../components/FinalCta.astro";
 import Features from "../components/Features.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
@@ -21,14 +26,20 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbi
       <TrustStrip />
       <Connect />
       <Features appUrl={appUrl} />
+      <FeatureRows appUrl={appUrl} />
+      <Security />
+      <Pricing appUrl={appUrl} />
+      <Faq />
+      <FinalCta appUrl={appUrl} />
     </main>
-    <Footer appUrl={appUrl} />
+    <Footer appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
   </div>
   <IosWaitlist />
 </Layout>
 
 <script>
   import "../scripts/i18n";
+  import "../scripts/scroll";
   import "../scripts/waitlist";
   import "../scripts/waitlist-dialog";
 </script>

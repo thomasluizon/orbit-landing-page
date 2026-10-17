@@ -2,6 +2,7 @@
   min-inline-size: 0;
 }
 .landing-shell {
+  padding-block-start: 64px;
   overflow: clip;
 }
 .site-header {
@@ -74,7 +75,7 @@
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 32px;
-  padding-block: 160px 96px;
+  padding-block: 96px;
 }
 .hero-copy {
   display: grid;
@@ -136,8 +137,8 @@
   display: grid;
   place-items: center;
   inline-size: min(1120px, 100%);
-  margin-block-start: 32px;
-  padding-block: 32px;
+  margin-block-start: 0;
+  padding-block: 0;
   isolation: isolate;
 }
 .hero-device {
@@ -275,7 +276,7 @@
 }
 .float-week {
   inset-inline-end: 0;
-  inset-block-start: 192px;
+  inset-block-start: 96px;
 }
 .float-reminder {
   inset-inline-start: 24px;
@@ -776,7 +777,7 @@
   color: var(--color-fg-3);
 }
 :where(section[id], main[id]) {
-  scroll-margin-block-start: 128px;
+  scroll-margin-block-start: 96px;
 }
 :where(a, button) > [data-copy-en] {
   white-space: nowrap;
@@ -823,7 +824,7 @@
 }
 @media (max-width: 56rem) {
   .hero {
-    padding-block-start: 160px;
+    padding-block-start: 96px;
   }
   .hero .t-hero {
     font-size: var(--fs-4xl);
@@ -938,7 +939,7 @@
     inline-size: 80px;
   }
   .hero {
-    padding-block: 128px 64px;
+    padding-block: 64px;
     gap: 24px;
   }
   .hero-copy {
@@ -1033,7 +1034,7 @@
     padding: 24px;
   }
   .faq-list summary {
-    font-size: var(--fs-base);
+    font-size: var(--fs-sm);
     gap: 16px;
   }
   .faq-list summary,
@@ -1059,9 +1060,8 @@
   }
 }
 @media (max-width: 23rem) {
-  .header-install {
-    padding-inline: 12px;
-    font-size: var(--fs-xs);
+  .brand-lockup svg {
+    inline-size: 64px;
   }
   .hero .t-hero {
     font-size: var(--fs-3xl);
@@ -1076,9 +1076,6 @@
   }
   .demo-preview-actions {
     gap: 12px;
-  }
-  .demo-preview-actions .pill-sm {
-    padding-inline: 12px;
   }
   .demo-examples {
     gap: 4px;
@@ -1110,5 +1107,30 @@
   .habit-row,
   .sample-message {
     background: var(--color-bg-elev);
+  }
+}
+
+.footer-social-icon {
+  display: flex;
+}
+
+.footer-links .text-link {
+  gap: 8px;
+}
+.brand,
+.footer-qr {
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.footer-qr {
+  padding: 8px;
+  border-radius: var(--radius-md);
+}
+.header-links a {
+  transition: color var(--duration-hover-control) var(--ease-standard);
+}
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover,
+  .footer-qr:hover {
+    background: var(--color-bg-hover);
   }
 }
