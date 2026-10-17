@@ -1,0 +1,18 @@
+---
+import Copy from "./Copy.astro";
+import ProductCard from "./ProductCard.astro";
+---
+
+<section class="section" data-section="connect" aria-labelledby="connect-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="connect-title" class="section-title"><Copy name="connect.title" /></h2>
+      <p class="section-description"><Copy name="connect.body" /></p>
+    </div>
+    <div class="connect-composition">
+      <p class="sample-message" data-reveal><Copy name="phrase.start" /></p>
+      <ProductCard kind="today" />
+      <ProductCard kind="reminder" />
+    </div>
+  </div>
+</section>

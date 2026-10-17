@@ -1,0 +1,16 @@
+---
+import { Check, Smartphone, Circle } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import { translations } from "../i18n/translations";
+---
+
+<section class="trust-strip" data-section="trust">
+  <div class="trust-content">
+    <p><Check size={20} /><Copy name="trust.approval" /></p>
+    <p>
+      <Smartphone size={20} /><span data-i18n="hero.platforms"
+        >{translations.en["hero.platforms"]}</span>
+    </p>
+    <p><Circle size={20} /><Copy name="trust.free" /></p>
+  </div>
+</section>

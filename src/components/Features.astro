@@ -1,0 +1,44 @@
+---
+import { MessageCircle, Bell, ListChecks, RotateCcw } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import PillButton from "./PillButton.astro";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
+const features = [
+  { key: "start", Icon: MessageCircle },
+  { key: "remember", Icon: Bell },
+  { key: "act", Icon: ListChecks },
+  { key: "restart", Icon: RotateCcw },
+] as const;
+---
+
+<section id="features" class="section" data-section="features" aria-labelledby="features-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="features-title" class="section-title"><Copy name="features.title" /></h2>
+      <p class="section-description"><Copy name="features.body" /></p>
+    </div>
+    <div class="feature-grid">
+      {
+        features.map(({ key, Icon }) => (
+          <article class="feature-card">
+            <span class="feature-icon" data-reveal>
+              <Icon size={24} />
+            </span>
+            <h3>
+              <Copy name={`features.${key}.title`} />
+            </h3>
+            <p>
+              <Copy name={`features.${key}.body`} />
+            </p>
+          </article>
+        ))
+      }
+    </div>
+    <PillButton href={appUrl} size="md" class="section-action"
+      ><Copy name="action.start" /></PillButton
+    >
+  </div>
+</section>
