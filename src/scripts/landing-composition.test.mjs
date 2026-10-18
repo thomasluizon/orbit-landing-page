@@ -943,7 +943,7 @@ test("example cards share a square frame, reduced app view and one alternating r
   );
   assert.match(
     css,
-    /\.example-app\s*\{[^}]*inline-size:\s*440px;[^}]*translate:\s*-50% -50%;[^}]*transform:\s*scale\(0\.64\)/,
+    /\.example-app\s*\{[^}]*inline-size:\s*440px;[^}]*transform:\s*translate\(-50%, -50%\) scale\(0\.64\)/,
   );
   assert.match(css, /\.example-rows\s*\{[^}]*gap:\s*96px/);
   assert.match(

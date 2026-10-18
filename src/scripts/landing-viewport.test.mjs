@@ -802,3 +802,10 @@ test("compact habit rows use the owner's pill and rounded-square check standard"
     /\.demo-preview-actions \.pill-sm\s*\{[^}]*border-radius:\s*var\(--radius-lg\)/,
   );
 });
+
+test("phone widths drop the install QR, which a phone cannot scan from its own screen", () => {
+  const phone = [...css.matchAll(/@media \(width < 48rem\)\s*\{([\s\S]*?)\n\}/g)].map(
+    ([, rules]) => rules,
+  );
+  assert.ok(phone.some((rules) => /\.footer-qr\s*\{\s*display:\s*none;?\s*\}/.test(rules)));
+});

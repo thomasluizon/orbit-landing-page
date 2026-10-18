@@ -303,17 +303,34 @@ test("built product examples carry the localized templates their controls consum
 });
 
 test("the built stylesheet keeps every example card's app view centred inside its card", () => {
-  const stylesheets = [...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g)].map(
-    ([, href]) => readFileSync(`dist${href}`, "utf8"),
-  );
+  const stylesheets = [
+    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
+  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
   const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
-  const rules = [...stylesheets, ...inline]
-    .join("\n")
-    .match(/\.example-app\{[^}]*\}/g);
+  const rules = [...stylesheets, ...inline].join("\n").match(/\.example-app\{[^}]*\}/g);
   assert.ok(rules?.length, "the built CSS must carry the example app rules");
   for (const rule of rules) {
     const centred =
       /transform:translate\(-50%,\s?-50%\)/.test(rule) || /translate:-50%\s-50%/.test(rule);
     assert.ok(centred, `an example app rule loses its centring in the build: ${rule}`);
   }
+});
+
+test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
+  const stylesheets = [
+    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
+  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
+  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
+  const target = ".closing-legal p .text-link>[data-copy-en]";
+  const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
+    ([, selectors, body]) =>
+      selectors
+        .split(",")
+        .map((selector) => selector.trim().replace(/\s*>\s*/g, ">"))
+        .includes(target) && /white-space:\s?normal/.test(body),
+  );
+  assert.ok(
+    wraps,
+    "the closing data request copy must wrap, or it widens the closing block past a 320px viewport",
+  );
 });
