@@ -28,6 +28,18 @@ let touchStart: { x: number; y: number } | undefined;
 carousel?.addEventListener(
   "touchstart",
   (event) => {
+    touchStart = undefined;
+    for (
+      let target = event.target instanceof Element ? event.target : null;
+      target && target !== carousel;
+      target = target.parentElement
+    ) {
+      if (
+        target.scrollWidth > target.clientWidth &&
+        ["auto", "scroll"].includes(getComputedStyle(target).overflowX)
+      )
+        return;
+    }
     touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
   },
   { passive: true },

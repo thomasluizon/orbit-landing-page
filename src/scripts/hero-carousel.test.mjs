@@ -5,16 +5,21 @@ import vm from "node:vm";
 import ts from "typescript";
 
 function harness({ reduced = false } = {}) {
-  const element = () => ({
-    attrs: {},
-    listeners: new Map(),
+  class Element {
+    attrs = {};
+    listeners = new Map();
+    parentElement = null;
+    clientWidth = 200;
+    scrollWidth = 200;
+    overflowX = "visible";
     setAttribute(name, value) {
       this.attrs[name] = value;
-    },
+    }
     addEventListener(name, fn) {
       this.listeners.set(name, fn);
-    },
-  });
+    }
+  }
+  const element = (options = {}) => Object.assign(new Element(), options);
   const slides = [0, 1, 2, 3].map(element);
   const segments = [0, 1, 2, 3].map(element);
   const positions = [];
@@ -25,6 +30,7 @@ function harness({ reduced = false } = {}) {
       positions.push(options);
     },
   });
+  slides.forEach((slide) => (slide.parentElement = carousel));
   const stage = {
     querySelector: () => carousel,
     querySelectorAll: (selector) => (selector === "[data-phone-slide]" ? slides : segments),
@@ -44,6 +50,8 @@ function harness({ reduced = false } = {}) {
     {
       document: { getElementById: () => stage },
       window: { matchMedia: () => preference },
+      Element,
+      getComputedStyle: (element) => ({ overflowX: element.overflowX }),
       exports,
       ResizeObserver: class {
         constructor(fn) {
@@ -57,15 +65,56 @@ function harness({ reduced = false } = {}) {
     slides,
     segments,
     carousel,
+    element,
     positions,
     preference,
     resize,
     progress: exports.updateHeroCarousel,
     event(target, name, event = {}) {
-      target.listeners.get(name)?.(event);
+      target.listeners.get(name)?.({ target, ...event });
     },
   };
 }
+
+test("horizontal scrollers keep their swipe while plain phone areas change screens", () => {
+  for (const overflowX of ["auto", "scroll"]) {
+    const h = harness();
+    const row = h.element({ parentElement: h.slides[0], scrollWidth: 300, overflowX });
+    const chip = h.element({ parentElement: row });
+    h.event(h.carousel, "touchstart", {
+      target: chip,
+      touches: [{ clientX: 100, clientY: 0 }],
+    });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 40, clientY: 2 }] });
+    assert.equal(h.positions.length, 1, `${overflowX} scroller owns the gesture`);
+    assert.equal(h.slides[0].inert, false);
+    h.event(h.carousel, "touchstart", {
+      target: h.slides[0],
+      touches: [{ clientX: 100, clientY: 0 }],
+    });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 40, clientY: 2 }] });
+    assert.equal(h.positions.at(-1).left, 200);
+    assert.equal(h.slides[1].inert, false);
+  }
+});
+
+test("non-scrolling descendants keep phone swipes available", () => {
+  for (const options of [
+    { overflowX: "auto", scrollWidth: 200 },
+    { overflowX: "scroll", scrollWidth: 100 },
+    { overflowX: "hidden", scrollWidth: 300 },
+    { overflowX: "visible", scrollWidth: 300 },
+  ]) {
+    const h = harness();
+    const target = h.element({ parentElement: h.slides[0], ...options });
+    h.event(h.carousel, "touchstart", {
+      target,
+      touches: [{ clientX: 100, clientY: 0 }],
+    });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 40, clientY: 2 }] });
+    assert.equal(h.positions.at(-1).left, 200);
+  }
+});
 
 for (const reduced of [false, true]) {
   test(`scroll exposes every screen in equal slices, including reverse scroll (reduced: ${reduced})`, () => {
