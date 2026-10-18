@@ -48,7 +48,7 @@ for (const [event, region, label] of [
   [
     "hero_app_cta_clicked",
     /<section\b[^>]*data-section="final"[^>]*>[\s\S]*?<\/section>/,
-    "action.start",
+    "final.cta",
   ],
   [
     "hero_google_play_cta_clicked",
@@ -65,8 +65,8 @@ for (const [event, region, label] of [
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
     assert.ok(
-      label === "action.start"
-        ? anchor?.includes('data-copy-en="Start free"')
+      label === "final.cta"
+        ? anchor?.includes('data-copy-en="Open in your browser"')
         : anchor?.includes(`data-i18n="${label}"`),
     );
     const destination =
@@ -77,15 +77,15 @@ for (const [event, region, label] of [
   });
 }
 
-test("the single closing free-start action keeps the existing app event and footer surface", () => {
+test("the single closing web app action keeps the existing app event and footer surface", () => {
   const event = 'data-analytics-event="hero_app_cta_clicked"';
   assert.equal(html.split(event).length - 1, 1);
   const action = [...html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
     .map(([tag]) => tag)
     .find((tag) => tag.includes(event));
   assert.ok(action.includes('data-analytics-surface="footer"'));
-  assert.ok(action.includes('data-copy-en="Start free"'));
-  assert.ok(action.includes('data-copy-pt="Começar grátis"'));
+  assert.ok(action.includes('data-copy-en="Open in your browser"'));
+  assert.ok(action.includes('data-copy-pt="Abrir no navegador"'));
 });
 
 test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
