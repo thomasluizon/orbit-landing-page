@@ -40,6 +40,12 @@ function renderPlan() {
   setCopy("demo-second-repeat", schedule);
 }
 
+function revealProposal() {
+  if (!preview || preview.hidden || (editForm && !editForm.hidden)) return;
+  const thread = preview.closest<HTMLElement>(".demo-thread");
+  if (thread) thread.scrollTop = thread.scrollHeight;
+}
+
 function resetProposal() {
   approved = false;
   if (preview) preview.hidden = false;
@@ -52,6 +58,7 @@ function resetProposal() {
     ?.querySelectorAll<HTMLElement>("[data-demo]")
     .forEach((chip) => chip.setAttribute("aria-pressed", String(chip.dataset.demo === current)));
   renderPlan();
+  revealProposal();
 }
 
 function play(example: Example) {
@@ -165,3 +172,10 @@ window.addEventListener("orbit:language-changed", () => {
   renderPlan();
   if (approved) updateToday();
 });
+
+if (preview) {
+  const proposalSize = new ResizeObserver(revealProposal);
+  proposalSize.observe(preview);
+  const thread = preview.closest(".demo-thread");
+  if (thread) proposalSize.observe(thread);
+}

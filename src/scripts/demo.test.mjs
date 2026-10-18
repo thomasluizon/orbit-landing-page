@@ -41,6 +41,9 @@ function harness(language = "en") {
       this.focused = true;
     },
     scrollIntoView() {},
+    closest() {
+      return null;
+    },
     fire(event) {
       this.listeners.get(event)?.({ preventDefault() {} });
     },
@@ -63,6 +66,9 @@ function harness(language = "en") {
   elements.get("demo-continue-link").dataset.appUrl = "https://app-staging.useorbit.org";
   const context = vm.createContext({
     URL,
+    ResizeObserver: class {
+      observe() {}
+    },
     exports: {},
     document: {
       getElementById: (id) => elements.get(id),

@@ -624,3 +624,24 @@ test("back to top appears past the hero and yields to footer links and consent",
   }
   assert.match(css, /\.back-to-top\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px/);
 });
+
+test("proposal action options stay in one trailing row with a fixed 12px gap", () => {
+  const rows = [...css.matchAll(/\.demo-preview-actions\s*\{([^}]+)\}/g)];
+  assert.ok(rows.length);
+  for (const [, declarations] of rows) {
+    assert.match(declarations, /flex-wrap:\s*nowrap\s*;/);
+    assert.match(declarations, /gap:\s*12px\s*;/);
+    assert.match(declarations, /justify-content:\s*flex-end\s*;/);
+  }
+  assert.match(css, /\.demo-preview-actions \.pill-sm\s*\{[^}]*flex-shrink:\s*0/);
+});
+
+test("pager focus-visible follows the pill segment and its 44px target stays invisible", () => {
+  const segment = css.match(/\.carousel-segment\s*\{([^}]+)\}/)?.[1];
+  assert.match(segment, /inline-size:\s*36px\s*;/);
+  assert.match(segment, /block-size:\s*4px\s*;/);
+  assert.match(segment, /border-radius:\s*var\(--radius-full\)/);
+  assert.match(css, /\.carousel-segment::before\s*\{[^}]*inset-block:\s*-20px;[^}]*inset-inline:\s*-4px/);
+  assert.match(css, /\.carousel-segment:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*2px/);
+  assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
+});
