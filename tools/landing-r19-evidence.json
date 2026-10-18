@@ -28,5 +28,22 @@
     "widthsCheckedPx": { "from": 768, "through": 1920, "step": 1 },
     "method": "Source-derived motion envelopes include opposing float extrema and staggered entrance extrema. Shared column parallax cancels between siblings. These bounds hold independently of every card's phase and path."
   },
+  "checks": [
+    { "command": "npm test", "exitCode": 0, "passed": 164 },
+    { "command": "npm run lint", "exitCode": 0 },
+    { "command": "npm run format:check", "exitCode": 0 },
+    { "command": "npm run check", "exitCode": 0, "errors": 0, "warnings": 0, "hints": 1 },
+    { "command": "npm run build", "exitCode": 0, "passed": 17 }
+  ],
+  "unchanged": {
+    "item": 3,
+    "spacingBasePx": 4,
+    "colorRadiusShadowAndFontDefinitionsChanged": false,
+    "orangeTreatmentChanged": false,
+    "copyChanged": false,
+    "figmaTouched": false,
+    "phoneScreenDriverChanged": false,
+    "floatPathsPhasesAmplitudeAndParallaxChanged": false
+  },
   "renderedChecks": "The orchestrator owns hit testing, viewport rendering and motion clearance probes."
 }
