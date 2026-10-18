@@ -672,6 +672,60 @@ test("chat chips and composer occupy separate rows with their full targets in ve
   );
 });
 
+test("side-card float budget preserves 24px clearance for every phase and entrance offset", () => {
+  const declarations = (selector) =>
+    [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)]
+      .filter(([, selectors]) => selectors.trim() === selector)
+      .map(([, , body]) => body)
+      .join("\n");
+  const stage = declarations(".hero-stage");
+  const side = declarations(".hero-side");
+  const reserve = Number(stage.match(/--hero-float-reserve:\s*(\d+)px;/)?.[1]);
+  const entry = Number(stage.match(/--hero-float-entry:\s*(\d+)px;/)?.[1]);
+  const amplitude = Number(
+    readFileSync("src/scripts/hero-float.ts", "utf8").match(/const amplitude = (\d+);/)?.[1],
+  );
+  assert.ok(reserve >= amplitude, "each card's motion envelope must reserve its full amplitude");
+  assert.ok(amplitude >= 12 && amplitude <= 17);
+  assert.match(side, /padding-inline:\s*var\(--hero-float-reserve\);/);
+  assert.match(
+    side,
+    /gap:\s*calc\(24px \+ 2 \* var\(--hero-float-reserve\) \+ var\(--hero-float-entry\)\);/,
+  );
+  assert.doesNotMatch(side, /gap:\s*\d+px;/, "short viewports retain the motion reserve");
+  assert.match(stage, /gap:\s*16px 24px;/);
+  assert.match(
+    stage,
+    /inline-size:\s*min\(calc\(var\(--landing-narrow\) - 48px\), calc\(100% - 96px\)\);/,
+  );
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.equal(Number(motion.match(/\{ y: (\d+), opacity: 0 \}/)?.[1]), entry);
+  assert.match(
+    css,
+    /@media \(height < 1000px\)\s*\{\s*\.float-today,\s*\.float-week\s*\{\s*display:\s*none;/,
+  );
+  assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
+  for (let width = 768; width <= 1920; width++) {
+    const stageWidth = Math.min(896 - 48, width - 96);
+    const phoneWidth = Math.min(330, (width - 48) / 3);
+    const columnWidth = (stageWidth - phoneWidth - 48) / 2;
+    assert.ok(columnWidth - 2 * reserve >= 144, `compact cards fit at ${width}px`);
+    const outerInset = (width - stageWidth) / 2 + reserve;
+    for (const offset of [-amplitude, amplitude]) {
+      assert.ok(24 + reserve - offset >= 24, `phone clearance at ${width}px`);
+      assert.ok(outerInset + offset >= 24, `viewport clearance at ${width}px`);
+      for (const neighbourOffset of [-amplitude, amplitude]) {
+        for (const entranceDifference of [-entry, entry]) {
+          assert.ok(
+            24 + 2 * reserve + entry + neighbourOffset - offset + entranceDifference >= 24,
+            `sibling clearance at ${width}px; shared column parallax cancels`,
+          );
+        }
+      }
+    }
+  }
+});
+
 test("pager focus-visible follows the pill segment and its 44px target stays invisible", () => {
   const segment = css.match(/\.carousel-segment\s*\{([^}]+)\}/)?.[1];
   assert.match(segment, /inline-size:\s*36px\s*;/);

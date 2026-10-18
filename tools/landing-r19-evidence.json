@@ -7,7 +7,26 @@
       "redSources": "1b4726e with only the regression test added",
       "red": { "exitCode": 1, "passed": 0, "failed": 1 },
       "green": { "exitCode": 0, "passed": 1, "failed": 0 }
+    },
+    {
+      "item": 2,
+      "command": "node --test --test-name-pattern='side-card float budget' src/scripts/landing-viewport.test.mjs",
+      "redSources": "git archive 1b4726e with the regression test copied into the archive",
+      "red": { "exitCode": 1, "passed": 0, "failed": 1 },
+      "green": { "exitCode": 0, "passed": 1, "failed": 0 }
     }
   ],
+  "motionBudget": {
+    "amplitudePx": 17,
+    "reservedTravelPerEdgePx": 24,
+    "reservedEntrancePx": 24,
+    "phoneGapPx": 24,
+    "siblingGapPx": 96,
+    "minimumPhoneClearancePx": 31,
+    "minimumSiblingClearancePx": 38,
+    "minimumInlineViewportClearancePx": 55,
+    "widthsCheckedPx": { "from": 768, "through": 1920, "step": 1 },
+    "method": "Source-derived motion envelopes include opposing float extrema and staggered entrance extrema. Shared column parallax cancels between siblings. These bounds hold independently of every card's phase and path."
+  },
   "renderedChecks": "The orchestrator owns hit testing, viewport rendering and motion clearance probes."
 }

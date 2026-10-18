@@ -1543,6 +1543,8 @@ button.metric-bar-track:focus-visible {
 .hero-stage {
   --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
   --hero-device-bezel: 4px;
+  --hero-float-reserve: 24px;
+  --hero-float-entry: 24px;
   --hero-device-width: min(
     330px,
     calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
@@ -1595,8 +1597,10 @@ button.metric-bar-track:focus-visible {
   justify-items: center;
   align-self: center;
   grid-row: 1;
-  gap: 24px;
+  /* Reserve both neighbours' travel and the staggered entrance outside the clear gap. */
+  gap: calc(24px + 2 * var(--hero-float-reserve) + var(--hero-float-entry));
   inline-size: 100%;
+  padding-inline: var(--hero-float-reserve);
 }
 .hero-left {
   grid-column: 1;
@@ -1878,6 +1882,10 @@ button.metric-bar-track:focus-visible {
 .hero-side .proactive-line {
   gap: 8px;
   font-size: var(--fs-xs);
+  line-height: var(--lh-meta);
+}
+.hero-side .habit-name {
+  font-size: var(--fs-xs);
 }
 .hero-side .habit-row {
   gap: 4px;
@@ -1904,12 +1912,15 @@ button.metric-bar-track:focus-visible {
 .hero-side .today-pager {
   padding-block: 0;
 }
+@media (height < 1000px) {
+  .float-today,
+  .float-week {
+    display: none;
+  }
+}
 @media (height < 700px) {
   .hero-phrase {
     display: none;
-  }
-  .hero-side {
-    gap: 16px;
   }
 }
 @media (width < 768px) {
