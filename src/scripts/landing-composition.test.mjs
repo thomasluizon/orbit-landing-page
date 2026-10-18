@@ -1290,3 +1290,17 @@ test("habit checks, week bars, calendar days and data previews work when feature
   assert.equal(deleted.hidden, false);
   assert.equal(actions.hidden, true);
 });
+
+test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const toggle = css.match(/\.language-toggle\s*\{([^}]*)\}/)?.[1] ?? "";
+  const target = css.match(/\.language-toggle::before\s*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(toggle, /position:\s*relative;/);
+  assert.match(toggle, /block-size:\s*40px;/);
+  assert.match(target, /content:\s*"";/);
+  assert.match(target, /position:\s*absolute;/);
+  assert.match(target, /inset-block:\s*-2px;/);
+  assert.match(target, /inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
+  assert.match(target, /border-radius:\s*inherit;/);
+  assert.doesNotMatch(target, /background/);
+});

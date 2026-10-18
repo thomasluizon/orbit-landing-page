@@ -65,6 +65,7 @@
   white-space: nowrap;
 }
 .language-toggle {
+  position: relative;
   display: grid;
   place-items: center;
   block-size: 40px;
@@ -75,6 +76,13 @@
   font-size: var(--fs-sm);
   cursor: pointer;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.language-toggle::before {
+  content: "";
+  position: absolute;
+  inset-block: -2px;
+  inset-inline: min(0px, calc((100% - 44px) / 2));
+  border-radius: inherit;
 }
 .hero {
   display: grid;
