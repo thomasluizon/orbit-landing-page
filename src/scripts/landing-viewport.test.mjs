@@ -41,7 +41,7 @@ function stylesheetRules(source) {
   return rules;
 }
 
-test("all six hero side items remain rendered from 768px wide and 720px tall", () => {
+test("all four hero side items remain rendered from 768px wide and 720px tall", () => {
   const sideItem =
     /\.(?:hero-(?:products|side|float|phrase|left|right)|float-(?:today|week|reminder|insight)|phrase-(?:start|restart))(?![\w-])/;
   for (const rule of stylesheetRules(css)) {
@@ -358,20 +358,17 @@ test("composition fitting changes only visibility and preserves the canvas visua
   );
 });
 
-test("phone product screens use a zero-minimum column at every viewport width", () => {
-  const slide = unconditionalRules(css).match(/\.phone-product-content\s*\{([^}]+)\}/)?.[1];
-  assert.ok(slide, "the product screen layout must apply outside media queries");
-  assert.match(slide, /grid-template-columns:\s*minmax\(0, 1fr\)/);
-});
-
-test("phone product cards fill their slide outside media queries", () => {
-  const card = unconditionalRules(css).match(
-    /\.phone-product-content > \.product-card\s*\{([^}]+)\}/,
-  )?.[1];
-  assert.ok(card, "full-width cards must fit desktop phones as well as mobile phones");
-  assert.match(card, /(?:^|;)\s*inline-size:\s*100%\s*;/);
-  assert.match(card, /max-inline-size:\s*(?:100%|none)\s*;/);
-  assert.match(card, /min-inline-size:\s*0\s*;/);
+test("Today fills its slide with a flexible zero-minimum habit column", () => {
+  const base = unconditionalRules(css);
+  assert.match(
+    base,
+    /\.phone-today-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*flex:\s*1;/,
+  );
+  assert.match(base, /\.phone-today-habits\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(
+    base,
+    /\.phone-today-habits\s*\{[^}]*grid-template-rows:\s*repeat\(5, minmax\(64px, 1fr\)\)/,
+  );
 });
 
 test("phone text wraps to two lines without splitting words or pushing out the habit check", () => {
@@ -407,20 +404,7 @@ test("phone screens share the app header and content top inset at every width", 
   );
   assert.match(base, /\.phone-content\s*\{[^}]*padding-block-start:\s*16px;/);
   assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*0;[^}]*padding:\s*0;/);
-  assert.match(base, /\.phone-product-content\s*\{[^}]*gap:\s*16px;/);
-});
-
-test("phone week columns can shrink below the standalone chart's fixed day minimum", () => {
-  const base = unconditionalRules(css);
-  assert.match(
-    base,
-    /\.phone-slide \.week-chart\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/,
-  );
-  assert.match(
-    base,
-    /\.phone-slide \.chart-column\s*\{[^}]*min-inline-size:\s*0;[^}]*padding-inline:\s*0/,
-  );
-  assert.match(base, /\.phone-slide \.chart-track\s*\{[^}]*padding-inline:\s*4px/);
+  assert.match(base, /\.phone-today-content\s*\{[^}]*gap:\s*16px;/);
 });
 
 test("phone habit checks reserve only their visible square inside the full-row button", () => {
@@ -859,9 +843,9 @@ test("the phone reserves enough width for app pills and caps its height to the s
   }
 });
 
-test("mobile removes the floating cards and keeps the four screens inside the phone", () => {
+test("mobile removes the floating cards and keeps both screens inside the phone", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
-  assert.equal((hero.match(/data-phone-slide=/g) ?? []).length, 4);
+  assert.equal((hero.match(/data-phone-slide=/g) ?? []).length, 2);
   assert.match(css, /@media \(width < 768px\)[\s\S]*?\.hero-products\s*\{\s*display:\s*none/);
   assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*36px;[^}]*block-size:\s*4px/);
   assert.doesNotMatch(readFileSync("src/components/AstraDemo.astro", "utf8"), /demo-playback/);
@@ -1037,7 +1021,7 @@ test("side-card float budget preserves 24px clearance for every phase and entran
   assert.equal(Number(motion.match(/\{ y: (\d+), opacity: 0 \}/)?.[1]), entry);
   assert.match(
     css,
-    /@media \(height < 720px\)\s*\{\s*\.float-today,\s*\.float-week\s*\{\s*display:\s*none;/,
+    /@media \(height < 720px\)\s*\{\s*\.float-reminder,\s*\.float-week\s*\{\s*display:\s*none;/,
   );
   assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
   for (let width = 768; width <= 1920; width++) {

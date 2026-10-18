@@ -259,7 +259,56 @@ test("the built examples contain exactly one product and one localized sentence 
   }
   const cards = descendants(ast).filter((node) => attrs(node)["data-product-kind"]);
   const kinds = cards.map((node) => attrs(node)["data-product-kind"]);
-  assert.ok(kinds.includes("today") && kinds.includes("week"));
+  assert.ok(kinds.includes("week"));
+  assert.ok(!kinds.includes("today"), "Today belongs to the full phone screen");
+});
+
+test("the built hero has two shared headers, two pager segments and a full Today habit list", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const nodes = descendants(ast);
+  const screens = nodes.filter((node) => attrs(node)["data-phone-slide"]);
+  assert.deepEqual(
+    screens.map((node) => attrs(node)["data-phone-slide"]),
+    ["chat", "today"],
+  );
+  for (const screen of screens) {
+    assert.equal(
+      descendants(screen).filter((node) => attrs(node).class === "phone-app-header").length,
+      1,
+    );
+  }
+  const segments = nodes.filter((node) => Object.hasOwn(attrs(node), "data-carousel-segment"));
+  assert.deepEqual(
+    segments.map((node) => attrs(node)["aria-controls"]),
+    ["phone-chat", "phone-today"],
+  );
+  const habits = descendants(screens[1]).filter((node) =>
+    Object.hasOwn(attrs(node), "data-habit-toggle"),
+  );
+  assert.equal(habits.length, 5);
+  assert.deepEqual(
+    habits.map((node) => attrs(node)["aria-pressed"]),
+    ["true", "true", "false", "false", "false"],
+  );
+  const columns = nodes.filter((node) => Object.hasOwn(attrs(node), "data-hero-column"));
+  assert.deepEqual(
+    columns.map(
+      (column) =>
+        descendants(column).filter((node) => Object.hasOwn(attrs(node), "data-hero-float")).length,
+    ),
+    [2, 2],
+  );
+  assert.deepEqual(
+    columns
+      .flatMap(descendants)
+      .map((node) => attrs(node)["data-product-kind"])
+      .filter(Boolean),
+    ["reminder", "insight", "week"],
+  );
 });
 
 test("built product examples carry the localized templates their controls consume", async () => {

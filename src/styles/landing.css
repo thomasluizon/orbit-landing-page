@@ -1642,7 +1642,6 @@ button.metric-bar-track:focus-visible {
   max-inline-size: 176px;
   justify-self: end;
 }
-.float-today,
 .float-week {
   justify-self: start;
 }
@@ -1652,9 +1651,6 @@ button.metric-bar-track:focus-visible {
   justify-self: start;
   color: var(--color-primary-text);
   font-size: var(--fs-sm);
-}
-.phrase-restart {
-  justify-self: end;
 }
 .hero-phrase > span {
   display: block;
@@ -1731,24 +1727,60 @@ button.metric-bar-track:focus-visible {
 .phone-content {
   padding-block-start: 16px;
 }
-.phone-product-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: start;
+.phone-today-content {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   flex: 1;
   min-block-size: 0;
-  padding-inline: 8px;
+  padding-inline: 16px;
   padding-block-end: 24px;
   overflow-y: auto;
+  scrollbar-width: none;
   touch-action: pan-y;
 }
-.phone-product-content > .product-card {
-  grid-template-columns: minmax(0, 1fr);
+.phone-today-pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   inline-size: 100%;
-  max-inline-size: none;
-  min-inline-size: 0;
+}
+.phone-day-chevron {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  block-size: 48px;
+}
+.phone-today-date {
+  flex: 1;
+  text-align: center;
+}
+.phone-today-date .product-caption {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.phone-today-astra {
+  align-items: center;
+  flex-shrink: 0;
+  min-block-size: 48px;
   padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+}
+.phone-today-habits {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(5, minmax(64px, 1fr));
+  flex: 1;
+  gap: 12px;
+  min-inline-size: 0;
+}
+.phone-today-habits .habit-name {
+  font-size: var(--fs-md);
+}
+.phone-today-habits .habit-emoji {
+  inline-size: 46px;
+  block-size: 46px;
 }
 .phone-slide .habit-row {
   min-inline-size: 0;
@@ -1800,6 +1832,10 @@ button.metric-bar-track:focus-visible {
 .phone-slide .phone-app-header h2 {
   font-size: 16px;
 }
+.phone-slide .phone-today-pager h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+}
 .phone-slide .demo-preview .t-row,
 .phone-slide .demo-preview .t-secondary,
 .phone-slide .demo-thread .t-body {
@@ -1811,16 +1847,6 @@ button.metric-bar-track:focus-visible {
 .phone-slide .demo-input-area {
   gap: 8px;
   padding: 12px 8px 24px;
-}
-.phone-slide .week-chart {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-.phone-slide .chart-column {
-  min-inline-size: 0;
-  padding-inline: 0;
-}
-.phone-slide .chart-track {
-  padding-inline: 4px;
 }
 .demo-exchange {
   margin-block-start: 0;
@@ -1873,42 +1899,7 @@ button.metric-bar-track:focus-visible {
   white-space: normal;
   color: var(--color-primary-soft);
 }
-@container (inline-size < 240px) {
-  .phone-product-content {
-    padding-inline: 4px;
-    padding-block-end: 16px;
-  }
-  .phone-product-content > .product-card {
-    padding: 8px;
-  }
-  .phone-slide .habit-row {
-    gap: 4px;
-    padding-inline: 4px;
-  }
-  .phone-slide .habit-emoji {
-    inline-size: 24px;
-    block-size: 24px;
-    font-size: var(--fs-base);
-  }
-  .phone-slide .phone-app-header h2 {
-    font-size: var(--fs-sm);
-  }
-  .phone-slide .demo-preview .t-row,
-  .phone-slide .demo-preview .t-secondary,
-  .phone-slide .demo-thread .t-body {
-    font-size: var(--fs-xs);
-  }
-  .phone-slide .demo-preview {
-    gap: 8px;
-  }
-  .phone-slide .demo-exchange,
-  .phone-slide .demo-response {
-    gap: 4px;
-  }
-  .phone-slide .demo-request {
-    padding: 4px 8px;
-  }
-}
+
 .hero-side .product-card {
   inline-size: 100%;
   max-inline-size: 100%;
@@ -1917,7 +1908,6 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-lg);
   font-size: var(--fs-sm);
 }
-.hero-side .product-today,
 .hero-side .product-week {
   block-size: auto;
 }
@@ -1962,18 +1952,12 @@ button.metric-bar-track:focus-visible {
 .hero-side .chart-track {
   padding-inline: 4px;
 }
-.hero-side .product-top,
-.hero-side .today-pager {
+.hero-side .product-top {
   padding-block: 0;
 }
 @media (height < 720px) {
-  .float-today,
+  .float-reminder,
   .float-week {
-    display: none;
-  }
-}
-@media (height < 700px) {
-  .hero-phrase {
     display: none;
   }
 }

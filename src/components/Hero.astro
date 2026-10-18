@@ -3,10 +3,12 @@ import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
 import PhoneHeader from "./PhoneHeader.astro";
+import HabitRow from "./HabitRow.astro";
+import AstraGlyph from "./AstraGlyph.astro";
 import TrustStrip from "./TrustStrip.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
-import { Signal, Wifi, BatteryFull } from "@lucide/astro";
+import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight } from "@lucide/astro";
 interface Props {
   googlePlayUrl: string;
   appUrl: string;
@@ -55,31 +57,31 @@ const en = translations.en;
                 data-product-screen
               >
                 <PhoneHeader>
-                  <h2 class="t-row" data-i18n="carousel.today">{en["carousel.today"]}</h2>
+                  <div class="phone-today-pager">
+                    <span class="phone-day-chevron" aria-hidden="true"
+                      ><ChevronLeft size={20} /></span
+                    >
+                    <div class="phone-today-date">
+                      <h2><Copy name="product.today" /></h2>
+                      <p class="product-caption"><Copy name="today.date" /></p>
+                    </div>
+                    <span class="phone-day-chevron" aria-hidden="true"
+                      ><ChevronRight size={20} /></span
+                    >
+                  </div>
                 </PhoneHeader>
-                <div class="phone-content phone-product-content">
-                  <ProductCard kind="today" />
-                </div>
-              </div>
-              <div class="phone-slide" id="phone-week" data-phone-slide="week" data-product-screen>
-                <PhoneHeader>
-                  <h2 class="t-row" data-i18n="carousel.week">{en["carousel.week"]}</h2>
-                </PhoneHeader>
-                <div class="phone-content phone-product-content">
-                  <ProductCard kind="week" />
-                </div>
-              </div>
-              <div
-                class="phone-slide"
-                id="phone-reminder"
-                data-phone-slide="reminder"
-                data-product-screen
-              >
-                <PhoneHeader>
-                  <h2 class="t-row" data-i18n="carousel.reminder">{en["carousel.reminder"]}</h2>
-                </PhoneHeader>
-                <div class="phone-content phone-product-content">
-                  <ProductCard kind="insight" /><ProductCard kind="reminder" />
+                <div class="phone-content phone-today-content">
+                  <div class="proactive-line phone-today-astra">
+                    <AstraGlyph size={16} />
+                    <p><Copy name="today.astra" /></p>
+                  </div>
+                  <div class="phone-today-habits">
+                    <HabitRow habit="water" timing="done" time="08:00" />
+                    <HabitRow habit="stretch" timing="done" />
+                    <HabitRow habit="walk" timing="todo" time="18:00" />
+                    <HabitRow habit="read" timing="todo" />
+                    <HabitRow habit="run" days={7} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -95,7 +97,7 @@ const en = translations.en;
           data-i18n-label="carousel.label"
         >
           {
-            (["chat", "today", "week", "reminder"] as const).map((screen, index) => (
+            (["chat", "today"] as const).map((screen, index) => (
               <button
                 type="button"
                 class="carousel-segment"
@@ -119,17 +121,11 @@ const en = translations.en;
           <div class="hero-float float-reminder" data-hero-float>
             <ProductCard kind="reminder" />
           </div>
-          <div class="hero-float float-today" data-hero-float>
-            <ProductCard kind="today" />
-          </div>
         </div>
         <div class="hero-side hero-right" data-hero-column>
           <div class="hero-float float-insight" data-hero-float>
             <ProductCard kind="insight" />
           </div>
-          <p class="hero-phrase phrase-restart" data-hero-float>
-            <Copy name="phrase.restart" />
-          </p>
           <div class="hero-float float-week" data-hero-float>
             <ProductCard kind="week" />
           </div>

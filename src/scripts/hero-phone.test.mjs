@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import test from "node:test";
 import { parse } from "@astrojs/compiler";
+import ts from "typescript";
+import vm from "node:vm";
 
 const source = (name) => readFileSync(`src/components/${name}.astro`, "utf8");
 const attributes = (node) =>
@@ -79,4 +81,98 @@ test("proposal actions retain the app small pill geometry and separated targets"
     [...actions.matchAll(/variant="([^"]+)"/g)].map(([, variant]) => variant),
     ["ghost", "ghost", "primary"],
   );
+});
+
+test("the phone and its pager contain exactly chat and Today", () => {
+  assert.deepEqual(
+    slides.map((node) => attributes(node)["data-phone-slide"]),
+    ["chat", "today"],
+  );
+  assert.match(source("Hero"), /\(\["chat", "today"\] as const\)\.map/);
+  assert.doesNotMatch(source("Hero"), /<ProductCard kind="today"/);
+});
+
+test("Today fills the screen with one Astra line and five mixed-state habit rows", () => {
+  const today = slides.find((node) => attributes(node)["data-phone-slide"] === "today");
+  const nodes = descendants(today);
+  const rows = nodes.filter((node) => node.name === "HabitRow");
+  assert.equal(rows.length, 5);
+  assert.ok(rows.some((node) => attributes(node).timing === "done"));
+  assert.ok(rows.some((node) => attributes(node).timing === "todo"));
+  assert.ok(rows.some((node) => attributes(node).time));
+  assert.ok(rows.some((node) => attributes(node).days));
+  assert.equal(nodes.filter((node) => node.name === "AstraGlyph").length, 1);
+  assert.equal(nodes.filter((node) => node.name === "ChevronLeft").length, 1);
+  assert.equal(nodes.filter((node) => node.name === "ChevronRight").length, 1);
+  assert.ok(nodes.some((node) => attributes(node).name === "today.date"));
+  assert.match(rules(".phone-today-habits").join("\n"), /flex:\s*1;/);
+  assert.match(
+    rules(".phone-today-habits").join("\n"),
+    /grid-template-rows:\s*repeat\(5, minmax\(64px, 1fr\)\);/,
+  );
+});
+
+test("side cards balance two items per column", () => {
+  const columns = descendants(hero).filter((node) =>
+    Object.hasOwn(attributes(node), "data-hero-column"),
+  );
+  assert.deepEqual(
+    columns.map(
+      (column) =>
+        descendants(column).filter((node) => Object.hasOwn(attributes(node), "data-hero-float"))
+          .length,
+    ),
+    [2, 2],
+  );
+});
+
+test("no side card repeats phone copy in either locale", async () => {
+  const copy = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    { exports: copy },
+  );
+  const columns = descendants(hero).filter((node) =>
+    Object.hasOwn(attributes(node), "data-hero-column"),
+  );
+  const product = (await parse(source("ProductCard"))).ast;
+  const templates = new Map([["AstraDemo", (await parse(source("AstraDemo"))).ast]]);
+  async function texts(node, language) {
+    const attrs = attributes(node);
+    const table = copy.landingCopy[language];
+    if (node.name === "Copy") return [table[attrs.name]];
+    if (attrs["data-i18n"]) return [copy.translations[language][attrs["data-i18n"]]];
+    if (node.name === "HabitRow")
+      return [
+        table[`product.${attrs.habit}`],
+        table[`product.${attrs.timing ?? "morning"}`],
+      ].filter(Boolean);
+    if (node.name === "ProductCard") {
+      const branch = descendants(product).find(
+        (child) =>
+          child.type === "expression" &&
+          child.children?.some(
+            (part) => part.type === "text" && part.value.includes(`kind === "${attrs.kind}"`),
+          ),
+      );
+      assert.ok(branch, attrs.kind);
+      return (
+        await Promise.all((branch.children ?? []).map((child) => texts(child, language)))
+      ).flat();
+    }
+    const template = templates.get(node.name);
+    if (template) return texts(template, language);
+    return (await Promise.all((node.children ?? []).map((child) => texts(child, language)))).flat();
+  }
+  for (const language of ["en", "pt-BR"]) {
+    const phoneText = new Set(
+      (await Promise.all(slides.map((slide) => texts(slide, language)))).flat(),
+    );
+    for (const column of columns) {
+      for (const text of await texts(column, language))
+        assert.ok(!phoneText.has(text), `${language}: ${text}`);
+    }
+  }
 });

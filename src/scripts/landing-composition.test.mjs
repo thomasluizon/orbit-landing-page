@@ -205,7 +205,7 @@ test("the hero keeps copy and actions above the centered device", () => {
   assert.ok(descendants(stage).some((node) => attributes(node).class === "hero-device"));
   assert.equal(
     descendants(stage).filter((node) => Object.hasOwn(attributes(node), "data-hero-float")).length,
-    6,
+    4,
   );
 });
 

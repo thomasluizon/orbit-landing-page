@@ -1,11 +1,10 @@
 ---
-import { Bell, Check } from "@lucide/astro";
+import { Bell } from "@lucide/astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
-import HabitRow from "./HabitRow.astro";
-import { landingCopy, translations } from "../i18n/translations";
+import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "today" | "week" | "reminder" | "insight";
+  kind: "week" | "reminder" | "insight";
 }
 const { kind } = Astro.props;
 import { exampleWeek, exampleDays } from "../config/product-examples";
@@ -22,71 +21,6 @@ function dayLabel(index: number, language: "en" | "pt-BR") {
 ---
 
 <div class:list={["product-card", `product-${kind}`]} data-mock="true" data-product-kind={kind}>
-  {
-    kind === "today" && (
-      <>
-        <div class="today-pager">
-          <>
-            <h3>
-              <Copy name="product.today" />
-            </h3>
-          </>
-        </div>
-        <div class="proactive-line">
-          <>
-            <AstraGlyph />
-            <p>
-              <Copy name="product.proactive" />
-            </p>
-          </>
-        </div>
-        <HabitRow habit="walk" timing="morning" />
-        <HabitRow habit="water" timing="done" />
-        <button
-          type="button"
-          class="habit-row"
-          data-demo-approved
-          data-habit-toggle
-          aria-pressed="false"
-          hidden
-        >
-          <span class="habit-copy">
-            <>
-              <span class="habit-name" data-approved-name />
-              <span class="product-caption" data-approved-repeat />
-            </>
-          </span>
-          <span class="habit-check" aria-hidden="true">
-            <span class="status-ring">
-              <Check size={16} />
-            </span>
-          </span>
-        </button>
-        <button
-          type="button"
-          class="habit-row"
-          data-demo-approved-second
-          data-habit-toggle
-          aria-pressed="false"
-          hidden
-        >
-          <span class="habit-copy">
-            <>
-              <span class="habit-name" data-i18n="demo.move.secondHabit">
-                {translations.en["demo.move.secondHabit"]}
-              </span>
-              <span class="product-caption" data-approved-second-repeat />
-            </>
-          </span>
-          <span class="habit-check" aria-hidden="true">
-            <span class="status-ring">
-              <Check size={16} />
-            </span>
-          </span>
-        </button>
-      </>
-    )
-  }
   {
     kind === "week" && (
       <>
@@ -164,7 +98,6 @@ function dayLabel(index: number, language: "en" | "pt-BR") {
       <>
         <div class="product-top">
           <AstraGlyph />
-          <span translate="no">Astra</span>
         </div>
         <p>
           <Copy name="product.insight" />

@@ -3,12 +3,13 @@ import { Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  habit: "walk" | "water" | "run" | "stretch";
-  timing?: "morning" | "done";
+  habit: "walk" | "water" | "run" | "stretch" | "read";
+  timing?: "morning" | "done" | "todo";
+  time?: string;
   days?: number;
 }
-const { habit, timing = "morning", days } = Astro.props;
-const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘" };
+const { habit, timing = "morning", time, days } = Astro.props;
+const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘", read: "📖" };
 ---
 
 <button type="button" class="habit-row" data-habit-toggle aria-pressed={timing === "done"}>
@@ -17,15 +18,17 @@ const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘" };
     <span class="habit-name"><Copy name={`product.${habit}`} /></span>
     <span class="product-caption">
       {
-        days === undefined ? (
-          <Copy name={`product.${timing}`} />
-        ) : (
+        days !== undefined ? (
           <span
             data-copy-en={landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
             data-copy-pt={landingCopy["pt-BR"]["blocks.goal.days"].replace("{days}", String(days))}
           >
             {landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
           </span>
+        ) : time ? (
+          <time>{time}</time>
+        ) : (
+          <Copy name={`product.${timing}`} />
         )
       }
     </span>

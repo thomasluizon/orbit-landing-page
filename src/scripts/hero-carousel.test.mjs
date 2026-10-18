@@ -36,8 +36,8 @@ function harness({ reduced = false } = {}) {
     }
   }
   const element = (options = {}) => Object.assign(new Element(), options);
-  const slides = [0, 1, 2, 3].map(element);
-  const segments = [0, 1, 2, 3].map(element);
+  const slides = [0, 1].map(element);
+  const segments = [0, 1].map(element);
   const positions = [];
   const carousel = Object.assign(element(), {
     clientWidth: 200,
@@ -163,9 +163,9 @@ for (const reduced of [false, true]) {
     h.event(h.carousel, "focusout", { target: composer, relatedTarget: outside });
     assert.equal(h.positions.length, 1, "leaving focus waits for the next progress update");
     h.progress(0.9);
-    assert.equal(h.positions.at(-1).left, 600);
-    assert.equal(h.slides[3].inert, false);
-    assert.equal(h.segments[3].attrs["aria-current"], "true");
+    assert.equal(h.positions.at(-1).left, 200);
+    assert.equal(h.slides[1].inert, false);
+    assert.equal(h.segments[1].attrs["aria-current"], "true");
   });
 
   test(`pointer-focused buttons allow scroll to change screens (reduced: ${reduced})`, () => {
@@ -175,10 +175,10 @@ for (const reduced of [false, true]) {
     h.document.activeElement = chip;
     h.event(h.carousel, "focusin", { target: chip });
     h.progress(0.9);
-    assert.equal(h.positions.at(-1).left, 600);
+    assert.equal(h.positions.at(-1).left, 200);
     assert.equal(h.slides[0].inert, true);
-    assert.equal(h.slides[3].inert, false);
-    assert.equal(h.segments[3].attrs["aria-current"], "true");
+    assert.equal(h.slides[1].inert, false);
+    assert.equal(h.segments[1].attrs["aria-current"], "true");
   });
 
   test(`pager taps and swipes still work with carousel focus (reduced: ${reduced})`, () => {
@@ -192,8 +192,8 @@ for (const reduced of [false, true]) {
       touches: [{ clientX: 100, clientY: 0 }],
     });
     h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 40, clientY: 2 }] });
-    assert.equal(h.positions.at(-1).left, 400);
-    assert.equal(h.slides[2].inert, false);
+    assert.equal(h.positions.at(-1).left, 0);
+    assert.equal(h.slides[0].inert, false);
   });
 }
 
@@ -202,18 +202,15 @@ for (const reduced of [false, true]) {
     const h = harness({ reduced });
     for (const [progress, index] of [
       [0, 0],
-      [0.249, 0],
-      [0.25, 1],
-      [0.499, 1],
-      [0.5, 2],
-      [0.749, 2],
-      [0.75, 3],
-      [1, 3],
-      [0.3, 1],
+      [0.499, 0],
+      [0.5, 1],
+      [0.999, 1],
+      [1, 1],
+      [0.3, 0],
       [0, 0],
     ]) {
       h.progress(progress);
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < h.slides.length; i++) {
         assert.equal(h.slides[i].inert, i !== index);
         assert.equal(h.slides[i].attrs["aria-hidden"], String(i !== index));
         assert.equal(h.segments[i].attrs["aria-current"], String(i === index));
@@ -223,24 +220,24 @@ for (const reduced of [false, true]) {
     }
   });
 
-  test(`pager taps and swipes select screens at every width (reduced: ${reduced})`, () => {
+  test(`pager taps and swipes select both screens at every width (reduced: ${reduced})`, () => {
     const h = harness({ reduced });
-    h.event(h.segments[2], "click");
-    assert.equal(h.positions.at(-1).left, 400);
+    h.event(h.segments[1], "click");
+    assert.equal(h.positions.at(-1).left, 200);
     assert.equal(h.positions.at(-1).behavior, reduced ? "instant" : "smooth");
     h.event(h.carousel, "touchstart", { touches: [{ clientX: 100, clientY: 0 }] });
     h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 20, clientY: 2 }] });
-    assert.equal(h.positions.at(-1).left, 600);
+    assert.equal(h.positions.at(-1).left, 0);
     h.event(h.carousel, "touchstart", { touches: [{ clientX: 20, clientY: 0 }] });
     h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 100, clientY: 2 }] });
-    assert.equal(h.positions.at(-1).left, 400);
+    assert.equal(h.positions.at(-1).left, 200);
     const count = h.positions.length;
     h.event(h.carousel, "touchstart", { touches: [{ clientX: 0, clientY: 0 }] });
     h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 20, clientY: 100 }] });
     assert.equal(h.positions.length, count, "vertical gestures stay available for scrolling");
     h.carousel.clientWidth = 300;
     h.resize();
-    assert.equal(h.carousel.scrollLeft, 600);
+    assert.equal(h.carousel.scrollLeft, 300);
   });
 }
 
@@ -368,7 +365,7 @@ function floatHarness({ reduced = false } = {}) {
     addEventListener: (name, fn) => events.set(`width:${name}`, fn),
     removeEventListener: (name) => events.delete(`width:${name}`),
   };
-  const cards = Array.from({ length: 6 }, () => ({
+  const cards = Array.from({ length: 4 }, () => ({
     style: {
       transform: "",
       removeProperty(name) {
@@ -381,7 +378,7 @@ function floatHarness({ reduced = false } = {}) {
   let frameId = 0;
   let phaseIndex = 0;
   const columns = [0, 1].map((index) => ({
-    querySelectorAll: () => cards.slice(index * 3, index * 3 + 3),
+    querySelectorAll: () => cards.slice(index * 2, index * 2 + 2),
     getBoundingClientRect: () => ({ top: 100, height: 320 }),
   }));
   const stage = {
@@ -459,7 +456,7 @@ test("hero float assigns all three paths and an independent phase to every side 
   h.intersect(true);
   h.tick(1000);
   const first = h.cards.map((card) => card.style.transform);
-  const expectedPaths = [0, 1, 2, 1, 2, 0];
+  const expectedPaths = [0, 1, 1, 2];
   first.forEach((transform, index) => {
     const phase = ((index + 1) / 10) * Math.PI * 2;
     const t = 0.82;
@@ -480,7 +477,7 @@ test("hero float assigns all three paths and an independent phase to every side 
     assert.equal(offsets.length, 2, "float and column parallax compose in one transform");
     assert.ok(Math.abs(Number(offsets[0][1]) - x) < 0.01);
     assert.ok(Math.abs(Number(offsets[0][2]) - y) < 0.01);
-    const parallax = ((0.35 * 50 * 0.22 * 0.14 * 320) / 100) * (index < 3 ? 1 : -1);
+    const parallax = ((0.35 * 50 * 0.22 * 0.14 * 320) / 100) * (index < 2 ? 1 : -1);
     assert.ok(Math.abs(Number(offsets[1][2]) - parallax) < 0.01);
   });
   h.tick(2000);
