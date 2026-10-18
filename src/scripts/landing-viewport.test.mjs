@@ -72,24 +72,13 @@ test("motion loads once after paint and interaction, with page lifecycle cleanup
   assert.equal(h.result.mounts, 2);
 });
 
-test("reduced motion imports nothing and never creates a scroll driver", async () => {
+test("reduced motion still loads the pinned screen driver after interaction", async () => {
   const h = harness(true);
   h.paint();
-  for (const event of ["scroll", "wheel", "touchstart", "keydown"]) await h.listeners.get(event)();
-  assert.deepEqual(h.result, { imports: 0, mounts: 0, disposals: 0 });
-});
-
-test("a reduced motion change during import cannot mount movement or prevent a later restart", async () => {
-  const h = harness();
-  h.paint();
   const pending = h.listeners.get("scroll")();
-  h.preference.matches = true;
   await h.resolve();
   await pending;
-  assert.equal(h.result.mounts, 0);
-  h.preference.matches = false;
-  await h.listeners.get("scroll")();
-  assert.equal(h.result.mounts, 1);
+  assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
 });
 
 test("a page left during import cannot mount a scroll driver", async () => {
@@ -413,26 +402,23 @@ test("mobile removes the floating cards and keeps the four screens inside the ph
   assert.match(css, /@media \(width < 768px\)[\s\S]*?\.hero-products\s*\{\s*display:\s*none/);
   assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px/);
   assert.doesNotMatch(readFileSync("src/components/AstraDemo.astro", "utf8"), /demo-playback/);
-  assert.match(hero, /id="hero-playback"/);
+  assert.doesNotMatch(hero, /id="hero-playback"/);
 });
 
 test("pinning and staggered feature motion use verified APIs and expose their static end state", () => {
   const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
   assert.equal(
-    (source.match(/media\.add\(/g) ?? []).length,
+    (source.match(/media\.add\(/g) ?? []).length - 1,
     (source.match(/prefers-reduced-motion: no-preference/g) ?? []).length,
   );
   assert.match(source, /pin:\s*true/);
   assert.match(source, /bottom[^}]*\+ 16/);
   assert.match(source, /end:\s*"\+=560"/);
-  assert.match(
-    css,
-    /prefers-reduced-motion: no-preference[^}]*\.hero-pin-range\s*\{\s*padding-block-end:\s*560px/s,
-  );
+  assert.match(css, /\.hero-pin-range\s*\{\s*padding-block-end:\s*560px/s);
   assert.match(source, /\[data-composition-card\]/);
   assert.match(source, /scale: 0\.94/);
   assert.match(source, /stagger: 0\.12/);
-  assert.match(source, /scrub: 0\.6/);
+  assert.match(source, /scrub: true/);
   assert.match(source, /media\.revert\(\)/);
   assert.match(source, /lenis\.destroy\(\)/);
   assert.match(

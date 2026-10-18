@@ -2,9 +2,6 @@ export const LANGUAGES = ["en", "pt-BR"] as const;
 export type Language = (typeof LANGUAGES)[number];
 
 const en = {
-  "demo.pause": "Pause",
-  "demo.resume": "Play",
-
   "plan.free": "Free",
   "hero.title": "An AI that keeps your routine going.",
   "hero.platforms": "Android and web",
@@ -101,9 +98,6 @@ const en = {
 export type TranslationKey = keyof typeof en;
 
 const ptBR: Record<TranslationKey, string> = {
-  "demo.pause": "Pausar",
-  "demo.resume": "Reproduzir",
-
   "plan.free": "Grátis",
   "hero.title": "Uma IA que mantém sua rotina de pé.",
   "hero.platforms": "Android e web",

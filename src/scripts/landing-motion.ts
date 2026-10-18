@@ -1,6 +1,7 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { updateHeroCarousel } from "./hero-carousel";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,7 +18,7 @@ export function mountLandingMotion() {
     lenis.on("scroll", ScrollTrigger.update);
     return () => lenis.destroy();
   });
-  media.add("(prefers-reduced-motion: no-preference)", () => {
+  media.add("all", () => {
     const stage = document.getElementById("hero-stage");
     if (stage) {
       const timeline = gsap.timeline({
@@ -28,19 +29,16 @@ export function mountLandingMotion() {
           end: "+=560",
           pin: true,
           pinSpacing: false,
-          scrub: 0.6,
+          scrub: true,
           invalidateOnRefresh: true,
+          onUpdate: (trigger) => updateHeroCarousel(trigger.progress),
+          onRefresh: (trigger) => updateHeroCarousel(trigger.progress),
         },
       });
-      stage.querySelectorAll<HTMLElement>("[data-hero-column]").forEach((column, index) => {
-        timeline.fromTo(
-          column.querySelectorAll("[data-hero-float]"),
-          { y: 24, opacity: 0 },
-          { y: 0, opacity: 1, duration: 1, ease: "none", stagger: 0.18 },
-          index * 0.08,
-        );
-      });
+      timeline.to({}, { duration: 1 });
     }
+  });
+  media.add("(prefers-reduced-motion: no-preference)", () => {
     document.querySelectorAll<HTMLElement>("[data-example-row]").forEach((row) => {
       gsap.fromTo(
         row.querySelectorAll("[data-composition-card]"),
@@ -55,7 +53,7 @@ export function mountLandingMotion() {
             trigger: row,
             start: "top 90%",
             end: "center 55%",
-            scrub: 0.6,
+            scrub: true,
             invalidateOnRefresh: true,
           },
         },

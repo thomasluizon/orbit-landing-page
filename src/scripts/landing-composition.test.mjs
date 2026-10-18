@@ -927,11 +927,7 @@ test("all app and install links and QR generation share environment-backed produ
   assert.match(workflow, /buildVariables/);
 });
 
-test("new motion controls have bilingual names and every current copy key has locale parity", () => {
-  assert.equal(copyTables.translations.en["demo.pause"], "Pause");
-  assert.equal(copyTables.translations.en["demo.resume"], "Play");
-  assert.equal(copyTables.translations["pt-BR"]["demo.pause"], "Pausar");
-  assert.equal(copyTables.translations["pt-BR"]["demo.resume"], "Reproduzir");
+test("every current copy key has locale parity", () => {
   for (const table of [copyTables.translations, copyTables.landingCopy])
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
 });

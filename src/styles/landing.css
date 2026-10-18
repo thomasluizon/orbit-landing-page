@@ -885,10 +885,8 @@
     inline-size: 64px;
   }
 }
-@media (prefers-reduced-motion: no-preference) {
-  .hero-pin-range {
-    padding-block-end: 560px;
-  }
+.hero-pin-range {
+  padding-block-end: 560px;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-hero-float],
@@ -1610,7 +1608,7 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-sm);
   background: var(--color-primary-dim);
 }
-.hero-motion-controls {
+.hero-pager {
   grid-column: 2;
   grid-row: 2;
   display: flex;
@@ -1618,7 +1616,6 @@ button.metric-bar-track:focus-visible {
   align-items: center;
   gap: 4px;
 }
-.hero-playback,
 .carousel-segment {
   display: grid;
   place-items: center;
@@ -1628,49 +1625,18 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-full);
   cursor: pointer;
 }
-.hero-playback {
-  color: var(--color-primary-text);
-  background: var(--color-primary-dim);
-}
-.hero-play-icon,
-.hero-playback[aria-pressed="true"] .hero-pause-icon {
-  display: none;
-}
-.hero-playback[aria-pressed="true"] .hero-play-icon {
-  display: block;
-}
 .carousel-segments {
-  display: none;
+  display: flex;
 }
-.carousel-progress {
+.carousel-marker {
   display: block;
   inline-size: 36px;
   block-size: 4px;
-  overflow: clip;
   border-radius: var(--radius-full);
   background: var(--color-bg-hover);
 }
-.carousel-progress-fill {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
+.carousel-segment[aria-current="true"] .carousel-marker {
   background: var(--color-primary);
-  transform: scaleX(0);
-  transform-origin: left;
-}
-.carousel-segment[aria-current="true"] .carousel-progress-fill {
-  animation: carousel-fill 6s linear both paused;
-}
-[data-carousel-running="true"] .carousel-segment[aria-current="true"] .carousel-progress-fill {
-  animation-play-state: running;
-}
-@keyframes carousel-fill {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
 }
 .phone-carousel {
   display: flex;
@@ -1692,8 +1658,13 @@ button.metric-bar-track:focus-visible {
   min-block-size: 0;
   scroll-snap-align: start;
 }
-.phone-slide[data-mobile-screen] {
-  display: none;
+.phone-slide[data-product-screen] {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 8px 8px 24px;
+  overflow-y: auto;
+  touch-action: pan-y;
 }
 .phone-slide .astra-demo {
   inline-size: 100%;
@@ -1773,38 +1744,6 @@ button.metric-bar-track:focus-visible {
 .hero-side .today-pager {
   padding-block: 0;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .hero-device,
-  [data-hero-float] > * {
-    animation: hero-float 7s ease-in-out infinite alternate paused;
-  }
-  .hero-left [data-hero-float] > * {
-    animation-duration: 8s;
-    animation-delay: -3s;
-  }
-  .hero-right [data-hero-float] > * {
-    animation-duration: 9s;
-    animation-delay: -6s;
-  }
-  [data-hero-float]:nth-child(2) > * {
-    animation-delay: -1s;
-  }
-  [data-hero-float]:nth-child(3) > * {
-    animation-delay: -5s;
-  }
-  [data-ambient-running="true"] .hero-device,
-  [data-ambient-running="true"] [data-hero-float] > * {
-    animation-play-state: running;
-  }
-}
-@keyframes hero-float {
-  from {
-    transform: translateY(-3px);
-  }
-  to {
-    transform: translateY(3px);
-  }
-}
 @media (height < 700px) {
   .hero-phrase {
     display: none;
@@ -1826,22 +1765,11 @@ button.metric-bar-track:focus-visible {
     inline-size: calc(100% - 32px);
   }
   .hero-phone,
-  .hero-motion-controls {
+  .hero-pager {
     grid-column: 1;
   }
   .hero-products {
     display: none;
-  }
-  .carousel-segments {
-    display: flex;
-  }
-  .phone-slide[data-mobile-screen] {
-    display: grid;
-    align-content: start;
-    gap: 16px;
-    padding: 8px 8px 24px;
-    overflow-y: auto;
-    touch-action: pan-y;
   }
   .phone-slide > .product-card {
     inline-size: 100%;
@@ -1891,13 +1819,6 @@ button.metric-bar-track:focus-visible {
     --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .carousel-segment[aria-current="true"] .carousel-progress-fill {
-    animation: none;
-    transform: scaleX(1);
-  }
-}
-
 .habit-row[data-habit-toggle] {
   inline-size: 100%;
   min-block-size: 56px;
@@ -2028,9 +1949,4 @@ button.metric-bar-track:focus-visible {
     transform: none !important;
     opacity: 1 !important;
   }
-}
-
-[data-auto-stopped="true"] .carousel-segment[aria-current="true"] .carousel-progress-fill {
-  animation: none;
-  transform: scaleX(1);
 }

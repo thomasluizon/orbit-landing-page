@@ -162,7 +162,7 @@ test("empty submissions keep the current proposal and user text remains literal"
   h.switchLanguage("pt-BR");
   assert.equal(h.get("demo-habit").textContent, '<img src=x onerror="alert(1)">');
 });
-test("the composer is an editable form and playback lives outside the phone header", () => {
+test("the composer is an editable form with a submit action", () => {
   const composer = nodes.find((node) => attributes(node).id === "demo-composer");
   assert.equal(composer.name, "form");
   assert.ok(nodes.some((node) => node.name === "input" && attributes(node).id === "demo-input"));

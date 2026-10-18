@@ -1,14 +1,13 @@
-const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 let loading = false;
 let active = true;
 let dispose: (() => void) | undefined;
 
 async function startMotion() {
-  if (loading || motionPreference.matches) return;
+  if (loading) return;
   loading = true;
   try {
     const { mountLandingMotion } = await import("./landing-motion");
-    if (active && !motionPreference.matches) dispose = mountLandingMotion();
+    if (active) dispose = mountLandingMotion();
     if (!dispose) loading = false;
   } catch {
     loading = false;

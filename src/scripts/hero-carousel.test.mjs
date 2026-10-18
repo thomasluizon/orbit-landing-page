@@ -1,209 +1,224 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
-function harness({ mobile = true, reduced = false, stored = false } = {}) {
-  const events = new Map(),
-    documentEvents = new Map(),
-    timers = new Map(),
-    storage = new Map();
-  if (stored) storage.set("orbit-demo-interacted", "true");
-  let now = 0,
-    next = 0,
-    intersection;
+function harness({ reduced = false } = {}) {
   const element = () => ({
-    dataset: {},
     attrs: {},
     listeners: new Map(),
-    style: {},
-    offsetWidth: 36,
-    hidden: false,
     setAttribute(name, value) {
       this.attrs[name] = value;
     },
     addEventListener(name, fn) {
       this.listeners.set(name, fn);
     },
-    querySelector() {
-      return element();
+  });
+  const slides = [0, 1, 2, 3].map(element);
+  const segments = [0, 1, 2, 3].map(element);
+  const positions = [];
+  const carousel = Object.assign(element(), {
+    clientWidth: 200,
+    scrollLeft: 0,
+    scrollTo(options) {
+      positions.push(options);
     },
   });
-  const slides = [0, 1, 2, 3].map(element),
-    segments = [0, 1, 2, 3].map(element),
-    device = element(),
-    playback = element(),
-    carousel = Object.assign(element(), {
-      clientWidth: 200,
-      scrollTo(options) {
-        this.position = options.left;
-      },
-    });
-  const stage = Object.assign(element(), {
-    querySelector: (selector) => (selector === ".hero-device" ? device : carousel),
+  const stage = {
+    querySelector: () => carousel,
     querySelectorAll: (selector) => (selector === "[data-phone-slide]" ? slides : segments),
-    getBoundingClientRect: () => ({ top: 100, bottom: 600 }),
-  });
-  const preferences = {
-    mobile: {
-      matches: mobile,
-      addEventListener(_name, fn) {
-        this.change = fn;
-      },
-    },
-    reduced: {
-      matches: reduced,
-      addEventListener(_name, fn) {
-        this.change = fn;
-      },
+  };
+  const preference = {
+    matches: reduced,
+    addEventListener(_name, fn) {
+      this.change = fn;
     },
   };
-  const document = {
-    hidden: false,
-    getElementById: (id) => (id === "hero-stage" ? stage : playback),
-    addEventListener: (name, fn) => documentEvents.set(name, fn),
-  };
-  const window = {
-    innerHeight: 800,
-    matchMedia: (query) => (query.includes("768") ? preferences.mobile : preferences.reduced),
-    addEventListener: (name, fn) => events.set(name, fn),
-    clearTimeout: (id) => timers.delete(id),
-    setTimeout: (fn, delay) => {
-      timers.set(++next, { fn, delay });
-      return next;
-    },
-  };
+  const exports = {};
+  let resize;
   vm.runInNewContext(
     ts.transpileModule(readFileSync("src/scripts/hero-carousel.ts", "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText,
     {
-      document,
-      window,
-      exports: {},
-      performance: { now: () => now },
-      sessionStorage: {
-        getItem: (key) => storage.get(key),
-        setItem: (key, value) => storage.set(key, value),
-      },
-      require: (path) =>
-        path === "./i18n"
-          ? { getLang: () => "en" }
-          : { translations: { en: { "demo.pause": "Pause", "demo.resume": "Play" } } },
-      IntersectionObserver: class {
-        constructor(fn) {
-          intersection = fn;
-        }
-        observe() {}
-      },
+      document: { getElementById: () => stage },
+      window: { matchMedia: () => preference },
+      exports,
       ResizeObserver: class {
+        constructor(fn) {
+          resize = fn;
+        }
         observe() {}
       },
     },
   );
   return {
-    stage,
     slides,
     segments,
     carousel,
-    device,
-    playback,
-    preferences,
-    timers,
-    storage,
-    events,
-    documentEvents,
-    document,
-    visibility(value) {
-      intersection([{ isIntersecting: value }]);
-    },
-    advance(milliseconds) {
-      now += milliseconds;
-    },
-    fireTimer() {
-      const [id, entry] = [...timers][0];
-      timers.delete(id);
-      entry.fn();
-    },
+    positions,
+    preference,
+    resize,
+    progress: exports.updateHeroCarousel,
     event(target, name, event = {}) {
       target.listeners.get(name)?.(event);
     },
   };
 }
-test("mobile advances after six seconds and marks only the active slide as accessible", () => {
+
+for (const reduced of [false, true]) {
+  test(`scroll exposes every screen in equal slices, including reverse scroll (reduced: ${reduced})`, () => {
+    const h = harness({ reduced });
+    for (const [progress, index] of [
+      [0, 0],
+      [0.249, 0],
+      [0.25, 1],
+      [0.499, 1],
+      [0.5, 2],
+      [0.749, 2],
+      [0.75, 3],
+      [1, 3],
+      [0.3, 1],
+      [0, 0],
+    ]) {
+      h.progress(progress);
+      for (let i = 0; i < 4; i++) {
+        assert.equal(h.slides[i].inert, i !== index);
+        assert.equal(h.slides[i].attrs["aria-hidden"], String(i !== index));
+        assert.equal(h.segments[i].attrs["aria-current"], String(i === index));
+      }
+      assert.equal(h.positions.at(-1).left, index * 200);
+      if (reduced) assert.equal(h.positions.at(-1).behavior, "instant");
+    }
+  });
+
+  test(`pager taps and swipes select screens at every width (reduced: ${reduced})`, () => {
+    const h = harness({ reduced });
+    h.event(h.segments[2], "click");
+    assert.equal(h.positions.at(-1).left, 400);
+    assert.equal(h.positions.at(-1).behavior, reduced ? "instant" : "smooth");
+    h.event(h.carousel, "touchstart", { touches: [{ clientX: 100, clientY: 0 }] });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 20, clientY: 2 }] });
+    assert.equal(h.positions.at(-1).left, 600);
+    h.event(h.carousel, "touchstart", { touches: [{ clientX: 20, clientY: 0 }] });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 100, clientY: 2 }] });
+    assert.equal(h.positions.at(-1).left, 400);
+    const count = h.positions.length;
+    h.event(h.carousel, "touchstart", { touches: [{ clientX: 0, clientY: 0 }] });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 20, clientY: 100 }] });
+    assert.equal(h.positions.length, count, "vertical gestures stay available for scrolling");
+    h.carousel.clientWidth = 300;
+    h.resize();
+    assert.equal(h.carousel.scrollLeft, 600);
+  });
+}
+
+test("a reduced motion change stops an in-flight slide immediately", () => {
   const h = harness();
-  assert.equal(h.timers.size, 0);
-  h.visibility(true);
-  assert.equal([...h.timers.values()][0].delay, 6000);
-  h.advance(6000);
-  h.fireTimer();
-  assert.equal(h.carousel.position, 200);
-  assert.equal(h.slides[1].inert, false);
-  assert.equal(h.slides[0].inert, true);
-  assert.equal(h.segments[1].attrs["aria-current"], "true");
-  assert.equal([...h.timers.values()][0].delay, 6000);
+  h.event(h.segments[1], "click");
+  h.preference.matches = true;
+  h.preference.change();
+  assert.equal(h.positions.at(-1).left, 200);
+  assert.equal(h.positions.at(-1).behavior, "instant");
 });
-test("offscreen, hidden, desktop and reduced motion never advance the carousel", () => {
-  for (const options of [{ mobile: false }, { reduced: true }, { stored: true }]) {
-    const h = harness(options);
-    h.visibility(true);
-    assert.equal(h.timers.size, 0);
+
+test("production has no autonomous carousel, playback controls or repeating animation", () => {
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  const carousel = readFileSync("src/scripts/hero-carousel.ts", "utf8");
+  const copy = readFileSync("src/i18n/translations.ts", "utf8");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.doesNotMatch(
+    hero + carousel + copy + css,
+    /hero-playback|demo\.(?:pause|resume)|hero-(?:pause|play)-icon|ambientRunning|carouselRunning|carousel-fill|hero-float\s+\d/,
+  );
+  assert.doesNotMatch(
+    carousel,
+    /setTimeout|setInterval|performance\.now|sessionStorage|IntersectionObserver/,
+  );
+  for (const file of readdirSync("src", { recursive: true }).filter((file) =>
+    /\.(?:astro|css|ts)$/.test(file),
+  )) {
+    assert.doesNotMatch(
+      readFileSync(`src/${file}`, "utf8"),
+      /setInterval\s*\(|repeat:\s*-1|animation[^;{}]*\binfinite\b/,
+      file,
+    );
   }
-  const h = harness();
-  h.visibility(true);
-  h.advance(2000);
-  h.visibility(false);
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.stage.dataset.ambientRunning, "false");
-  h.visibility(true);
-  assert.equal([...h.timers.values()][0].delay, 4000);
-  h.document.hidden = true;
-  h.documentEvents.get("visibilitychange")();
-  assert.equal(h.timers.size, 0);
-  h.document.hidden = false;
-  h.documentEvents.get("visibilitychange")();
-  assert.equal(h.timers.size, 1);
-  h.preferences.reduced.matches = true;
-  h.preferences.reduced.change();
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.playback.hidden, true);
+  assert.match(
+    css,
+    /\.carousel-segment\[aria-current="true"\] \.carousel-marker\s*\{\s*background: var\(--color-primary\)/,
+  );
 });
-test("the external pause control freezes both ambient motion and remaining progress", () => {
-  const h = harness();
-  h.visibility(true);
-  h.advance(2500);
-  h.event(h.playback, "click");
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.stage.dataset.ambientRunning, "false");
-  assert.equal(h.playback.attrs["aria-label"], "Play");
-  h.advance(9000);
-  h.event(h.playback, "click");
-  assert.equal([...h.timers.values()][0].delay, 3500);
-  assert.equal(h.stage.dataset.ambientRunning, "true");
-  assert.equal(h.playback.attrs["aria-label"], "Pause");
-});
-test("pointer, focus, typing, segments and swipe stop automatic advance for the visit", () => {
-  for (const event of ["pointerdown", "focusin", "input"]) {
-    const h = harness();
-    h.visibility(true);
-    h.event(h.device, event);
-    assert.equal(h.timers.size, 0);
-    assert.equal(h.storage.get("orbit-demo-interacted"), "true");
-    h.event(h.playback, "click");
-    h.event(h.playback, "click");
-    assert.equal(h.timers.size, 0);
-    h.visibility(false);
-    h.visibility(true);
-    assert.equal(h.timers.size, 0);
+
+test("the pinned timeline sends scroll progress in both motion preferences", () => {
+  for (const reduced of [false, true]) {
+    const triggers = [],
+      progresses = [],
+      lenisInstances = [];
+    const stage = {};
+    const exports = {};
+    let reverted = false;
+    class Lenis {
+      constructor() {
+        lenisInstances.push(this);
+      }
+      on() {}
+      destroy() {
+        this.destroyed = true;
+      }
+    }
+    const gsap = {
+      registerPlugin() {},
+      matchMedia: () => ({
+        add(query, fn) {
+          if (query === "all" || !reduced) fn();
+        },
+        revert() {
+          reverted = true;
+        },
+      }),
+      timeline(options) {
+        triggers.push(options.scrollTrigger);
+        return { to() {} };
+      },
+      fromTo() {},
+    };
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText,
+      {
+        exports,
+        require: (name) =>
+          name === "gsap"
+            ? { gsap }
+            : name === "gsap/ScrollTrigger"
+              ? { ScrollTrigger: { refresh() {}, update() {} } }
+              : name === "lenis"
+                ? { default: Lenis }
+                : { updateHeroCarousel: (progress) => progresses.push(progress) },
+        document: {
+          getElementById: (id) => (id === "hero-stage" ? stage : null),
+          querySelectorAll: () => [],
+          querySelector: () => null,
+          fonts: { ready: Promise.resolve() },
+        },
+        window: { addEventListener() {}, removeEventListener() {} },
+        ResizeObserver: class {
+          disconnect() {}
+        },
+      },
+    );
+    const dispose = exports.mountLandingMotion();
+    assert.equal(triggers.length, 1);
+    assert.equal(triggers[0].pin, true);
+    assert.equal(triggers[0].scrub, true);
+    triggers[0].onUpdate({ progress: 0.625 });
+    triggers[0].onRefresh({ progress: 0.25 });
+    assert.deepEqual(progresses, [0.625, 0.25]);
+    assert.equal(lenisInstances.length, reduced ? 0 : 1);
+    dispose();
+    assert.equal(reverted, true);
   }
-  const h = harness();
-  h.visibility(true);
-  h.event(h.segments[2], "click");
-  assert.equal(h.carousel.position, 400);
-  assert.equal(h.timers.size, 0);
-  h.event(h.carousel, "touchstart", { touches: [{ clientX: 100, clientY: 0 }] });
-  h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 20, clientY: 2 }] });
-  assert.equal(h.carousel.position, 600);
-  assert.equal(h.timers.size, 0);
 });
