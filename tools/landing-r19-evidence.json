@@ -1,0 +1,13 @@
+{
+  "baselineRef": "1b4726e",
+  "regressions": [
+    {
+      "item": 1,
+      "command": "node --test --test-name-pattern='chat chips and composer' src/scripts/landing-viewport.test.mjs",
+      "redSources": "1b4726e with only the regression test added",
+      "red": { "exitCode": 1, "passed": 0, "failed": 1 },
+      "green": { "exitCode": 0, "passed": 1, "failed": 0 }
+    }
+  ],
+  "renderedChecks": "The orchestrator owns hit testing, viewport rendering and motion clearance probes."
+}

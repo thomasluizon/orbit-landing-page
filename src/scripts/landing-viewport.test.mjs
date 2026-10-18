@@ -635,6 +635,43 @@ test("proposal action options stay in one trailing row with a fixed 12px gap", (
   assert.match(css, /\.demo-preview-actions \.pill-sm\s*\{[^}]*flex-shrink:\s*0/);
 });
 
+test("chat chips and composer occupy separate rows with their full targets in vertical flow", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(readFileSync("src/components/AstraDemo.astro", "utf8"));
+  const find = (node, className) => {
+    if (node.attributes?.some(({ name, value }) => name === "class" && value === className)) {
+      return node;
+    }
+    return node.children?.map((child) => find(child, className)).find(Boolean);
+  };
+  const area = find(ast, "demo-input-area");
+  assert.deepEqual(
+    area.children
+      .filter((node) => node.name)
+      .map((node) => node.attributes.find(({ name }) => name === "class").value),
+    ["demo-examples", "demo-composer"],
+  );
+  const base = unconditionalRules(css);
+  assert.match(
+    base,
+    /\.demo-input-area\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*max-content max-content;/,
+  );
+  assert.match(base, /\.demo-chip\s*\{[^}]*min-block-size:\s*44px;/);
+  assert.match(base, /\.demo-examples\s*\{[^}]*padding-block:\s*0;[^}]*margin-block:\s*0;/);
+  for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
+    if (!/\.demo-(?:input-area|examples|composer|chip)(?![\w:-])/.test(selectors)) continue;
+    assert.doesNotMatch(declarations, /position:\s*(?:absolute|fixed)/, selectors);
+    assert.doesNotMatch(declarations, /(?:margin|inset)[\w-]*:[^;]*-\d/, selectors);
+    assert.doesNotMatch(declarations, /(?:transform|translate|grid-row|grid-area):/, selectors);
+  }
+  assert.doesNotMatch(css, /\.demo-chip::before/, "the target belongs inside the chip row");
+  assert.match(base, /\.demo-preview-actions\s*\{[^}]*padding-block:\s*4px;/);
+  assert.match(
+    css,
+    /@container \(inline-size < 240px\)[\s\S]*?\.phone-slide \.demo-preview\s*\{[^}]*padding:\s*4px;/,
+  );
+});
+
 test("pager focus-visible follows the pill segment and its 44px target stays invisible", () => {
   const segment = css.match(/\.carousel-segment\s*\{([^}]+)\}/)?.[1];
   assert.match(segment, /inline-size:\s*36px\s*;/);
