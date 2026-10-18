@@ -26,8 +26,7 @@ const {
 const ogImage = "/og-image.png";
 const siteUrl = Astro.site?.origin || "https://useorbit.org";
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
-const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+import { appUrl, googlePlayUrl } from "../config/links";
 const posthogKey = import.meta.env.PUBLIC_POSTHOG_KEY;
 const renderBuildCommit = process.env.RENDER_GIT_COMMIT;
 

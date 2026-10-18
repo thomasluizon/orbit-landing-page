@@ -224,6 +224,8 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_STAGING_SERVICE_ID: ${{ vars.RENDER_LANDING_STAGING_SERVICE_ID }}
+          PUBLIC_APP_URL: https://app-staging.useorbit.org
+          PUBLIC_ANDROID_INSTALL_URL: https://play.google.com/store/apps/details?id=org.useorbit.app.staging
           RELEASE_BRANCH: ${{ inputs.branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -265,6 +267,14 @@ jobs:
           }
           const serviceOrigin = service.serviceDetails?.url;
           if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
+
+          const buildVariables = await jsonRequest(`${renderUrl}/env-vars`, { headers: renderHeaders });
+          for (const key of ["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"]) {
+            const configured = buildVariables.find(({ envVar }) => envVar.key === key)?.envVar.value;
+            if (configured !== process.env[key]) {
+              throw new Error(`Set the Render staging build variable ${key} to ${process.env[key]} before releasing`);
+            }
+          }
 
           const updated = await jsonRequest(renderUrl, {
             method: "PATCH",

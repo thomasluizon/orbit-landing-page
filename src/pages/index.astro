@@ -8,8 +8,7 @@ import FinalCta from "../components/FinalCta.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
 import { translations } from "../i18n/translations";
-const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
-const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
+import { appUrl, googlePlayUrl } from "../config/links";
 ---
 
 <Layout withAstraGlyph>

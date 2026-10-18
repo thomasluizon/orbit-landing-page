@@ -135,12 +135,13 @@ Render build contract:
 
 Build-time variables on the Render static site:
 
-| Variable                    | Purpose                                                       |
-| --------------------------- | ------------------------------------------------------------- |
-| `PUBLIC_API_URL`            | Waitlist API endpoint; defaults to `https://api.useorbit.org` |
-| `PUBLIC_APP_URL`            | Web app links; defaults to `https://app.useorbit.org`         |
-| `PUBLIC_POSTHOG_KEY`        | Enables consent-gated PostHog analytics through `/relay/`     |
-| `PUBLIC_TURNSTILE_SITE_KEY` | Enables the waitlist Turnstile widget                         |
+| Variable                     | Purpose                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| `PUBLIC_API_URL`             | Waitlist API endpoint; defaults to `https://api.useorbit.org`                   |
+| `PUBLIC_ANDROID_INSTALL_URL` | Android install links and generated QR; defaults to the production Play listing |
+| `PUBLIC_APP_URL`             | Web app links; defaults to `https://app.useorbit.org`                           |
+| `PUBLIC_POSTHOG_KEY`         | Enables consent-gated PostHog analytics through `/relay/`                       |
+| `PUBLIC_TURNSTILE_SITE_KEY`  | Enables the waitlist Turnstile widget                                           |
 
 Configure release credentials in GitHub Settings > Environments:
 
