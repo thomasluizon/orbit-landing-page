@@ -368,10 +368,14 @@ function billingHarness(language = "en") {
     .filter((node) => attributes(node).role === "radio")
     .map(element);
   const fields = Object.fromEntries(
-    ["data-pro-price", "data-annual-saving", "data-billed-total"].map((name) => [
-      name,
-      element(pricing.find((node) => Object.hasOwn(attributes(node), name))),
-    ]),
+    [
+      "data-pro-price",
+      "data-annual-saving",
+      "data-billed-total",
+      "data-billing-saving",
+      "data-billing-monthly-price",
+      "data-plan-recommendation",
+    ].map((name) => [name, element(pricing.find((node) => Object.hasOwn(attributes(node), name)))]),
   );
   const free = element(pricing.find((node) => attributes(node)["data-price"] === "free"));
   const translated = pricing.filter((node) => attributes(node)["data-i18n"]).map(element);
@@ -833,6 +837,14 @@ test("every billing period shows its configured daily price and actual billed to
     assert.equal(h.fields["data-pro-price"].textContent, monthly);
     assert.equal(h.fields["data-billed-total"].textContent, totalMonthly);
     assert.equal(h.fields["data-billed-total"].hidden, false);
+    assert.equal(h.fields["data-billing-monthly-price"].textContent, monthly);
+    assert.equal(
+      h.fields["data-billing-saving"].textContent,
+      h.prices.pricingFor(language, "yearly").saving,
+    );
+    assert.equal(h.fields["data-plan-recommendation"].hidden, true);
+    h.options[0].click();
+    assert.equal(h.fields["data-plan-recommendation"].hidden, false);
   }
   const source = readFileSync("src/config/pricing.ts", "utf8");
   assert.match(source, /plan\.monthly \/ 30 \/ 100/);
@@ -849,6 +861,47 @@ test("every billing period shows its configured daily price and actual billed to
     descendants(options[0]).some((node) => Object.hasOwn(attributes(node), "data-billing-saving")),
   );
   assert.match(readFileSync("src/components/Pricing.astro", "utf8"), /data-plan-recommendation/);
+});
+
+test("billing options are compact single-line pills with Yearly recommended and selected first", () => {
+  const group = descendants(components.get("Pricing")).find(
+    (node) => attributes(node).role === "radiogroup",
+  );
+  const options = descendants(group).filter((node) => attributes(node).role === "radio");
+  assert.deepEqual(
+    options.map((node) => attributes(node)["data-billing-period"]),
+    ["yearly", "monthly"],
+  );
+  assert.deepEqual(
+    options.map((node) => attributes(node)["aria-checked"]),
+    ["true", "false"],
+  );
+  assert.deepEqual(
+    options.map((node) => attributes(node).tabindex),
+    ["0", "-1"],
+  );
+  assert.ok(
+    descendants(options[0]).some((node) => attributes(node).class === "billing-recommendation"),
+  );
+  assert.ok(
+    descendants(options[1]).some((node) =>
+      Object.hasOwn(attributes(node), "data-billing-monthly-price"),
+    ),
+  );
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const optionRules = [...css.matchAll(/(?:^|\n)\.billing-option\s*\{([^}]+)\}/g)];
+  assert.equal(optionRules.length, 1);
+  const rule = optionRules[0][1];
+  assert.match(rule, /display:\s*flex/);
+  assert.match(rule, /min-block-size:\s*56px/);
+  assert.match(rule, /border-radius:\s*var\(--radius-full\)/);
+  assert.match(rule, /white-space:\s*nowrap/);
+  assert.doesNotMatch(rule, /flex-wrap:\s*wrap|flex-direction:\s*column/);
+  assert.match(
+    css,
+    /\.billing-option\[aria-checked="true"\]\s*\{[^}]*background:\s*var\(--color-primary-dim\);[^}]*box-shadow:\s*inset 0 0 0 1\.5px var\(--color-primary\)/,
+  );
+  assert.match(css, /\.billing-recommendation\s*\{[^}]*border-radius:\s*var\(--radius-sm\)/);
 });
 
 test("the footer groups product and legal links with its own QR and no source-code link", () => {

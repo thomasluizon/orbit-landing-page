@@ -9,6 +9,7 @@ function mountBillingControl() {
   const billed = document.querySelector<HTMLElement>("[data-billed-total]");
   const recommendation = document.querySelector<HTMLElement>("[data-plan-recommendation]");
   const billingSaving = document.querySelector<HTMLElement>("[data-billing-saving]");
+  const monthlyPrice = document.querySelector<HTMLElement>("[data-billing-monthly-price]");
   if (!price || !saving || !billed) return;
   let selected: "monthly" | "yearly" = "yearly";
   const render = () => {
@@ -18,6 +19,7 @@ function mountBillingControl() {
     if (recommendation) recommendation.hidden = selected === "monthly";
     recommendation?.closest("article")?.setAttribute("data-plan-period", selected);
     if (billingSaving) billingSaving.textContent = display.saving;
+    if (monthlyPrice) monthlyPrice.textContent = pricingFor(language, "monthly").primary;
     saving.hidden = selected === "monthly";
     billed.textContent = display.billed;
     saving.textContent = display.saving;

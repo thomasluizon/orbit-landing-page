@@ -45,8 +45,13 @@ const { appUrl } = Astro.props;
         role="radio"
         data-billing-period="monthly"
         aria-checked="false"
-        tabindex="-1"><Copy name="pricing.monthly" /></button
+        tabindex="-1"
       >
+        <Copy name="pricing.monthly" />
+        <span class="billing-monthly-price" data-billing-monthly-price
+          >{pricingFor("en", "monthly").primary}</span
+        >
+      </button>
     </div>
     <div class="pricing-grid">
       <article class="plan-card">
