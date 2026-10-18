@@ -57,6 +57,30 @@ test("all six hero side items remain rendered from 768px wide and 720px tall", (
   }
 });
 
+test("compositions fit through layout without scaling controls or their hit areas", () => {
+  assert.doesNotMatch(css, /--composition-scale/);
+  for (const rule of stylesheetRules(css)) {
+    if (rule.selector.includes(".example-app")) {
+      assert.doesNotMatch(rule.declarations, /(?:transform:\s*[^;]*scale|scale\s*:)/);
+    }
+  }
+  const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.doesNotMatch(motion, /--composition-(?:scale|height)|fitCompositions|\bscale\s*:/);
+  const frame = unconditionalRules(css).match(/\.example-card\s*\{([^}]+)\}/)?.[1];
+  assert.match(frame, /max-inline-size:\s*400px;/);
+  assert.doesNotMatch(frame, /block-size:/);
+  assert.match(css, /\.example-app\s*\{[^}]*max-block-size:\s*80svh;[^}]*overflow:\s*auto;/);
+  assert.match(
+    css,
+    /\.example-app :where\(button, a\)\s*\{[^}]*min-inline-size:\s*44px;[^}]*min-block-size:\s*44px;/,
+  );
+  assert.match(css, /\.example-app \.metric-bars\s*\{[^}]*min-inline-size:\s*calc\(7 \* 44px\);/);
+  assert.match(
+    css,
+    /\.example-app \.orbit-month-grid\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(44px, 1fr\)\);[^}]*grid-auto-rows:\s*44px;[^}]*overflow:\s*auto;/,
+  );
+});
+
 test("phone product screens use a zero-minimum column at every viewport width", () => {
   const slide = unconditionalRules(css).match(
     /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,
@@ -429,15 +453,17 @@ test("FAQ questions and answers share one inset with an 8px text gap and 16px bo
   assert.match(global, /--lh-body:\s*1.55/);
 });
 
-test("the seven metric bar columns never wrap or exceed their block at 320px", () => {
+test("the seven metric bar columns share their row and retain native scrolling at narrow widths", () => {
   const rows = [...css.matchAll(/\.metric-bars(?:\[[^\]]+\])?\s*\{([^}]+)\}/g)];
   assert.ok(rows.length);
   for (const [, declarations] of rows) {
-    assert.match(
-      declarations,
-      /grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/,
-      "every metric row override must retain seven shrinkable columns",
-    );
+    if (/grid-template-columns:/.test(declarations)) {
+      assert.match(
+        declarations,
+        /grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/,
+        "every metric column override must retain seven shrinkable columns",
+      );
+    }
     assert.doesNotMatch(declarations, /flex-wrap:\s*wrap/);
   }
   const targets = [...css.matchAll(/(?:button)?\.metric-bar-track\s*\{([^}]+)\}/g)];
@@ -575,7 +601,7 @@ test("pinning and staggered feature motion use verified APIs and expose their st
   assert.match(source, /end:\s*"\+=560"/);
   assert.match(css, /\.hero-pin-range\s*\{\s*padding-block-end:\s*560px/s);
   assert.match(source, /\[data-composition-card\]/);
-  assert.match(source, /scale: 0\.94/);
+  assert.doesNotMatch(source, /\bscale\s*:/);
   assert.match(source, /stagger: 0\.12/);
   assert.match(source, /scrub: true/);
   assert.match(source, /media\.revert\(\)/);

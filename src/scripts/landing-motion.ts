@@ -14,7 +14,7 @@ export function mountLandingMotion() {
       smoothWheel: true,
       lerp: 0.15,
       anchors: false,
-      prevent: (node) => node.closest(".phone-carousel, #ios") !== null,
+      prevent: (node) => node.closest(".phone-carousel, .example-app, #ios") !== null,
     });
     lenis.on("scroll", ScrollTrigger.update);
     return () => lenis.destroy();
@@ -64,10 +64,9 @@ export function mountLandingMotion() {
     document.querySelectorAll<HTMLElement>("[data-example-row]").forEach((row) => {
       gsap.fromTo(
         row.querySelectorAll("[data-composition-card]"),
-        { y: 48, scale: 0.94, opacity: 0.5 },
+        { y: 48, opacity: 0.5 },
         {
           y: 0,
-          scale: 1,
           opacity: 1,
           stagger: 0.12,
           ease: "none",
@@ -83,29 +82,7 @@ export function mountLandingMotion() {
     });
     return () => disposeFloat?.();
   });
-  const compositions = [...document.querySelectorAll<HTMLElement>(".example-card")];
-  const fitCompositions = () => {
-    compositions.forEach((card) => {
-      const app = card.querySelector<HTMLElement>(".example-app");
-      if (!app) return;
-      const height = app.offsetHeight;
-      const scale =
-        window.innerWidth >= 768 && height > 0
-          ? Math.min(1, (window.innerHeight * 0.8) / height)
-          : 1;
-      card.style.setProperty("--composition-scale", String(scale));
-      card.style.setProperty("--composition-height", `${height * scale}px`);
-    });
-  };
-  const compositionSize = new ResizeObserver(fitCompositions);
-  compositions.forEach((card) => {
-    const app = card.querySelector(".example-app");
-    if (app) compositionSize.observe(app);
-  });
-  const refresh = () => {
-    fitCompositions();
-    ScrollTrigger.refresh();
-  };
+  const refresh = () => ScrollTrigger.refresh();
   document.fonts.ready.then(refresh);
   const deviceSize = new ResizeObserver(refresh);
   const device = document.querySelector(".hero-device");
@@ -117,11 +94,6 @@ export function mountLandingMotion() {
   window.addEventListener("orbit:language-changed", refresh);
   window.addEventListener("orbit:layout-changed", refresh);
   return () => {
-    compositionSize.disconnect();
-    compositions.forEach((card) => {
-      card.style.removeProperty("--composition-scale");
-      card.style.removeProperty("--composition-height");
-    });
     deviceSize.disconnect();
     media.revert();
     document

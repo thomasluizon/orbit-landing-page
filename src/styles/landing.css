@@ -1253,14 +1253,12 @@ button.metric-bar-track:focus-visible {
 .example-card {
   inline-size: 100%;
   max-inline-size: 400px;
-  block-size: var(--composition-height, auto);
 }
 .example-app {
+  display: grid;
   inline-size: 100%;
   font-size: var(--fs-sm);
   line-height: var(--lh-meta);
-  transform: scale(var(--composition-scale, 1));
-  transform-origin: top center;
 }
 .example-app .product-caption {
   line-height: var(--lh-meta);
@@ -1281,6 +1279,35 @@ button.metric-bar-track:focus-visible {
 .example-app .metric-bar-track {
   block-size: 96px;
 }
+.example-app .metric-chart {
+  overflow-x: auto;
+}
+.example-app .metric-bars {
+  min-inline-size: calc(7 * 44px);
+}
+.example-app .metric-dates {
+  min-inline-size: calc(7 * 44px);
+}
+.example-app .orbit-month-grid {
+  grid-template-columns: repeat(7, minmax(44px, 1fr));
+  grid-template-rows: 16px;
+  grid-auto-rows: 44px;
+  align-content: start;
+  min-block-size: 0;
+  gap: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.example-app .orbit-calendar {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.example-app .orbit-calendar .orbit-product {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-block-size: 0;
+}
+.example-app .orbit-wrapped-bars {
+  block-size: 48px;
+}
 .example-app .breakdown-proposal {
   gap: 8px;
 }
@@ -1293,6 +1320,14 @@ button.metric-bar-track:focus-visible {
   inline-size: 100%;
 }
 @media (min-width: 48rem) {
+  .example-app {
+    max-block-size: 80svh;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .example-app .orbit-composition {
+    max-block-size: 80svh;
+  }
   .example-row[data-card-side="right"] .example-card {
     grid-column: 2;
     grid-row: 1;
@@ -2052,6 +2087,8 @@ button.metric-bar-track:focus-visible {
   outline-offset: -2px;
 }
 .example-app :where(button, a) {
+  min-inline-size: 44px;
+  min-block-size: 44px;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .example-app :where(button, a):is(:active, :focus-visible) {
