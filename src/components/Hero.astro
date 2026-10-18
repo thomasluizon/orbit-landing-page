@@ -2,6 +2,7 @@
 import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
+import PhoneHeader from "./PhoneHeader.astro";
 import TrustStrip from "./TrustStrip.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
@@ -53,10 +54,20 @@ const en = translations.en;
                 data-phone-slide="today"
                 data-product-screen
               >
-                <ProductCard kind="today" />
+                <PhoneHeader>
+                  <h2 class="t-row" data-i18n="carousel.today">{en["carousel.today"]}</h2>
+                </PhoneHeader>
+                <div class="phone-content phone-product-content">
+                  <ProductCard kind="today" />
+                </div>
               </div>
               <div class="phone-slide" id="phone-week" data-phone-slide="week" data-product-screen>
-                <ProductCard kind="week" />
+                <PhoneHeader>
+                  <h2 class="t-row" data-i18n="carousel.week">{en["carousel.week"]}</h2>
+                </PhoneHeader>
+                <div class="phone-content phone-product-content">
+                  <ProductCard kind="week" />
+                </div>
               </div>
               <div
                 class="phone-slide"
@@ -64,7 +75,12 @@ const en = translations.en;
                 data-phone-slide="reminder"
                 data-product-screen
               >
-                <ProductCard kind="insight" /><ProductCard kind="reminder" />
+                <PhoneHeader>
+                  <h2 class="t-row" data-i18n="carousel.reminder">{en["carousel.reminder"]}</h2>
+                </PhoneHeader>
+                <div class="phone-content phone-product-content">
+                  <ProductCard kind="insight" /><ProductCard kind="reminder" />
+                </div>
               </div>
             </div>
             <div class="device-home" aria-hidden="true"></div>

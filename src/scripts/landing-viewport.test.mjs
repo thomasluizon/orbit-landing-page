@@ -359,15 +359,15 @@ test("composition fitting changes only visibility and preserves the canvas visua
 });
 
 test("phone product screens use a zero-minimum column at every viewport width", () => {
-  const slide = unconditionalRules(css).match(
-    /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,
-  )?.[1];
+  const slide = unconditionalRules(css).match(/\.phone-product-content\s*\{([^}]+)\}/)?.[1];
   assert.ok(slide, "the product screen layout must apply outside media queries");
   assert.match(slide, /grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
 
 test("phone product cards fill their slide outside media queries", () => {
-  const card = unconditionalRules(css).match(/\.phone-slide > \.product-card\s*\{([^}]+)\}/)?.[1];
+  const card = unconditionalRules(css).match(
+    /\.phone-product-content > \.product-card\s*\{([^}]+)\}/,
+  )?.[1];
   assert.ok(card, "full-width cards must fit desktop phones as well as mobile phones");
   assert.match(card, /(?:^|;)\s*inline-size:\s*100%\s*;/);
   assert.match(card, /max-inline-size:\s*(?:100%|none)\s*;/);
@@ -399,19 +399,15 @@ test("phone text wraps to two lines without splitting words or pushing out the h
   );
 });
 
-test("phone screens keep the same inset and gaps outside viewport media queries", () => {
+test("phone screens share the app header and content top inset at every width", () => {
   const base = unconditionalRules(css);
-  for (const selector of [".phone-slide[data-product-screen]", ".phone-slide .astra-demo"]) {
-    const rule = base.split(`${selector} {`)[1]?.split("}")[0];
-    assert.ok(rule, `${selector} must have an unconditional inset`);
-    assert.match(rule, /padding:\s*8px 8px 24px\s*;/);
-  }
-  assert.match(base, /\.phone-slide > \.product-card\s*\{[^}]*padding:\s*12px\s*;/);
-  assert.match(base, /\.phone-slide\[data-product-screen\]\s*\{[^}]*gap:\s*16px\s*;/);
-  assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*12px\s*;/);
-  assert.match(base, /\.phone-slide \.demo-preview\s*\{[^}]*gap:\s*12px\s*;/);
-  assert.match(base, /\.phone-slide \.demo-input-area\s*\{[^}]*gap:\s*8px\s*;/);
-  assert.match(base, /\.demo-examples\s*\{[^}]*gap:\s*8px\s*;/);
+  assert.match(
+    base,
+    /\.phone-app-header\s*\{[^}]*min-block-size:\s*56px;[^}]*padding-inline:\s*16px;/,
+  );
+  assert.match(base, /\.phone-content\s*\{[^}]*padding-block-start:\s*16px;/);
+  assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*0;[^}]*padding:\s*0;/);
+  assert.match(base, /\.phone-product-content\s*\{[^}]*gap:\s*16px;/);
 });
 
 test("phone week columns can shrink below the standalone chart's fixed day minimum", () => {

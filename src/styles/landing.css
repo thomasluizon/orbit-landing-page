@@ -217,15 +217,18 @@
 .demo-exchange {
   margin-block-start: 32px;
 }
-.demo-heading {
+.phone-app-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+  min-block-size: 56px;
+  padding-inline: 16px;
 }
-.demo-heading h2 {
+.phone-app-header h2 {
   font-weight: 500;
 }
-.demo-heading svg {
+.phone-app-header svg {
   color: var(--color-fg-1);
 }
 .demo-exchange {
@@ -1727,15 +1730,24 @@ button.metric-bar-track:focus-visible {
   scroll-snap-align: start;
 }
 .phone-slide[data-product-screen] {
+  touch-action: pan-y;
+}
+.phone-content {
+  padding-block-start: 16px;
+}
+.phone-product-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 16px;
-  padding: 8px 8px 24px;
+  flex: 1;
+  min-block-size: 0;
+  padding-inline: 8px;
+  padding-block-end: 24px;
   overflow-y: auto;
   touch-action: pan-y;
 }
-.phone-slide > .product-card {
+.phone-product-content > .product-card {
   grid-template-columns: minmax(0, 1fr);
   inline-size: 100%;
   max-inline-size: none;
@@ -1776,13 +1788,13 @@ button.metric-bar-track:focus-visible {
 }
 .phone-slide .astra-demo {
   inline-size: 100%;
-  gap: 12px;
-  padding: 8px 8px 24px;
+  gap: 0;
+  padding: 0;
 }
-.phone-slide .demo-heading {
-  gap: 8px;
+.phone-slide .demo-thread {
+  padding-inline: 8px;
 }
-.phone-slide .demo-heading h2 {
+.phone-slide .phone-app-header h2 {
   font-size: 16px;
 }
 .phone-slide .demo-preview .t-row,
@@ -1795,6 +1807,7 @@ button.metric-bar-track:focus-visible {
 }
 .phone-slide .demo-input-area {
   gap: 8px;
+  padding: 12px 8px 24px;
 }
 .phone-slide .week-chart {
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1861,10 +1874,11 @@ button.metric-bar-track:focus-visible {
   padding: 12px;
 }
 @container (inline-size < 240px) {
-  .phone-slide[data-product-screen] {
-    padding: 8px 4px 16px;
+  .phone-product-content {
+    padding-inline: 4px;
+    padding-block-end: 16px;
   }
-  .phone-slide > .product-card {
+  .phone-product-content > .product-card {
     padding: 8px;
   }
   .phone-slide .habit-row {
@@ -1876,11 +1890,10 @@ button.metric-bar-track:focus-visible {
     block-size: 24px;
     font-size: var(--fs-base);
   }
-  .phone-slide .astra-demo {
-    gap: 8px;
-    padding: 8px 4px 16px;
+  .phone-slide .demo-thread {
+    padding-inline: 4px;
   }
-  .phone-slide .demo-heading h2 {
+  .phone-slide .phone-app-header h2 {
     font-size: var(--fs-sm);
   }
   .phone-slide .demo-preview .t-row,

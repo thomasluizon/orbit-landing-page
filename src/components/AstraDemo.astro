@@ -3,6 +3,7 @@ import { ArrowUp, Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import PillButton from "./PillButton.astro";
+import PhoneHeader from "./PhoneHeader.astro";
 import { translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
@@ -12,11 +13,11 @@ const en = translations.en;
 ---
 
 <section id="astra-demo" class="astra-demo" aria-labelledby="demo-title" data-example>
-  <div class="demo-heading">
-    <AstraGlyph />
+  <PhoneHeader>
+    <AstraGlyph size={16} />
     <h2 id="demo-title" class="t-row" translate="no">Astra</h2>
-  </div>
-  <div class="demo-thread">
+  </PhoneHeader>
+  <div class="demo-thread phone-content">
     <div class="demo-exchange" aria-live="polite" aria-atomic="true" aria-busy="false">
       <p id="demo-request" class="demo-request t-body" data-i18n="demo.start.request">
         {en["demo.start.request"]}
