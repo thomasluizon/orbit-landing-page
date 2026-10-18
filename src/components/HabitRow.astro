@@ -11,11 +11,11 @@ const { habit, timing = "morning", days } = Astro.props;
 const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘" };
 ---
 
-<div class="habit-row">
+<button type="button" class="habit-row" data-habit-toggle aria-pressed={timing === "done"}>
   <span class="habit-emoji" aria-hidden="true">{emoji[habit]}</span>
-  <div>
-    <p class="habit-name"><Copy name={`product.${habit}`} /></p>
-    <p class="product-caption">
+  <span class="habit-copy">
+    <span class="habit-name"><Copy name={`product.${habit}`} /></span>
+    <span class="product-caption">
       {
         days === undefined ? (
           <Copy name={`product.${timing}`} />
@@ -28,11 +28,10 @@ const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘" };
           </span>
         )
       }
-    </p>
-  </div>
-  <span class="habit-check" aria-hidden="true">
-    <span class:list={["status-ring", { "is-done": timing === "done" }]}>
-      {timing === "done" && <Check size={16} />}
     </span>
   </span>
-</div>
+  <span class="habit-check" aria-hidden="true"
+    ><span class:list={["status-ring", { "is-done": timing === "done" }]}><Check size={16} /></span
+    ></span
+  >
+</button>

@@ -1,4 +1,5 @@
 ---
+import { ArrowUp } from "@lucide/astro";
 import Layout from "../layouts/Layout.astro";
 import Header from "../components/Header.astro";
 import FeatureRows from "../components/FeatureRows.astro";
@@ -23,6 +24,14 @@ import { appUrl, googlePlayUrl } from "../config/links";
       <Faq />
       <FinalCta appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
     </main>
+    <button
+      type="button"
+      id="back-to-top"
+      class="back-to-top"
+      hidden
+      aria-label={translations.en["back.top"]}
+      data-i18n-label="back.top"><ArrowUp size={20} /></button
+    >
   </div>
 </Layout>
 
@@ -30,6 +39,7 @@ import { appUrl, googlePlayUrl } from "../config/links";
   import "../scripts/i18n";
   import "../scripts/pricing";
   import "../scripts/faq";
+  import "../scripts/back-to-top";
   import "../scripts/scroll";
   import "../scripts/waitlist";
   import "../scripts/waitlist-section";

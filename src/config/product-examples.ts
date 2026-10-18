@@ -28,3 +28,6 @@ export const exampleBreakdown = [
   { habit: "laundry", cadence: "weekly" },
   { habit: "bathroom", cadence: "weekly" },
 ] as const;
+
+export const exampleDate = "2026-08-18";
+export const exampleExportFile = `orbit-data-export-${exampleDate}.json`;

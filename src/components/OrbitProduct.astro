@@ -1,108 +1,110 @@
 ---
-import { Check, ChevronRight, Snowflake, Download, Trash2, Trophy } from "@lucide/astro";
+import { Check, Snowflake, Download, Trash2, Trophy, FileCheck } from "@lucide/astro";
 import Copy from "./Copy.astro";
-import { exampleMonth } from "../config/product-examples";
+import HabitRow from "./HabitRow.astro";
+import { exampleMonth, exampleDate, exampleExportFile } from "../config/product-examples";
 import { landingCopy } from "../i18n/translations";
 interface Props {
   kind: "calendar" | "progress" | "privacy" | "achievements";
 }
 const { kind } = Astro.props;
 const cells = Array.from({ length: 42 }, (_, index) => index - 4);
+function datedCopy(
+  key: "orbit.exampleDate" | "orbit.selectedDay",
+  day = 18,
+  language: "en" | "pt-BR" = "en",
+) {
+  const date = new Intl.DateTimeFormat(language, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${exampleDate.slice(0, 8)}${day}`));
+  return landingCopy[language][key].replace("{date}", date);
+}
 ---
 
-<div
-  class:list={["product-block", "orbit-product", `orbit-${kind}`]}
-  data-mock="true"
-  data-product-kind={kind}
->
+<div class:list={["orbit-composition", `orbit-${kind}`]} data-mock="true" data-product-kind={kind}>
   {
     kind === "calendar" && (
       <>
-        <h3>
-          <Copy name="orbit.calendar" />
-        </h3>
-        <p class="product-caption">
-          <Copy name="orbit.google" />
-        </p>
-        <p class="orbit-month-title">
-          <Copy name="orbit.august" />
-        </p>
-        <div class="orbit-view-labels" aria-hidden="true">
-          <span data-current>
-            <Copy name="orbit.month" />
-          </span>
-          <span>
-            <Copy name="orbit.week" />
-          </span>
-          <span>
-            <Copy name="orbit.agenda" />
-          </span>
-        </div>
-        <div class="orbit-month-grid" aria-hidden="true">
-          {landingCopy.en["product.days"].split(" ").map((day, index) => (
-            <span
-              class="product-caption"
-              data-copy-en={day}
-              data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
-            >
-              {day}
-            </span>
-          ))}
-          {cells.map((day) => (
-            <span class="orbit-date" data-current={day === 18 || undefined}>
-              {day > 0 && day <= 31 ? day : ""}
-              {day > 0 && day < 18 && (
-                <span class:list={["orbit-date-dot", { "is-done": day % 4 !== 0 }]} />
-              )}
-            </span>
-          ))}
-        </div>
-      </>
-    )
-  }
-  {
-    kind === "progress" && (
-      <>
-        <h3>
-          <Copy name="orbit.progress" />
-        </h3>
-        <div class="orbit-streak">
-          <span class="orbit-streak-number">12</span>
-          <span>
-            <Copy name="orbit.streak" />
-          </span>
-        </div>
-        <div class="orbit-streak-strip" aria-hidden="true">
-          {Array.from({ length: 14 }, (_, index) => (
-            <span data-frozen={index === 5 || undefined} data-missed={index < 2 || undefined}>
-              {index === 5 ? <Snowflake size={16} /> : index < 2 ? "−" : <Check size={16} />}
-            </span>
-          ))}
-        </div>
-        <div class="orbit-list-row">
-          <Snowflake size={20} aria-hidden="true" />
-          <div class="orbit-row-copy">
-            <p>
-              <Copy name="orbit.freezes" /> · 2
-            </p>
-            <p class="product-caption">
-              <Copy name="orbit.repair" />
-            </p>
+        <div class="product-block orbit-product" data-composition-card>
+          <div>
+            <>
+              <h3>
+                <Copy name="orbit.calendar" />
+              </h3>
+              <p class="product-caption">
+                <Copy name="orbit.google" />
+              </p>
+            </>
+          </div>
+          <p class="orbit-month-title">
+            <Copy name="orbit.august" />
+          </p>
+          <div
+            class="orbit-month-grid"
+            role="group"
+            aria-label={landingCopy.en["orbit.calendar"]}
+            data-copy-label-en={landingCopy.en["orbit.calendar"]}
+            data-copy-label-pt={landingCopy["pt-BR"]["orbit.calendar"]}
+          >
+            {landingCopy.en["product.days"].split(" ").map((day, index) => (
+              <span
+                class="product-caption"
+                aria-hidden="true"
+                data-copy-en={day}
+                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
+              >
+                {day}
+              </span>
+            ))}
+            {cells.map((day) =>
+              day > 0 && day <= 31 ? (
+                <button
+                  type="button"
+                  class="orbit-date"
+                  data-calendar-day={day}
+                  aria-pressed={day === 17}
+                  aria-label={datedCopy("orbit.selectedDay", day)}
+                  data-copy-label-en={datedCopy("orbit.selectedDay", day)}
+                  data-copy-label-pt={datedCopy("orbit.selectedDay", day, "pt-BR")}
+                >
+                  {day}
+                  {day < 18 && (
+                    <span class:list={["orbit-date-dot", { "is-done": day % 4 !== 0 }]} />
+                  )}
+                </button>
+              ) : (
+                <span />
+              ),
+            )}
           </div>
         </div>
-        <p class="product-caption">
-          <Copy name="orbit.monthChart" />
-        </p>
-        <div
-          class="orbit-month-chart"
-          role="img"
-          aria-label={landingCopy.en["orbit.monthChartLabel"]}
-          data-copy-label-en={landingCopy.en["orbit.monthChartLabel"]}
-          data-copy-label-pt={landingCopy["pt-BR"]["orbit.monthChartLabel"]}
-        >
-          {exampleMonth.map((value) => (
-            <span style={`--bar-height: ${value}%`} />
-          ))}
+        <div class="product-block calendar-day-card" data-composition-card>
+          <h3
+            data-calendar-readout
+            aria-live="polite"
+            data-copy-en={datedCopy("orbit.selectedDay", 17)}
+            data-copy-pt={datedCopy("orbit.selectedDay", 17, "pt-BR")}
+          >
+            {datedCopy("orbit.selectedDay", 17)}
+          </h3>
+          <HabitRow habit="walk" />
+          <HabitRow habit="water" timing="done" />
+          <div data-calendar-events>
+            <>
+              <p class="product-caption">
+                <Copy name="orbit.events" />
+              </p>
+              <p>
+                <Copy name="orbit.teamMeeting" /> <span class="product-caption">10:00</span>
+              </p>
+              <p>
+                <Copy name="orbit.dentist" /> <span class="product-caption">15:30</span>
+              </p>
+            </>
+          </div>
         </div>
       </>
     )
@@ -110,22 +112,141 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
   {
     kind === "privacy" && (
       <>
-        <div class="orbit-list-row">
-          <>
-            <Download size={20} aria-hidden="true" />
-            <span>
+        <div class="product-block" data-composition-card>
+          <button
+            type="button"
+            class="orbit-list-row"
+            data-privacy-toggle="export-example"
+            aria-expanded="true"
+            aria-controls="export-example"
+          >
+            <>
+              <Download size={20} aria-hidden="true" />
               <Copy name="orbit.export" />
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
-          </>
-        </div>
-        <div class="orbit-list-row">
-          <>
-            <Trash2 size={20} aria-hidden="true" />
-            <span>
+            </>
+          </button>
+          <button
+            type="button"
+            class="orbit-list-row"
+            data-privacy-toggle="delete-example"
+            aria-expanded="true"
+            aria-controls="delete-example"
+          >
+            <>
+              <Trash2 size={20} aria-hidden="true" />
               <Copy name="orbit.delete" />
-            </span>
-            <ChevronRight size={16} aria-hidden="true" />
+            </>
+          </button>
+        </div>
+        <div id="export-example" class="product-block" data-composition-card>
+          <div class="orbit-list-row">
+            <>
+              <FileCheck size={24} aria-hidden="true" />
+              <div class="orbit-row-copy">
+                <>
+                  <h3>
+                    <Copy name="orbit.exportReady" />
+                  </h3>
+                  <p class="product-caption export-filename">{exampleExportFile}</p>
+                </>
+              </div>
+            </>
+          </div>
+          <button type="button" class="text-link" data-download-example>
+            <Copy name="orbit.downloadExample" />
+          </button>
+        </div>
+        <div id="delete-example" class="product-block" data-composition-card>
+          <h3>
+            <Copy name="orbit.deleteTitle" />
+          </h3>
+          <p class="product-caption">
+            <Copy name="orbit.deleteBody" />
+          </p>
+          <p
+            class="product-caption"
+            data-copy-en={datedCopy("orbit.exampleDate")}
+            data-copy-pt={datedCopy("orbit.exampleDate", 18, "pt-BR")}
+          >
+            {datedCopy("orbit.exampleDate")}
+          </p>
+          <div class="privacy-actions">
+            <>
+              <button type="button" class="text-link" data-delete-cancel>
+                <Copy name="orbit.cancel" />
+              </button>
+              <button type="button" class="text-link" data-delete-example>
+                <Copy name="orbit.deleteExample" />
+              </button>
+            </>
+          </div>
+          <p data-delete-result role="status" hidden>
+            <Copy name="orbit.deleted" />
+          </p>
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "progress" && (
+      <>
+        <div class="product-block orbit-product" data-composition-card>
+          <h3>
+            <Copy name="orbit.progress" />
+          </h3>
+          <div class="orbit-streak">
+            <>
+              <span class="orbit-streak-number">12</span>
+              <Copy name="orbit.streak" />
+            </>
+          </div>
+          <div class="orbit-streak-strip" aria-hidden="true">
+            {Array.from({ length: 14 }, (_, index) => (
+              <span data-frozen={index === 5 || undefined} data-missed={index < 2 || undefined}>
+                {index === 5 ? <Snowflake size={16} /> : index < 2 ? "−" : <Check size={16} />}
+              </span>
+            ))}
+          </div>
+          <p class="product-caption">
+            <Copy name="orbit.monthChart" />
+          </p>
+          <div
+            class="orbit-month-chart"
+            role="img"
+            aria-label={landingCopy.en["orbit.monthChartLabel"]}
+            data-copy-label-en={landingCopy.en["orbit.monthChartLabel"]}
+            data-copy-label-pt={landingCopy["pt-BR"]["orbit.monthChartLabel"]}
+          >
+            {exampleMonth.map((value) => (
+              <span style={`--bar-height: ${value}%`} />
+            ))}
+          </div>
+        </div>
+        <div class="product-block" data-composition-card>
+          <>
+            <div class="orbit-list-row">
+              <>
+                <Snowflake size={24} aria-hidden="true" />
+                <div class="orbit-row-copy">
+                  <>
+                    <h3>
+                      <Copy name="orbit.freezes" /> · 2
+                    </h3>
+                    <p class="product-caption">
+                      <Copy name="orbit.repair" />
+                    </p>
+                  </>
+                </div>
+              </>
+            </div>
+            <div class="habit-row">
+              <>
+                <span class="status-ring is-done" aria-hidden="true">
+                  <Check size={16} />
+                </span>
+                <Copy name="orbit.firstWeek" />
+              </>
+            </div>
           </>
         </div>
       </>
@@ -134,25 +255,45 @@ const cells = Array.from({ length: 42 }, (_, index) => index - 4);
   {
     kind === "achievements" && (
       <>
-        <div class="orbit-list-row">
-          <Trophy size={24} aria-hidden="true" />
-          <h3>
-            <Copy name="orbit.achievements" />
-          </h3>
-          <span class="status-ring is-done" aria-hidden="true">
-            <Check size={16} />
-          </span>
-        </div>
-        <div class="orbit-wrapped">
-          <p translate="no">Orbit Wrapped</p>
-          <p class="product-caption">
-            <Copy name="orbit.wrapped" />
-          </p>
-          <div class="orbit-wrapped-bars" aria-hidden="true">
-            {exampleMonth.slice(-7).map((value) => (
-              <span style={`--bar-height: ${value}%`} />
-            ))}
+        <div class="product-block" data-composition-card>
+          <div class="orbit-list-row">
+            <>
+              <Trophy size={24} aria-hidden="true" />
+              <h3>
+                <Copy name="orbit.achievements" />
+              </h3>
+            </>
           </div>
+          {(["orbit.firstWeek", "orbit.firstHabit"] as const).map((name) => (
+            <div class="orbit-list-row">
+              <span class="status-ring is-done" aria-hidden="true">
+                <Check size={16} />
+              </span>
+              <div>
+                <p>
+                  <Copy name={name} />
+                </p>
+                <p class="product-caption">
+                  <Copy name="orbit.earned" />
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="product-block orbit-wrapped" data-composition-card>
+          <>
+            <p translate="no">Orbit Wrapped</p>
+            <p class="product-caption">
+              <Copy name="orbit.wrapped" />
+            </p>
+            <div class="orbit-wrapped-bars" aria-hidden="true">
+              {exampleMonth.slice(-7).map((value) => (
+                <span style={`--bar-height: ${value}%`} />
+              ))}
+            </div>
+            <HabitRow habit="walk" />
+            <HabitRow habit="water" timing="done" />
+          </>
         </div>
       </>
     )

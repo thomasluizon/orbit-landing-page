@@ -2,12 +2,36 @@
 import { landingCopy, type LandingKey } from "../i18n/translations";
 interface Props {
   name: LandingKey;
+  accent?: "Orbit" | "Astra";
 }
-const { name } = Astro.props;
+const { name, accent } = Astro.props;
+const words = (language: "en" | "pt-BR") =>
+  accent ? landingCopy[language][name].split(accent) : [];
 ---
 
-<span
-  translate={/\b(?:Orbit|Astra)\b/.test(landingCopy.en[name]) ? "no" : undefined}
-  data-copy-en={landingCopy.en[name]}
-  data-copy-pt={landingCopy["pt-BR"][name]}>{landingCopy.en[name]}</span
->
+{
+  accent ? (
+    <span>
+      {words("en").map((part, index) => (
+        <>
+          <span data-copy-en={part} data-copy-pt={words("pt-BR")[index]}>
+            {part}
+          </span>
+          {index < words("en").length - 1 && (
+            <span class="accent-word" translate="no">
+              {accent}
+            </span>
+          )}
+        </>
+      ))}
+    </span>
+  ) : (
+    <span
+      translate={/\b(?:Orbit|Astra)\b/.test(landingCopy.en[name]) ? "no" : undefined}
+      data-copy-en={landingCopy.en[name]}
+      data-copy-pt={landingCopy["pt-BR"][name]}
+    >
+      {landingCopy.en[name]}
+    </span>
+  )
+}

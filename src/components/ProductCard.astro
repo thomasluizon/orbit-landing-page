@@ -1,5 +1,5 @@
 ---
-import { Bell, ChevronLeft, ChevronRight, ArrowUpRight } from "@lucide/astro";
+import { Bell, Check } from "@lucide/astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import Copy from "./Copy.astro";
 import HabitRow from "./HabitRow.astro";
@@ -8,6 +8,17 @@ interface Props {
   kind: "today" | "week" | "reminder" | "insight";
 }
 const { kind } = Astro.props;
+import { exampleWeek, exampleDays } from "../config/product-examples";
+import type { LandingKey } from "../i18n/translations";
+function dayLabel(index: number, language: "en" | "pt-BR") {
+  return (
+    landingCopy[language][`blocks.metrics.date${index}` as LandingKey] +
+    ", " +
+    landingCopy[language]["blocks.metrics.done"]
+      .replace("{done}", String(exampleDays[index].done))
+      .replace("{total}", String(exampleDays[index].total))
+  );
+}
 ---
 
 <div class:list={["product-card", `product-${kind}`]} data-mock="true" data-product-kind={kind}>
@@ -16,11 +27,9 @@ const { kind } = Astro.props;
       <>
         <div class="today-pager">
           <>
-            <ChevronLeft size={20} />
             <h3>
               <Copy name="product.today" />
             </h3>
-            <ChevronRight size={20} />
           </>
         </div>
         <div class="proactive-line">
@@ -33,6 +42,26 @@ const { kind } = Astro.props;
         </div>
         <HabitRow habit="walk" timing="morning" />
         <HabitRow habit="water" timing="done" />
+        <button
+          type="button"
+          class="habit-row"
+          data-demo-approved
+          data-habit-toggle
+          aria-pressed="false"
+          hidden
+        >
+          <span class="habit-copy">
+            <>
+              <span class="habit-name" data-approved-name />
+              <span class="product-caption" data-approved-repeat />
+            </>
+          </span>
+          <span class="habit-check" aria-hidden="true">
+            <span class="status-ring">
+              <Check size={16} />
+            </span>
+          </span>
+        </button>
       </>
     )
   }
@@ -44,29 +73,45 @@ const { kind } = Astro.props;
             <h3>
               <Copy name="product.week" />
             </h3>
-            <ArrowUpRight size={20} />
           </>
         </div>
         <div
           class="week-chart"
-          role="img"
-          aria-label={landingCopy.en["product.chart"]}
-          data-copy-label-en={landingCopy.en["product.chart"]}
-          data-copy-label-pt={landingCopy["pt-BR"]["product.chart"]}
+          data-week-chart
+          role="group"
+          aria-label={landingCopy.en["blocks.metrics.choose"]}
+          data-copy-label-en={landingCopy.en["blocks.metrics.choose"]}
+          data-copy-label-pt={landingCopy["pt-BR"]["blocks.metrics.choose"]}
         >
-          {[46, 74, 58, 90, 62, 100, 78].map((height, index) => (
-            <div class="chart-column" aria-hidden="true">
-              <div class="chart-track">
+          {exampleWeek.map((height, index) => (
+            <button
+              type="button"
+              class="chart-column"
+              data-week-day={index}
+              aria-pressed={index === 6}
+              aria-label={dayLabel(index, "en")}
+              data-copy-label-en={dayLabel(index, "en")}
+              data-copy-label-pt={dayLabel(index, "pt-BR")}
+            >
+              <span class="chart-track">
                 <span class="chart-bar" style={`--bar-height: ${height}%`} />
-              </div>
-              <span
-                class="chart-day"
-                data-copy-en={landingCopy.en["product.days"].split(" ")[index]}
-                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
-              >
-                {landingCopy.en["product.days"].split(" ")[index]}
               </span>
-            </div>
+              <span class="chart-day" aria-hidden="true">
+                {index + 12}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div class="product-caption week-readout" aria-live="polite">
+          {exampleDays.map((_, index) => (
+            <span
+              data-week-readout={index}
+              hidden={index !== 6}
+              data-copy-en={dayLabel(index, "en")}
+              data-copy-pt={dayLabel(index, "pt-BR")}
+            >
+              {dayLabel(index, "en")}
+            </span>
           ))}
         </div>
       </>

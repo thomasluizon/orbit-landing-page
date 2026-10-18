@@ -34,6 +34,7 @@ function renderPlayback() {
   if (!stage || !playback) return;
   stage.dataset.ambientRunning = String(visible && !document.hidden && !reduced.matches && !paused);
   stage.dataset.carouselRunning = String(running);
+  stage.dataset.autoStopped = String(interacted);
   const key = paused ? "demo.resume" : "demo.pause";
   playback.setAttribute("aria-pressed", String(paused));
   playback.setAttribute("data-i18n-label", key);
@@ -129,7 +130,11 @@ window.addEventListener("pagehide", () => {
   visible = false;
   syncTimer();
 });
-window.addEventListener("pageshow", syncTimer);
+window.addEventListener("pageshow", () => {
+  const rect = stage?.getBoundingClientRect();
+  visible = !!rect && rect.bottom > 0 && rect.top < window.innerHeight;
+  syncTimer();
+});
 window.addEventListener("orbit:language-changed", renderPlayback);
 reduced.addEventListener("change", syncTimer);
 mobile.addEventListener("change", () => select(0));

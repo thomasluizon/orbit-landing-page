@@ -29,6 +29,7 @@ function doneLabel(language: Language, index: number) {
   <div
     class:list={["product-block", `block-${kind}`]}
     data-example-block={interactive ? kind : undefined}
+    data-composition-card
     data-product-kind={kind}
   >
     {
@@ -103,7 +104,7 @@ function doneLabel(language: Language, index: number) {
               </>
             </div>
           </div>
-          <dl class="metric-figures">
+          <dl class="metric-figures" data-composition-card>
             <div>
               <>
                 <dt>
@@ -132,7 +133,10 @@ function doneLabel(language: Language, index: number) {
           <h3>
             <Copy name="blocks.breakdown.title" />
           </h3>
-          <div class="breakdown-proposal">
+          <p class="demo-request">
+            <Copy name="blocks.breakdown.request" />
+          </p>
+          <div class="breakdown-proposal" data-composition-card>
             <p class="product-caption" data-i18n="demo.proposed">
               {translations.en["demo.proposed"]}
             </p>
@@ -179,7 +183,7 @@ function doneLabel(language: Language, index: number) {
           <p class="product-caption">
             <Copy name="blocks.goal.derived" />
           </p>
-          <div class="goal-habits">
+          <div class="goal-habits" data-composition-card>
             <h4 class="product-caption">
               <Copy name="blocks.goal.linked" />
             </h4>

@@ -1307,37 +1307,15 @@ button.metric-bar-track:focus-visible {
   text-wrap: balance;
 }
 .example-card {
-  position: relative;
-  container-type: inline-size;
-  inline-size: min(440px, 100%);
-  aspect-ratio: 1 / 1;
-  padding: 24px;
-  border-radius: var(--radius-xl);
-  background: var(--color-bg-card);
-  box-shadow: inset 0 0 0 1px var(--color-hairline);
+  inline-size: 100%;
 }
 .example-app {
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  inline-size: 440px;
-  /* One transform list: the CSS minifier drops a separate two-value translate beside transform. */
-  transform: translate(-50%, -50%) scale(0.64);
+  inline-size: 100%;
 }
-@container (width < 360px) {
-  .example-app {
-    transform: translate(-50%, -50%) scale(0.56);
-  }
-}
-@container (width < 320px) {
-  .example-app {
-    transform: translate(-50%, -50%) scale(0.48);
-  }
-}
-@container (width < 280px) {
-  .example-app {
-    transform: translate(-50%, -50%) scale(0.4);
-  }
+.orbit-composition {
+  display: grid;
+  gap: 16px;
+  inline-size: 100%;
 }
 @media (min-width: 48rem) {
   .example-row[data-card-side="right"] .example-card {
@@ -1764,7 +1742,7 @@ button.metric-bar-track:focus-visible {
   overscroll-behavior: contain;
 }
 .phone-carousel[data-enhanced] {
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 .phone-slide {
   display: flex;
@@ -1969,4 +1947,141 @@ button.metric-bar-track:focus-visible {
     animation: none;
     transform: scaleX(1);
   }
+}
+
+.habit-row[data-habit-toggle] {
+  inline-size: 100%;
+  min-block-size: 56px;
+  block-size: auto;
+  text-align: start;
+  cursor: pointer;
+}
+.habit-copy {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 0;
+}
+.habit-copy .habit-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.status-ring:not(.is-done) svg {
+  display: none;
+}
+.week-chart {
+  gap: 0;
+  grid-template-columns: repeat(7, minmax(24px, 1fr));
+  overflow-x: auto;
+}
+.chart-column {
+  min-inline-size: 24px;
+  padding-inline: 4px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.chart-track {
+  min-block-size: 48px;
+}
+.chart-column[aria-pressed="true"] {
+  background: var(--color-primary-dim);
+}
+.chart-bar,
+.metric-bar,
+.orbit-month-chart > span,
+.orbit-wrapped-bars > span {
+  background: var(--color-primary);
+}
+.metric-bar[data-selected="true"] {
+  background: var(--color-primary-soft);
+}
+.product-icon {
+  background: var(--color-primary-dim);
+  color: var(--color-primary-soft);
+}
+.orbit-list-row[type="button"] {
+  cursor: pointer;
+  text-align: start;
+  border-radius: var(--radius-sm);
+}
+.privacy-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.privacy-actions .text-link,
+.privacy-actions .text-link > [data-copy-en] {
+  white-space: normal;
+  text-align: start;
+}
+.export-filename {
+  overflow-wrap: anywhere;
+}
+.orbit-date {
+  cursor: pointer;
+}
+.orbit-date[aria-pressed="true"] {
+  background: var(--color-primary-dim);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+  color: var(--color-primary-soft);
+}
+.calendar-day-card h3 {
+  font-size: var(--fs-base);
+}
+[data-calendar-events] {
+  display: grid;
+  gap: 8px;
+}
+[data-calendar-events] > p:not(.product-caption) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.accent-word {
+  color: var(--color-primary-soft);
+}
+.back-to-top {
+  position: fixed;
+  inset-inline-end: max(16px, env(safe-area-inset-right));
+  inset-block-end: max(16px, env(safe-area-inset-bottom));
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-fg-on-primary);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .habit-row[data-habit-toggle]:hover,
+  .orbit-date:hover,
+  .orbit-list-row[type="button"]:hover,
+  .chart-column:hover {
+    background: var(--color-bg-hover);
+  }
+}
+@media (width < 48rem) {
+  .example-app .product-block {
+    padding: 16px;
+  }
+  .orbit-month-grid {
+    gap: 0;
+  }
+  .orbit-date {
+    min-inline-size: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-composition-card] {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+}
+
+[data-auto-stopped="true"] .carousel-segment[aria-current="true"] .carousel-progress-fill {
+  animation: none;
+  transform: scaleX(1);
 }
