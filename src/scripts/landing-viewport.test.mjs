@@ -7,6 +7,77 @@ import ts from "typescript";
 const css = readFileSync("src/styles/landing.css", "utf8");
 const code = readFileSync("src/scripts/scroll.ts", "utf8");
 
+function unconditionalRules(source) {
+  const rules = [];
+  let depth = 0;
+  let start = 0;
+  source = source.replace(/\/\*[\s\S]*?\*\//g, "");
+  for (let index = 0; index < source.length; index++) {
+    if (source[index] === "{") depth++;
+    if (source[index] !== "}") continue;
+    if (--depth !== 0) continue;
+    const rule = source.slice(start, index + 1).trim();
+    if (!rule.startsWith("@")) rules.push(rule);
+    start = index + 1;
+  }
+  return rules.join("\n");
+}
+
+test("phone product screens use a zero-minimum column at every viewport width", () => {
+  const slide = unconditionalRules(css).match(
+    /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,
+  )?.[1];
+  assert.ok(slide, "the product screen layout must apply outside media queries");
+  assert.match(slide, /grid-template-columns:\s*minmax\(0, 1fr\)/);
+});
+
+test("phone product cards fill their slide outside media queries", () => {
+  const card = unconditionalRules(css).match(/\.phone-slide > \.product-card\s*\{([^}]+)\}/)?.[1];
+  assert.ok(card, "full-width cards must fit desktop phones as well as mobile phones");
+  assert.match(card, /(?:^|;)\s*inline-size:\s*100%\s*;/);
+  assert.match(card, /max-inline-size:\s*(?:100%|none)\s*;/);
+  assert.match(card, /min-inline-size:\s*0\s*;/);
+});
+
+test("phone text wraps to two lines without splitting words or pushing out the habit check", () => {
+  const base = unconditionalRules(css);
+  const text = base.match(
+    /\.phone-slide \.habit-name,\s*\.phone-slide \.proactive-line p,\s*\.phone-slide \.demo-habit \.t-row\s*\{([^}]+)\}/,
+  )?.[1];
+  assert.ok(text, "habit titles and the Astra line share a bounded text layout");
+  assert.match(text, /min-inline-size:\s*0\s*;/);
+  assert.match(text, /display:\s*-webkit-box\s*;/);
+  assert.match(text, /-webkit-box-orient:\s*vertical\s*;/);
+  assert.match(text, /-webkit-line-clamp:\s*2\s*;/);
+  assert.match(text, /overflow:\s*hidden\s*;/);
+  assert.match(text, /white-space:\s*normal\s*;/);
+  assert.match(text, /overflow-wrap:\s*normal\s*;/);
+  assert.match(text, /word-break:\s*normal\s*;/);
+  assert.match(base, /\.phone-slide \.habit-copy\s*\{[^}]*flex:\s*1\s*;/);
+  assert.match(
+    base,
+    /\.phone-slide \.habit-copy \.product-caption\s*\{[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;[^}]*text-overflow:\s*ellipsis/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.phone-slide \.(?:habit-emoji|today-pager svg)\s*\{[^}]*display:\s*none/,
+  );
+});
+
+test("phone screens keep the same inset and gaps outside viewport media queries", () => {
+  const base = unconditionalRules(css);
+  for (const selector of [".phone-slide[data-product-screen]", ".phone-slide .astra-demo"]) {
+    const rule = base.split(`${selector} {`)[1]?.split("}")[0];
+    assert.ok(rule, `${selector} must have an unconditional inset`);
+    assert.match(rule, /padding:\s*8px 8px 24px\s*;/);
+  }
+  assert.match(base, /\.phone-slide > \.product-card\s*\{[^}]*padding:\s*12px\s*;/);
+  assert.match(base, /\.phone-slide\[data-product-screen\]\s*\{[^}]*gap:\s*16px\s*;/);
+  assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*12px\s*;/);
+  assert.match(base, /\.phone-slide \.demo-preview\s*\{[^}]*gap:\s*12px\s*;/);
+  assert.match(base, /\.phone-slide \.demo-input-area\s*\{[^}]*gap:\s*8px\s*;/);
+});
+
 function harness(reduced = false) {
   const frames = [];
   const listeners = new Map();

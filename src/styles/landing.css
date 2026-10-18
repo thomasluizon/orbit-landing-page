@@ -1644,14 +1644,66 @@ button.metric-bar-track:focus-visible {
 }
 .phone-slide[data-product-screen] {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 16px;
   padding: 8px 8px 24px;
   overflow-y: auto;
   touch-action: pan-y;
 }
+.phone-slide > .product-card {
+  grid-template-columns: minmax(0, 1fr);
+  inline-size: 100%;
+  max-inline-size: none;
+  min-inline-size: 0;
+  padding: 12px;
+}
+.phone-slide .habit-row {
+  min-inline-size: 0;
+  block-size: auto;
+  min-block-size: 64px;
+}
+.phone-slide .habit-copy {
+  flex: 1;
+}
+.phone-slide .habit-name,
+.phone-slide .proactive-line p,
+.phone-slide .demo-habit .t-row {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  min-inline-size: 0;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.phone-slide .habit-copy .product-caption {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .phone-slide .astra-demo {
   inline-size: 100%;
+  gap: 12px;
+  padding: 8px 8px 24px;
+}
+.phone-slide .demo-heading {
+  gap: 8px;
+}
+.phone-slide .demo-heading h2 {
+  font-size: 16px;
+}
+.phone-slide .demo-preview .t-row,
+.phone-slide .demo-preview .t-secondary,
+.phone-slide .demo-thread .t-body {
+  font-size: 14px;
+}
+.phone-slide .demo-preview {
+  gap: 12px;
+}
+.phone-slide .demo-input-area {
+  gap: 8px;
 }
 .demo-exchange {
   margin-block-start: 0;
@@ -1755,47 +1807,11 @@ button.metric-bar-track:focus-visible {
   .hero-products {
     display: none;
   }
-  .phone-slide > .product-card {
-    inline-size: 100%;
-    max-inline-size: none;
-    padding: 12px;
-  }
-  .phone-slide .habit-row {
-    block-size: auto;
-    min-block-size: 64px;
-  }
-  .phone-slide .habit-emoji {
-    display: none;
-  }
-  .phone-slide .today-pager svg {
-    display: none;
-  }
   .hero-copy {
     gap: 24px;
   }
   .hero {
     gap: 24px;
-  }
-  .astra-demo {
-    gap: 12px;
-    padding: 8px 8px 24px;
-  }
-  .demo-heading {
-    gap: 8px;
-  }
-  .demo-heading h2 {
-    font-size: 16px;
-  }
-  .demo-preview .t-row,
-  .demo-preview .t-secondary,
-  .demo-thread .t-body {
-    font-size: 14px;
-  }
-  .demo-preview {
-    gap: 12px;
-  }
-  .demo-input-area {
-    gap: 8px;
   }
 }
 @media (width <= 640px) {
