@@ -337,8 +337,25 @@ test("composition fitting follows font, size, locale and interaction changes in 
   }
 });
 
-test("landing CSS contains no comments", () => {
+test("composition fitting changes only visibility and preserves the canvas visual primitives", () => {
   assert.equal((css.match(/\/\*/g) ?? []).length, 0);
+  const folded = stylesheetRules(css).filter((rule) =>
+    rule.selector.includes("[data-composition-folded]"),
+  );
+  assert.equal(folded.length, 1);
+  assert.equal(folded[0].declarations.trim(), "display: none;");
+  const global = readFileSync("src/styles/global.css", "utf8");
+  assert.deepEqual(
+    [...global.matchAll(/--fs-[\w-]+:\s*(\d+)px;/g)].map(([, size]) => Number(size)),
+    [12, 14, 16, 17, 20, 22, 28, 34, 44, 60],
+  );
+  assert.match(global, /--spacing:\s*4px;/);
+  assert.match(css, /\.orbit-composition\s*\{[^}]*gap:\s*12px;/);
+  assert.match(css, /\.product-block\s*\{[^}]*gap:\s*8px;[^}]*padding:\s*16px;/);
+  assert.match(
+    css,
+    /\.chart-bar,\s*\.metric-bar,\s*\.orbit-month-chart > span,\s*\.orbit-wrapped-bars > span\s*\{\s*background:\s*var\(--color-primary\);/,
+  );
 });
 
 test("phone product screens use a zero-minimum column at every viewport width", () => {
