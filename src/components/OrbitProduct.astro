@@ -59,12 +59,13 @@ function datedCopy(
                 {day}
               </span>
             ))}
-            {cells.map((day) =>
+            {cells.map((day, index) =>
               day > 0 && day <= 31 ? (
                 <button
                   type="button"
                   class="orbit-date"
                   data-calendar-day={day}
+                  data-calendar-week={Math.floor(index / 7)}
                   aria-pressed={day === 17}
                   aria-label={datedCopy("orbit.selectedDay", day)}
                   data-copy-label-en={datedCopy("orbit.selectedDay", day)}
@@ -76,7 +77,7 @@ function datedCopy(
                   )}
                 </button>
               ) : (
-                <span />
+                <span data-calendar-week={Math.floor(index / 7)} />
               ),
             )}
           </div>
@@ -92,7 +93,7 @@ function datedCopy(
           </h3>
           <HabitRow habit="walk" />
           <HabitRow habit="water" timing="done" />
-          <div data-calendar-events>
+          <div data-calendar-events data-composition-secondary>
             <>
               <p class="product-caption">
                 <Copy name="orbit.events" />
@@ -165,6 +166,7 @@ function datedCopy(
           </p>
           <p
             class="product-caption"
+            data-composition-secondary
             data-copy-en={datedCopy("orbit.exampleDate")}
             data-copy-pt={datedCopy("orbit.exampleDate", 18, "pt-BR")}
           >
@@ -200,7 +202,7 @@ function datedCopy(
               <Copy name="orbit.streak" />
             </>
           </div>
-          <div class="orbit-streak-strip" aria-hidden="true">
+          <div class="orbit-streak-strip" aria-hidden="true" data-composition-secondary>
             {Array.from({ length: 14 }, (_, index) => (
               <span data-frozen={index === 5 || undefined} data-missed={index < 2 || undefined}>
                 {index === 5 ? <Snowflake size={16} /> : index < 2 ? "−" : <Check size={16} />}
@@ -239,7 +241,7 @@ function datedCopy(
                 </div>
               </>
             </div>
-            <div class="habit-row">
+            <div class="habit-row" data-composition-secondary>
               <>
                 <span class="status-ring is-done" aria-hidden="true">
                   <Check size={16} />
@@ -286,7 +288,7 @@ function datedCopy(
             <p class="product-caption">
               <Copy name="orbit.wrapped" />
             </p>
-            <div class="orbit-wrapped-bars" aria-hidden="true">
+            <div class="orbit-wrapped-bars" aria-hidden="true" data-composition-secondary>
               {exampleMonth.slice(-7).map((value) => (
                 <span style={`--bar-height: ${value}%`} />
               ))}

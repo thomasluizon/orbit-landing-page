@@ -104,7 +104,7 @@ function doneLabel(language: Language, index: number) {
               </>
             </div>
           </div>
-          <dl class="metric-figures" data-composition-card>
+          <dl class="metric-figures" data-composition-card data-composition-secondary>
             <div>
               <>
                 <dt>
@@ -141,8 +141,11 @@ function doneLabel(language: Language, index: number) {
               {translations.en["demo.proposed"]}
             </p>
             <div class="breakdown-list">
-              {exampleBreakdown.map(({ habit, cadence }) => (
-                <div class="breakdown-row">
+              {exampleBreakdown.map(({ habit, cadence }, index) => (
+                <div
+                  class="breakdown-row"
+                  data-composition-secondary={index === exampleBreakdown.length - 1 || undefined}
+                >
                   <span class="habit-name">
                     <Copy name={`blocks.breakdown.${habit}`} />
                   </span>
@@ -180,7 +183,7 @@ function doneLabel(language: Language, index: number) {
               style={`--goal-progress: ${(exampleGoal.progress / exampleGoal.target) * 100}%`}
             />
           </div>
-          <p class="product-caption">
+          <p class="product-caption" data-composition-secondary>
             <Copy name="blocks.goal.derived" />
           </p>
           <div class="goal-habits" data-composition-card>

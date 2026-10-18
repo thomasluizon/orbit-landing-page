@@ -116,6 +116,227 @@ test("composition grid targets fill adjoining cells and keep at least 44px of he
   assert.match(standalone.declarations, /min-block-size:\s*44px;/);
 });
 
+function compositionFitHarness() {
+  const exports = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    { exports, require: () => ({ gsap: { registerPlugin() {} } }) },
+  );
+  return exports;
+}
+
+test("calendar week selection derives a smaller window from measured content height", () => {
+  const { calendarWeekRange } = compositionFitHarness();
+  assert.equal(typeof calendarWeekRange, "function");
+  for (let selected = 0; selected < 6; selected++) {
+    for (let weeks = 1; weeks <= 6; weeks++) {
+      const [start, end] = calendarWeekRange(6, selected, 720, 456 + weeks * 44, 44);
+      assert.equal(end - start, weeks);
+      assert.ok(start >= 0 && end <= 6);
+      assert.ok(start <= selected && end > selected, "the selected week always remains visible");
+      if (weeks >= 3 && selected > 0 && selected < 5) {
+        assert.ok(start <= selected - 1 && end > selected + 1);
+      }
+    }
+  }
+  assert.deepEqual(Array.from(calendarWeekRange(6, 3, 720, 576, 44)), [2, 4]);
+  assert.deepEqual(Array.from(calendarWeekRange(6, 3, 720, 800, 44)), [0, 6]);
+});
+
+function measuredComposition({ height = 720, secondaryHeight = 80, calendar = true } = {}) {
+  const item = (extra = {}) => ({
+    folded: false,
+    dataset: {},
+    setAttribute(name) {
+      assert.equal(name, "data-composition-folded");
+      this.folded = true;
+    },
+    removeAttribute(name) {
+      assert.equal(name, "data-composition-folded");
+      this.folded = false;
+    },
+    ...extra,
+  });
+  const cells = calendar
+    ? Array.from({ length: 42 }, (_, index) =>
+        item({
+          dataset: { calendarWeek: String(Math.floor(index / 7)) },
+          getBoundingClientRect: () => ({ height: 44 }),
+        }),
+      )
+    : [];
+  const secondary = item();
+  const grid = {
+    querySelectorAll: () => cells,
+    querySelector: () => cells[24],
+  };
+  const app = {
+    querySelector: () => (calendar ? grid : null),
+    querySelectorAll: (selector) =>
+      selector === "[data-composition-folded]"
+        ? [...cells, secondary].filter((cell) => cell.folded)
+        : [secondary],
+    getBoundingClientRect: () => ({
+      height:
+        height -
+        cells.filter((cell) => cell.folded).length * (44 / 7) -
+        (secondary.folded ? secondaryHeight : 0),
+    }),
+  };
+  return { app, cells, secondary };
+}
+
+test("composition fitting selects complete weeks on desktop and restores normal phone flow", () => {
+  const { fitComposition } = compositionFitHarness();
+  assert.equal(typeof fitComposition, "function");
+  for (const width of [768, 1024, 1280, 1920]) {
+    for (let height = 720; height <= 900; height++) {
+      const composition = measuredComposition();
+      fitComposition(composition.app, width, height);
+      assert.ok(composition.app.getBoundingClientRect().height <= height * 0.8);
+      assert.equal(composition.cells[24].folded, false);
+      for (let index = 0; index < 42; index += 7) {
+        assert.equal(
+          new Set(composition.cells.slice(index, index + 7).map((c) => c.folded)).size,
+          1,
+        );
+      }
+      fitComposition(composition.app, 767, 568);
+      assert.ok(composition.cells.every((cell) => !cell.folded));
+      assert.equal(composition.secondary.folded, false);
+      assert.equal(composition.app.getBoundingClientRect().height, 720);
+    }
+  }
+  const tall = measuredComposition({ height: 1000 });
+  fitComposition(tall.app, 768, 720);
+  assert.ok(tall.cells.some((cell) => cell.folded));
+  fitComposition(tall.app, 768, 1400);
+  assert.ok(tall.cells.every((cell) => !cell.folded));
+  assert.equal(tall.secondary.folded, false);
+});
+
+test("composition fitting folds secondary content only after measuring an excess", () => {
+  const { fitComposition } = compositionFitHarness();
+  assert.equal(typeof fitComposition, "function");
+  for (const calendar of [false, true]) {
+    const composition = measuredComposition({ height: calendar ? 800 : 620, calendar });
+    fitComposition(composition.app, 768, 720);
+    assert.equal(composition.secondary.folded, true);
+    assert.ok(composition.app.getBoundingClientRect().height <= 576);
+    fitComposition(composition.app, 320, 568);
+    assert.equal(composition.secondary.folded, false);
+  }
+});
+
+test("measured composition fitting has a desktop width guard and never writes a height or scale", () => {
+  const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.match(source, /if \(viewportWidth < 768\) return;/);
+  assert.match(source, /viewportHeight \* 0\.8/);
+  assert.match(source, /fitComposition\(app, window\.innerWidth, window\.innerHeight\)/);
+  assert.doesNotMatch(source, /--composition-|\.style\.|\bscale\s*:|maxBlockSize|80svh/);
+  assert.match(css, /\.example-app \[data-composition-folded\]\s*\{\s*display:\s*none;/);
+});
+
+test("composition fitting follows font, size, locale and interaction changes in both motion preferences", async () => {
+  for (const reduced of [false, true]) {
+    const exports = {};
+    const composition = measuredComposition();
+    const listeners = new Map();
+    const observed = [];
+    let observeSize;
+    let disconnected = false;
+    let refreshes = 0;
+    const window = {
+      innerWidth: 320,
+      innerHeight: 568,
+      addEventListener: (name, callback) => listeners.set(name, callback),
+      removeEventListener: (name, callback) => {
+        assert.equal(listeners.get(name), callback);
+        listeners.delete(name);
+      },
+    };
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText,
+      {
+        exports,
+        require: (name) => {
+          if (name === "gsap")
+            return {
+              gsap: {
+                registerPlugin() {},
+                matchMedia: () => ({
+                  add(query, callback) {
+                    if (query === "all" || !reduced) callback();
+                  },
+                  revert() {},
+                }),
+              },
+            };
+          if (name === "gsap/ScrollTrigger")
+            return { ScrollTrigger: { refresh: () => refreshes++ } };
+          if (name === "lenis")
+            return {
+              default: class {
+                on() {}
+              },
+            };
+          return {};
+        },
+        document: {
+          getElementById: () => null,
+          querySelector: () => null,
+          querySelectorAll: (selector) =>
+            [".example-app", ".example-card"].includes(selector) ? [composition.app] : [],
+          fonts: { ready: Promise.resolve() },
+        },
+        window,
+        ResizeObserver: class {
+          constructor(callback) {
+            observeSize = callback;
+          }
+          observe(target) {
+            observed.push(target);
+          }
+          disconnect() {
+            disconnected = true;
+          }
+        },
+      },
+    );
+    const dispose = exports.mountLandingMotion();
+    assert.deepEqual(observed, [composition.app]);
+    assert.ok(composition.cells.every((cell) => !cell.folded));
+    window.innerWidth = 768;
+    window.innerHeight = 720;
+    await Promise.resolve();
+    assert.ok(
+      composition.cells.some((cell) => cell.folded),
+      "font readiness also fits content",
+    );
+    for (const refresh of [
+      observeSize,
+      listeners.get("resize"),
+      listeners.get("orbit:language-changed"),
+      listeners.get("orbit:layout-changed"),
+    ]) {
+      window.innerWidth = 320;
+      refresh();
+      assert.ok(composition.cells.every((cell) => !cell.folded));
+      window.innerWidth = 768;
+      refresh();
+      assert.ok(composition.app.getBoundingClientRect().height <= 576);
+    }
+    assert.equal(refreshes, 9);
+    dispose();
+    assert.equal(disconnected, true);
+    assert.equal(listeners.size, 0);
+  }
+});
+
 test("landing CSS contains no comments", () => {
   assert.equal((css.match(/\/\*/g) ?? []).length, 0);
 });

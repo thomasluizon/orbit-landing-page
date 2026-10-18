@@ -47,6 +47,23 @@ function descendants(node) {
 const nodes = expand(page).flatMap(descendants);
 const sections = nodes.filter((node) => attributes(node)["data-section"]);
 
+test("calendar dates and padding cells expose complete weeks for measured composition fitting", async () => {
+  const source = readFileSync("src/components/OrbitProduct.astro", "utf8");
+  const cells = descendants((await parse(source)).ast).filter((node) =>
+    Object.hasOwn(attributes(node), "data-calendar-week"),
+  );
+  assert.deepEqual(cells.map((node) => node.name).sort(), ["button", "span"]);
+  assert.match(source, /cells\.map\(\(day, index\)/);
+  for (let index = 0; index < 42; index++) {
+    for (const cell of cells) {
+      assert.equal(
+        vm.runInNewContext(attributes(cell)["data-calendar-week"], { index }),
+        Math.floor(index / 7),
+      );
+    }
+  }
+});
+
 test("the owning page follows Pierre's section order with Orbit product compositions", () => {
   assert.deepEqual(
     sections

@@ -1259,6 +1259,9 @@ button.metric-bar-track:focus-visible {
   font-size: var(--fs-sm);
   line-height: var(--lh-meta);
 }
+.example-app [data-composition-folded] {
+  display: none;
+}
 .example-app .product-caption {
   line-height: var(--lh-meta);
 }
@@ -1291,13 +1294,6 @@ button.metric-bar-track:focus-visible {
   align-content: start;
   min-block-size: 0;
   gap: 0;
-}
-.example-app .orbit-calendar {
-  grid-template-rows: minmax(0, 1fr) auto;
-}
-.example-app .orbit-calendar .orbit-product {
-  grid-template-rows: auto auto minmax(0, 1fr);
-  min-block-size: 0;
 }
 .example-app .orbit-wrapped-bars {
   block-size: 48px;
