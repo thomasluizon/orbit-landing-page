@@ -306,7 +306,7 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .dialog-close:hover {
+  .language-toggle:hover {
     background: var(--color-bg-hover);
   }
   #waitlist-email:hover:not(:focus-visible) {

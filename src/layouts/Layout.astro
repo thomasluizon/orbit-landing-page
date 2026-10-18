@@ -121,6 +121,6 @@ const structuredData = {
   <body class="bg-bg text-fg-1 font-sans antialiased">
     {withAstraGlyph && <AstraGlyph definition />}
     <slot />
-    {posthogKey && <ConsentBanner appUrl={appUrl} />}
+    <ConsentBanner appUrl={appUrl} analyticsEnabled={Boolean(posthogKey)} />
   </body>
 </html>

@@ -82,7 +82,7 @@ src/
     i18n.ts              # Language cookie, toggle and translated metadata
     demo.ts              # Local scripted examples
     waitlist.ts          # Turnstile and waitlist submission
-    waitlist-dialog.ts   # Fragment navigation and modal dismissal
+    waitlist-section.ts  # Fragment navigation and email focus
     scroll.ts           # Deferred scroll animation startup
     landing-motion.ts   # Lenis and GSAP choreography
   styles/

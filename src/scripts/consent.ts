@@ -100,7 +100,7 @@ declineButton?.addEventListener("click", () => {
 const choice = readConsentChoice();
 if (choice === "accepted") {
   window.dispatchEvent(new CustomEvent("orbit:analytics-consent-granted"));
-} else if (choice === null) {
+} else if (choice === null && banner?.dataset?.analyticsEnabled !== "false") {
   scheduleAfterPageSettles(() => {
     if (readConsentChoice() === null) showBanner();
   });

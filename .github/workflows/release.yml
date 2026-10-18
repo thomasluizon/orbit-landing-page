@@ -268,7 +268,7 @@ jobs:
           const serviceOrigin = service.serviceDetails?.url;
           if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
 
-          const buildVariables = await jsonRequest(`${renderUrl}/env-vars`, { headers: renderHeaders });
+          const buildVariables = await jsonRequest(`${renderUrl}/env-vars?limit=100`, { headers: renderHeaders });
           for (const key of ["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"]) {
             const configured = buildVariables.find(({ envVar }) => envVar.key === key)?.envVar.value;
             if (configured !== process.env[key]) {

@@ -74,6 +74,19 @@ function updateToday() {
     const repeat = row.querySelector<HTMLElement>("[data-approved-repeat]");
     if (name) name.textContent = habitTitle();
     if (repeat) repeat.textContent = translations[getLang()][schedule];
+    const originals = row
+      .closest(".product-card")
+      ?.querySelectorAll<HTMLElement>(
+        "[data-habit-toggle]:not([data-demo-approved]):not([data-demo-approved-second])",
+      );
+    originals?.forEach((habit, index) => {
+      habit.hidden = index === 0 || current === "move";
+    });
+  });
+  document.querySelectorAll<HTMLElement>("[data-demo-approved-second]").forEach((row) => {
+    row.hidden = current !== "move";
+    const repeat = row.querySelector("[data-approved-second-repeat]");
+    if (repeat) repeat.textContent = translations[getLang()][schedule];
   });
 }
 

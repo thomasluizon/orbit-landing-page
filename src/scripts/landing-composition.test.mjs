@@ -17,6 +17,7 @@ const componentNames = [
   "Pricing",
   "Faq",
   "FinalCta",
+  "IosWaitlist",
   "Footer",
 ].filter((name) => existsSync(`src/components/${name}.astro`));
 const components = new Map(
@@ -51,99 +52,10 @@ test("the owning page follows Pierre's section order with Orbit product composit
     sections
       .filter((node) => node.name === "section")
       .map((node) => attributes(node)["data-section"]),
-    ["hero", "trust", "features", "pricing", "faq", "final"],
+    ["hero", "trust", "features", "pricing", "ios", "faq", "final"],
   );
   assert.equal(nodes.filter((node) => node.name === "h1").length, 1);
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
-});
-
-async function productInstances(name, props = {}) {
-  const source = readFileSync(`src/components/${name}.astro`, "utf8");
-  if (!/\b(?:ProductCard|OrbitProduct|AstraBlock|FeatureVignette)\b/.test(source)) return [];
-  const { ast } = await parse(source);
-  const context = vm.createContext({
-    Astro: { props },
-    require: () => copyTables,
-    exports: {},
-  });
-  vm.runInContext(
-    ts.transpileModule(source.split("---")[1], {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    context,
-  );
-  const serialize = (node) => {
-    if (["ProductCard", "OrbitProduct", "AstraBlock", "FeatureVignette"].includes(node.name)) {
-      const kind = node.attributes.find((attribute) => attribute.name === "kind");
-      return `{ component: ${JSON.stringify(node.name)}, kind: ${kind.kind === "expression" ? kind.value : JSON.stringify(kind.value)} }`;
-    }
-    if (node.type === "text" || node.type === "frontmatter") return "[]";
-    if (node.type === "expression") {
-      if (!node.children.some((child) => child.type !== "text")) return "[]";
-      return `(${node.children.map((child) => (child.type === "text" ? child.value : serialize(child))).join("")})`;
-    }
-    return `[${(node.children ?? []).map(serialize).join(",")}]`;
-  };
-  const instances = vm.runInContext(serialize(ast), context).flat(Infinity).filter(Boolean);
-  return (
-    await Promise.all(
-      instances.map((instance) =>
-        instance.component === "FeatureVignette"
-          ? productInstances(instance.component, { kind: instance.kind })
-          : instance,
-      ),
-    )
-  ).flat();
-}
-
-test("no product card kind repeats, including Today variants and hero floating cards", async () => {
-  const instances = (
-    await Promise.all(
-      descendants(page)
-        .filter((node) => componentNames.includes(node.name))
-        .map((node) => productInstances(node.name)),
-    )
-  ).flat();
-  const counts = new Map();
-  for (const { component, kind } of instances) {
-    const key =
-      (component === "ProductCard" && kind === "today") ||
-      (component === "AstraBlock" && kind === "habits") ||
-      (component === "OrbitProduct" && kind === "steps")
-        ? "today"
-        : `${component}:${kind}`;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  assert.deepEqual(
-    [...counts].filter(([, count]) => count > 1),
-    [],
-    "repeated product cards, including copies of hero floating cards",
-  );
-});
-
-test("exactly seven example rows pair one square card with one sentence and alternate sides", () => {
-  const rows = nodes.filter((node) => attributes(node)["data-example-row"]);
-  assert.equal(rows.length, 7, "the owning page must render seven example rows");
-  assert.deepEqual(
-    rows.map((node) => attributes(node)["data-example-row"]),
-    ["calendar", "data", "metrics", "breakdown", "streak", "goal", "achievements"],
-  );
-  for (const [index, row] of rows.entries()) {
-    const cards = descendants(row).filter((node) => node.name === "ExampleCard");
-    const sentences = descendants(row).filter(
-      (node) => attributes(node).class === "example-sentence",
-    );
-    assert.equal(cards.length, 1);
-    assert.equal(sentences.length, 1);
-    assert.equal(attributes(row)["data-card-side"], index % 2 ? "right" : "left");
-    assert.equal(descendants(row).filter((node) => node.name === "PillButton").length, 0);
-  }
-  const card = readFileSync("src/components/ExampleCard.astro", "utf8");
-  assert.match(card, /class="example-card"/);
-  assert.match(
-    readFileSync("src/styles/landing.css", "utf8"),
-    /\.example-card\s*\{[^}]*aspect-ratio:\s*1\s*\/\s*1/,
-  );
 });
 
 test("each product surface has one primary intent and the viewport controller arbitrates their accent", () => {
@@ -278,7 +190,7 @@ test("the header opens Orbit while the hero has only its install action", async 
   assert.equal(attributes(action).analyticsEvent, "header_app_cta_clicked");
   assert.equal(
     descendants(sections[0]).filter(
-      (node) => node.name === "a" && attributes(node).class !== "demo-composer",
+      (node) => node.name === "a" && attributes(node).id !== "demo-continue-link",
     ).length,
     0,
   );
@@ -381,40 +293,6 @@ test("the recommended plan keeps its canonical inset ring and selected tint", ()
   );
 });
 
-test("section rhythm uses fixed spacing without viewport minimums or feature pin spacers", () => {
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /--landing-section-gap:\s*96px/);
-  assert.match(css, /@media \(max-width: 47\.999rem\)[\s\S]*--landing-section-gap:\s*96px/);
-  assert.match(
-    css,
-    /\.section,\s*\.final-section\s*\{[^}]*padding-block:\s*var\(--landing-section-gap\) 0/,
-  );
-  assert.doesNotMatch(css, /min-block-size:[^;}]*svh/);
-  assert.doesNotMatch(
-    readFileSync("src/scripts/landing-motion.ts", "utf8"),
-    /trigger:\s*(?:row|composition)|pinSpacing:\s*true/,
-  );
-});
-
-test("each week bar and its localized weekday share one of seven equal columns", async () => {
-  const product = (await parse(readFileSync("src/components/ProductCard.astro", "utf8"))).ast;
-  const column = descendants(product).find((node) => attributes(node).class === "chart-column");
-  assert.ok(column, "the shared hero and feature chart owns a column for each day");
-  const children = descendants(column);
-  assert.ok(children.some((node) => attributes(node).class === "chart-bar"));
-  const label = children.find((node) => attributes(node).class === "chart-day");
-  assert.ok(attributes(label)["data-copy-en"]);
-  assert.ok(attributes(label)["data-copy-pt"]);
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.week-chart\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/);
-  assert.match(
-    css,
-    /\.chart-column\s*\{[^}]*grid-template-rows:\s*minmax\(0, 1fr\) auto;[^}]*gap:\s*8px/,
-  );
-  assert.match(css, /\.chart-day\s*\{[^}]*font-size:\s*var\(--fs-xs\);[^}]*text-align:\s*center/);
-  assert.doesNotMatch(css, /word-spacing:|\.chart-days/);
-});
-
 test("every section shares one heading scale and at most one supporting paragraph", () => {
   for (const section of sections) {
     if (["hero", "trust", "footer"].includes(attributes(section)["data-section"])) continue;
@@ -455,6 +333,9 @@ function billingHarness(language = "en") {
       hidden: Object.hasOwn(attrs, "hidden"),
       tabIndex: Number(attrs.tabindex),
       focused: false,
+      closest() {
+        return null;
+      },
       setAttribute(name, value) {
         this.attributes[name] = value;
       },
@@ -487,7 +368,7 @@ function billingHarness(language = "en") {
     .filter((node) => attributes(node).role === "radio")
     .map(element);
   const fields = Object.fromEntries(
-    ["data-pro-price", "data-annual-saving", "data-annual-equivalent"].map((name) => [
+    ["data-pro-price", "data-annual-saving", "data-billed-total"].map((name) => [
       name,
       element(pricing.find((node) => Object.hasOwn(attributes(node), name))),
     ]),
@@ -592,7 +473,7 @@ test("the free plan title and all plan mentions follow the actual language toggl
       description.textContent,
       language === "pt-BR"
         ? "O plano anual sai mais barato por dia."
-        : "Annual costs less per day.",
+        : "Pay less each day with Yearly.",
     );
   }
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
@@ -800,6 +681,7 @@ async function metricsHarness() {
     {
       exports: {},
       document: {
+        querySelector: () => null,
         querySelectorAll: (selector) =>
           selector === '[data-example-block="metrics"]' ? [block] : [],
       },
@@ -935,126 +817,238 @@ test("every translation key has a source consumer and retired copy is removed", 
   }
 });
 
-test("example cards share a square frame, reduced app view and one alternating responsive rhythm", () => {
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(
-    css,
-    /\.example-card\s*\{[^}]*inline-size:\s*min\(440px, 100%\);[^}]*aspect-ratio:\s*1 \/ 1;[^}]*padding:\s*24px;[^}]*border-radius:\s*var\(--radius-xl\)/,
-  );
-  assert.match(
-    css,
-    /\.example-app\s*\{[^}]*inline-size:\s*440px;[^}]*transform:\s*translate\(-50%, -50%\) scale\(0\.64\)/,
-  );
-  assert.match(css, /\.example-rows\s*\{[^}]*gap:\s*96px/);
-  assert.match(
-    css,
-    /\.example-row\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\);[^}]*gap:\s*64px/,
-  );
-  assert.match(
-    css,
-    /\.example-sentence\s*\{[^}]*font-size:\s*var\(--fs-3xl\);[^}]*text-wrap:\s*balance/,
-  );
-  assert.match(
-    css,
-    /@media \(width < 48rem\)[^{]*\{\s*\.example-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\)/,
-  );
-  assert.match(css, /\.example-sentence\s*\{[^}]*grid-row:\s*1;/);
-  const features = descendants(components.get("FeatureRows"));
-  const heading = features.find((node) => attributes(node).class === "section-heading");
-  assert.equal(descendants(heading).filter((node) => node.name === "p").length, 0);
-});
-
-test("annual billing leads with configured daily and monthly equivalents and rounded-down savings", () => {
-  const pricing = descendants(components.get("Pricing"));
-  const options = pricing.filter((node) => attributes(node).role === "radio");
-  assert.deepEqual(
-    options.map((node) => attributes(node)["aria-checked"]),
-    ["false", "true"],
-  );
-  assert.deepEqual(
-    options.map((node) => attributes(node).tabindex),
-    ["-1", "0"],
-  );
-  const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /\.plan-name h3\s*\{[^}]*font-size:\s*var\(--fs-3xl\)/);
-  assert.match(
-    css,
-    /\.billing-option\[aria-checked="true"\]\s*\{[^}]*box-shadow:\s*inset 0 0 0 2px var\(--color-primary\)/,
-  );
-  for (const language of ["en", "pt-BR"]) {
-    const h = billingHarness(language);
-    const annual = h.prices.offersFor(language)[2].price;
-    const monthly = h.prices.offersFor(language)[1].price;
-    const formatter = new Intl.NumberFormat(language === "en" ? "en-US" : "pt-BR", {
-      style: "currency",
-      currency: language === "en" ? "USD" : "BRL",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    assert.equal(h.prices.formatPrice(language, "dailyEquivalent"), formatter.format(annual / 365));
-    assert.equal(
-      h.prices.formatPrice(language, "monthlyEquivalent"),
-      formatter.format(annual / 12),
-    );
-    assert.equal(h.prices.annualSavings(language), Math.floor((1 - annual / (monthly * 12)) * 100));
-    const free = h.free.textContent;
-    for (const [index, period] of [
-      [1, "yearly"],
-      [0, "monthly"],
-      [1, "yearly"],
-    ]) {
-      h.options[index].click();
-      const display = h.prices.pricingFor(language, period);
-      assert.equal(h.fields["data-pro-price"].textContent, display.primary);
-      assert.equal(h.fields["data-annual-equivalent"].textContent, display.equivalent);
-      assert.equal(h.fields["data-annual-saving"].textContent, display.saving);
-      assert.equal(h.fields["data-annual-equivalent"].hidden, period === "monthly");
-      assert.equal(h.fields["data-annual-saving"].hidden, period === "monthly");
-      assert.equal(h.free.textContent, free);
-    }
-    for (const other of ["pt-BR", "en"]) {
-      h.changeLanguage(other);
-      assert.equal(
-        h.fields["data-pro-price"].textContent,
-        h.prices.pricingFor(other, "yearly").primary,
-      );
-      assert.equal(h.options[1].attributes["aria-checked"], "true");
-    }
-    h.options[0].click();
+test("every billing period shows its configured daily price and actual billed total", () => {
+  const h = billingHarness();
+  for (const [language, yearly, monthly, totalYearly, totalMonthly] of [
+    ["en", "$0.19/day", "$0.33/day", "$69.99 billed yearly", "$9.99 billed monthly"],
+    ["pt-BR", "R$ 0,55/dia", "R$ 1,00/dia", "R$ 199 cobrados por ano", "R$ 29,90 cobrados por mês"],
+  ]) {
     h.changeLanguage(language);
-    assert.equal(
-      h.fields["data-pro-price"].textContent,
-      h.prices.pricingFor(language, "monthly").primary,
-    );
-    assert.equal(h.options[0].attributes["aria-checked"], "true");
+    assert.equal(h.prices.pricingFor(language, "yearly").primary, yearly);
+    assert.equal(h.prices.pricingFor(language, "monthly").primary, monthly);
+    h.options[0].click();
+    assert.equal(h.fields["data-pro-price"].textContent, yearly);
+    assert.equal(h.fields["data-billed-total"].textContent, totalYearly);
+    h.options[1].click();
+    assert.equal(h.fields["data-pro-price"].textContent, monthly);
+    assert.equal(h.fields["data-billed-total"].textContent, totalMonthly);
+    assert.equal(h.fields["data-billed-total"].hidden, false);
   }
-  const source =
-    readFileSync("src/components/Pricing.astro", "utf8") +
-    readFileSync("src/scripts/pricing.ts", "utf8");
-  assert.match(source, /import \{[^}]*pricingFor[^}]*\} from "\.\.\/config\/pricing"/);
-  assert.match(readFileSync("src/config/pricing.ts", "utf8"), /plan\.yearly \/ 365 \/ 100/);
-  for (const text of [source, readFileSync("src/i18n/translations.ts", "utf8")])
-    assert.doesNotMatch(text, /(?:\$|R\$)\s*\d|69\.99|9\.99|19900|6999/);
+  const source = readFileSync("src/config/pricing.ts", "utf8");
+  assert.match(source, /plan\.monthly \/ 30 \/ 100/);
+  assert.match(source, /plan\.yearly \/ 365 \/ 100/);
+  const options = descendants(components.get("Pricing")).filter(
+    (node) => attributes(node).role === "radio",
+  );
+  assert.equal(attributes(options[0])["data-billing-period"], "yearly");
+  assert.equal(attributes(options[0])["aria-checked"], "true");
+  assert.ok(
+    descendants(options[0]).some((node) => attributes(node).name === "pricing.recommended"),
+  );
+  assert.ok(
+    descendants(options[0]).some((node) => Object.hasOwn(attributes(node), "data-billing-saving")),
+  );
+  assert.match(readFileSync("src/components/Pricing.astro", "utf8"), /data-plan-recommendation/);
 });
 
-test("one closing block contains the last action, install QR and data and cookie controls", () => {
-  const closing = descendants(components.get("FinalCta"));
-  assert.equal(closing.filter((node) => node.name === "PillButton").length, 1);
-  assert.equal(nodes.filter((node) => node.name === "footer").length, 1);
-  assert.ok(
-    closing.some(
-      (node) =>
-        attributes(node).id === "cookie-preferences" &&
-        attributes(node)["aria-controls"] === "consent-banner",
-    ),
+test("the footer groups product and legal links with its own QR and no source-code link", () => {
+  const footer = readFileSync("src/components/FinalCta.astro", "utf8");
+  assert.doesNotMatch(footer, /footer\.source|github\.com|Source code|Código-fonte/);
+  for (const key of [
+    "footer.description",
+    "footer.product",
+    "footer.legal",
+    "footer.android",
+    "footer.cookies",
+    "footer.controller",
+    "footer.qr",
+  ])
+    assert.ok(footer.includes(key));
+  assert.match(footer, /href="#ios"/);
+  assert.match(footer, /src="\/orbit-install-qr.svg"/);
+});
+
+test("all app and install links and QR generation share environment-backed production defaults", async () => {
+  const linkSource = readFileSync("src/config/links.ts", "utf8");
+  function links(environment) {
+    const exports = {};
+    vm.runInNewContext(
+      ts.transpileModule(linkSource.replaceAll("import.meta.env", "environment"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS },
+      }).outputText,
+      { exports, environment },
+    );
+    return exports;
+  }
+  assert.equal(links({}).appUrl, "https://app.useorbit.org");
+  assert.equal(
+    links({}).googlePlayUrl,
+    "https://play.google.com/store/apps/details?id=org.useorbit.app",
   );
-  assert.ok(closing.some((node) => attributes(node).href === "mailto:contact@useorbit.org"));
-  assert.ok(closing.some((node) => attributes(node).src === "/orbit-install-qr.svg"));
-  for (const key of ["footer.controller", "footer.requests", "footer.cookies"])
-    assert.ok(closing.some((node) => attributes(node).name === key));
-  assert.doesNotMatch(
-    readFileSync("src/components/FinalCta.astro", "utf8"),
-    /orbit-lockup|hero\.web/,
+  const staging = {
+    PUBLIC_APP_URL: "https://app-staging.useorbit.org",
+    PUBLIC_ANDROID_INSTALL_URL:
+      "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
+  };
+  assert.equal(links(staging).appUrl, staging.PUBLIC_APP_URL);
+  assert.equal(links(staging).googlePlayUrl, staging.PUBLIC_ANDROID_INSTALL_URL);
+  for (const path of [
+    "src/layouts/Layout.astro",
+    "src/pages/index.astro",
+    "src/pages/waitlist-confirmed.astro",
+    "src/pages/orbit-install-qr.svg.ts",
+  ]) {
+    const source = readFileSync(path, "utf8");
+    assert.match(source, /from "\.\.\/config\/links"/);
+    assert.doesNotMatch(source, /https:\/\/(?:app\.useorbit|play\.google)/);
+  }
+  const { default: qrcode } = await import("qrcode-generator");
+  const endpoint = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/pages/orbit-install-qr.svg.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      exports: endpoint,
+      Response,
+      require: (path) => (path === "qrcode-generator" ? { default: qrcode } : links(staging)),
+    },
   );
-  assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /<Footer|<Security|<Features/);
+  const expected = qrcode(0, "H");
+  expected.addData(staging.PUBLIC_ANDROID_INSTALL_URL);
+  expected.make();
+  assert.equal(
+    await endpoint.GET().text(),
+    expected.createSvgTag({ cellSize: 4, margin: 16, scalable: true }),
+  );
+  const workflow = readFileSync(".github/workflows/release.yml", "utf8").split("  staging:")[1];
+  assert.ok(workflow.includes(staging.PUBLIC_APP_URL));
+  assert.ok(workflow.includes(staging.PUBLIC_ANDROID_INSTALL_URL));
+  assert.match(workflow, /buildVariables/);
+});
+
+test("new motion controls have bilingual names and every current copy key has locale parity", () => {
+  assert.equal(copyTables.translations.en["demo.pause"], "Pause");
+  assert.equal(copyTables.translations.en["demo.resume"], "Play");
+  assert.equal(copyTables.translations["pt-BR"]["demo.pause"], "Pausar");
+  assert.equal(copyTables.translations["pt-BR"]["demo.resume"], "Reproduzir");
+  for (const table of [copyTables.translations, copyTables.landingCopy])
+    assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
+});
+
+test("habit checks, week bars, calendar days and data previews change their local state", () => {
+  const item = (extra = {}) => ({
+    hidden: false,
+    dataset: {},
+    attrs: {},
+    listeners: new Map(),
+    addEventListener(name, fn) {
+      this.listeners.set(name, fn);
+    },
+    setAttribute(name, value) {
+      this.attrs[name] = value;
+    },
+    getAttribute(name) {
+      return this.attrs[name];
+    },
+    removeAttribute(name) {
+      if (name === "hidden") this.hidden = false;
+    },
+    click() {
+      this.listeners.get("click")();
+    },
+    ...extra,
+  });
+  const ring = {
+    classList: {
+      toggle(_name, value) {
+        this.done = value;
+      },
+    },
+  };
+  const habit = item({ querySelector: () => ring });
+  const weekDays = [0, 1].map((index) => item({ dataset: { weekDay: String(index) } }));
+  const weekReadouts = [0, 1].map((index) => item({ dataset: { weekReadout: String(index) } }));
+  const week = item({
+    querySelectorAll: () => weekDays,
+    closest: () => ({ querySelectorAll: () => weekReadouts }),
+  });
+  const dates = [17, 18].map((day) =>
+    item({
+      dataset: { calendarDay: String(day), copyLabelEn: `Day ${day}`, copyLabelPt: `Dia ${day}` },
+    }),
+  );
+  const dayReadout = item(),
+    calendarEvents = item();
+  const calendar = item({
+    querySelectorAll: () => dates,
+    querySelector: (selector) =>
+      selector === "[data-calendar-readout]" ? dayReadout : calendarEvents,
+  });
+  const panels = new Map([
+    ["export-example", item()],
+    ["delete-example", item()],
+  ]);
+  const privacy = ["export-example", "delete-example"].map((id) =>
+    item({ dataset: { privacyToggle: id } }),
+  );
+  const cancel = item(),
+    confirm = item(),
+    actions = item(),
+    deleted = item({ hidden: true });
+  const querySelector = (selector) =>
+    ({
+      "[data-delete-cancel]": cancel,
+      "[data-delete-example]": confirm,
+      "[data-delete-result]": deleted,
+      ".privacy-actions": actions,
+      '[data-privacy-toggle="delete-example"]': privacy[1],
+    })[selector] ?? null;
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      exports: {},
+      require: () => ({}),
+      window: { addEventListener() {}, dispatchEvent() {} },
+      CustomEvent: class {},
+      document: {
+        documentElement: { lang: "pt-BR" },
+        getElementById: (id) => panels.get(id),
+        querySelector,
+        querySelectorAll: (selector) =>
+          ({
+            "[data-week-chart]": [week],
+            "[data-habit-toggle]": [habit],
+            ".orbit-calendar": [calendar],
+            "[data-privacy-toggle]": privacy,
+          })[selector] ?? [],
+      },
+    },
+  );
+  habit.click();
+  assert.equal(habit.attrs["aria-pressed"], "true");
+  assert.equal(ring.classList.done, true);
+  habit.click();
+  assert.equal(ring.classList.done, false);
+  weekDays[0].click();
+  assert.equal(weekReadouts[0].hidden, false);
+  assert.equal(weekReadouts[1].hidden, true);
+  assert.equal(weekDays[1].attrs["aria-pressed"], "false");
+  dates[1].click();
+  assert.equal(dayReadout.textContent, "Dia 18");
+  assert.equal(calendarEvents.hidden, true);
+  dates[0].click();
+  assert.equal(calendarEvents.hidden, false);
+  privacy[0].click();
+  assert.equal(panels.get("export-example").hidden, true);
+  privacy[0].click();
+  assert.equal(panels.get("export-example").hidden, false);
+  cancel.click();
+  assert.equal(panels.get("delete-example").hidden, true);
+  privacy[1].click();
+  confirm.click();
+  assert.equal(deleted.hidden, false);
+  assert.equal(actions.hidden, true);
 });

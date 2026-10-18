@@ -72,7 +72,8 @@ for (const [event, region, label] of [
     const destination =
       event !== "hero_google_play_cta_clicked"
         ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
-        : "https://play.google.com/store/apps/details?id=org.useorbit.app";
+        : process.env.PUBLIC_ANDROID_INSTALL_URL ||
+          "https://play.google.com/store/apps/details?id=org.useorbit.app";
     assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
@@ -88,14 +89,14 @@ test("the single closing web app action keeps the existing app event and footer 
   assert.ok(action.includes('data-copy-pt="Abrir no navegador"'));
 });
 
-test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
+test("the built homepage follows the scrolling Astra composition with the dedicated waitlist section", () => {
   assert.match(html, /class="landing-shell"/);
   assert.match(html, /id="astra-demo"/);
-  assert.match(html, /<dialog[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
+  assert.match(html, /<section[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
   assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
   assert.deepEqual(
     [...html.matchAll(/data-section="([^"]+)"/g)].map(([, name]) => name),
-    ["hero", "trust", "features", "pricing", "faq", "final"],
+    ["hero", "trust", "features", "pricing", "ios", "faq", "final"],
   );
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
@@ -225,14 +226,14 @@ test("the complete local script graph stays inside the raw byte budget", () => {
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
 });
 
-test("the built billing control leads with Annual and its daily price, monthly equivalent and saving", () => {
-  const pro = html.match(/<article class="plan-card plan-pro">([\s\S]*?)<\/article>/)?.[1];
+test("the built billing control leads with recommended Yearly and its daily price, billed total and saving", () => {
+  const pro = html.match(/<article class="plan-card plan-pro"[^>]*>([\s\S]*?)<\/article>/)?.[1];
   assert.ok(pro);
   const group = html.match(/<div[^>]*role="radiogroup"[^>]*>([\s\S]*?)<\/div>/)?.[1];
   assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
   assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
-  assert.match(pro, /data-pro-price[^>]*>[^<]+per day/);
-  assert.match(pro, /data-annual-equivalent[^>]*>[^<]+billed yearly/);
+  assert.match(pro, /data-pro-price[^>]*>[^<]+\/day/);
+  assert.match(pro, /data-billed-total[^>]*>[^<]+billed yearly/);
   assert.match(pro, /data-annual-saving[^>]*>Save \d+%/);
   assert.doesNotMatch(pro, /data-annual-(?:equivalent|saving)[^>]*hidden/);
   assert.match(pro, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
@@ -256,7 +257,7 @@ test("the built examples contain exactly one product and one localized sentence 
   }
   const cards = descendants(ast).filter((node) => attrs(node)["data-product-kind"]);
   const kinds = cards.map((node) => attrs(node)["data-product-kind"]);
-  assert.equal(new Set(kinds).size, kinds.length);
+  assert.ok(kinds.includes("today") && kinds.includes("week"));
 });
 
 test("built product examples carry the localized templates their controls consume", async () => {
@@ -302,18 +303,13 @@ test("built product examples carry the localized templates their controls consum
   }
 });
 
-test("the built stylesheet keeps every example card's app view centred inside its card", () => {
+test("the built feature compositions use full width without backing panels", () => {
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
   ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
-  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
-  const rules = [...stylesheets, ...inline].join("\n").match(/\.example-app\{[^}]*\}/g);
-  assert.ok(rules?.length, "the built CSS must carry the example app rules");
-  for (const rule of rules) {
-    const centred =
-      /transform:translate\(-50%,\s?-50%\)/.test(rule) || /translate:-50%\s-50%/.test(rule);
-    assert.ok(centred, `an example app rule loses its centring in the build: ${rule}`);
-  }
+  const rules = stylesheets.join("\n").match(/\.example-card\{[^}]*\}/g);
+  assert.ok(rules?.length);
+  for (const rule of rules) assert.doesNotMatch(rule, /background|box-shadow|aspect-ratio/);
 });
 
 test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {

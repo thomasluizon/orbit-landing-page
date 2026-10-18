@@ -15,286 +15,157 @@ function visit(node) {
 visit(ast);
 const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
-
-function harness(language = "en", reducedMotion = false) {
-  const timers = new Map();
-  const listeners = new Map();
-  let nextTimer = 0;
-  const elements = new Map();
-  const chips = ["start", "restart", "move"].map((example) => ({
-    dataset: { demo: example },
-    focused: false,
-    attributes: {},
+function harness(language = "en") {
+  const events = new Map();
+  const element = (attrs = {}) => ({
+    hidden: Object.hasOwn(attrs, "hidden"),
+    attributes: { ...attrs },
     listeners: new Map(),
+    dataset: {},
+    textContent: "",
+    value: "",
+    focused: false,
     setAttribute(name, value) {
       this.attributes[name] = value;
     },
-    addEventListener(name, listener) {
-      this.listeners.set(name, listener);
+    removeAttribute(name) {
+      delete this.attributes[name];
+    },
+    toggleAttribute(name, on) {
+      if (name === "hidden") this.hidden = on;
+    },
+    addEventListener(name, fn) {
+      this.listeners.set(name, fn);
     },
     focus() {
       this.focused = true;
     },
-  }));
-  for (const node of nodes) {
-    const attrs = attributes(node);
-    const id = attrs.id || (attrs.class?.includes("demo-exchange") ? "exchange" : undefined);
-    if (!id) continue;
-    elements.set(id, {
-      style: {},
-      attributes: { ...attrs },
-      listeners: new Map(),
-      hidden: Object.hasOwn(attrs, "hidden"),
-      setAttribute(name, value) {
-        this.attributes[name] = value;
-      },
-      removeAttribute(name) {
-        delete this.attributes[name];
-      },
-      addEventListener(name, listener) {
-        this.listeners.set(name, listener);
-      },
-    });
-  }
-  elements.get("astra-demo").querySelector = () => elements.get("exchange");
-  elements.get("astra-demo").querySelectorAll = () => chips;
-  const motion = {
-    matches: reducedMotion,
-    addEventListener(_name, callback) {
-      this.change = callback;
-    },
-  };
-  const document = {
-    hidden: false,
-    getElementById: (id) => elements.get(id),
-    addEventListener: (name, callback) => listeners.set(name, callback),
-  };
-  const context = vm.createContext({
-    document,
-    window: {
-      addEventListener: (name, callback) => listeners.set(name, callback),
-      matchMedia: () => motion,
-      setTimeout(callback) {
-        timers.set(++nextTimer, callback);
-        return nextTimer;
-      },
-      clearTimeout(id) {
-        timers.delete(id);
-      },
+    scrollIntoView() {},
+    fire(event) {
+      this.listeners.get(event)?.({ preventDefault() {} });
     },
   });
-  const translations = ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS },
-  }).outputText;
-  const table = {};
-  vm.runInContext(`(function(exports, require) { ${translations} })`, context)(table, () => {
-    throw new Error("unexpected dependency");
-  });
-  const code = ts.transpileModule(readFileSync("src/scripts/demo.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS },
-  }).outputText;
-  vm.runInContext(`(function(exports, require) { ${code} })`, context)({}, (path) =>
-    path.endsWith("translations") ? table : { getLang: () => language },
+  const elements = new Map(
+    nodes
+      .filter((node) => attributes(node).id)
+      .map((node) => [attributes(node).id, element(attributes(node))]),
   );
+  const chips = ["start", "restart", "move"].map((name) =>
+    Object.assign(element(), { dataset: { demo: name } }),
+  );
+  elements.get("astra-demo").querySelectorAll = () => chips;
+  elements.get("astra-demo").querySelector = () => chips[0];
+  const copied = [element(), element()];
+  const added = Object.assign(element({ hidden: true }), {
+    closest: () => null,
+    querySelector: (selector) => copied[selector === "[data-approved-name]" ? 0 : 1],
+  });
+  elements.get("demo-continue-link").dataset.appUrl = "https://app-staging.useorbit.org";
+  const context = vm.createContext({
+    URL,
+    exports: {},
+    document: {
+      getElementById: (id) => elements.get(id),
+      querySelectorAll: (selector) => (selector === "[data-demo-approved]" ? [added] : []),
+    },
+    window: { addEventListener: (name, fn) => events.set(name, fn) },
+  });
+  const modules = new Map();
+  function require(path) {
+    if (path === "./i18n") return { getLang: () => language };
+    if (modules.has(path)) return modules.get(path);
+    const code = ts.transpileModule(readFileSync(`src/scripts/${path}.ts`, "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    const exports = {};
+    vm.runInContext(`(function(exports,require){${code}\n})`, context)(exports, require);
+    modules.set(path, exports);
+    return exports;
+  }
+  require("./demo");
   return {
     elements,
     chips,
-    timers,
-    motion,
-    document,
-    listeners,
-    strings: table.translations[language],
-    advance() {
-      const [id, callback] = timers.entries().next().value;
-      timers.delete(id);
-      callback();
+    added,
+    copied,
+    events,
+    get: (id) => elements.get(id),
+    strings: require("../i18n/translations").translations[language],
+    switchLanguage(value) {
+      language = value;
+      events.get("orbit:language-changed")();
     },
   };
 }
-
 for (const language of ["en", "pt-BR"]) {
-  test(`${language}: every example plays its real request and preview, with one batch for both habits`, () => {
+  test(`${language}: typed requests stay local, can be edited, and approve into Today with a supported app title`, () => {
     const h = harness(language);
-    for (const chip of h.chips) {
-      chip.listeners.get("click")();
-      const example = chip.dataset.demo;
-      assert.equal(h.elements.get("exchange").attributes["aria-busy"], "true");
-      assert.equal(h.elements.get("demo-response").style.visibility, "hidden");
-      for (const field of ["request", "reply", "habit", "repeat"]) {
-        assert.equal(
-          h.elements.get(`demo-${field}`).textContent,
-          h.strings[`demo.${example}.${field}`],
-        );
-        assert.equal(
-          h.elements.get(`demo-${field}`).attributes["data-i18n"],
-          `demo.${example}.${field}`,
-        );
-      }
-      assert.equal(h.timers.size, 1, "a new request cancels the previous replay");
-      for (const callback of h.timers.values()) callback();
-      h.timers.clear();
-      assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-      assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
-      assert.equal(h.elements.get("demo-second").hidden, example !== "move");
-      assert.deepEqual(
-        h.chips.map((target) => target.attributes["aria-pressed"]),
-        h.chips.map((target) => String(target === chip)),
-      );
-    }
+    h.get("demo-input").value =
+      language === "en" ? "I want to read at night." : "Quero ler à noite.";
+    h.get("demo-composer").fire("submit");
+    assert.equal(
+      h.get("demo-request").textContent,
+      language === "en" ? "I want to read at night." : "Quero ler à noite.",
+    );
+    assert.equal(
+      h.get("demo-habit").textContent,
+      language === "en" ? "read at night" : "ler à noite",
+    );
+    assert.equal(h.get("demo-repeat").textContent, h.strings["demo.start.alternateRepeat"]);
+    assert.equal(h.get("demo-continue").hidden, true);
+    h.get("demo-edit").fire("click");
+    assert.equal(h.get("demo-edit-form").hidden, false);
+    h.get("demo-edit-name").value = "Read & reflect";
+    h.get("demo-edit-schedule").value = "afternoon";
+    h.get("demo-edit-form").fire("submit");
+    assert.equal(h.get("demo-habit").textContent, "Read & reflect");
+    assert.equal(h.get("demo-repeat").textContent, h.strings["demo.afternoon"]);
+    h.get("demo-approve").fire("click");
+    assert.equal(h.get("demo-preview").hidden, true);
+    assert.equal(h.get("demo-today").hidden, false);
+    assert.equal(h.get("demo-today-habit").textContent, "Read & reflect");
+    assert.equal(h.get("demo-today-repeat").textContent, h.strings["demo.afternoon"]);
+    assert.equal(h.added.hidden, false);
+    assert.equal(h.copied[0].textContent, "Read & reflect");
+    const link = new URL(h.get("demo-continue-link").href);
+    assert.equal(link.origin, "https://app-staging.useorbit.org");
+    assert.equal(link.pathname, "/habits/new");
+    assert.deepEqual([...link.searchParams], [["title", "Read & reflect"]]);
+    assert.equal(h.get("demo-continue").hidden, false);
+    assert.doesNotMatch(
+      readFileSync("src/scripts/demo.ts", "utf8"),
+      /fetch\(|innerHTML|setTimeout/,
+    );
   });
-
-  test(`${language}: reduced motion shows the first result and every chosen result immediately`, () => {
-    const h = harness(language, true);
-    assert.equal(h.timers.size, 0);
-    assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-    for (const chip of h.chips) {
-      chip.listeners.get("click")();
-      assert.equal(h.timers.size, 0);
-      assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
-      assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-    }
-  });
-}
-
-test("changing the motion preference finishes an in-flight replay", () => {
-  const h = harness();
-  h.chips[1].listeners.get("click")();
-  assert.equal(h.timers.size, 1, "a selected example plays on request");
-  h.motion.matches = true;
-  h.motion.change();
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-});
-
-test("example chips are keyboard buttons and the composer opens Orbit as a real link", () => {
-  const chip = nodes.find((node) => Object.hasOwn(attributes(node), "data-demo"));
-  assert.equal(chip.name, "button");
-  assert.ok(!chip.attributes.some(({ name }) => name === "tabindex" || name === "disabled"));
-  const composer = nodes.find((node) => attributes(node).class === "demo-composer");
-  assert.ok(composer, "the conversation needs its composer entry point");
-  assert.equal(composer.name, "a");
-  assert.equal(attributes(composer).href, "appUrl");
-  assert.ok(!nodes.some((node) => node.name === "input"));
-  assert.match(source, /data-i18n="demo.composer"/);
-});
-
-for (const language of ["en", "pt-BR"]) {
-  test(`${language}: approval and rejection finish each example and return focus to its chip`, () => {
-    for (const action of ["approve", "reject"]) {
-      const h = harness(language, true);
-      for (const chip of h.chips) {
-        chip.listeners.get("click")();
-        const button = h.elements.get(`demo-${action}`);
-        assert.ok(button?.listeners.has("click"), `${action} must be a real control`);
-        button.listeners.get("click")();
-        assert.equal(h.elements.get("demo-preview").hidden, true);
-        assert.equal(h.elements.get("demo-result").hidden, false);
-        const key = action === "approve" ? `demo.${chip.dataset.demo}.approved` : "demo.rejected";
-        assert.equal(h.elements.get("demo-result").textContent, h.strings[key]);
-        assert.equal(h.elements.get("exchange").attributes["aria-live"], "polite");
-        assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
-        assert.equal(chip.focused, true);
-        chip.listeners.get("click")();
-        assert.equal(h.elements.get("demo-preview").hidden, false);
-        assert.equal(h.elements.get("demo-result").hidden, true);
-      }
-    }
-  });
-
-  test(`${language}: edit switches morning and evening in place and keeps the whole batch proposed`, () => {
-    const h = harness(language, true);
-    for (const chip of h.chips) {
-      chip.listeners.get("click")();
-      const example = chip.dataset.demo;
-      const original = h.elements.get("demo-repeat").textContent;
-      const edit = h.elements.get("demo-edit");
-      assert.ok(edit?.listeners.has("click"), "edit must change the proposal");
-      edit.listeners.get("click")();
-      const key = `demo.${example}.alternateRepeat`;
-      assert.equal(h.elements.get("demo-repeat").textContent, h.strings[key]);
-      if (example === "move")
-        assert.equal(h.elements.get("demo-second-repeat").textContent, h.strings[key]);
-      assert.equal(h.elements.get("demo-preview").attributes["data-state"], "proposed");
-      assert.equal(h.elements.get("demo-preview").hidden, false);
-      assert.equal(h.elements.get("demo-announcement").textContent, h.strings["demo.edited"]);
-      edit.listeners.get("click")();
-      assert.equal(h.elements.get("demo-repeat").textContent, original);
-      chip.listeners.get("click")();
-      assert.equal(h.elements.get("demo-announcement").attributes["data-i18n"], undefined);
+  test(`${language}: examples propose the selected habits and rejection adds nothing`, () => {
+    const h = harness(language);
+    for (const [index, name] of ["start", "restart", "move"].entries()) {
+      h.chips[index].fire("click");
+      assert.equal(h.get("demo-request").textContent, h.strings[`demo.${name}.request`]);
+      assert.equal(h.get("demo-second").hidden, name !== "move");
+      h.get("demo-reject").fire("click");
+      assert.equal(h.get("demo-result").textContent, h.strings["demo.rejected"]);
+      assert.equal(h.get("demo-today").hidden, true);
+      assert.equal(h.added.hidden, true);
+      assert.equal(h.get("demo-continue").hidden, true);
     }
   });
 }
-
-test("actions during a replay clear its timer before announcing the result", () => {
+test("empty submissions keep the current proposal and user text remains literal", () => {
   const h = harness();
-  h.chips[0].listeners.get("click")();
-  assert.equal(h.timers.size, 1);
-  assert.ok(h.elements.get("demo-approve")?.listeners.has("click"));
-  h.elements.get("demo-approve").listeners.get("click")();
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-  assert.equal(h.elements.get("exchange").attributes["aria-busy"], "false");
+  h.get("demo-input").value = "   ";
+  h.get("demo-composer").fire("submit");
+  assert.equal(h.get("demo-request").textContent, "");
+  h.get("demo-input").value = '<img src=x onerror="alert(1)">';
+  h.get("demo-composer").fire("submit");
+  assert.equal(h.get("demo-habit").textContent, '<img src=x onerror="alert(1)">');
+  h.switchLanguage("pt-BR");
+  assert.equal(h.get("demo-habit").textContent, '<img src=x onerror="alert(1)">');
 });
-
-test("approval lands the accepted habit and edited schedule on Today; rejection never does", () => {
-  const h = harness("pt-BR", true);
-  const today = h.elements.get("demo-today");
-  assert.ok(today, "the conversation must render the Today destination");
-  assert.equal(today.hidden, true);
-  h.elements.get("demo-edit").listeners.get("click")();
-  h.elements.get("demo-approve").listeners.get("click")();
-  assert.equal(today.hidden, false);
-  assert.equal(h.elements.get("demo-today-habit").textContent, h.strings["demo.start.habit"]);
-  assert.equal(
-    h.elements.get("demo-today-repeat").textContent,
-    h.strings["demo.start.alternateRepeat"],
-  );
-  h.chips[2].listeners.get("click")();
-  assert.equal(today.hidden, true);
-  h.elements.get("demo-approve").listeners.get("click")();
-  assert.equal(h.elements.get("demo-today-second").hidden, false);
-  h.chips[0].listeners.get("click")();
-  h.elements.get("demo-reject").listeners.get("click")();
-  assert.equal(today.hidden, true);
-});
-
-test("the calm loop approves into Today, resets the proposal and never steals focus", () => {
-  const h = harness();
-  assert.equal(h.elements.get("demo-today").hidden, true);
-  h.advance();
-  assert.equal(h.elements.get("demo-today").hidden, false);
-  assert.equal(h.elements.get("demo-today-habit").textContent, h.strings["demo.start.habit"]);
-  assert.equal(
-    h.chips.some((chip) => chip.focused),
-    false,
-  );
-  assert.equal(h.elements.get("exchange").attributes["aria-live"], "off");
-  h.advance();
-  assert.equal(h.elements.get("demo-today").hidden, true);
-  assert.equal(h.elements.get("demo-preview").hidden, false);
-  h.advance();
-  assert.equal(h.elements.get("demo-response").style.visibility, "visible");
-  h.elements.get("demo-playback").listeners.get("click")();
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.elements.get("demo-playback").attributes["aria-label"], h.strings["demo.resume"]);
-  h.elements.get("demo-playback").listeners.get("click")();
-  assert.equal(h.timers.size, 1);
-  h.elements.get("demo-edit").listeners.get("click")();
-  assert.equal(h.timers.size, 0, "a person's action takes over the loop");
-});
-
-test("the loop stops on hidden pages and reduced motion, and can resume only while visible", () => {
-  const h = harness();
-  h.document.hidden = true;
-  h.listeners.get("visibilitychange")();
-  assert.equal(h.timers.size, 0);
-  h.document.hidden = false;
-  h.listeners.get("visibilitychange")();
-  assert.equal(h.timers.size, 1);
-  h.motion.matches = true;
-  h.motion.change();
-  assert.equal(h.timers.size, 0);
-  assert.equal(h.elements.get("demo-playback").hidden, true);
-  h.listeners.get("pageshow")();
-  assert.equal(h.timers.size, 0);
+test("the composer is an editable form and playback lives outside the phone header", () => {
+  const composer = nodes.find((node) => attributes(node).id === "demo-composer");
+  assert.equal(composer.name, "form");
+  assert.ok(nodes.some((node) => node.name === "input" && attributes(node).id === "demo-input"));
+  assert.ok(nodes.some((node) => node.name === "button" && attributes(node).type === "submit"));
+  assert.doesNotMatch(source, /demo-playback/);
 });

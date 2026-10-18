@@ -1,5 +1,6 @@
 import { exampleDate, exampleExportFile } from "../config/product-examples";
 const refreshers: (() => void)[] = [];
+const notifyLayoutChange = () => window.dispatchEvent(new CustomEvent("orbit:layout-changed"));
 
 function bindMetrics(block: HTMLElement) {
   const days = Array.from(block.querySelectorAll<HTMLButtonElement>("[data-metric-day]"));
@@ -97,6 +98,7 @@ document.querySelectorAll<HTMLElement>(".orbit-calendar").forEach((calendar) => 
       }
       const events = calendar.querySelector<HTMLElement>("[data-calendar-events]");
       if (events) events.hidden = day.dataset.calendarDay !== "17";
+      notifyLayoutChange();
     }),
   );
 });
@@ -107,6 +109,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-privacy-toggle]").forEach((b
     if (!panel) return;
     panel.hidden = !panel.hidden;
     button.setAttribute("aria-expanded", String(!panel.hidden));
+    notifyLayoutChange();
   });
 });
 document.querySelector("[data-delete-cancel]")?.addEventListener("click", () => {
@@ -116,6 +119,7 @@ document.querySelector("[data-delete-example]")?.addEventListener("click", () =>
   document.querySelector<HTMLElement>("[data-delete-result]")?.removeAttribute("hidden");
   const actions = document.querySelector<HTMLElement>(".privacy-actions");
   if (actions) actions.hidden = true;
+  notifyLayoutChange();
 });
 
 document.querySelector("[data-download-example]")?.addEventListener("click", () => {

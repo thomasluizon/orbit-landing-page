@@ -71,6 +71,7 @@ export function mountLandingMotion() {
     .querySelectorAll("details")
     .forEach((element) => element.addEventListener("toggle", refresh));
   window.addEventListener("orbit:language-changed", refresh);
+  window.addEventListener("orbit:layout-changed", refresh);
   return () => {
     deviceSize.disconnect();
     media.revert();
@@ -78,5 +79,6 @@ export function mountLandingMotion() {
       .querySelectorAll("details")
       .forEach((element) => element.removeEventListener("toggle", refresh));
     window.removeEventListener("orbit:language-changed", refresh);
+    window.removeEventListener("orbit:layout-changed", refresh);
   };
 }

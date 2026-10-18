@@ -631,11 +631,6 @@
   font-size: var(--fs-3xl);
   font-family: var(--font-display);
 }
-.plan-badge {
-  font-size: var(--fs-xs);
-  color: var(--color-fg-2);
-  white-space: nowrap;
-}
 .plan-description {
   color: var(--color-fg-2);
   font-size: var(--fs-base);
@@ -734,12 +729,6 @@
 .final-section .section-inner {
   gap: 32px;
 }
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  align-items: center;
-}
 .footer-qr {
   display: grid;
   padding: 8px;
@@ -760,19 +749,6 @@
   inline-size: 100%;
   block-size: 100%;
   border-radius: var(--radius-sm);
-}
-.footer-qr-mark {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  inline-size: 48px;
-  block-size: 48px;
-  background: var(--color-bg);
-  color: var(--color-fg-1);
-}
-.footer-qr-mark svg {
-  inline-size: 32px;
-  block-size: 32px;
 }
 :where(section[id], main[id]) {
   scroll-margin-block-start: 96px;
@@ -881,9 +857,6 @@
   .product-card {
     padding: 24px;
   }
-  .footer-links {
-    gap: 24px;
-  }
 }
 @media (max-width: 29.999rem) {
   .hero {
@@ -932,9 +905,6 @@
   .habit-row {
     background: var(--color-bg-elev);
   }
-}
-.footer-links .text-link {
-  gap: 8px;
 }
 .brand,
 .footer-qr {
@@ -1157,25 +1127,6 @@ button.metric-bar-track:focus-visible {
   font-weight: 500;
   text-align: center;
 }
-.orbit-view-labels {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  background: var(--color-bg-well);
-  border-radius: var(--radius-md);
-  color: var(--color-fg-2);
-  font-size: var(--fs-sm);
-  text-align: center;
-}
-.orbit-view-labels > span {
-  padding: 8px;
-  border-radius: var(--radius-sm);
-}
-.orbit-view-labels [data-current] {
-  background: var(--color-bg-hover);
-  color: var(--color-fg-1);
-}
 .orbit-month-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1352,12 +1303,6 @@ button.metric-bar-track:focus-visible {
   font-size: var(--fs-sm);
   color: var(--color-fg-1);
 }
-.closing-content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 64px;
-}
 .closing-copy {
   display: grid;
   justify-items: start;
@@ -1404,14 +1349,6 @@ button.metric-bar-track:focus-visible {
   background: var(--color-fg-2);
 }
 @media (width < 48rem) {
-  .closing-content {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
-    gap: 48px;
-  }
-  .footer-qr {
-    display: none;
-  }
   .closing-copy,
   .closing-copy .section-heading {
     justify-items: center;
@@ -1445,7 +1382,7 @@ button.metric-bar-track:focus-visible {
 .billing-recommendation,
 .billing-saving {
   font-size: var(--fs-xs);
-  color: var(--color-primary-soft);
+  color: var(--color-primary-text);
 }
 .plan-pro {
   position: relative;
@@ -1595,7 +1532,7 @@ button.metric-bar-track:focus-visible {
   padding-block-start: 32px;
 }
 .hero-stage {
-  --hero-pin-top: 112px;
+  --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
   --hero-device-bezel: 8px;
   --hero-device-width: min(
     330px,
@@ -1664,11 +1601,14 @@ button.metric-bar-track:focus-visible {
 }
 .hero-phrase {
   max-inline-size: 100%;
+  color: var(--color-primary-text);
+  font-size: var(--fs-sm);
+}
+.hero-phrase > span {
+  display: block;
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   background: var(--color-primary-dim);
-  color: var(--color-primary-soft);
-  font-size: var(--fs-sm);
 }
 .hero-motion-controls {
   grid-column: 2;
@@ -1689,7 +1629,7 @@ button.metric-bar-track:focus-visible {
   cursor: pointer;
 }
 .hero-playback {
-  color: var(--color-primary-soft);
+  color: var(--color-primary-text);
   background: var(--color-primary-dim);
 }
 .hero-play-icon,
@@ -1849,6 +1789,9 @@ button.metric-bar-track:focus-visible {
   [data-hero-float]:nth-child(2) > * {
     animation-delay: -1s;
   }
+  [data-hero-float]:nth-child(3) > * {
+    animation-delay: -5s;
+  }
   [data-ambient-running="true"] .hero-device,
   [data-ambient-running="true"] [data-hero-float] > * {
     animation-play-state: running;
@@ -1871,8 +1814,14 @@ button.metric-bar-track:focus-visible {
   }
 }
 @media (width < 768px) {
+  .header-links {
+    display: none;
+  }
+  .header-actions {
+    margin-inline-start: auto;
+  }
   .hero-stage {
-    --hero-pin-top: 112px;
+    --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
   }
@@ -1939,7 +1888,7 @@ button.metric-bar-track:focus-visible {
 }
 @media (width <= 640px) {
   .hero-stage {
-    --hero-pin-top: 96px;
+    --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2023,7 +1972,7 @@ button.metric-bar-track:focus-visible {
 .orbit-date[aria-pressed="true"] {
   background: var(--color-primary-dim);
   box-shadow: inset 0 0 0 1px var(--color-primary);
-  color: var(--color-primary-soft);
+  color: var(--color-primary-text);
 }
 .calendar-day-card h3 {
   font-size: var(--fs-base);

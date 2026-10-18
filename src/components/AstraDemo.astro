@@ -82,13 +82,13 @@ const en = translations.en;
       <p class="product-caption"><Copy name="product.approved" /></p>
       <h3><Copy name="product.today" /></h3>
       <button type="button" class="habit-row" data-habit-toggle aria-pressed="false">
-        <span class="habit-emoji" aria-hidden="true">🚶</span><div>
-          <p id="demo-today-habit" class="habit-name"></p><p
+        <span class="habit-emoji" aria-hidden="true">🚶</span><span class="habit-copy">
+          <span id="demo-today-habit" class="habit-name"></span><span
             id="demo-today-repeat"
             class="product-caption"
           >
-          </p>
-        </div><span class="habit-check" aria-hidden="true"
+          </span>
+        </span><span class="habit-check" aria-hidden="true"
           ><span class="status-ring"><Check size={16} /></span></span
         >
       </button>
@@ -100,11 +100,11 @@ const en = translations.en;
         aria-pressed="false"
         hidden
       >
-        <span class="habit-emoji" aria-hidden="true">📖</span><div>
-          <p class="habit-name" data-i18n="demo.move.secondHabit">
+        <span class="habit-emoji" aria-hidden="true">📖</span><span class="habit-copy">
+          <span class="habit-name" data-i18n="demo.move.secondHabit">
             {en["demo.move.secondHabit"]}
-          </p><p id="demo-today-second-repeat" class="product-caption"></p>
-        </div><span class="habit-check" aria-hidden="true"
+          </span><span id="demo-today-second-repeat" class="product-caption"></span>
+        </span><span class="habit-check" aria-hidden="true"
           ><span class="status-ring"><Check size={16} /></span></span
         >
       </button>
@@ -161,7 +161,3 @@ const en = translations.en;
     </form>
   </div>
 </section>
-
-<script>
-  import "../scripts/demo";
-</script>
