@@ -18,6 +18,12 @@ function harness({ reduced = false } = {}) {
     addEventListener(name, fn) {
       this.listeners.set(name, fn);
     }
+    contains(target) {
+      for (let node = target; node; node = node.parentElement) {
+        if (node === this) return true;
+      }
+      return false;
+    }
   }
   const element = (options = {}) => Object.assign(new Element(), options);
   const slides = [0, 1, 2, 3].map(element);
@@ -42,13 +48,14 @@ function harness({ reduced = false } = {}) {
     },
   };
   const exports = {};
+  const document = { getElementById: () => stage, activeElement: null };
   let resize;
   vm.runInNewContext(
     ts.transpileModule(readFileSync("src/scripts/hero-carousel.ts", "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText,
     {
-      document: { getElementById: () => stage },
+      document,
       window: { matchMedia: () => preference },
       Element,
       getComputedStyle: (element) => ({ overflowX: element.overflowX }),
@@ -66,6 +73,7 @@ function harness({ reduced = false } = {}) {
     segments,
     carousel,
     element,
+    document,
     positions,
     preference,
     resize,
@@ -115,6 +123,49 @@ test("non-scrolling descendants keep phone swipes available", () => {
     assert.equal(h.positions.at(-1).left, 200);
   }
 });
+
+for (const reduced of [false, true]) {
+  test(`focus inside the carousel holds its screen until focus leaves (reduced: ${reduced})`, () => {
+    const h = harness({ reduced });
+    const chip = h.element({ parentElement: h.slides[0] });
+    const composer = h.element({ parentElement: h.slides[0] });
+    h.document.activeElement = chip;
+    h.event(h.carousel, "focusin", { target: chip });
+    h.progress(0.9);
+    assert.equal(h.positions.length, 1);
+    assert.equal(h.slides[0].inert, false);
+    assert.equal(h.slides[0].attrs["aria-hidden"], "false");
+    assert.equal(h.document.activeElement, chip);
+    h.document.activeElement = composer;
+    h.event(h.carousel, "focusout", { target: chip, relatedTarget: composer });
+    h.event(h.carousel, "focusin", { target: composer });
+    h.progress(0.9);
+    assert.equal(h.positions.length, 1, "focus moving within the carousel keeps the screen");
+    const outside = h.element();
+    h.document.activeElement = outside;
+    h.event(h.carousel, "focusout", { target: composer, relatedTarget: outside });
+    assert.equal(h.positions.length, 1, "leaving focus waits for the next progress update");
+    h.progress(0.9);
+    assert.equal(h.positions.at(-1).left, 600);
+    assert.equal(h.slides[3].inert, false);
+    assert.equal(h.segments[3].attrs["aria-current"], "true");
+  });
+
+  test(`pager taps and swipes still work with carousel focus (reduced: ${reduced})`, () => {
+    const h = harness({ reduced });
+    h.document.activeElement = h.element({ parentElement: h.slides[0] });
+    h.event(h.segments[1], "click");
+    assert.equal(h.positions.at(-1).left, 200);
+    h.document.activeElement = h.element({ parentElement: h.slides[1] });
+    h.event(h.carousel, "touchstart", {
+      target: h.slides[1],
+      touches: [{ clientX: 100, clientY: 0 }],
+    });
+    h.event(h.carousel, "touchend", { changedTouches: [{ clientX: 40, clientY: 2 }] });
+    assert.equal(h.positions.at(-1).left, 400);
+    assert.equal(h.slides[2].inert, false);
+  });
+}
 
 for (const reduced of [false, true]) {
   test(`scroll exposes every screen in equal slices, including reverse scroll (reduced: ${reduced})`, () => {

@@ -20,6 +20,7 @@ function select(index: number, animate = true) {
 }
 
 export function updateHeroCarousel(progress: number) {
+  if (carousel?.contains(document.activeElement)) return;
   select(Math.min(slides.length - 1, Math.floor(Math.max(0, progress) * slides.length)));
 }
 
