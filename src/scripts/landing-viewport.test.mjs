@@ -526,7 +526,7 @@ test("mobile removes the floating cards and keeps the four screens inside the ph
   const hero = readFileSync("src/components/Hero.astro", "utf8");
   assert.equal((hero.match(/data-phone-slide=/g) ?? []).length, 4);
   assert.match(css, /@media \(width < 768px\)[\s\S]*?\.hero-products\s*\{\s*display:\s*none/);
-  assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*48px;[^}]*block-size:\s*48px/);
+  assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*36px;[^}]*block-size:\s*4px/);
   assert.doesNotMatch(readFileSync("src/components/AstraDemo.astro", "utf8"), /demo-playback/);
   assert.doesNotMatch(hero, /id="hero-playback"/);
 });
@@ -641,7 +641,13 @@ test("pager focus-visible follows the pill segment and its 44px target stays inv
   assert.match(segment, /inline-size:\s*36px\s*;/);
   assert.match(segment, /block-size:\s*4px\s*;/);
   assert.match(segment, /border-radius:\s*var\(--radius-full\)/);
-  assert.match(css, /\.carousel-segment::before\s*\{[^}]*inset-block:\s*-20px;[^}]*inset-inline:\s*-4px/);
-  assert.match(css, /\.carousel-segment:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*2px/);
+  assert.match(
+    css,
+    /\.carousel-segment::before\s*\{[^}]*inset-block:\s*-20px;[^}]*inset-inline:\s*-4px/,
+  );
+  assert.match(
+    css,
+    /\.carousel-segment:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*2px/,
+  );
   assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
 });

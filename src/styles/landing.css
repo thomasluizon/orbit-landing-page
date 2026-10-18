@@ -1634,16 +1634,29 @@ button.metric-bar-track:focus-visible {
   gap: 4px;
 }
 .carousel-segment {
+  position: relative;
   display: grid;
   place-items: center;
-  inline-size: 48px;
-  block-size: 48px;
+  inline-size: 36px;
+  block-size: 4px;
   flex-shrink: 0;
   border-radius: var(--radius-full);
   cursor: pointer;
 }
+.carousel-segment::before {
+  content: "";
+  position: absolute;
+  inset-block: -20px;
+  inset-inline: -4px;
+}
+.carousel-segment:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 .carousel-segments {
   display: flex;
+  gap: 12px;
+  padding: 20px 4px;
 }
 .carousel-marker {
   display: block;
