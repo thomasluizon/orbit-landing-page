@@ -1303,12 +1303,13 @@ button.metric-bar-track:focus-visible {
 }
 .closing-copy {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: 32px;
+  text-align: center;
 }
 .closing-copy .section-heading {
-  justify-items: start;
-  text-align: start;
+  justify-items: center;
+  text-align: center;
 }
 .closing-legal {
   display: grid;
@@ -1347,11 +1348,6 @@ button.metric-bar-track:focus-visible {
   background: var(--color-fg-2);
 }
 @media (width < 48rem) {
-  .closing-copy,
-  .closing-copy .section-heading {
-    justify-items: center;
-    text-align: center;
-  }
   .plan-pro .price-value {
     font-size: var(--fs-2xl);
   }

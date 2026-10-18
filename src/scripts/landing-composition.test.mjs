@@ -868,6 +868,26 @@ test("the footer groups product and legal links with its own QR and no source-co
   assert.match(footer, /src="\/orbit-install-qr.svg"/);
 });
 
+test("the closing call to action centers its column and label-hugging button at every width", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  for (const selector of ["\\.closing-copy", "\\.closing-copy \\.section-heading"]) {
+    const rules = [...css.matchAll(new RegExp(`${selector}\\s*\\{([^}]+)\\}`, "g"))];
+    assert.ok(rules.length);
+    for (const [, declarations] of rules) {
+      assert.match(declarations, /justify-items:\s*center/);
+      assert.match(declarations, /text-align:\s*center/);
+    }
+  }
+  assert.match(css, /\.section-title\s*\{[^}]*max-inline-size:\s*23ch/);
+  assert.match(css, /\.section-description\s*\{[^}]*max-inline-size:\s*55ch/);
+  const closing = descendants(components.get("FinalCta")).find(
+    (node) => attributes(node).class === "closing-copy",
+  );
+  const action = closing.children.find((node) => node.name === "PillButton");
+  assert.ok(action);
+  assert.equal(attributes(action).class, undefined);
+});
+
 test("all app and install links and QR generation share environment-backed production defaults", async () => {
   const linkSource = readFileSync("src/config/links.ts", "utf8");
   function links(environment) {
