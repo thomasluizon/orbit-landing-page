@@ -332,8 +332,8 @@ test("each metric day target fills its whole column, as the app BarChart does", 
   const track = css.match(/^\.metric-bar-track\s*\{([^}]+)\}/m)[1];
   assert.match(
     track,
-    /padding-inline:\s*4px/,
-    "the visible bars keep their 8px visual gap inside the full-column targets",
+    /padding-inline:\s*8px/,
+    "the visible bars keep content clearance inside the full-column targets",
   );
   const button = css.match(/^button\.metric-bar-track\s*\{([^}]+)\}/m)[1];
   assert.doesNotMatch(
@@ -342,6 +342,36 @@ test("each metric day target fills its whole column, as the app BarChart does", 
     "the button keeps the track's inline inset",
   );
   assert.match(css, /button\.metric-bar-track:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
+});
+
+test("feature cards retain card padding and inset their interactive content from fills and focus rings", () => {
+  for (const [, declarations] of css.matchAll(
+    /(?:^|\n)[^{}]*\.(?:product-block|orbit-wrapped)\s*\{([^}]+)\}/g,
+  )) {
+    if (/padding:/.test(declarations)) assert.match(declarations, /padding:\s*24px/);
+  }
+  assert.match(
+    css,
+    /\.example-app \.habit-row\[data-habit-toggle\],\s*\.example-app \.orbit-list-row\[type="button"\]\s*\{[^}]*padding:\s*12px 16px;[^}]*min-block-size:\s*52px/,
+  );
+  assert.match(
+    css,
+    /\.example-app \.text-link\s*\{[^}]*padding:\s*12px 16px;[^}]*border-radius:\s*var\(--radius-sm\)/,
+  );
+  assert.match(
+    css,
+    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*4px 8px/,
+  );
+  assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
+  assert.match(css, /\.example-app \.orbit-date:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
+  assert.match(
+    css,
+    /\.example-app :where\(button, a\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+  );
+  assert.match(
+    css,
+    /\.example-app :where\(button, a\):hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+  );
 });
 
 test("compact habit rows use the owner's pill and rounded-square check standard", () => {
