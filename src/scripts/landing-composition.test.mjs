@@ -90,6 +90,48 @@ test("each product surface has one primary intent and the viewport controller ar
   );
 });
 
+test("proposal actions keep distinct 44px targets in one trailing row at every container width", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+  const selector = ".demo-preview-actions .pill-sm";
+  const pills = rules.filter(([, selectors]) =>
+    selectors.split(",").some((s) => s.trim() === selector),
+  );
+  assert.ok(pills.length > 0);
+  let minimum;
+  for (const [, , declarations] of pills) {
+    const value = declarations.match(/min-inline-size:\s*([^;]+);/)?.[1];
+    if (value !== undefined) {
+      assert.match(value, /^(?:0|\d+(?:\.\d+)?px)$/);
+      minimum = parseFloat(value);
+    }
+    assert.ok(minimum >= 44, `${selector} resolves to ${minimum}px`);
+  }
+  assert.match(pills[0][2], /flex-shrink:\s*0;/);
+  const height = Number(pills[0][2].match(/(?:^|;)\s*block-size:\s*(\d+)px;/)?.[1]);
+  const target = rules.find(([, selectors]) => selectors.trim() === `${selector}::before`);
+  const outset = Number(target?.[2].match(/inset-block:\s*-(\d+)px;/)?.[1]);
+  assert.ok(height + 2 * outset >= 44);
+  const global = readFileSync("src/styles/global.css", "utf8");
+  assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-inline:\s*0;/);
+  const rows = rules.filter(([, selectors]) => selectors.trim() === ".demo-preview-actions");
+  assert.ok(rows.length > 0);
+  for (const [, , declarations] of rows) {
+    assert.match(declarations, /flex-wrap:\s*nowrap;/);
+    assert.match(declarations, /gap:\s*12px;/);
+    assert.match(declarations, /justify-content:\s*flex-end;/);
+  }
+  const row = descendants(components.get("AstraDemo")).find(
+    (node) => attributes(node).class === "demo-preview-actions",
+  );
+  assert.deepEqual(
+    descendants(row)
+      .filter((node) => node.name === "PillButton")
+      .map((node) => attributes(node).id),
+    ["demo-reject", "demo-edit", "demo-approve"],
+  );
+});
+
 test("pricing actions stay at the bottom independently of list length and hug their labels", () => {
   const plans = descendants(components.get("Pricing")).filter((node) => node.name === "article");
   assert.equal(plans.length, 2);
