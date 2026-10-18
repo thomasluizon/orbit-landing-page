@@ -433,7 +433,8 @@
 .habit-name {
   font-size: var(--fs-sm);
   font-weight: 500;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .status-ring {
   display: grid;
@@ -1546,10 +1547,10 @@ button.metric-bar-track:focus-visible {
 }
 .hero-stage {
   --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
-  --hero-device-bezel: 8px;
+  --hero-device-bezel: 4px;
   --hero-device-width: min(
     330px,
-    calc((100svh - var(--hero-pin-top) - 96px) * 9 / 19.5),
+    calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
     calc(100vw - 64px),
     calc((100vw - 48px) / 3)
   );
@@ -1725,6 +1726,9 @@ button.metric-bar-track:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: normal;
+}
+.phone-slide .proactive-line p,
+.phone-slide .demo-habit .t-row {
   overflow-wrap: normal;
   word-break: normal;
 }
@@ -1820,6 +1824,21 @@ button.metric-bar-track:focus-visible {
   padding: 12px;
 }
 @container (inline-size < 240px) {
+  .phone-slide[data-product-screen] {
+    padding: 8px 4px 16px;
+  }
+  .phone-slide > .product-card {
+    padding: 8px;
+  }
+  .phone-slide .habit-row {
+    gap: 4px;
+    padding-inline: 4px;
+  }
+  .phone-slide .habit-emoji {
+    inline-size: 24px;
+    block-size: 24px;
+    font-size: var(--fs-base);
+  }
   .phone-slide .astra-demo {
     gap: 8px;
     padding: 8px 4px 16px;
@@ -1913,7 +1932,7 @@ button.metric-bar-track:focus-visible {
     --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
     --hero-device-width: min(
       330px,
-      calc((100svh - var(--hero-pin-top) - 96px) * 9 / 19.5),
+      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
       calc(100vw - 64px)
     );
     grid-template-columns: minmax(0, 1fr);
@@ -1952,7 +1971,6 @@ button.metric-bar-track:focus-visible {
 }
 .habit-copy .habit-name {
   white-space: normal;
-  overflow-wrap: anywhere;
 }
 .status-ring:not(.is-done) svg {
   display: none;

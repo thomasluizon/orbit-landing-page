@@ -52,8 +52,7 @@ test("phone text wraps to two lines without splitting words or pushing out the h
   assert.match(text, /overflow:\s*hidden\s*;/);
   assert.match(text, /text-overflow:\s*ellipsis\s*;/);
   assert.match(text, /white-space:\s*normal\s*;/);
-  assert.match(text, /overflow-wrap:\s*normal\s*;/);
-  assert.match(text, /word-break:\s*normal\s*;/);
+  assert.match(base, /\.habit-name\s*\{[^}]*overflow-wrap:\s*normal;[^}]*word-break:\s*normal/);
   assert.match(base, /\.phone-slide \.habit-copy\s*\{[^}]*flex:\s*1\s*;/);
   assert.match(
     base,
@@ -502,7 +501,7 @@ test("compact habit rows use the owner's pill and rounded-square check standard"
 });
 
 test("the phone fits a safe viewport height and preserves the device aspect ratio", () => {
-  assert.match(css, /100svh - var\(--hero-pin-top\) - 96px/);
+  assert.match(css, /100svh - var\(--hero-pin-top\) - 64px/);
   assert.match(css, /aspect-ratio:\s*9 \/ 19\.5/);
   assert.match(css, /--hero-device-width:\s*min\(\s*330px/);
   for (const [width, height] of [
@@ -516,9 +515,9 @@ test("the phone fits a safe viewport height and preserves the device aspect rati
     [1920, 1080],
   ]) {
     const top = width <= 640 ? 96 : 112;
-    const deviceWidth = Math.min(330, ((height - top - 96) * 9) / 19.5, width - 64);
-    const bottom = top + (deviceWidth * 19.5) / 9 + 64;
-    assert.ok(bottom <= height - 31, `${width}x${height} must reserve bottom clearance`);
+    const deviceWidth = Math.min(330, ((height - top - 64) * 9) / 19.5, width - 64);
+    const bottom = top + (deviceWidth * 19.5) / 9 + 60;
+    assert.ok(bottom <= height - 4, `${width}x${height} must reserve bottom clearance`);
   }
 });
 
@@ -650,4 +649,23 @@ test("pager focus-visible follows the pill segment and its 44px target stays inv
     /\.carousel-segment:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*2px/,
   );
   assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
+});
+
+test("habit-name rules never split words and have one overflow-wrap declaration", () => {
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)].filter(([, selectors]) =>
+    /\.habit-name\b/.test(selectors),
+  );
+  assert.ok(rules.length);
+  let wraps = 0;
+  for (const [, selectors, declarations] of rules) {
+    assert.doesNotMatch(
+      declarations,
+      /overflow-wrap:\s*anywhere|word-break:\s*break-all/,
+      selectors,
+    );
+    const declarationsOfWrap = [...declarations.matchAll(/overflow-wrap:\s*([^;]+);/g)];
+    wraps += declarationsOfWrap.length;
+    declarationsOfWrap.forEach(([, value]) => assert.match(value, /^(?:normal|break-word)$/));
+  }
+  assert.equal(wraps, 1, "a later habit-copy rule must not override the word boundary policy");
 });
