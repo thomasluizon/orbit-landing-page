@@ -1610,14 +1610,28 @@ button.metric-bar-track:focus-visible {
 }
 .hero-float {
   inline-size: 100%;
+  max-inline-size: 224px;
   display: grid;
   justify-items: stretch;
 }
+.float-reminder,
+.float-insight {
+  max-inline-size: 176px;
+  justify-self: end;
+}
+.float-today,
+.float-week {
+  justify-self: start;
+}
 .hero-phrase {
   inline-size: 100%;
-  max-inline-size: 100%;
+  max-inline-size: 160px;
+  justify-self: start;
   color: var(--color-primary-text);
   font-size: var(--fs-sm);
+}
+.phrase-restart {
+  justify-self: end;
 }
 .hero-phrase > span {
   display: block;
@@ -1873,7 +1887,7 @@ button.metric-bar-track:focus-visible {
 }
 .hero-side .product-today,
 .hero-side .product-week {
-  block-size: 240px;
+  block-size: auto;
 }
 .hero-side .product-card h3,
 .hero-side .product-insight p {
@@ -1891,6 +1905,12 @@ button.metric-bar-track:focus-visible {
   gap: 4px;
   padding-inline: 4px;
 }
+.hero-side .habit-row[data-habit-toggle] {
+  min-block-size: 48px;
+}
+.hero-side .habit-copy .product-caption {
+  line-height: var(--lh-meta);
+}
 .hero-side .habit-emoji {
   inline-size: 24px;
   block-size: 24px;
@@ -1901,6 +1921,8 @@ button.metric-bar-track:focus-visible {
 }
 .hero-side .week-chart {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  block-size: 96px;
+  padding-block-start: 8px;
 }
 .hero-side .chart-column {
   min-inline-size: 0;
@@ -1912,7 +1934,7 @@ button.metric-bar-track:focus-visible {
 .hero-side .today-pager {
   padding-block: 0;
 }
-@media (height < 1000px) {
+@media (height < 720px) {
   .float-today,
   .float-week {
     display: none;

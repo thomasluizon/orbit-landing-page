@@ -23,6 +23,40 @@ function unconditionalRules(source) {
   return rules.join("\n");
 }
 
+function stylesheetRules(source) {
+  const parents = [];
+  const rules = [];
+  for (const [, text, boundary] of source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .matchAll(/([^{}]*)([{}])/g)) {
+    if (boundary === "{") {
+      parents.push(text.trim());
+      continue;
+    }
+    const selector = parents.pop();
+    if (selector && !selector.startsWith("@")) {
+      rules.push({ selector, declarations: text, conditions: [...parents] });
+    }
+  }
+  return rules;
+}
+
+test("all six hero side items remain rendered from 768px wide and 720px tall", () => {
+  const sideItem =
+    /\.(?:hero-(?:products|side|float|phrase|left|right)|float-(?:today|week|reminder|insight)|phrase-(?:start|restart))(?![\w-])/;
+  for (const rule of stylesheetRules(css)) {
+    if (!sideItem.test(rule.selector) || !/display:\s*none\s*;/.test(rule.declarations)) continue;
+    const bounds = rule.conditions.join(" ");
+    const width = bounds.match(/\(width\s*<\s*(\d+)px\)/)?.[1];
+    if (width && Number(width) <= 768) continue;
+    const height = bounds.match(/\(height\s*<\s*(\d+)px\)/)?.[1];
+    assert.ok(
+      height && Number(height) <= 720,
+      `${rule.selector} cannot disappear at 720px or above: ${bounds}`,
+    );
+  }
+});
+
 test("phone product screens use a zero-minimum column at every viewport width", () => {
   const slide = unconditionalRules(css).match(
     /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,
@@ -702,7 +736,7 @@ test("side-card float budget preserves 24px clearance for every phase and entran
   assert.equal(Number(motion.match(/\{ y: (\d+), opacity: 0 \}/)?.[1]), entry);
   assert.match(
     css,
-    /@media \(height < 1000px\)\s*\{\s*\.float-today,\s*\.float-week\s*\{\s*display:\s*none;/,
+    /@media \(height < 720px\)\s*\{\s*\.float-today,\s*\.float-week\s*\{\s*display:\s*none;/,
   );
   assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
   for (let width = 768; width <= 1920; width++) {
