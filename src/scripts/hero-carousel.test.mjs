@@ -286,7 +286,7 @@ test("the pinned timeline sends scroll progress in both motion preferences", () 
     const triggers = [],
       progresses = [],
       lenisInstances = [];
-    const stage = {};
+    const stage = { querySelectorAll: () => [] };
     const exports = {};
     let reverted = false;
     class Lenis {
@@ -327,7 +327,9 @@ test("the pinned timeline sends scroll progress in both motion preferences", () 
               ? { ScrollTrigger: { refresh() {}, update() {} } }
               : name === "lenis"
                 ? { default: Lenis }
-                : { updateHeroCarousel: (progress) => progresses.push(progress) },
+                : name === "./hero-float"
+                  ? { mountHeroFloat: () => () => {} }
+                  : { updateHeroCarousel: (progress) => progresses.push(progress) },
         document: {
           getElementById: (id) => (id === "hero-stage" ? stage : null),
           querySelectorAll: () => [],
@@ -351,4 +353,178 @@ test("the pinned timeline sends scroll progress in both motion preferences", () 
     dispose();
     assert.equal(reverted, true);
   }
+});
+
+function floatHarness({ reduced = false } = {}) {
+  const frames = new Map();
+  const events = new Map();
+  const preference = {
+    matches: reduced,
+    addEventListener: (name, fn) => events.set(`motion:${name}`, fn),
+    removeEventListener: (name) => events.delete(`motion:${name}`),
+  };
+  const desktop = {
+    matches: true,
+    addEventListener: (name, fn) => events.set(`width:${name}`, fn),
+    removeEventListener: (name) => events.delete(`width:${name}`),
+  };
+  const cards = Array.from({ length: 6 }, () => ({
+    style: {
+      transform: "",
+      removeProperty(name) {
+        this[name] = "";
+      },
+    },
+  }));
+  let intersection;
+  let disconnected = false;
+  let frameId = 0;
+  let phaseIndex = 0;
+  const columns = [0, 1].map((index) => ({
+    querySelectorAll: () => cards.slice(index * 3, index * 3 + 3),
+    getBoundingClientRect: () => ({ top: 100, height: 320 }),
+  }));
+  const stage = {
+    querySelectorAll(selector) {
+      assert.equal(selector, "[data-hero-column]");
+      return columns;
+    },
+  };
+  const document = {
+    hidden: false,
+    addEventListener: (name, fn) => events.set(name, fn),
+    removeEventListener: (name) => events.delete(name),
+  };
+  const exports = {};
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/hero-float.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    {
+      exports,
+      Math: Object.assign(Object.create(Math), { random: () => ++phaseIndex / 10 }),
+      document,
+      window: {
+        innerHeight: 800,
+        matchMedia: (query) => (query.includes("reduced-motion") ? preference : desktop),
+      },
+      requestAnimationFrame: (fn) => {
+        frames.set(++frameId, fn);
+        return frameId;
+      },
+      cancelAnimationFrame: (id) => frames.delete(id),
+      IntersectionObserver: class {
+        constructor(fn) {
+          intersection = fn;
+        }
+        observe(target) {
+          assert.equal(target, stage);
+        }
+        disconnect() {
+          disconnected = true;
+        }
+      },
+    },
+  );
+  const dispose = exports.mountHeroFloat(stage);
+  return {
+    cards,
+    frames,
+    events,
+    document,
+    preference,
+    desktop,
+    dispose,
+    get disconnected() {
+      return disconnected;
+    },
+    intersect(visible) {
+      intersection([{ isIntersecting: visible }]);
+    },
+    tick(time) {
+      assert.equal(frames.size, 1, "all cards share one scheduled animation frame");
+      const [id, callback] = frames.entries().next().value;
+      frames.delete(id);
+      callback(time);
+    },
+  };
+}
+
+test("hero float assigns all three paths and an independent phase to every side card and chip", () => {
+  const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
+  assert.match(source, /mountHeroFloat\(stage\)/);
+  assert.match(source, /\[data-hero-float\] > \*/);
+  const h = floatHarness();
+  assert.equal(h.frames.size, 0, "wait for the hero to enter the viewport");
+  h.intersect(true);
+  h.tick(1000);
+  const first = h.cards.map((card) => card.style.transform);
+  const expectedPaths = [0, 1, 2, 1, 2, 0];
+  first.forEach((transform, index) => {
+    const phase = ((index + 1) / 10) * Math.PI * 2;
+    const t = 0.82;
+    const x =
+      expectedPaths[index] === 0
+        ? Math.cos(t + phase) * 17
+        : expectedPaths[index] === 1
+          ? Math.sin(t + phase) * 17
+          : 17 * (0.58 * Math.sin(0.62 * t + phase) + 0.42 * Math.sin(1.73 * t + 1.3 * phase));
+    const y =
+      expectedPaths[index] === 0
+        ? Math.sin(t + phase) * 17
+        : expectedPaths[index] === 1
+          ? Math.sin(2 * (t + phase)) * 17 * 0.48
+          : 17 *
+            (0.58 * Math.cos(0.81 * t + 0.9 * phase) + 0.42 * Math.cos(1.51 * t + 1.1 * phase));
+    const offsets = [...transform.matchAll(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px,\s*0\)/g)];
+    assert.equal(offsets.length, 2, "float and column parallax compose in one transform");
+    assert.ok(Math.abs(Number(offsets[0][1]) - x) < 0.01);
+    assert.ok(Math.abs(Number(offsets[0][2]) - y) < 0.01);
+    const parallax = ((0.35 * 50 * 0.22 * 0.14 * 320) / 100) * (index < 3 ? 1 : -1);
+    assert.ok(Math.abs(Number(offsets[1][2]) - parallax) < 0.01);
+  });
+  h.tick(2000);
+  assert.ok(h.cards.every((card, index) => card.style.transform !== first[index]));
+  h.dispose();
+});
+
+test("hero float stops on visibilitychange hidden, offscreen intersection and disposal", () => {
+  const h = floatHarness();
+  h.intersect(true);
+  h.tick(1000);
+  h.document.hidden = true;
+  h.events.get("visibilitychange")();
+  assert.equal(h.frames.size, 0);
+  h.document.hidden = false;
+  h.events.get("visibilitychange")();
+  h.tick(2000);
+  h.intersect(false);
+  assert.equal(h.frames.size, 0);
+  h.intersect(true);
+  h.tick(3000);
+  h.dispose();
+  assert.equal(h.frames.size, 0);
+  assert.equal(h.disconnected, true);
+  assert.equal(h.events.size, 0);
+});
+
+test("hero float guards prefers-reduced-motion and rests when the preference or width changes", () => {
+  const resting = floatHarness({ reduced: true });
+  assert.equal(resting.frames.size, 0);
+  assert.ok(resting.cards.every((card) => card.style.transform === ""));
+  resting.dispose();
+  const h = floatHarness();
+  h.intersect(true);
+  h.tick(1000);
+  h.preference.matches = true;
+  h.events.get("motion:change")();
+  assert.equal(h.frames.size, 0);
+  assert.ok(h.cards.every((card) => card.style.transform === ""));
+  h.preference.matches = false;
+  h.events.get("motion:change")();
+  h.tick(2000);
+  h.desktop.matches = false;
+  h.events.get("width:change")();
+  assert.equal(h.frames.size, 0);
+  h.dispose();
 });

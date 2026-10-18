@@ -2,6 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { updateHeroCarousel } from "./hero-carousel";
+import { mountHeroFloat } from "./hero-float";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -39,6 +40,27 @@ export function mountLandingMotion() {
     }
   });
   media.add("(prefers-reduced-motion: no-preference)", () => {
+    const stage = document.getElementById("hero-stage");
+    const disposeFloat = stage ? mountHeroFloat(stage) : undefined;
+    if (stage) {
+      gsap.fromTo(
+        stage.querySelectorAll("[data-hero-float] > *"),
+        { y: 24, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          stagger: 0.12,
+          ease: "none",
+          scrollTrigger: {
+            trigger: stage,
+            start: "top 85%",
+            end: "top 20%",
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
+        },
+      );
+    }
     document.querySelectorAll<HTMLElement>("[data-example-row]").forEach((row) => {
       gsap.fromTo(
         row.querySelectorAll("[data-composition-card]"),
@@ -59,6 +81,7 @@ export function mountLandingMotion() {
         },
       );
     });
+    return () => disposeFloat?.();
   });
   const refresh = () => ScrollTrigger.refresh();
   document.fonts.ready.then(refresh);
