@@ -936,7 +936,71 @@ test("new motion controls have bilingual names and every current copy key has lo
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
 });
 
-test("habit checks, week bars, calendar days and data previews change their local state", () => {
+async function reachFeaturesWithoutPhone(loadProductExamples) {
+  const featureSection = sections.find((node) => attributes(node)["data-section"] === "features");
+  assert.ok(featureSection);
+  const targets = [
+    { matches: (selector) => selector === ".hero-device" },
+    {
+      matches: (selector) =>
+        selector === `[data-section="${attributes(featureSection)["data-section"]}"]`,
+    },
+  ];
+  const matches = (target, selector) =>
+    selector.split(",").some((part) => target.matches(part.trim()));
+  const observers = [];
+  const imports = [];
+  const script = readFileSync("src/pages/index.astro", "utf8").match(
+    /<script>([\s\S]*?)<\/script>/,
+  )[1];
+  vm.runInNewContext(
+    ts.transpileModule(script, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText,
+    {
+      exports: {},
+      document: {
+        querySelector: (selector) => targets.find((target) => matches(target, selector)) ?? null,
+        querySelectorAll: (selector) => targets.filter((target) => matches(target, selector)),
+      },
+      IntersectionObserver: class {
+        observed = new Set();
+        constructor(callback) {
+          this.callback = callback;
+          observers.push(this);
+        }
+        observe(target) {
+          this.observed.add(target);
+        }
+        unobserve(target) {
+          this.observed.delete(target);
+        }
+        disconnect() {
+          this.observed.clear();
+        }
+      },
+      require(path) {
+        imports.push(path);
+        if (path === "../scripts/product-examples") loadProductExamples();
+        return {};
+      },
+    },
+  );
+  assert.ok(!imports.includes("../scripts/product-examples"), "product previews stay deferred");
+  for (const observer of observers) {
+    observer.callback(
+      [...observer.observed].map((target) => ({ target, isIntersecting: target === targets[1] })),
+    );
+  }
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(
+    imports.includes("../scripts/product-examples"),
+    "reaching features must load their controls without the hero ever intersecting",
+  );
+  assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
+}
+
+test("habit checks, week bars, calendar days and data previews work when features are reached without the phone", async () => {
   const item = (extra = {}) => ({
     hidden: false,
     dataset: {},
@@ -1004,29 +1068,31 @@ test("habit checks, week bars, calendar days and data previews change their loca
       ".privacy-actions": actions,
       '[data-privacy-toggle="delete-example"]': privacy[1],
     })[selector] ?? null;
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: {},
-      require: () => ({}),
-      window: { addEventListener() {}, dispatchEvent() {} },
-      CustomEvent: class {},
-      document: {
-        documentElement: { lang: "pt-BR" },
-        getElementById: (id) => panels.get(id),
-        querySelector,
-        querySelectorAll: (selector) =>
-          ({
-            "[data-week-chart]": [week],
-            "[data-habit-toggle]": [habit],
-            ".orbit-calendar": [calendar],
-            "[data-privacy-toggle]": privacy,
-          })[selector] ?? [],
+  await reachFeaturesWithoutPhone(() => {
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS },
+      }).outputText,
+      {
+        exports: {},
+        require: () => ({}),
+        window: { addEventListener() {}, dispatchEvent() {} },
+        CustomEvent: class {},
+        document: {
+          documentElement: { lang: "pt-BR" },
+          getElementById: (id) => panels.get(id),
+          querySelector,
+          querySelectorAll: (selector) =>
+            ({
+              "[data-week-chart]": [week],
+              "[data-habit-toggle]": [habit],
+              ".orbit-calendar": [calendar],
+              "[data-privacy-toggle]": privacy,
+            })[selector] ?? [],
+        },
       },
-    },
-  );
+    );
+  });
   habit.click();
   assert.equal(habit.attrs["aria-pressed"], "true");
   assert.equal(ring.classList.done, true);

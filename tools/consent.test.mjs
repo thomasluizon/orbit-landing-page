@@ -66,13 +66,12 @@ class FakeCustomEvent {
   }
 }
 
-function createHarness(initialChoice = null) {
+function createHarness(initialChoice = null, values = new Map()) {
   const networkRequests = [];
   const capturedEvents = [];
   const capturedCalls = [];
   const configUpdates = [];
   const consentCalls = [];
-  const values = new Map();
   if (initialChoice) values.set("orbit_analytics_consent", initialChoice);
 
   const banner = new FakeElement();
@@ -129,15 +128,41 @@ function createHarness(initialChoice = null) {
   function completePostHogLoad() {
     const initialization = window.posthog?._i?.[0];
     if (!initialization) return null;
+    const queued = [...window.posthog];
+    const token = initialization[0];
     const config = initialization[1];
+    const consentKey = `__ph_opt_in_out_${token}`;
+    let initialPageviewCaptured = false;
+    const captureInitialPageview = () => {
+      if (
+        !config.capture_pageview ||
+        initialPageviewCaptured ||
+        analytics.has_opted_out_capturing()
+      )
+        return;
+      initialPageviewCaptured = true;
+      analytics.capture("$pageview");
+    };
     const analytics = {
       opt_in_capturing() {
         consentCalls.push("in");
+        values.set(consentKey, "1");
+        analytics.capture("$opt_in", undefined, { send_instantly: true });
+        captureInitialPageview();
       },
       opt_out_capturing() {
         consentCalls.push("out");
+        values.set(consentKey, "0");
+      },
+      has_opted_out_capturing() {
+        const preference = values.get(consentKey);
+        return (
+          preference === "0" ||
+          (preference === undefined && config.opt_out_capturing_by_default === true)
+        );
       },
       capture(eventName, properties, options) {
+        if (analytics.has_opted_out_capturing()) return;
         capturedEvents.push(eventName);
         capturedCalls.push({
           eventName,
@@ -151,11 +176,12 @@ function createHarness(initialChoice = null) {
       },
     };
     window.posthog = analytics;
-    if (config.capture_pageview !== false) analytics.capture("$pageview");
+    for (const [method, ...args] of queued) analytics[method]?.(...args);
+    config.loaded?.(analytics);
+    captureInitialPageview();
     if (config.capture_pageleave !== false) {
       window.addEventListener("pagehide", () => analytics.capture("$pageleave"));
     }
-    config.loaded?.(analytics);
     return { analytics, config };
   }
 
@@ -172,6 +198,7 @@ function createHarness(initialChoice = null) {
     preferencesButton,
     document,
     networkRequests,
+    values,
     window,
   };
 }
@@ -330,7 +357,67 @@ test("cookie preferences reopens an accepted choice, supports withdrawal and rea
   h.acceptButton.click();
   assert.deepEqual(h.consentCalls, ["out", "in"]);
   h.document.dispatchEvent({ type: "click", target: cta });
-  assert.deepEqual(h.capturedEvents, ["hero_app_cta_clicked"]);
+  assert.deepEqual(h.capturedEvents, ["$opt_in", "hero_app_cta_clicked"]);
+});
+
+test("withdrawal survives reload and reacceptance resumes pageviews and CTA capture", async () => {
+  const h = createHarness();
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.acceptButton.click();
+  h.completePostHogLoad();
+  h.preferencesButton.click();
+  h.declineButton.click();
+  assert.equal(h.values.get("__ph_opt_in_out_phc_test"), "0");
+
+  const cta = new FakeElement();
+  cta.dataset.analyticsEvent = "hero_app_cta_clicked";
+  cta.dataset.analyticsSurface = "hero";
+  h.capturedEvents.length = 0;
+  h.networkRequests.length = 0;
+  h.document.dispatchEvent({ type: "click", target: cta });
+  h.window.dispatchEvent({ type: "pagehide" });
+  assert.deepEqual(h.capturedEvents, []);
+  assert.deepEqual(h.networkRequests, []);
+
+  const reload = createHarness(null, h.values);
+  await executeProductionScripts(reload);
+  reload.window.dispatchEvent({ type: "load" });
+  assert.equal(reload.completePostHogLoad(), null);
+  reload.document.dispatchEvent({ type: "click", target: cta });
+  reload.window.dispatchEvent({ type: "pagehide" });
+  assert.deepEqual(reload.networkRequests, []);
+
+  reload.preferencesButton.click();
+  reload.acceptButton.click();
+  assert.equal(reload.values.get("orbit_analytics_consent"), "accepted");
+  const loaded = reload.completePostHogLoad();
+  assert.equal(loaded.analytics.has_opted_out_capturing(), false);
+  assert.equal(reload.values.get("__ph_opt_in_out_phc_test"), "1");
+  reload.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(reload.capturedEvents, ["$opt_in", "$pageview", "hero_app_cta_clicked"]);
+
+  reload.preferencesButton.click();
+  reload.declineButton.click();
+  reload.capturedEvents.length = 0;
+  reload.networkRequests.length = 0;
+  reload.document.dispatchEvent({ type: "click", target: cta });
+  reload.window.dispatchEvent({ type: "pagehide" });
+  assert.deepEqual(reload.capturedEvents, []);
+  assert.deepEqual(reload.networkRequests, []);
+});
+
+test("withdrawal while the SDK loads remains opted out when loading completes", async () => {
+  const h = createHarness();
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.acceptButton.click();
+  h.preferencesButton.click();
+  h.declineButton.click();
+  const loaded = h.completePostHogLoad();
+  assert.equal(loaded.analytics.has_opted_out_capturing(), true);
+  h.window.dispatchEvent({ type: "pagehide" });
+  assert.deepEqual(h.capturedEvents, []);
 });
 
 test("a previously declined visitor can reopen preferences and allow the original consent-gated loader", async () => {

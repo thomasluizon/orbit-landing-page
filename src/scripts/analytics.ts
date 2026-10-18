@@ -58,6 +58,7 @@ function startAnalytics() {
     capture_pageleave: true,
     disable_session_recording: true,
     loaded: (posthog) => {
+      if (consentGranted && posthog.has_opted_out_capturing()) posthog.opt_in_capturing();
       window.dispatchEvent(new CustomEvent("orbit:analytics-ready", { detail: posthog }));
     },
   });

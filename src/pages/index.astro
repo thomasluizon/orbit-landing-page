@@ -44,14 +44,18 @@ import { appUrl, googlePlayUrl } from "../config/links";
   import "../scripts/waitlist";
   import "../scripts/waitlist-section";
 
-  const phone = document.querySelector(".hero-device");
   const previewObserver = new IntersectionObserver(
     (entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      previewObserver.disconnect();
-      void Promise.all([import("../scripts/demo"), import("../scripts/product-examples")]);
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        previewObserver.unobserve(entry.target);
+        void import("../scripts/product-examples");
+        if (entry.target.matches(".hero-device")) void import("../scripts/demo");
+      }
     },
     { rootMargin: "160px" },
   );
-  if (phone) previewObserver.observe(phone);
+  document
+    .querySelectorAll('.hero-device, [data-section="features"]')
+    .forEach((surface) => previewObserver.observe(surface));
 </script>
