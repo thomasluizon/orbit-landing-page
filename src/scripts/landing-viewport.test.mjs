@@ -65,65 +65,33 @@ test("compositions fit through layout without scaling controls or their hit area
     }
   }
   const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.doesNotMatch(motion, /--composition-(?:scale|height)|fitCompositions|\bscale\s*:/);
+  assert.doesNotMatch(motion, /--composition-scale|\bscale\s*:|\.style\.transform/);
   const frame = unconditionalRules(css).match(/\.example-card\s*\{([^}]+)\}/)?.[1];
   assert.match(frame, /max-inline-size:\s*400px;/);
   assert.doesNotMatch(frame, /block-size:/);
-  assert.match(css, /\.example-app\s*\{[^}]*max-block-size:\s*80svh;[^}]*overflow:\s*auto;/);
-  assert.match(
-    css,
-    /\.example-app :where\(button, a\)\s*\{[^}]*min-inline-size:\s*44px;[^}]*min-block-size:\s*44px;/,
-  );
-  assert.match(css, /\.example-app \.metric-bars\s*\{[^}]*min-inline-size:\s*calc\(7 \* 44px\);/);
-  assert.match(
-    css,
-    /\.example-app \.orbit-month-grid\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(44px, 1fr\)\);[^}]*grid-auto-rows:\s*44px;[^}]*overflow:\s*auto;/,
-  );
 });
 
-test("the 80 percent composition height cap applies without a viewport width condition", () => {
-  const caps = stylesheetRules(css).filter(
-    (rule) =>
-      rule.selector.includes(".example-app") && /max-block-size:\s*80svh;/.test(rule.declarations),
-  );
-  assert.equal(caps.length, 2, "the app and its calendar layout share the viewport cap");
-  for (const rule of caps) {
-    assert.deepEqual(rule.conditions, [], `${rule.selector} must also fit phone viewports`);
-  }
-  assert.match(unconditionalRules(css), /\.example-app\s*\{[^}]*max-block-size:\s*80svh;/);
-  assert.doesNotMatch(
-    readFileSync("src/scripts/landing-motion.ts", "utf8"),
-    /innerWidth|composition-height/,
-  );
-});
-
-test("composition date controls reserve nonoverlapping 44px targets in both axes", () => {
-  const date = Object.fromEntries(
-    stylesheetRules(css)
-      .filter((rule) => rule.selector === ".example-app .orbit-date")
-      .flatMap((rule) =>
-        [...rule.declarations.matchAll(/([\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [
-          key,
-          value,
-        ]),
-      ),
-  );
-  for (const axis of ["inline", "block"]) {
-    assert.match(date[`min-${axis}-size`] ?? "", /^\d+px$/);
-    assert.ok(
-      parseFloat(date[`min-${axis}-size`]) >= 44,
-      `${axis} target is ${date[`min-${axis}-size`]}`,
+test("composition surfaces never cap or scroll their content", () => {
+  const surfaces = /\.(?:example-app|orbit-month-grid|metric-chart)\b/;
+  for (const rule of stylesheetRules(css)) {
+    if (!surfaces.test(rule.selector)) continue;
+    assert.doesNotMatch(
+      rule.declarations,
+      /overflow(?:-[\w-]+)?:\s*[^;]*(?:auto|scroll)|overscroll-behavior[\w-]*\s*:|max-block-size\s*:/,
+      rule.selector,
     );
   }
-  const grid = stylesheetRules(css).find(
-    (rule) => rule.selector === ".example-app .orbit-month-grid",
-  );
-  assert.match(
-    grid?.declarations ?? "",
-    /grid-template-columns:\s*repeat\(7, minmax\(44px, 1fr\)\);/,
-  );
-  assert.match(grid.declarations, /grid-auto-rows:\s*44px;/);
-  assert.match(grid.declarations, /gap:\s*0;/);
+});
+
+test("composition grids never impose a minimum column or row width", () => {
+  for (const rule of stylesheetRules(css)) {
+    if (/\.(?:orbit-month-grid|metric-bars|metric-dates)\b/.test(rule.selector)) {
+      assert.doesNotMatch(rule.declarations, /min-inline-size\s*:|minmax\(44px,/);
+    }
+    if (rule.selector === ".example-app :where(button, a)") {
+      assert.doesNotMatch(rule.declarations, /min-inline-size\s*:/);
+    }
+  }
 });
 
 test("landing CSS contains no comments", () => {
@@ -502,7 +470,7 @@ test("FAQ questions and answers share one inset with an 8px text gap and 16px bo
   assert.match(global, /--lh-body:\s*1.55/);
 });
 
-test("the seven metric bar columns share their row and retain native scrolling at narrow widths", () => {
+test("the seven metric bar columns share their row at narrow widths", () => {
   const rows = [...css.matchAll(/\.metric-bars(?:\[[^\]]+\])?\s*\{([^}]+)\}/g)];
   assert.ok(rows.length);
   for (const [, declarations] of rows) {

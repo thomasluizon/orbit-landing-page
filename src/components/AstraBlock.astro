@@ -57,7 +57,7 @@ function doneLabel(language: Language, index: number) {
                 </span>
               ))}
             </div>
-            <fieldset
+            <div
               class="metric-bars"
               role={interactive ? "radiogroup" : undefined}
               aria-label={interactive ? landingCopy.en["blocks.metrics.choose"] : undefined}
@@ -96,7 +96,7 @@ function doneLabel(language: Language, index: number) {
                   </span>
                 ),
               )}
-            </fieldset>
+            </div>
             <div class="metric-dates product-caption">
               <>
                 <Copy name="blocks.metrics.date0" />
