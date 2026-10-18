@@ -106,8 +106,12 @@ test("proposal actions keep distinct 44px targets in one trailing row at every c
       minimum = parseFloat(value);
     }
     assert.ok(minimum >= 44, `${selector} resolves to ${minimum}px`);
+    assert.match(declarations, /font-size:\s*var\(--fs-(?:xs|sm)\);/);
+    assert.doesNotMatch(declarations, /display:\s*none|visibility:\s*hidden|opacity:\s*0\s*;/);
   }
   assert.match(pills[0][2], /flex-shrink:\s*0;/);
+  assert.match(pills[0][2], /padding-inline:\s*4px;/);
+  assert.match(pills[0][2], /border-radius:\s*var\(--radius-lg\);/);
   const height = Number(pills[0][2].match(/(?:^|;)\s*block-size:\s*(\d+)px;/)?.[1]);
   const target = rules.find(([, selectors]) => selectors.trim() === `${selector}::before`);
   const outset = Number(target?.[2].match(/inset-block:\s*-(\d+)px;/)?.[1]);

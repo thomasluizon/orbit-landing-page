@@ -98,8 +98,13 @@ for (const tag of ["a", "button"]) {
     const { css } = await compiledControl("src/components/PillButton.astro", tag, "ghost", "sm");
     assert.match(css, /height:\s*40px/);
     assert.doesNotMatch(css, /min-height:\s*48px/);
-    assert.match(css, /\.pill-sm\s*\{[^}]*min-inline-size:\s*44px;/);
+    const inlineMinimum = css.match(/\.pill-sm\s*\{[^}]*min-inline-size:\s*(\d+)px;/)?.[1];
+    assert.ok(Number(inlineMinimum) >= 44, `${tag} pill needs a 44px inline floor`);
     assert.match(css, /justify-content:\s*center/);
+    assert.match(css, /padding-inline:\s*18px;/);
+    assert.match(css, /font-size:\s*14px;/);
+    assert.match(css, /font-family:\s*var\(--font-sans\);/);
+    assert.match(css, /border-radius:\s*var\(--radius-full\);/);
     const global = await readFile("src/styles/global.css", "utf8");
     assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px/);
   });
