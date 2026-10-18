@@ -106,12 +106,12 @@ test("proposal actions keep natural drawn widths and separate 44px targets in on
       minimum = parseFloat(value);
     }
     assert.equal(minimum, 0, `${selector} must keep its natural drawn width`);
-    assert.match(declarations, /font-size:\s*var\(--fs-(?:xs|sm)\);/);
+    assert.match(declarations, /font-size:\s*var\(--fs-sm\);/);
     assert.doesNotMatch(declarations, /display:\s*none|visibility:\s*hidden|opacity:\s*0\s*;/);
   }
   assert.match(pills[0][2], /flex-shrink:\s*0;/);
-  assert.match(pills[0][2], /padding-inline:\s*4px;/);
-  assert.match(pills[0][2], /border-radius:\s*var\(--radius-lg\);/);
+  assert.match(pills[0][2], /padding-inline:\s*18px;/);
+  assert.match(pills[0][2], /border-radius:\s*var\(--radius-full\);/);
   const height = Number(pills[0][2].match(/(?:^|;)\s*block-size:\s*(\d+)px;/)?.[1]);
   const target = rules.find(([, selectors]) => selectors.trim() === `${selector}::before`);
   const outset = Number(target?.[2].match(/inset-block:\s*-(\d+)px;/)?.[1]);

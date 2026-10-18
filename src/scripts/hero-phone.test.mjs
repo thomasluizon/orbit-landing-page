@@ -47,3 +47,36 @@ test("every phone screen shares the status, 56px app header and 16px content ins
   }
   assert.match(source("AstraDemo"), /<PhoneHeader>\s*<AstraGlyph size=\{16\} \/>\s*<h2/);
 });
+
+test("proposal actions retain the app small pill geometry and separated targets", () => {
+  const pills = rules(".demo-preview-actions .pill-sm");
+  assert.ok(pills.length);
+  assert.match(pills[0], /block-size:\s*40px;/);
+  assert.match(pills[0], /border-radius:\s*var\(--radius-full\);/);
+  assert.match(pills[0], /padding-inline:\s*18px;/);
+  assert.match(pills[0], /flex-shrink:\s*0;/);
+  for (const rule of pills) {
+    for (const [, size] of rule.matchAll(/font-size:\s*([^;]+);/g))
+      assert.equal(size.trim(), "var(--fs-sm)");
+    assert.doesNotMatch(rule, /(?:scale|transform|overflow):/);
+  }
+  const shared = readFileSync("src/styles/global.css", "utf8");
+  assert.match(shared, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px;/);
+  assert.match(shared, /inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
+  for (const row of rules(".demo-preview-actions")) {
+    assert.match(row, /flex-wrap:\s*nowrap;/);
+    assert.match(row, /gap:\s*12px;/);
+    assert.match(row, /justify-content:\s*flex-end;/);
+  }
+  const actions = source("AstraDemo").match(
+    /<div class="demo-preview-actions">([\s\S]*?)<\/div>/,
+  )[1];
+  assert.deepEqual(
+    [...actions.matchAll(/id="demo-([^"]+)"/g)].map(([, id]) => id),
+    ["reject", "edit", "approve"],
+  );
+  assert.deepEqual(
+    [...actions.matchAll(/variant="([^"]+)"/g)].map(([, variant]) => variant),
+    ["ghost", "ghost", "primary"],
+  );
+});

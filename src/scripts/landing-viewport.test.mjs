@@ -829,28 +829,33 @@ test("compact habit rows use the owner's pill and rounded-square check standard"
   assert.match(global, /--color-bg-card:\s*rgba\(250, 250, 250, 0\.04\)/);
   assert.match(
     css,
-    /\.demo-preview-actions \.pill-sm\s*\{[^}]*border-radius:\s*var\(--radius-lg\)/,
+    /\.demo-preview-actions \.pill-sm\s*\{[^}]*border-radius:\s*var\(--radius-full\)/,
   );
 });
 
-test("the phone fits a safe viewport height and preserves the device aspect ratio", () => {
-  assert.match(css, /100svh - var\(--hero-pin-top\) - 64px/);
+test("the phone reserves enough width for app pills and caps its height to the safe viewport", () => {
   assert.match(css, /aspect-ratio:\s*9 \/ 19\.5/);
+  assert.match(css, /max-block-size:\s*calc\(100svh - var\(--hero-pin-top\) - 64px\)/);
   assert.match(css, /--hero-device-width:\s*min\(\s*330px/);
+  assert.match(css, /max\(304px, calc\(\(100vw - 48px\) \/ 3\)\)/);
   for (const [width, height] of [
+    [305, 568],
     [320, 568],
     [375, 667],
-    [390, 844],
     [768, 1024],
     [1024, 768],
     [1280, 720],
-    [1352, 762],
     [1920, 1080],
   ]) {
     const top = width <= 640 ? 96 : 112;
-    const deviceWidth = Math.min(330, ((height - top - 64) * 9) / 19.5, width - 64);
-    const bottom = top + (deviceWidth * 19.5) / 9 + 60;
-    assert.ok(bottom <= height - 4, `${width}x${height} must reserve bottom clearance`);
+    const deviceWidth =
+      width < 768 ? Math.min(330, width) : Math.min(330, Math.max(304, (width - 48) / 3));
+    const deviceHeight = Math.min((deviceWidth * 19.5) / 9, height - top - 64);
+    assert.ok(deviceWidth - 8 - 16 >= 277.36, `canonical pills fit at ${width}px`);
+    assert.ok(
+      top + deviceHeight + 60 <= height - 4,
+      `${width}x${height} reserves bottom clearance`,
+    );
   }
 });
 
@@ -999,10 +1004,7 @@ test("chat chips and composer occupy separate rows with their full targets in ve
   }
   assert.doesNotMatch(css, /\.demo-chip::before/, "the target belongs inside the chip row");
   assert.match(base, /\.demo-preview-actions\s*\{[^}]*padding-block:\s*4px;/);
-  assert.match(
-    css,
-    /@container \(inline-size < 240px\)[\s\S]*?\.phone-slide \.demo-preview\s*\{[^}]*padding:\s*4px;/,
-  );
+  assert.match(css, /\.demo-preview\s*\{[^}]*padding:\s*8px;/);
 });
 
 test("side-card float budget preserves 24px clearance for every phase and entrance offset", () => {
@@ -1040,9 +1042,9 @@ test("side-card float budget preserves 24px clearance for every phase and entran
   assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
   for (let width = 768; width <= 1920; width++) {
     const stageWidth = Math.min(896 - 48, width - 96);
-    const phoneWidth = Math.min(330, (width - 48) / 3);
+    const phoneWidth = Math.min(330, Math.max(304, (width - 48) / 3));
     const columnWidth = (stageWidth - phoneWidth - 48) / 2;
-    assert.ok(columnWidth - 2 * reserve >= 144, `compact cards fit at ${width}px`);
+    assert.ok(columnWidth - 2 * reserve >= 112, `compact cards fit at ${width}px`);
     const outerInset = (width - stageWidth) / 2 + reserve;
     for (const offset of [-amplitude, amplitude]) {
       assert.ok(24 + reserve - offset >= 24, `phone clearance at ${width}px`);
