@@ -1273,10 +1273,15 @@ button.metric-bar-track:focus-visible {
   font-size: var(--fs-sm);
 }
 .example-app .orbit-date {
+  inline-size: 100%;
+  min-inline-size: 0;
   min-block-size: 44px;
   padding: 4px 8px;
 }
 .example-app .metric-bar-track {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 44px;
   block-size: 96px;
 }
 .example-app .orbit-month-grid {
@@ -2065,6 +2070,10 @@ button.metric-bar-track:focus-visible {
 .example-app :where(button, a) {
   min-block-size: 44px;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.example-app :where(button, a, input):not(.orbit-date, .metric-bar-track) {
+  min-inline-size: 44px;
+  min-block-size: 44px;
 }
 .example-app :where(button, a):is(:active, :focus-visible) {
   background: var(--color-bg-hover);

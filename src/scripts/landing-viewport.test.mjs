@@ -94,6 +94,28 @@ test("composition grids never impose a minimum column or row width", () => {
   }
 });
 
+test("composition grid targets fill adjoining cells and keep at least 44px of height", () => {
+  for (const selector of [".example-app .orbit-date", ".example-app .metric-bar-track"]) {
+    const rule = stylesheetRules(css).find((rule) => rule.selector === selector);
+    assert.ok(rule, selector);
+    assert.match(rule.declarations, /(?:^|;)\s*inline-size:\s*100%;/);
+    assert.match(rule.declarations, /min-inline-size:\s*0;/);
+    assert.match(rule.declarations, /min-block-size:\s*44px;/);
+  }
+  for (const selector of [".example-app .orbit-month-grid", ".metric-bars"]) {
+    const rule = stylesheetRules(css).find((rule) => rule.selector === selector);
+    assert.match(rule.declarations, /grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\);/);
+    assert.match(rule.declarations, /(?:^|;)\s*gap:\s*0;/);
+  }
+  const standalone = stylesheetRules(css).find(
+    (rule) =>
+      rule.selector === ".example-app :where(button, a, input):not(.orbit-date, .metric-bar-track)",
+  );
+  assert.ok(standalone, "standalone minimum widths must exclude grid cells");
+  assert.match(standalone.declarations, /min-inline-size:\s*44px;/);
+  assert.match(standalone.declarations, /min-block-size:\s*44px;/);
+});
+
 test("landing CSS contains no comments", () => {
   assert.equal((css.match(/\/\*/g) ?? []).length, 0);
 });
@@ -532,7 +554,7 @@ test("feature cards retain card padding and inset their interactive content from
   );
   assert.match(
     css,
-    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*44px;[^}]*padding:\s*4px 8px/,
+    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*4px 8px/,
   );
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(css, /\.example-app \.orbit-date:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
