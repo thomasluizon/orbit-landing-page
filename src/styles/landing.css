@@ -1280,7 +1280,9 @@ button.metric-bar-track:focus-visible {
   font-size: var(--fs-sm);
 }
 .example-app .orbit-date {
-  min-block-size: 32px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 4px 8px;
 }
 .example-app .metric-bar-track {
   block-size: 96px;
@@ -1630,7 +1632,6 @@ button.metric-bar-track:focus-visible {
   justify-items: center;
   align-self: center;
   grid-row: 1;
-  /* Reserve both neighbours' travel and the staggered entrance outside the clear gap. */
   gap: calc(24px + 2 * var(--hero-float-reserve) + var(--hero-float-entry));
   inline-size: 100%;
   padding-inline: var(--hero-float-reserve);
@@ -2076,10 +2077,6 @@ button.metric-bar-track:focus-visible {
   justify-self: start;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-}
-.example-app .orbit-date {
-  min-inline-size: 0;
-  padding: 4px 8px;
 }
 .example-app .orbit-date:focus-visible {
   outline-offset: -2px;

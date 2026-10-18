@@ -97,6 +97,39 @@ test("the 80 percent composition height cap applies without a viewport width con
   );
 });
 
+test("composition date controls reserve nonoverlapping 44px targets in both axes", () => {
+  const date = Object.fromEntries(
+    stylesheetRules(css)
+      .filter((rule) => rule.selector === ".example-app .orbit-date")
+      .flatMap((rule) =>
+        [...rule.declarations.matchAll(/([\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [
+          key,
+          value,
+        ]),
+      ),
+  );
+  for (const axis of ["inline", "block"]) {
+    assert.match(date[`min-${axis}-size`] ?? "", /^\d+px$/);
+    assert.ok(
+      parseFloat(date[`min-${axis}-size`]) >= 44,
+      `${axis} target is ${date[`min-${axis}-size`]}`,
+    );
+  }
+  const grid = stylesheetRules(css).find(
+    (rule) => rule.selector === ".example-app .orbit-month-grid",
+  );
+  assert.match(
+    grid?.declarations ?? "",
+    /grid-template-columns:\s*repeat\(7, minmax\(44px, 1fr\)\);/,
+  );
+  assert.match(grid.declarations, /grid-auto-rows:\s*44px;/);
+  assert.match(grid.declarations, /gap:\s*0;/);
+});
+
+test("landing CSS contains no comments", () => {
+  assert.equal((css.match(/\/\*/g) ?? []).length, 0);
+});
+
 test("phone product screens use a zero-minimum column at every viewport width", () => {
   const slide = unconditionalRules(css).match(
     /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,
@@ -531,7 +564,7 @@ test("feature cards retain card padding and inset their interactive content from
   );
   assert.match(
     css,
-    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*4px 8px/,
+    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*44px;[^}]*padding:\s*4px 8px/,
   );
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(css, /\.example-app \.orbit-date:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
