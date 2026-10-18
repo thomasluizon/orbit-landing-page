@@ -22,7 +22,7 @@
   gap: 24px;
   max-inline-size: var(--landing-narrow);
   min-block-size: 72px;
-  padding: 8px 12px 8px 24px;
+  padding: 8px 24px;
   margin-inline: auto;
   border-radius: var(--radius-full);
   background: var(--color-bg);
@@ -1519,7 +1519,8 @@ button.metric-bar-track:focus-visible {
   --hero-device-width: min(
     330px,
     calc((100svh - var(--hero-pin-top) - 96px) * 9 / 19.5),
-    calc(100vw - 64px)
+    calc(100vw - 64px),
+    calc((100vw - 48px) / 3)
   );
   position: relative;
   display: grid;
@@ -1527,7 +1528,7 @@ button.metric-bar-track:focus-visible {
   align-items: start;
   justify-items: center;
   gap: 16px 24px;
-  inline-size: min(var(--landing-content), calc(100% - 48px));
+  inline-size: min(calc(var(--landing-narrow) - 48px), calc(100% - 96px));
   margin-inline: auto;
   isolation: isolate;
 }
@@ -1579,9 +1580,10 @@ button.metric-bar-track:focus-visible {
 .hero-float {
   inline-size: 100%;
   display: grid;
-  justify-items: center;
+  justify-items: stretch;
 }
 .hero-phrase {
+  inline-size: 100%;
   max-inline-size: 100%;
   color: var(--color-primary-text);
   font-size: var(--fs-sm);
@@ -1786,9 +1788,46 @@ button.metric-bar-track:focus-visible {
 .demo-preview {
   padding: 12px;
 }
-.hero-side .product-today {
+.hero-side .product-card {
+  inline-size: 100%;
+  max-inline-size: 100%;
   gap: 8px;
   padding: 12px;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-sm);
+}
+.hero-side .product-today,
+.hero-side .product-week {
+  block-size: 240px;
+}
+.hero-side .product-card h3,
+.hero-side .product-insight p {
+  font-size: var(--fs-sm);
+}
+.hero-side .proactive-line {
+  gap: 8px;
+  font-size: var(--fs-xs);
+}
+.hero-side .habit-row {
+  gap: 4px;
+  padding-inline: 4px;
+}
+.hero-side .habit-emoji {
+  inline-size: 24px;
+  block-size: 24px;
+  font-size: var(--fs-base);
+}
+.hero-side .habit-check {
+  inline-size: 28px;
+}
+.hero-side .week-chart {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.hero-side .chart-column {
+  min-inline-size: 0;
+}
+.hero-side .chart-track {
+  padding-inline: 4px;
 }
 .hero-side .product-top,
 .hero-side .today-pager {
@@ -1811,6 +1850,11 @@ button.metric-bar-track:focus-visible {
   }
   .hero-stage {
     --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
+    --hero-device-width: min(
+      330px,
+      calc((100svh - var(--hero-pin-top) - 96px) * 9 / 19.5),
+      calc(100vw - 64px)
+    );
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
   }
