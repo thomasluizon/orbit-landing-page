@@ -81,6 +81,22 @@ test("compositions fit through layout without scaling controls or their hit area
   );
 });
 
+test("the 80 percent composition height cap applies without a viewport width condition", () => {
+  const caps = stylesheetRules(css).filter(
+    (rule) =>
+      rule.selector.includes(".example-app") && /max-block-size:\s*80svh;/.test(rule.declarations),
+  );
+  assert.equal(caps.length, 2, "the app and its calendar layout share the viewport cap");
+  for (const rule of caps) {
+    assert.deepEqual(rule.conditions, [], `${rule.selector} must also fit phone viewports`);
+  }
+  assert.match(unconditionalRules(css), /\.example-app\s*\{[^}]*max-block-size:\s*80svh;/);
+  assert.doesNotMatch(
+    readFileSync("src/scripts/landing-motion.ts", "utf8"),
+    /innerWidth|composition-height/,
+  );
+});
+
 test("phone product screens use a zero-minimum column at every viewport width", () => {
   const slide = unconditionalRules(css).match(
     /\.phone-slide\[data-product-screen\]\s*\{([^}]+)\}/,

@@ -1259,6 +1259,12 @@ button.metric-bar-track:focus-visible {
   inline-size: 100%;
   font-size: var(--fs-sm);
   line-height: var(--lh-meta);
+  max-block-size: 80svh;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.example-app .orbit-composition {
+  max-block-size: 80svh;
 }
 .example-app .product-caption {
   line-height: var(--lh-meta);
@@ -1320,14 +1326,6 @@ button.metric-bar-track:focus-visible {
   inline-size: 100%;
 }
 @media (min-width: 48rem) {
-  .example-app {
-    max-block-size: 80svh;
-    overflow: auto;
-    overscroll-behavior: contain;
-  }
-  .example-app .orbit-composition {
-    max-block-size: 80svh;
-  }
   .example-row[data-card-side="right"] .example-card {
     grid-column: 2;
     grid-row: 1;
