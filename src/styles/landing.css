@@ -144,7 +144,6 @@
   z-index: 2;
   inline-size: 100%;
   aspect-ratio: 9 / 19.5;
-  max-block-size: calc(100svh - var(--hero-pin-top) - 64px);
   padding: var(--hero-device-bezel);
   border-radius: 56px;
   background: var(--color-bg-elev);
@@ -1574,7 +1573,12 @@ button.metric-bar-track:focus-visible {
   --hero-device-bezel: 4px;
   --hero-float-reserve: 24px;
   --hero-float-entry: 24px;
-  --hero-device-width: min(330px, 100vw, max(304px, calc((100vw - 48px) / 3)));
+  --hero-device-width: min(
+    330px,
+    calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
+    calc(100vw - 64px),
+    calc((100vw - 48px) / 3)
+  );
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--hero-device-width) minmax(0, 1fr);
@@ -1970,7 +1974,11 @@ button.metric-bar-track:focus-visible {
   }
   .hero-stage {
     --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
-    --hero-device-width: min(330px, 100vw);
+    --hero-device-width: min(
+      330px,
+      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
+      calc(100vw - 64px)
+    );
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
   }

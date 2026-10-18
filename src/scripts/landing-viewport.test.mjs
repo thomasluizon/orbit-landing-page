@@ -817,25 +817,44 @@ test("compact habit rows use the owner's pill and rounded-square check standard"
   );
 });
 
-test("the phone reserves enough width for app pills and caps its height to the safe viewport", () => {
+test("the phone derives its width from the pinned height at its real device ratio", () => {
   assert.match(css, /aspect-ratio:\s*9 \/ 19\.5/);
-  assert.match(css, /max-block-size:\s*calc\(100svh - var\(--hero-pin-top\) - 64px\)/);
-  assert.match(css, /--hero-device-width:\s*min\(\s*330px/);
-  assert.match(css, /max\(304px, calc\(\(100vw - 48px\) \/ 3\)\)/);
+  const widths = stylesheetRules(css).filter((rule) =>
+    /--hero-device-width:/.test(rule.declarations),
+  );
+  assert.equal(widths.length, 2);
+  for (const { declarations } of widths) {
+    assert.match(declarations, /--hero-device-width:\s*min\(\s*330px,/);
+    assert.match(declarations, /calc\(\(100svh - var\(--hero-pin-top\) - 64px\) \* 9 \/ 19\.5\)/);
+    assert.match(declarations, /calc\(100vw - 64px\)/);
+  }
+  assert.match(widths[0].declarations, /calc\(\(100vw - 48px\) \/ 3\)/);
+  for (const { declarations } of stylesheetRules(css).filter(
+    (rule) => rule.selector === ".hero-device",
+  ))
+    assert.doesNotMatch(declarations, /max-block-size:/, "height must follow the device ratio");
   for (const [width, height] of [
     [305, 568],
     [320, 568],
+    [360, 740],
     [375, 667],
     [768, 1024],
     [1024, 768],
     [1280, 720],
+    [1352, 762],
+    [1440, 900],
     [1920, 1080],
   ]) {
     const top = width <= 640 ? 96 : 112;
-    const deviceWidth =
-      width < 768 ? Math.min(330, width) : Math.min(330, Math.max(304, (width - 48) / 3));
-    const deviceHeight = Math.min((deviceWidth * 19.5) / 9, height - top - 64);
-    assert.ok(deviceWidth - 8 - 16 >= 277.36, `canonical pills fit at ${width}px`);
+    const deviceWidth = Math.min(
+      330,
+      ((height - top - 64) * 9) / 19.5,
+      width - 64,
+      width < 768 ? Infinity : (width - 48) / 3,
+    );
+    const deviceHeight = (deviceWidth * 19.5) / 9;
+    assert.ok(Math.abs(deviceHeight / deviceWidth - 19.5 / 9) < 1e-12);
+    assert.ok(top - (width <= 640 ? 80 : 96) >= 8, "clearance below the fixed header");
     assert.ok(
       top + deviceHeight + 60 <= height - 4,
       `${width}x${height} reserves bottom clearance`,
