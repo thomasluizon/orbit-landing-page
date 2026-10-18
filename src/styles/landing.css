@@ -1666,6 +1666,9 @@ button.metric-bar-track:focus-visible {
 .phone-slide .habit-copy {
   flex: 1;
 }
+.phone-slide .habit-check {
+  inline-size: 28px;
+}
 .phone-slide .habit-name,
 .phone-slide .proactive-line p,
 .phone-slide .demo-habit .t-row {
@@ -1674,6 +1677,7 @@ button.metric-bar-track:focus-visible {
   -webkit-line-clamp: 2;
   min-inline-size: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: normal;
   overflow-wrap: normal;
   word-break: normal;
@@ -1704,6 +1708,16 @@ button.metric-bar-track:focus-visible {
 }
 .phone-slide .demo-input-area {
   gap: 8px;
+}
+.phone-slide .week-chart {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.phone-slide .chart-column {
+  min-inline-size: 0;
+  padding-inline: 0;
+}
+.phone-slide .chart-track {
+  padding-inline: 4px;
 }
 .demo-exchange {
   margin-block-start: 0;

@@ -50,6 +50,7 @@ test("phone text wraps to two lines without splitting words or pushing out the h
   assert.match(text, /-webkit-box-orient:\s*vertical\s*;/);
   assert.match(text, /-webkit-line-clamp:\s*2\s*;/);
   assert.match(text, /overflow:\s*hidden\s*;/);
+  assert.match(text, /text-overflow:\s*ellipsis\s*;/);
   assert.match(text, /white-space:\s*normal\s*;/);
   assert.match(text, /overflow-wrap:\s*normal\s*;/);
   assert.match(text, /word-break:\s*normal\s*;/);
@@ -76,6 +77,29 @@ test("phone screens keep the same inset and gaps outside viewport media queries"
   assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*12px\s*;/);
   assert.match(base, /\.phone-slide \.demo-preview\s*\{[^}]*gap:\s*12px\s*;/);
   assert.match(base, /\.phone-slide \.demo-input-area\s*\{[^}]*gap:\s*8px\s*;/);
+});
+
+test("phone week columns can shrink below the standalone chart's fixed day minimum", () => {
+  const base = unconditionalRules(css);
+  assert.match(
+    base,
+    /\.phone-slide \.week-chart\s*\{[^}]*grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\)/,
+  );
+  assert.match(
+    base,
+    /\.phone-slide \.chart-column\s*\{[^}]*min-inline-size:\s*0;[^}]*padding-inline:\s*0/,
+  );
+  assert.match(base, /\.phone-slide \.chart-track\s*\{[^}]*padding-inline:\s*4px/);
+});
+
+test("phone habit checks reserve only their visible square inside the full-row button", () => {
+  const base = unconditionalRules(css);
+  assert.match(base, /\.phone-slide \.habit-check\s*\{[^}]*inline-size:\s*28px/);
+  assert.match(base, /\.habit-row\[data-habit-toggle\]\s*\{[^}]*min-block-size:\s*56px/);
+  assert.match(base, /\.phone-slide \.habit-row\s*\{[^}]*min-block-size:\s*64px/);
+  const row = readFileSync("src/components/HabitRow.astro", "utf8");
+  assert.match(row, /<button[^>]*class="habit-row"[^>]*data-habit-toggle/);
+  assert.match(row, /<span class="habit-check" aria-hidden="true"/);
 });
 
 function harness(reduced = false) {
