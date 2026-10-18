@@ -230,7 +230,8 @@ test("the complete local script graph stays inside the raw byte budget", () => {
 test("the built billing control leads with recommended Yearly and its daily price, billed total and saving", () => {
   const pro = html.match(/<article class="plan-card plan-pro"[^>]*>([\s\S]*?)<\/article>/)?.[1];
   assert.ok(pro);
-  const group = html.match(/<div[^>]*role="radiogroup"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+  const group = html.match(/<div\b[^>]*data-billing-control[^>]*>[\s\S]*?<\/div>/)?.[0];
+  assert.match(group, /role="radiogroup"/);
   assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
   assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
   assert.match(pro, /data-pro-price[^>]*>[^<]+\/day/);
