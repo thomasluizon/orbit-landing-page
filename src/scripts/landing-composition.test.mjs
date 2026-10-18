@@ -139,6 +139,43 @@ test("proposal actions keep natural drawn widths and separate 44px targets in on
   );
 });
 
+test("sibling small-pill rows stay within the audited proposal and consent actions", async () => {
+  const rows = [];
+  for (const directory of ["src/components", "src/pages"]) {
+    for (const file of readdirSync(directory).filter((name) => name.endsWith(".astro"))) {
+      const { ast } = await parse(readFileSync(`${directory}/${file}`, "utf8"));
+      for (const node of descendants(ast)) {
+        const pills = (node.children ?? []).filter(
+          (child) => child.name === "PillButton" && (attributes(child).size ?? "sm") === "sm",
+        );
+        if (pills.length < 2) continue;
+        rows.push({
+          file,
+          className: attributes(node).class,
+          labels: pills.map(
+            (pill) =>
+              descendants(pill)
+                .find((child) => attributes(child)["data-i18n"])
+                .attributes.find(({ name }) => name === "data-i18n").value,
+          ),
+        });
+      }
+    }
+  }
+  assert.deepEqual(rows, [
+    {
+      file: "AstraDemo.astro",
+      className: "demo-preview-actions",
+      labels: ["demo.reject", "demo.edit", "demo.approve"],
+    },
+    {
+      file: "ConsentBanner.astro",
+      className: "flex shrink-0 gap-3",
+      labels: ["consent.decline", "consent.accept"],
+    },
+  ]);
+});
+
 test("pricing actions stay at the bottom independently of list length and hug their labels", () => {
   const plans = descendants(components.get("Pricing")).filter((node) => node.name === "article");
   assert.equal(plans.length, 2);
