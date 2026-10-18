@@ -98,6 +98,8 @@ for (const tag of ["a", "button"]) {
     const { css } = await compiledControl("src/components/PillButton.astro", tag, "ghost", "sm");
     assert.match(css, /height:\s*40px/);
     assert.doesNotMatch(css, /min-height:\s*48px/);
+    assert.match(css, /\.pill-sm\s*\{[^}]*min-inline-size:\s*44px;/);
+    assert.match(css, /justify-content:\s*center/);
     const global = await readFile("src/styles/global.css", "utf8");
     assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px/);
   });
@@ -134,6 +136,23 @@ for (const tag of ["a", "button"]) {
     });
   }
 }
+
+test("small pills keep a 44px inline floor through every stylesheet override", async () => {
+  const global = await readFile("src/styles/global.css", "utf8");
+  const landing = await readFile("src/styles/landing.css", "utf8");
+  const base = global.match(/\.pill-sm\s*\{([^}]+)\}/)?.[1];
+  assert.ok(base, "the shared small pill must declare its inline floor");
+  assert.match(base, /min-inline-size:\s*44px;/);
+  for (const [, selector, declarations] of `${global}\n${landing}`.matchAll(
+    /([^{}]+)\{([^{}]*)\}/g,
+  )) {
+    if (!/\.pill-sm(?![\w-])/.test(selector)) continue;
+    for (const [, value] of declarations.matchAll(/min-(?:inline-size|width):\s*([^;]+);/g)) {
+      assert.match(value, /^\d+(?:\.\d+)?px$/);
+      assert.ok(parseFloat(value) >= 44, `${selector.trim()} lowers the inline floor to ${value}`);
+    }
+  }
+});
 
 test("IosWaitlist forwards submit and challenge state through PillButton", async () => {
   const { ast } = await parse(await readFile("src/components/IosWaitlist.astro", "utf8"));

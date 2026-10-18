@@ -104,6 +104,9 @@
   transition-timing-function: var(--ease-standard);
 }
 
+.pill-sm {
+  min-inline-size: 44px;
+}
 .pill-sm::before {
   content: "";
   position: absolute;
