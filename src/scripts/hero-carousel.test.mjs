@@ -12,6 +12,16 @@ function harness({ reduced = false } = {}) {
     clientWidth = 200;
     scrollWidth = 200;
     overflowX = "visible";
+    tagName = "DIV";
+    focusVisible = false;
+    matches(selector) {
+      return selector.split(",").some((part) => {
+        const value = part.trim();
+        return value === ":focus-visible"
+          ? this.focusVisible
+          : value.toUpperCase() === this.tagName;
+      });
+    }
     setAttribute(name, value) {
       this.attrs[name] = value;
     }
@@ -125,10 +135,14 @@ test("non-scrolling descendants keep phone swipes available", () => {
 });
 
 for (const reduced of [false, true]) {
-  test(`focus inside the carousel holds its screen until focus leaves (reduced: ${reduced})`, () => {
+  test(`keyboard focus and text input hold the screen until focus leaves (reduced: ${reduced})`, () => {
     const h = harness({ reduced });
-    const chip = h.element({ parentElement: h.slides[0] });
-    const composer = h.element({ parentElement: h.slides[0] });
+    const chip = h.element({
+      parentElement: h.slides[0],
+      tagName: "BUTTON",
+      focusVisible: true,
+    });
+    const composer = h.element({ parentElement: h.slides[0], tagName: "INPUT" });
     h.document.activeElement = chip;
     h.event(h.carousel, "focusin", { target: chip });
     h.progress(0.9);
@@ -141,12 +155,28 @@ for (const reduced of [false, true]) {
     h.event(h.carousel, "focusin", { target: composer });
     h.progress(0.9);
     assert.equal(h.positions.length, 1, "focus moving within the carousel keeps the screen");
+    assert.equal(h.slides[0].inert, false);
+    assert.equal(h.slides[0].attrs["aria-hidden"], "false");
+    assert.equal(h.document.activeElement, composer);
     const outside = h.element();
     h.document.activeElement = outside;
     h.event(h.carousel, "focusout", { target: composer, relatedTarget: outside });
     assert.equal(h.positions.length, 1, "leaving focus waits for the next progress update");
     h.progress(0.9);
     assert.equal(h.positions.at(-1).left, 600);
+    assert.equal(h.slides[3].inert, false);
+    assert.equal(h.segments[3].attrs["aria-current"], "true");
+  });
+
+  test(`pointer-focused buttons allow scroll to change screens (reduced: ${reduced})`, () => {
+    const h = harness({ reduced });
+    const chip = h.element({ parentElement: h.slides[0], tagName: "BUTTON" });
+    assert.equal(chip.matches(":focus-visible"), false);
+    h.document.activeElement = chip;
+    h.event(h.carousel, "focusin", { target: chip });
+    h.progress(0.9);
+    assert.equal(h.positions.at(-1).left, 600);
+    assert.equal(h.slides[0].inert, true);
     assert.equal(h.slides[3].inert, false);
     assert.equal(h.segments[3].attrs["aria-current"], "true");
   });

@@ -20,7 +20,8 @@ function select(index: number, animate = true) {
 }
 
 export function updateHeroCarousel(progress: number) {
-  if (carousel?.contains(document.activeElement)) return;
+  const focused = document.activeElement;
+  if (carousel?.contains(focused) && focused?.matches(":focus-visible, input, textarea")) return;
   select(Math.min(slides.length - 1, Math.floor(Math.max(0, progress) * slides.length)));
 }
 
