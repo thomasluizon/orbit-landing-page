@@ -1,26 +1,20 @@
 ---
-import { X } from "@lucide/astro";
 import PillButton from "./PillButton.astro";
 import { translations } from "../i18n/translations";
 const en = translations.en;
 ---
 
-<dialog
+<section
   id="ios"
-  class="waitlist-dialog"
+  class="section ios-section"
+  data-section="ios"
   aria-labelledby="ios-title"
   aria-describedby="ios-description"
 >
-  <button
-    id="ios-close"
-    class="dialog-close"
-    type="button"
-    aria-label={en["ios.close"]}
-    data-i18n-label="ios.close"><X size={20} /></button
-  >
   <div class="waitlist-content">
-    <div>
-      <h2 id="ios-title" class="t-h1" data-i18n="ios.title">{en["ios.title"]}</h2><p
+    <div class="section-heading">
+      <p class="coming-soon" data-i18n="ios.soon">{en["ios.soon"]}</p>
+      <h2 id="ios-title" class="section-title" data-i18n="ios.title">{en["ios.title"]}</h2><p
         id="ios-description"
         class="t-secondary"
         data-i18n="ios.desc"
@@ -53,4 +47,4 @@ const en = translations.en;
       <p id="waitlist-privacy" class="t-meta" data-i18n="ios.privacy">{en["ios.privacy"]}</p>
     </div>
   </div>
-</dialog>
+</section>

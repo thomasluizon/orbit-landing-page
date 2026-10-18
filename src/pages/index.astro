@@ -19,11 +19,11 @@ import { appUrl, googlePlayUrl } from "../config/links";
       <Hero googlePlayUrl={googlePlayUrl} appUrl={appUrl} />
       <FeatureRows />
       <Pricing appUrl={appUrl} />
+      <IosWaitlist />
       <Faq />
       <FinalCta appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
     </main>
   </div>
-  <IosWaitlist />
 </Layout>
 
 <script>
@@ -32,5 +32,5 @@ import { appUrl, googlePlayUrl } from "../config/links";
   import "../scripts/faq";
   import "../scripts/scroll";
   import "../scripts/waitlist";
-  import "../scripts/waitlist-dialog";
+  import "../scripts/waitlist-section";
 </script>

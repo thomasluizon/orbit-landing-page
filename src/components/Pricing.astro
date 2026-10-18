@@ -31,17 +31,21 @@ const { appUrl } = Astro.props;
         class="billing-option"
         type="button"
         role="radio"
-        data-billing-period="monthly"
-        aria-checked="false"
-        tabindex="-1"><Copy name="pricing.monthly" /></button
+        data-billing-period="yearly"
+        aria-checked="true"
+        tabindex="0"
       >
+        <Copy name="pricing.annual" />
+        <span class="billing-recommendation"><Copy name="pricing.recommended" /></span>
+        <span class="billing-saving" data-billing-saving>{pricingFor("en", "yearly").saving}</span>
+      </button>
       <button
         class="billing-option"
         type="button"
         role="radio"
-        data-billing-period="yearly"
-        aria-checked="true"
-        tabindex="0"><Copy name="pricing.annual" /></button
+        data-billing-period="monthly"
+        aria-checked="false"
+        tabindex="-1"><Copy name="pricing.monthly" /></button
       >
     </div>
     <div class="pricing-grid">
@@ -70,18 +74,19 @@ const { appUrl } = Astro.props;
           <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
         </div>
       </article>
-      <article class="plan-card plan-pro">
+      <article class="plan-card plan-pro" data-plan-period="yearly">
+        <span class="plan-recommendation" data-plan-recommendation
+          ><Copy name="pricing.recommended" /></span
+        >
         <div class="plan-name">
-          <h3 translate="no">Pro</h3><span class="plan-badge"
-            ><Copy name="pricing.recommended" /></span
-          >
+          <h3 translate="no">Pro</h3>
         </div>
         <p class="plan-description"><Copy name="pricing.pro.body" /></p>
         <div class="plan-cost" aria-live="polite" aria-atomic="true">
           <p class="plan-price">
             <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
           </p>
-          <p class="plan-annual" data-annual-equivalent>{pricingFor("en", "yearly").equivalent}</p>
+          <p class="plan-annual" data-billed-total>{pricingFor("en", "yearly").billed}</p>
           <p class="plan-saving" data-annual-saving>{pricingFor("en", "yearly").saving}</p>
         </div>
         <ul>

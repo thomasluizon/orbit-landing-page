@@ -6,16 +6,20 @@ function mountBillingControl() {
   const options = [...group.querySelectorAll<HTMLButtonElement>("[data-billing-period]")];
   const price = document.querySelector<HTMLElement>("[data-pro-price]");
   const saving = document.querySelector<HTMLElement>("[data-annual-saving]");
-  const equivalent = document.querySelector<HTMLElement>("[data-annual-equivalent]");
-  if (!price || !saving || !equivalent) return;
+  const billed = document.querySelector<HTMLElement>("[data-billed-total]");
+  const recommendation = document.querySelector<HTMLElement>("[data-plan-recommendation]");
+  const billingSaving = document.querySelector<HTMLElement>("[data-billing-saving]");
+  if (!price || !saving || !billed) return;
   let selected: "monthly" | "yearly" = "yearly";
   const render = () => {
     const language = document.documentElement.lang === "pt-BR" ? "pt-BR" : "en";
     const display = pricingFor(language, selected);
     price.textContent = display.primary;
-    equivalent.hidden = selected === "monthly";
+    if (recommendation) recommendation.hidden = selected === "monthly";
+    recommendation?.closest("article")?.setAttribute("data-plan-period", selected);
+    if (billingSaving) billingSaving.textContent = display.saving;
     saving.hidden = selected === "monthly";
-    equivalent.textContent = display.equivalent;
+    billed.textContent = display.billed;
     saving.textContent = display.saving;
     options.forEach((option) => {
       const active = option.dataset.billingPeriod === selected;

@@ -33,15 +33,15 @@ export function offersFor(language: PriceLanguage) {
 
 export function formatPrice(
   language: PriceLanguage,
-  period: "monthly" | "yearly" | "free" | "monthlyEquivalent" | "dailyEquivalent",
+  period: "monthly" | "yearly" | "free" | "dailyYearly" | "dailyMonthly",
 ) {
   const plan = plans[language];
   const amount =
     period === "free"
       ? 0
-      : period === "monthlyEquivalent"
-        ? plan.yearly / 12 / 100
-        : period === "dailyEquivalent"
+      : period === "dailyMonthly"
+        ? plan.monthly / 30 / 100
+        : period === "dailyYearly"
           ? plan.yearly / 365 / 100
           : plan[period] / 100;
   return new Intl.NumberFormat(plan.locale, {
@@ -60,13 +60,13 @@ export function annualSavings(language: PriceLanguage) {
 export function pricingFor(language: PriceLanguage, period: "monthly" | "yearly") {
   const copy = pricingCopy[language];
   return {
-    primary: copy[period === "yearly" ? "pricing.day" : "pricing.month"].replace(
+    primary: copy["pricing.day"].replace(
       "{price}",
-      formatPrice(language, period === "yearly" ? "dailyEquivalent" : "monthly"),
+      formatPrice(language, period === "yearly" ? "dailyYearly" : "dailyMonthly"),
     ),
-    equivalent: copy["pricing.equivalent"].replace(
+    billed: copy[period === "yearly" ? "pricing.billedYearly" : "pricing.billedMonthly"].replace(
       "{price}",
-      formatPrice(language, "monthlyEquivalent"),
+      formatPrice(language, period),
     ),
     saving: copy["pricing.saving"].replace("{percent}", String(annualSavings(language))),
   };
