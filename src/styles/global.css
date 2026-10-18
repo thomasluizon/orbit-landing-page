@@ -104,14 +104,11 @@
   transition-timing-function: var(--ease-standard);
 }
 
-.pill-sm {
-  min-inline-size: 44px;
-}
 .pill-sm::before {
   content: "";
   position: absolute;
   inset-block: -4px;
-  inset-inline: 0;
+  inset-inline: min(0px, calc((100% - 44px) / 2));
   border-radius: inherit;
 }
 [data-primary-action][data-accent-active="false"] {

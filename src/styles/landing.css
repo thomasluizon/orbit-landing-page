@@ -267,7 +267,7 @@
 }
 .demo-preview-actions .pill-sm {
   flex-shrink: 0;
-  min-inline-size: 44px;
+  min-inline-size: 0;
   border-radius: var(--radius-lg);
   block-size: 40px;
   padding-inline: 4px;

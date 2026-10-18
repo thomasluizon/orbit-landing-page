@@ -90,7 +90,7 @@ test("each product surface has one primary intent and the viewport controller ar
   );
 });
 
-test("proposal actions keep distinct 44px targets in one trailing row at every container width", () => {
+test("proposal actions keep natural drawn widths and separate 44px targets in one trailing row", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
   const selector = ".demo-preview-actions .pill-sm";
@@ -105,7 +105,7 @@ test("proposal actions keep distinct 44px targets in one trailing row at every c
       assert.match(value, /^(?:0|\d+(?:\.\d+)?px)$/);
       minimum = parseFloat(value);
     }
-    assert.ok(minimum >= 44, `${selector} resolves to ${minimum}px`);
+    assert.equal(minimum, 0, `${selector} must keep its natural drawn width`);
     assert.match(declarations, /font-size:\s*var\(--fs-(?:xs|sm)\);/);
     assert.doesNotMatch(declarations, /display:\s*none|visibility:\s*hidden|opacity:\s*0\s*;/);
   }
@@ -117,7 +117,10 @@ test("proposal actions keep distinct 44px targets in one trailing row at every c
   const outset = Number(target?.[2].match(/inset-block:\s*-(\d+)px;/)?.[1]);
   assert.ok(height + 2 * outset >= 44);
   const global = readFileSync("src/styles/global.css", "utf8");
-  assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-inline:\s*0;/);
+  assert.match(
+    global,
+    /\.pill-sm::before\s*\{[^}]*inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/,
+  );
   const rows = rules.filter(([, selectors]) => selectors.trim() === ".demo-preview-actions");
   assert.ok(rows.length > 0);
   for (const [, , declarations] of rows) {
