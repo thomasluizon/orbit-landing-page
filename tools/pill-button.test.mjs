@@ -32,7 +32,7 @@ test("button mode renders both analytics attributes", async () => {
   });
 });
 
-async function compiledControl(path, tag, variant) {
+async function compiledControl(path, tag, variant, size) {
   const source = await readFile(path, "utf8");
   const { ast } = await parse(source);
   const element = findElement(ast, tag);
@@ -48,6 +48,13 @@ async function compiledControl(path, tag, variant) {
     const variantMatch = variantClasses.match(new RegExp(`${variant}:\\s*"([^"]+)"`));
     assert.ok(variantMatch, `${variant} variant has shipping classes`);
     candidates.push(...variantMatch[1].split(/\s+/));
+  }
+  if (size) {
+    assert.match(attribute.value, /sizeClasses\[size\]/);
+    const sizes = source.match(/const sizeClasses[^=]*=\s*\{([^}]+)\}/)[1];
+    const sizeMatch = sizes.match(new RegExp(`${size}:\\s*"([^"]+)"`));
+    assert.ok(sizeMatch, `${size} size has shipping classes`);
+    candidates.push(...sizeMatch[1].split(/\s+/));
   }
   const globalCss = await readFile("src/styles/global.css", "utf8");
   const compiler = await compile(
@@ -87,7 +94,14 @@ function stateDeclarations(css, state) {
 }
 
 for (const tag of ["a", "button"]) {
-  for (const variant of ["primary", "ghost"]) {
+  test(`small ${tag} pills keep the app's 40px visible height and a separate 48px target`, async () => {
+    const { css } = await compiledControl("src/components/PillButton.astro", tag, "ghost", "sm");
+    assert.match(css, /height:\s*40px/);
+    assert.doesNotMatch(css, /min-height:\s*48px/);
+    const global = await readFile("src/styles/global.css", "utf8");
+    assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px/);
+  });
+  for (const variant of ["primary", "secondary", "ghost"]) {
     const label = `PillButton ${tag} ${variant}`;
     const control = () => compiledControl("src/components/PillButton.astro", tag, variant);
 

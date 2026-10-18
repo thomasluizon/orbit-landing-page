@@ -32,6 +32,11 @@ class FakeElement extends FakeEventTarget {
   classNames = new Set();
   dataset = {};
   hidden = false;
+  focused = false;
+
+  focus() {
+    this.focused = true;
+  }
 
   constructor(tagName = "a") {
     super();
@@ -66,6 +71,7 @@ function createHarness(initialChoice = null) {
   const capturedEvents = [];
   const capturedCalls = [];
   const configUpdates = [];
+  const consentCalls = [];
   const values = new Map();
   if (initialChoice) values.set("orbit_analytics_consent", initialChoice);
 
@@ -73,10 +79,12 @@ function createHarness(initialChoice = null) {
   banner.hidden = true;
   const acceptButton = new FakeElement();
   const declineButton = new FakeElement();
+  const preferencesButton = new FakeElement("button");
   const elements = new Map([
     ["consent-banner", banner],
     ["consent-accept", acceptButton],
     ["consent-decline", declineButton],
+    ["cookie-preferences", preferencesButton],
   ]);
 
   const document = new FakeEventTarget();
@@ -98,6 +106,7 @@ function createHarness(initialChoice = null) {
 
   const window = new FakeEventTarget();
   window.setTimeout = (callback) => callback();
+  window.clearTimeout = () => {};
   window.requestIdleCallback = (callback) => callback();
 
   const localStorage = {
@@ -122,6 +131,12 @@ function createHarness(initialChoice = null) {
     if (!initialization) return null;
     const config = initialization[1];
     const analytics = {
+      opt_in_capturing() {
+        consentCalls.push("in");
+      },
+      opt_out_capturing() {
+        consentCalls.push("out");
+      },
       capture(eventName, properties, options) {
         capturedEvents.push(eventName);
         capturedCalls.push({
@@ -135,6 +150,7 @@ function createHarness(initialChoice = null) {
         configUpdates.push(update);
       },
     };
+    window.posthog = analytics;
     if (config.capture_pageview !== false) analytics.capture("$pageview");
     if (config.capture_pageleave !== false) {
       window.addEventListener("pagehide", () => analytics.capture("$pageleave"));
@@ -150,8 +166,10 @@ function createHarness(initialChoice = null) {
     capturedEvents,
     completePostHogLoad,
     configUpdates,
+    consentCalls,
     context,
     declineButton,
+    preferencesButton,
     document,
     networkRequests,
     window,
@@ -288,4 +306,55 @@ test("an accepted visitor captures analytics from a button", async () => {
   harness.document.dispatchEvent({ type: "click", target: button });
 
   assert.deepEqual(harness.capturedEvents, ["consent_action_clicked"]);
+});
+
+test("cookie preferences reopens an accepted choice, supports withdrawal and reacceptance, and returns focus", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.completePostHogLoad();
+  h.preferencesButton.click();
+  assert.equal(h.banner.hidden, false);
+  assert.equal(h.declineButton.focused, true);
+  h.declineButton.click();
+  assert.equal(h.context.localStorage.getItem("orbit_analytics_consent"), "declined");
+  assert.deepEqual(h.consentCalls, ["out"]);
+  assert.equal(h.preferencesButton.focused, true);
+  h.capturedEvents.length = 0;
+  const cta = new FakeElement();
+  cta.dataset.analyticsEvent = "hero_app_cta_clicked";
+  cta.dataset.analyticsSurface = "footer";
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(h.capturedEvents, []);
+  h.preferencesButton.click();
+  h.acceptButton.click();
+  assert.deepEqual(h.consentCalls, ["out", "in"]);
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(h.capturedEvents, ["hero_app_cta_clicked"]);
+});
+
+test("a previously declined visitor can reopen preferences and allow the original consent-gated loader", async () => {
+  const h = createHarness("declined");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  assert.equal(h.banner.hidden, true);
+  h.preferencesButton.click();
+  assert.equal(h.banner.hidden, false);
+  h.acceptButton.click();
+  assert.equal(h.context.localStorage.getItem("orbit_analytics_consent"), "accepted");
+  assert.ok(h.completePostHogLoad());
+  assert.deepEqual(h.capturedEvents, ["$pageview"]);
+});
+
+test("withdrawal before the page settles cancels deferred analytics initialization", async () => {
+  const h = createHarness();
+  await executeProductionScripts(h);
+  h.preferencesButton.click();
+  h.acceptButton.click();
+  h.preferencesButton.click();
+  h.declineButton.click();
+  h.window.dispatchEvent({ type: "load" });
+  assert.equal(h.context.localStorage.getItem("orbit_analytics_consent"), "declined");
+  assert.deepEqual(h.networkRequests, []);
+  assert.equal(h.completePostHogLoad(), null);
 });

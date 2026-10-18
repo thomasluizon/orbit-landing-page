@@ -1,0 +1,44 @@
+---
+import Copy from "./Copy.astro";
+import ExampleCard from "./ExampleCard.astro";
+import OrbitProduct from "./OrbitProduct.astro";
+import AstraBlock from "./AstraBlock.astro";
+---
+
+<section id="features" class="section" data-section="features" aria-labelledby="features-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="features-title" class="section-title"><Copy name="features.title" /></h2>
+    </div>
+    <div class="example-rows">
+      <article class="example-row" data-example-row="calendar" data-card-side="left">
+        <ExampleCard><OrbitProduct kind="calendar" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.calendar" /></h3>
+      </article>
+      <article class="example-row" data-example-row="data" data-card-side="right">
+        <ExampleCard><OrbitProduct kind="privacy" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.data" /></h3>
+      </article>
+      <article class="example-row" data-example-row="metrics" data-card-side="left">
+        <ExampleCard><AstraBlock kind="metrics" interactive /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.metrics" /></h3>
+      </article>
+      <article class="example-row" data-example-row="breakdown" data-card-side="right">
+        <ExampleCard><AstraBlock kind="breakdown" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.breakdown" /></h3>
+      </article>
+      <article class="example-row" data-example-row="streak" data-card-side="left">
+        <ExampleCard><OrbitProduct kind="progress" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.streak" /></h3>
+      </article>
+      <article class="example-row" data-example-row="goal" data-card-side="right">
+        <ExampleCard><AstraBlock kind="goal" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.goal" /></h3>
+      </article>
+      <article class="example-row" data-example-row="achievements" data-card-side="left">
+        <ExampleCard><OrbitProduct kind="achievements" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.achievements" /></h3>
+      </article>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,198 @@
+---
+import Copy from "./Copy.astro";
+import HabitRow from "./HabitRow.astro";
+import {
+  exampleWeek,
+  exampleDays,
+  exampleGoal,
+  exampleBreakdown,
+} from "../config/product-examples";
+import { landingCopy, translations, type LandingKey, type Language } from "../i18n/translations";
+interface Props {
+  kind: "metrics" | "breakdown" | "goal";
+  interactive?: boolean;
+}
+const { kind, interactive = false } = Astro.props;
+const dateKeys = exampleWeek.map((_, index) => `blocks.metrics.date${index}` as LandingKey);
+const completion = Math.round(
+  exampleWeek.reduce((sum, value) => sum + value, 0) / exampleWeek.length,
+);
+function doneLabel(language: Language, index: number) {
+  const { done, total } = exampleDays[index];
+  return landingCopy[language]["blocks.metrics.done"]
+    .replace("{done}", String(done))
+    .replace("{total}", String(total));
+}
+---
+
+<div class="astra-product" data-mock="true">
+  <div
+    class:list={["product-block", `block-${kind}`]}
+    data-example-block={interactive ? kind : undefined}
+    data-product-kind={kind}
+  >
+    {
+      kind === "metrics" && (
+        <>
+          <h3>
+            <Copy name="blocks.metrics.title" />
+          </h3>
+          <div class="metric-chart" data-metric-chart>
+            <div
+              class="metric-readout"
+              aria-live={interactive ? "polite" : undefined}
+              aria-atomic={interactive ? "true" : undefined}
+            >
+              {exampleWeek.map((value, index) => (
+                <span data-metric-readout={index} hidden={index !== exampleWeek.length - 1}>
+                  <Copy name={dateKeys[index]} />
+                  <strong>{value}%</strong>
+                  <span
+                    data-copy-en={doneLabel("en", index)}
+                    data-copy-pt={doneLabel("pt-BR", index)}
+                  >
+                    {doneLabel("en", index)}
+                  </span>
+                </span>
+              ))}
+            </div>
+            <fieldset
+              class="metric-bars"
+              role={interactive ? "radiogroup" : undefined}
+              aria-label={interactive ? landingCopy.en["blocks.metrics.choose"] : undefined}
+              data-copy-label-en={interactive ? landingCopy.en["blocks.metrics.choose"] : undefined}
+              data-copy-label-pt={
+                interactive ? landingCopy["pt-BR"]["blocks.metrics.choose"] : undefined
+              }
+              aria-hidden={!interactive || undefined}
+            >
+              {exampleWeek.map((value, index) =>
+                interactive ? (
+                  <button
+                    type="button"
+                    class="metric-bar-track"
+                    role="radio"
+                    data-metric-day={index}
+                    aria-checked={index === exampleWeek.length - 1}
+                    tabindex={index === exampleWeek.length - 1 ? 0 : -1}
+                    aria-label={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
+                    data-copy-label-en={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
+                    data-copy-label-pt={`${landingCopy["pt-BR"][dateKeys[index]]}, ${value}%, ${doneLabel("pt-BR", index)}`}
+                  >
+                    <span
+                      class="metric-bar"
+                      data-selected={String(index === exampleWeek.length - 1)}
+                      style={`--bar-height: ${value}%`}
+                    />
+                  </button>
+                ) : (
+                  <span class="metric-bar-track">
+                    <span
+                      class="metric-bar"
+                      data-selected={String(index === exampleWeek.length - 1)}
+                      style={`--bar-height: ${value}%`}
+                    />
+                  </span>
+                ),
+              )}
+            </fieldset>
+            <div class="metric-dates product-caption">
+              <>
+                <Copy name="blocks.metrics.date0" />
+                <Copy name="blocks.metrics.date6" />
+              </>
+            </div>
+          </div>
+          <dl class="metric-figures">
+            <div>
+              <>
+                <dt>
+                  <Copy name="blocks.metrics.completion" />
+                </dt>
+                <dd>{completion}%</dd>
+              </>
+            </div>
+            <div>
+              <>
+                <dt>
+                  <Copy name="blocks.metrics.active" />
+                </dt>
+                <dd>
+                  <Copy name="blocks.metrics.days" />
+                </dd>
+              </>
+            </div>
+          </dl>
+        </>
+      )
+    }
+    {
+      kind === "breakdown" && (
+        <>
+          <h3>
+            <Copy name="blocks.breakdown.title" />
+          </h3>
+          <div class="breakdown-proposal">
+            <p class="product-caption" data-i18n="demo.proposed">
+              {translations.en["demo.proposed"]}
+            </p>
+            <div class="breakdown-list">
+              {exampleBreakdown.map(({ habit, cadence }) => (
+                <div class="breakdown-row">
+                  <span class="habit-name">
+                    <Copy name={`blocks.breakdown.${habit}`} />
+                  </span>
+                  <span class="product-caption">
+                    <Copy name={`blocks.breakdown.${cadence}`} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )
+    }
+    {
+      kind === "goal" && (
+        <>
+          <h3 class="goal-title">
+            <Copy name="blocks.goal.title" />
+          </h3>
+          <p class="goal-figure">
+            <Copy name="blocks.goal.progress" />
+          </p>
+          <div
+            class="goal-progress"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax={exampleGoal.target}
+            aria-valuenow={exampleGoal.progress}
+            aria-label={landingCopy.en["blocks.goal.title"]}
+            data-copy-label-en={landingCopy.en["blocks.goal.title"]}
+            data-copy-label-pt={landingCopy["pt-BR"]["blocks.goal.title"]}
+          >
+            <span
+              class="goal-progress-fill"
+              style={`--goal-progress: ${(exampleGoal.progress / exampleGoal.target) * 100}%`}
+            />
+          </div>
+          <p class="product-caption">
+            <Copy name="blocks.goal.derived" />
+          </p>
+          <div class="goal-habits">
+            <h4 class="product-caption">
+              <Copy name="blocks.goal.linked" />
+            </h4>
+            {exampleGoal.habits.map(({ habit, streak }) => (
+              <HabitRow habit={habit} days={streak} />
+            ))}
+          </div>
+        </>
+      )
+    }
+  </div>
+</div>
+
+<script>
+  import "../scripts/product-examples";
+</script>

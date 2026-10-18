@@ -13,7 +13,8 @@ test("the built header lockup paints pale ink with only the moon in the accent",
   const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
   const lockup = header?.match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
   assert.ok(lockup, "the header must inline the lockup so currentColor resolves");
-  const css = readFileSync("src/styles/global.css", "utf8");
+  const css =
+    readFileSync("src/styles/global.css", "utf8") + readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.brand\s*\{[^}]*color:\s*var\(--color-fg-1\)/);
   assert.match(css, /--primary:\s*var\(--color-primary\)/);
   const token = (name) => css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]+)`))?.[1];
@@ -44,7 +45,11 @@ test("the built header lockup paints pale ink with only the moon in the accent",
 
 for (const [event, region, label] of [
   ["header_app_cta_clicked", /<header\b[^>]*>[\s\S]*?<\/header>/, "header.cta"],
-  ["hero_app_cta_clicked", /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/, "hero.web"],
+  [
+    "hero_app_cta_clicked",
+    /<section\b[^>]*data-section="final"[^>]*>[\s\S]*?<\/section>/,
+    "final.cta",
+  ],
   [
     "hero_google_play_cta_clicked",
     /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
@@ -53,38 +58,56 @@ for (const [event, region, label] of [
 ]) {
   test(`the built ${event} keeps its action and destination`, () => {
     const attribute = `data-analytics-event="${event}"`;
-    assert.equal(html.split(attribute).length - 1, 1);
     const surface = html.match(region)?.[0];
     assert.ok(surface);
+    assert.equal(surface.split(attribute).length - 1, 1);
     const anchor = [...surface.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
       .map(([tag]) => tag)
       .find((tag) => tag.includes(attribute));
-    assert.ok(anchor?.includes(`data-i18n="${label}"`));
+    assert.ok(
+      label === "final.cta"
+        ? anchor?.includes('data-copy-en="Open in your browser"')
+        : anchor?.includes(`data-i18n="${label}"`),
+    );
     const destination =
-      event === "hero_app_cta_clicked"
+      event !== "hero_google_play_cta_clicked"
         ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
         : "https://play.google.com/store/apps/details?id=org.useorbit.app";
     assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
 
-test("the homepage is one Astra composition with a dialog instead of retired sections", () => {
+test("the single closing web app action keeps the existing app event and footer surface", () => {
+  const event = 'data-analytics-event="hero_app_cta_clicked"';
+  assert.equal(html.split(event).length - 1, 1);
+  const action = [...html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
+    .map(([tag]) => tag)
+    .find((tag) => tag.includes(event));
+  assert.ok(action.includes('data-analytics-surface="footer"'));
+  assert.ok(action.includes('data-copy-en="Open in your browser"'));
+  assert.ok(action.includes('data-copy-pt="Abrir no navegador"'));
+});
+
+test("the built homepage follows the scrolling Astra composition with the original waitlist dialog", () => {
   assert.match(html, /class="landing-shell"/);
   assert.match(html, /id="astra-demo"/);
   assert.match(html, /<dialog[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
   assert.match(html, /href="#ios"[^>]*id="ios-trigger"/);
-  assert.doesNotMatch(
-    html,
-    /id="(?:pricing|platforms|faq|features)"|data-screen="today"|proof\.founder/,
+  assert.deepEqual(
+    [...html.matchAll(/data-section="([^"]+)"/g)].map(([, name]) => name),
+    ["hero", "trust", "features", "pricing", "faq", "final"],
   );
   assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
   assert.match(html, /data-state="proposed"/);
+  assert.match(html, /id="demo-today"[^>]*hidden/);
   for (const action of ["Approve", "Edit", "Reject"]) assert.ok(prose.includes(action));
   for (const example of ["start", "restart", "move"])
     assert.match(html, new RegExp(`data-demo="${example}"`));
+  assert.match(html, /<details name="orbit-questions">/);
+  assert.match(html, /src="\/orbit-install-qr.svg"/);
 });
 
-test("the built proposal has three native small pill actions with ghost actions first", () => {
+test("the built proposal has one trailing row of two ghost actions and a filled approval", () => {
   const row = html.match(/<div class="demo-preview-actions">([\s\S]*?)<\/div>/)?.[1];
   assert.ok(row);
   const buttons = [...row.matchAll(/<button\b([^>]+)>/g)].map(([, attributes]) => attributes);
@@ -200,4 +223,114 @@ test("the complete local script graph stays inside the raw byte budget", () => {
     bytes += path ? bytesFor(path) : Buffer.byteLength(body);
   }
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
+});
+
+test("the built billing control leads with Annual and its daily price, monthly equivalent and saving", () => {
+  const pro = html.match(/<article class="plan-card plan-pro">([\s\S]*?)<\/article>/)?.[1];
+  assert.ok(pro);
+  const group = html.match(/<div[^>]*role="radiogroup"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+  assert.match(group, /data-billing-period="monthly"[^>]*aria-checked="false"[^>]*tabindex="-1"/);
+  assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
+  assert.match(pro, /data-pro-price[^>]*>[^<]+per day/);
+  assert.match(pro, /data-annual-equivalent[^>]*>[^<]+billed yearly/);
+  assert.match(pro, /data-annual-saving[^>]*>Save \d+%/);
+  assert.doesNotMatch(pro, /data-annual-(?:equivalent|saving)[^>]*hidden/);
+  assert.match(pro, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
+});
+
+test("the built examples contain exactly one product and one localized sentence each", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const rows = descendants(ast).filter((node) => attrs(node)["data-example-row"]);
+  assert.equal(rows.length, 7);
+  for (const [index, row] of rows.entries()) {
+    assert.equal(attrs(row)["data-card-side"], index % 2 ? "right" : "left");
+    const nodes = descendants(row);
+    assert.equal(nodes.filter((node) => attrs(node).class === "example-card").length, 1);
+    assert.equal(nodes.filter((node) => attrs(node).class === "example-sentence").length, 1);
+    assert.equal(nodes.filter((node) => attrs(node)["data-product-kind"]).length, 1);
+    assert.equal(nodes.filter((node) => node.name === "a").length, 0);
+  }
+  const cards = descendants(ast).filter((node) => attrs(node)["data-product-kind"]);
+  const kinds = cards.map((node) => attrs(node)["data-product-kind"]);
+  assert.equal(new Set(kinds).size, kinds.length);
+});
+
+test("built product examples carry the localized templates their controls consume", async () => {
+  const { parse } = await import("@astrojs/compiler");
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const nodes = descendants(ast);
+  const blocks = nodes.filter((node) => attrs(node)["data-example-block"]);
+  assert.deepEqual(
+    blocks.map((node) => attrs(node)["data-example-block"]),
+    ["metrics"],
+  );
+  const breakdowns = nodes.filter((node) =>
+    (attrs(node).class ?? "").split(/\s+/).includes("block-breakdown"),
+  );
+  assert.equal(breakdowns.length, 1);
+  assert.equal(
+    descendants(breakdowns[0]).filter((node) => ["button", "a"].includes(node.name)).length,
+    0,
+  );
+  const frames = new Map(
+    nodes
+      .filter((node) => node.name === "symbol")
+      .map((node) => [attrs(node).id, attrs(node).viewBox]),
+  );
+  const glyphs = nodes.filter(
+    (node) =>
+      node.name === "svg" &&
+      descendants(node).some(
+        (child) => child.name === "use" && attrs(child).href?.startsWith("#astra-mark"),
+      ),
+  );
+  assert.ok(glyphs.length > 0);
+  for (const glyph of glyphs) {
+    const use = descendants(glyph).find((node) => node.name === "use");
+    const name = attrs(use).href.slice(1);
+    const asset = readFileSync(`public/brand/${name}.svg`, "utf8");
+    const viewBox = asset.match(/viewBox="([^"]+)"/)[1];
+    assert.equal(attrs(glyph).viewBox, viewBox);
+    assert.equal(frames.get(name), viewBox);
+  }
+});
+
+test("the built stylesheet keeps every example card's app view centred inside its card", () => {
+  const stylesheets = [
+    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
+  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
+  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
+  const rules = [...stylesheets, ...inline].join("\n").match(/\.example-app\{[^}]*\}/g);
+  assert.ok(rules?.length, "the built CSS must carry the example app rules");
+  for (const rule of rules) {
+    const centred =
+      /transform:translate\(-50%,\s?-50%\)/.test(rule) || /translate:-50%\s-50%/.test(rule);
+    assert.ok(centred, `an example app rule loses its centring in the build: ${rule}`);
+  }
+});
+
+test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
+  const stylesheets = [
+    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
+  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
+  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
+  const target = ".closing-legal p .text-link>[data-copy-en]";
+  const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
+    ([, selectors, body]) =>
+      selectors
+        .split(",")
+        .map((selector) => selector.trim().replace(/\s*>\s*/g, ">"))
+        .includes(target) && /white-space:\s?normal/.test(body),
+  );
+  assert.ok(
+    wraps,
+    "the closing data request copy must wrap, or it widens the closing block past a 320px viewport",
+  );
 });

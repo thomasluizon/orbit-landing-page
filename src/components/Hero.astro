@@ -1,21 +1,24 @@
 ---
 import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
+import ProductCard from "./ProductCard.astro";
+import TrustStrip from "./TrustStrip.astro";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import { Signal, Wifi, BatteryFull } from "@lucide/astro";
 interface Props {
-  appUrl: string;
   googlePlayUrl: string;
+  appUrl: string;
 }
-const { appUrl, googlePlayUrl } = Astro.props;
+const { googlePlayUrl, appUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<section id="hero" class="hero">
+<section id="hero" class="hero" data-section="hero">
   <div class="hero-copy">
     <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
-    <p class="hero-description t-secondary" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
+    <p class="hero-description" translate="no" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
-  <AstraDemo />
   <div class="hero-controls">
     <div class="hero-actions">
       <PillButton
@@ -23,26 +26,53 @@ const en = translations.en;
         size="md"
         external
         analyticsEvent="hero_google_play_cta_clicked"
-        analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
-      >
-      <a
-        class="text-link"
-        href={appUrl}
-        data-i18n="hero.web"
-        data-analytics-event="hero_app_cta_clicked"
-        data-analytics-surface="hero">{en["hero.web"]}</a
+        analyticsSurface="hero"
+        ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
     </div>
-    <p class="hero-meta t-meta">
-      <span data-i18n="hero.platforms">{en["hero.platforms"]}</span>
-      <a
-        href="#ios"
-        id="ios-trigger"
-        class="text-link"
-        aria-haspopup="dialog"
-        aria-controls="ios"
-        data-i18n="hero.ios">{en["hero.ios"]}</a
-      >
-    </p>
   </div>
+  <div class="hero-pin-range">
+    <div class="hero-stage" id="hero-stage">
+      <div class="hero-phone">
+        <div class="hero-device">
+          <div class="device-screen">
+            <div class="device-status" aria-hidden="true">
+              <span data-mock>9:41</span>
+              <span class="device-speaker"></span>
+              <span class="device-status-icons"
+                ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+              >
+            </div>
+            <AstraDemo appUrl={appUrl} />
+            <div class="device-home" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-products">
+        <div class="hero-side hero-left" data-hero-column>
+          <p class="hero-phrase phrase-start" data-hero-float>
+            <Copy name="phrase.start" />
+          </p>
+          <div class="hero-float float-reminder" data-hero-float>
+            <ProductCard kind="reminder" />
+          </div>
+          <div class="hero-float float-today" data-hero-float>
+            <ProductCard kind="today" />
+          </div>
+        </div>
+        <div class="hero-side hero-right" data-hero-column>
+          <div class="hero-float float-insight" data-hero-float>
+            <ProductCard kind="insight" />
+          </div>
+          <p class="hero-phrase phrase-restart" data-hero-float>
+            <Copy name="phrase.restart" />
+          </p>
+          <div class="hero-float float-week" data-hero-float>
+            <ProductCard kind="week" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <TrustStrip />
 </section>

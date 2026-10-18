@@ -1,0 +1,38 @@
+---
+import { Check } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import { landingCopy } from "../i18n/translations";
+interface Props {
+  habit: "walk" | "water" | "run" | "stretch";
+  timing?: "morning" | "done";
+  days?: number;
+}
+const { habit, timing = "morning", days } = Astro.props;
+const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘" };
+---
+
+<div class="habit-row">
+  <span class="habit-emoji" aria-hidden="true">{emoji[habit]}</span>
+  <div>
+    <p class="habit-name"><Copy name={`product.${habit}`} /></p>
+    <p class="product-caption">
+      {
+        days === undefined ? (
+          <Copy name={`product.${timing}`} />
+        ) : (
+          <span
+            data-copy-en={landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
+            data-copy-pt={landingCopy["pt-BR"]["blocks.goal.days"].replace("{days}", String(days))}
+          >
+            {landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
+          </span>
+        )
+      }
+    </p>
+  </div>
+  <span class="habit-check" aria-hidden="true">
+    <span class:list={["status-ring", { "is-done": timing === "done" }]}>
+      {timing === "done" && <Check size={16} />}
+    </span>
+  </span>
+</div>

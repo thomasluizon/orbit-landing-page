@@ -1,0 +1,107 @@
+---
+import { Bell, ChevronLeft, ChevronRight, ArrowUpRight } from "@lucide/astro";
+import AstraGlyph from "./AstraGlyph.astro";
+import Copy from "./Copy.astro";
+import HabitRow from "./HabitRow.astro";
+import { landingCopy } from "../i18n/translations";
+interface Props {
+  kind: "today" | "week" | "reminder" | "insight";
+}
+const { kind } = Astro.props;
+---
+
+<div class:list={["product-card", `product-${kind}`]} data-mock="true" data-product-kind={kind}>
+  {
+    kind === "today" && (
+      <>
+        <div class="today-pager">
+          <>
+            <ChevronLeft size={20} />
+            <h3>
+              <Copy name="product.today" />
+            </h3>
+            <ChevronRight size={20} />
+          </>
+        </div>
+        <div class="proactive-line">
+          <>
+            <AstraGlyph />
+            <p>
+              <Copy name="product.proactive" />
+            </p>
+          </>
+        </div>
+        <HabitRow habit="walk" timing="morning" />
+        <HabitRow habit="water" timing="done" />
+      </>
+    )
+  }
+  {
+    kind === "week" && (
+      <>
+        <div class="product-top">
+          <>
+            <h3>
+              <Copy name="product.week" />
+            </h3>
+            <ArrowUpRight size={20} />
+          </>
+        </div>
+        <div
+          class="week-chart"
+          role="img"
+          aria-label={landingCopy.en["product.chart"]}
+          data-copy-label-en={landingCopy.en["product.chart"]}
+          data-copy-label-pt={landingCopy["pt-BR"]["product.chart"]}
+        >
+          {[46, 74, 58, 90, 62, 100, 78].map((height, index) => (
+            <div class="chart-column" aria-hidden="true">
+              <div class="chart-track">
+                <span class="chart-bar" style={`--bar-height: ${height}%`} />
+              </div>
+              <span
+                class="chart-day"
+                data-copy-en={landingCopy.en["product.days"].split(" ")[index]}
+                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
+              >
+                {landingCopy.en["product.days"].split(" ")[index]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "reminder" && (
+      <>
+        <div class="product-top">
+          <>
+            <span class="product-icon">
+              <Bell size={20} />
+            </span>
+            <span class="product-caption">
+              <Copy name="product.reminder" />
+            </span>
+          </>
+        </div>
+        <h3>
+          <Copy name="product.ready" />
+        </h3>
+      </>
+    )
+  }
+  {
+    kind === "insight" && (
+      <>
+        <div class="product-top">
+          <AstraGlyph />
+          <span translate="no">Astra</span>
+        </div>
+        <p>
+          <Copy name="product.insight" />
+        </p>
+      </>
+    )
+  }
+</div>

@@ -1,6 +1,6 @@
 import { LANGUAGES, translations, type Language } from "../i18n/translations";
 
-import { offersFor } from "../config/pricing";
+import { offersFor, formatPrice } from "../config/pricing";
 
 const COOKIE_KEY = "orbit_lang";
 
@@ -35,6 +35,21 @@ function applyTranslations(lang: Language) {
     const key = element.getAttribute("data-i18n-placeholder");
     const value = key ? table[key] : undefined;
     if (value !== undefined) element.setAttribute("placeholder", value);
+  });
+  document.querySelectorAll<HTMLElement>("[data-copy-en]").forEach((element) => {
+    element.textContent =
+      (lang === "pt-BR" ? element.dataset.copyPt : element.dataset.copyEn) ?? "";
+  });
+  document.querySelectorAll<HTMLElement>("[data-copy-label-en]").forEach((element) => {
+    element.setAttribute(
+      "aria-label",
+      (lang === "pt-BR" ? element.dataset.copyLabelPt : element.dataset.copyLabelEn) ?? "",
+    );
+  });
+  document.querySelectorAll<HTMLElement>("[data-price]").forEach((element) => {
+    const period = element.dataset.price;
+    if (period === "monthly" || period === "yearly" || period === "free")
+      element.textContent = formatPrice(lang, period);
   });
   applyAttributes(lang);
   applyStructuredData(lang);
@@ -86,4 +101,5 @@ document.getElementById("lang-toggle")?.addEventListener("click", () => {
   currentLang = currentLang === "en" ? "pt-BR" : "en";
   setLangCookie(currentLang);
   applyTranslations(currentLang);
+  window.dispatchEvent(new CustomEvent("orbit:language-changed"));
 });
