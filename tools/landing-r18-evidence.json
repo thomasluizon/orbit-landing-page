@@ -1,0 +1,98 @@
+{
+  "baselineRef": "d0c1153",
+  "baselineSources": "git archive d0c1153 with the regression tests copied into the archive",
+  "regressions": [
+    {
+      "item": 2,
+      "command": "node --test --test-name-pattern='hero float' src/scripts/hero-carousel.test.mjs",
+      "red": {
+        "exitCode": 1,
+        "passed": 0,
+        "failed": 3
+      },
+      "green": {
+        "exitCode": 0,
+        "passed": 3,
+        "failed": 0
+      }
+    },
+    {
+      "item": 4,
+      "command": "node --test --test-name-pattern='proposal action options' src/scripts/landing-viewport.test.mjs",
+      "red": {
+        "exitCode": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "green": {
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0
+      }
+    },
+    {
+      "item": 5,
+      "command": "node --test --test-name-pattern='pager focus-visible' src/scripts/landing-viewport.test.mjs",
+      "red": {
+        "exitCode": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "green": {
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0
+      }
+    },
+    {
+      "item": 6,
+      "command": "node --test --test-name-pattern='habit-name rules' src/scripts/landing-viewport.test.mjs",
+      "red": {
+        "exitCode": 1,
+        "passed": 0,
+        "failed": 1
+      },
+      "green": {
+        "exitCode": 0,
+        "passed": 1,
+        "failed": 0
+      }
+    }
+  ],
+  "checks": [
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "passed": 162
+    },
+    {
+      "command": "npm run lint",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run format:check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run check",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "hints": 1
+    },
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "passed": 17
+    }
+  ],
+  "design": {
+    "spacingBasePx": 4,
+    "compactSpacingPx": [4, 8, 12, 16, 24],
+    "typeTokens": ["--fs-xs", "--fs-sm", "--fs-base", "--fs-lg"],
+    "colorRadiusShadowAndFontDefinitionsChanged": false,
+    "copyChanged": false,
+    "phoneScreenDriverChanged": false
+  },
+  "renderedChecks": "The orchestrator owns viewport rendering, geometry measurements and motion sampling."
+}
