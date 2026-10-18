@@ -148,9 +148,10 @@ test("all built pages expose translated copy and stable waitlist controls", () =
   }
   assert.match(html, /<label[^>]*for="waitlist-email"[^>]*data-i18n="ios.label"/);
   assert.match(html, /aria-describedby="waitlist-status waitlist-privacy"/);
-  for (const id of ["form", "email", "submit", "submit-label", "status", "turnstile"]) {
+  for (const id of ["form", "email", "submit", "submit-label", "status"]) {
     assert.ok(html.includes(`id="waitlist-${id}"`));
   }
+  assert.equal(html.includes('id="waitlist-turnstile"'), !!process.env.PUBLIC_TURNSTILE_SITE_KEY);
 });
 
 test("confirmation uses native hidden state for both response paths", async () => {

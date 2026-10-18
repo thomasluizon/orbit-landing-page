@@ -38,7 +38,7 @@ const en = translations.en;
           data-i18n-placeholder="ios.placeholder"
           aria-describedby="waitlist-status waitlist-privacy"
         />
-        <div id="waitlist-turnstile"></div>
+        {import.meta.env.PUBLIC_TURNSTILE_SITE_KEY && <div id="waitlist-turnstile" />}
         <PillButton id="waitlist-submit" type="submit" disabled size="sm">
           <span id="waitlist-submit-label" data-i18n="ios.button">{en["ios.button"]}</span>
         </PillButton>
