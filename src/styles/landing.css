@@ -283,7 +283,7 @@
 }
 .demo-examples {
   display: flex;
-  gap: calc(8 * var(--mock-unit));
+  gap: 8px;
   padding-block: 16px;
   margin-block: -12px -4px;
   overflow-x: auto;

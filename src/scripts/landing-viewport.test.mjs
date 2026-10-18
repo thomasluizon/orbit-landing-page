@@ -77,6 +77,7 @@ test("phone screens keep the same inset and gaps outside viewport media queries"
   assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*12px\s*;/);
   assert.match(base, /\.phone-slide \.demo-preview\s*\{[^}]*gap:\s*12px\s*;/);
   assert.match(base, /\.phone-slide \.demo-input-area\s*\{[^}]*gap:\s*8px\s*;/);
+  assert.match(base, /\.demo-examples\s*\{[^}]*gap:\s*8px\s*;/);
 });
 
 test("phone week columns can shrink below the standalone chart's fixed day minimum", () => {
