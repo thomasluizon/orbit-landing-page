@@ -5,7 +5,7 @@ import ProductCard from "./ProductCard.astro";
 import TrustStrip from "./TrustStrip.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
-import { Signal, Wifi, BatteryFull } from "@lucide/astro";
+import { Signal, Wifi, BatteryFull, Pause, Play } from "@lucide/astro";
 interface Props {
   googlePlayUrl: string;
   appUrl: string;
@@ -43,10 +43,66 @@ const en = translations.en;
                 ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
               >
             </div>
-            <AstraDemo appUrl={appUrl} />
+            <div class="phone-carousel" data-phone-carousel data-lenis-prevent>
+              <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
+                <AstraDemo appUrl={appUrl} />
+              </div>
+              <div class="phone-slide" id="phone-today" data-phone-slide="today" data-mobile-screen>
+                <ProductCard kind="today" />
+              </div>
+              <div class="phone-slide" id="phone-week" data-phone-slide="week" data-mobile-screen>
+                <ProductCard kind="week" />
+              </div>
+              <div
+                class="phone-slide"
+                id="phone-reminder"
+                data-phone-slide="reminder"
+                data-mobile-screen
+              >
+                <ProductCard kind="insight" /><ProductCard kind="reminder" />
+              </div>
+            </div>
             <div class="device-home" aria-hidden="true"></div>
           </div>
         </div>
+      </div>
+      <div class="hero-motion-controls">
+        <div
+          class="carousel-segments"
+          role="group"
+          aria-label={en["carousel.label"]}
+          data-i18n-label="carousel.label"
+        >
+          {
+            (["chat", "today", "week", "reminder"] as const).map((screen, index) => (
+              <button
+                type="button"
+                class="carousel-segment"
+                data-carousel-segment={index}
+                aria-controls={`phone-${screen}`}
+                aria-current={index === 0 ? "true" : "false"}
+                aria-label={en[`carousel.${screen}`]}
+                data-i18n-label={`carousel.${screen}`}
+              >
+                <span class="carousel-progress">
+                  <span class="carousel-progress-fill" />
+                </span>
+              </button>
+            ))
+          }
+        </div>
+        <button
+          type="button"
+          id="hero-playback"
+          class="hero-playback"
+          aria-label={en["demo.pause"]}
+          data-i18n-label="demo.pause"
+          aria-pressed="false"
+          ><Pause size={16} class="hero-pause-icon" /><Play
+            size={16}
+            class="hero-play-icon"
+          /></button
+        >
       </div>
       <div class="hero-products">
         <div class="hero-side hero-left" data-hero-column>
@@ -76,3 +132,7 @@ const en = translations.en;
   </div>
   <TrustStrip />
 </section>
+
+<script>
+  import "../scripts/hero-carousel";
+</script>

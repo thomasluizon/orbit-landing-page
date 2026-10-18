@@ -1,154 +1,154 @@
 import { translations, type TranslationKey } from "../i18n/translations";
 import { getLang } from "./i18n";
+import { planFromWords } from "./demo-plan";
 
 type Example = "start" | "restart" | "move";
-
 const demo = document.getElementById("astra-demo");
-const exchange = demo?.querySelector<HTMLElement>(".demo-exchange");
-const response = document.getElementById("demo-response");
-const second = document.getElementById("demo-second");
 const preview = document.getElementById("demo-preview");
 const today = document.getElementById("demo-today");
-const todaySecond = document.getElementById("demo-today-second");
 const result = document.getElementById("demo-result");
-const announcement = document.getElementById("demo-announcement");
-const chips = demo?.querySelectorAll<HTMLButtonElement>("[data-demo]");
-const playback = document.getElementById("demo-playback");
-const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-let pending: number | undefined;
-let loopTimer: number | undefined;
-let paused = false;
-let current: Example = "start";
-let edited = false;
+const continuation = document.getElementById("demo-continue");
+const continueLink = document.getElementById("demo-continue-link") as HTMLAnchorElement | null;
+const editForm = document.getElementById("demo-edit-form") as HTMLFormElement | null;
+const editName = document.getElementById("demo-edit-name") as HTMLInputElement | null;
+const editSchedule = document.getElementById("demo-edit-schedule") as HTMLSelectElement | null;
+const input = document.getElementById("demo-input") as HTMLInputElement | null;
+let current: Example | "custom" = "start";
+let title = "";
+let schedule: TranslationKey = "demo.start.repeat";
+let approved = false;
 
-function setCopy(id: string, key: TranslationKey) {
+function setText(id: string, text: string, key?: TranslationKey) {
   const element = document.getElementById(id);
   if (!element) return;
-  element.textContent = translations[getLang()][key];
-  element.setAttribute("data-i18n", key);
+  element.textContent = text;
+  if (key) element.setAttribute("data-i18n", key);
+  else element.removeAttribute("data-i18n");
 }
 
-function showResponse() {
-  if (response) response.style.visibility = "visible";
-  exchange?.setAttribute("aria-busy", "false");
-  pending = undefined;
+function setCopy(id: string, key: TranslationKey) {
+  setText(id, translations[getLang()][key], key);
 }
 
-function clearAnnouncement() {
-  if (!announcement) return;
-  announcement.textContent = "";
-  announcement.removeAttribute("data-i18n");
+function habitTitle() {
+  return title || translations[getLang()][`demo.${current === "custom" ? "start" : current}.habit`];
 }
 
-function play(example: Example, manual = true) {
-  if (manual) pause();
-  window.clearTimeout(pending);
-  exchange?.setAttribute("aria-live", manual ? "polite" : "off");
-  current = example;
-  edited = false;
-  if (today) today.hidden = true;
+function renderPlan() {
+  setText("demo-habit", habitTitle());
+  setCopy("demo-repeat", schedule);
+  setCopy("demo-second-repeat", schedule);
+}
+
+function resetProposal() {
+  approved = false;
   if (preview) preview.hidden = false;
+  if (today) today.hidden = true;
   if (result) result.hidden = true;
-  clearAnnouncement();
-  for (const field of ["request", "reply", "habit", "repeat"] as const) {
-    setCopy(`demo-${field}`, `demo.${example}.${field}`);
-  }
-  if (second) second.hidden = example !== "move";
-  setCopy("demo-second-repeat", "demo.move.secondRepeat");
-  chips?.forEach((chip) =>
-    chip.setAttribute("aria-pressed", String(chip.dataset.demo === example)),
-  );
-  if (motion.matches) return showResponse();
-  if (response) response.style.visibility = "hidden";
-  exchange?.setAttribute("aria-busy", "true");
-  pending = window.setTimeout(showResponse, 480);
+  if (continuation) continuation.hidden = true;
+  if (editForm) editForm.hidden = true;
+  document.getElementById("demo-second")?.toggleAttribute("hidden", current !== "move");
+  demo
+    ?.querySelectorAll<HTMLElement>("[data-demo]")
+    .forEach((chip) => chip.setAttribute("aria-pressed", String(chip.dataset.demo === current)));
+  renderPlan();
 }
 
-function finish(approved: boolean, manual = true) {
-  if (manual) pause();
-  window.clearTimeout(pending);
-  exchange?.setAttribute("aria-live", manual ? "polite" : "off");
-  showResponse();
-  setCopy("demo-result", approved ? `demo.${current}.approved` : "demo.rejected");
-  if (result) result.hidden = false;
-  if (preview) preview.hidden = true;
-  if (today) today.hidden = !approved;
-  if (todaySecond) todaySecond.hidden = current !== "move";
-  if (approved) {
-    setCopy("demo-today-habit", `demo.${current}.habit`);
-    const schedule: TranslationKey = edited
-      ? `demo.${current}.alternateRepeat`
-      : `demo.${current}.repeat`;
-    setCopy("demo-today-repeat", schedule);
-    setCopy("demo-today-second-repeat", schedule);
-  }
-  clearAnnouncement();
-  chips?.forEach((chip) => {
-    if (manual && chip.dataset.demo === current) chip.focus();
+function play(example: Example) {
+  current = example;
+  title = "";
+  schedule = `demo.${example}.repeat`;
+  setCopy("demo-request", `demo.${example}.request`);
+  setCopy("demo-reply", `demo.${example}.reply`);
+  resetProposal();
+}
+
+function updateToday() {
+  setText("demo-today-habit", habitTitle());
+  setCopy("demo-today-repeat", schedule);
+  setCopy("demo-today-second-repeat", schedule);
+  document.getElementById("demo-today-second")?.toggleAttribute("hidden", current !== "move");
+  document.querySelectorAll<HTMLElement>("[data-demo-approved]").forEach((row) => {
+    row.hidden = false;
+    const name = row.querySelector<HTMLElement>("[data-approved-name]");
+    const repeat = row.querySelector<HTMLElement>("[data-approved-repeat]");
+    if (name) name.textContent = habitTitle();
+    if (repeat) repeat.textContent = translations[getLang()][schedule];
   });
 }
 
-function edit() {
-  pause();
-  window.clearTimeout(pending);
-  showResponse();
-  edited = !edited;
-  const key: TranslationKey = edited ? `demo.${current}.alternateRepeat` : `demo.${current}.repeat`;
-  setCopy("demo-repeat", key);
-  if (current === "move") setCopy("demo-second-repeat", key);
+function finish(accept: boolean) {
+  approved = accept;
+  setCopy("demo-result", accept ? `demo.${current}.approved` : "demo.rejected");
+  if (result) result.hidden = false;
+  if (preview) preview.hidden = true;
+  if (today) today.hidden = !accept;
+  if (continuation) continuation.hidden = !accept;
+  if (accept) {
+    updateToday();
+    if (continueLink?.dataset.appUrl) {
+      const destination = new URL("/habits/new", continueLink.dataset.appUrl);
+      destination.searchParams.set("title", habitTitle());
+      continueLink.href = destination.href;
+    }
+  }
+  document.getElementById("demo-result")?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  demo
+    ?.querySelector<HTMLButtonElement>(`[data-demo="${current === "custom" ? "start" : current}"]`)
+    ?.focus({ preventScroll: true });
+}
+
+function openEditor() {
+  if (!editForm || !editName || !editSchedule) return;
+  editForm.hidden = !editForm.hidden;
+  editName.value = habitTitle();
+  editSchedule.value =
+    schedule === "demo.afternoon"
+      ? "afternoon"
+      : schedule.endsWith("alternateRepeat") ||
+          schedule === "demo.move.repeat" ||
+          schedule === "demo.restart.repeat"
+        ? "evening"
+        : "morning";
+  if (!editForm.hidden) editName.focus();
+}
+
+editForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!editName?.value.trim() || !editSchedule) return;
+  title = editName.value.trim().slice(0, 80);
+  schedule =
+    editSchedule.value === "evening"
+      ? "demo.start.alternateRepeat"
+      : editSchedule.value === "afternoon"
+        ? "demo.afternoon"
+        : "demo.start.repeat";
+  renderPlan();
+  editForm.hidden = true;
   setCopy("demo-announcement", "demo.edited");
-}
-
-function updatePlayback() {
-  if (!playback) return;
-  const key = paused ? "demo.resume" : "demo.pause";
-  playback.setAttribute("aria-pressed", String(paused));
-  playback.setAttribute("data-i18n-label", key);
-  playback.setAttribute("aria-label", translations[getLang()][key]);
-  playback.hidden = motion.matches;
-}
-
-function pause() {
-  paused = true;
-  window.clearTimeout(loopTimer);
-  updatePlayback();
-}
-
-function scheduleLoop() {
-  window.clearTimeout(loopTimer);
-  if (!demo || paused || motion.matches || document.hidden) return;
-  loopTimer = window.setTimeout(() => {
-    if (today?.hidden) finish(true, false);
-    else play("start", false);
-    scheduleLoop();
-  }, 4500);
-}
-
-playback?.addEventListener("click", () => {
-  if (!paused) return pause();
-  paused = false;
-  updatePlayback();
-  scheduleLoop();
+  document.getElementById("demo-edit")?.focus();
 });
-document.addEventListener("visibilitychange", scheduleLoop);
-window.addEventListener("pagehide", () => window.clearTimeout(loopTimer));
-window.addEventListener("pageshow", scheduleLoop);
-
-chips?.forEach((chip) => chip.addEventListener("click", () => play(chip.dataset.demo as Example)));
+document.getElementById("demo-composer")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const words = input?.value.trim();
+  if (!words) return;
+  current = "custom";
+  ({ title, schedule } = planFromWords(words));
+  setText("demo-request", words);
+  setCopy("demo-reply", "demo.custom.reply");
+  resetProposal();
+  if (input) input.value = "";
+  document
+    .getElementById("demo-preview")
+    ?.scrollIntoView({ block: "nearest", behavior: "instant" });
+});
+demo
+  ?.querySelectorAll<HTMLButtonElement>("[data-demo]")
+  .forEach((chip) => chip.addEventListener("click", () => play(chip.dataset.demo as Example)));
 document.getElementById("demo-approve")?.addEventListener("click", () => finish(true));
 document.getElementById("demo-reject")?.addEventListener("click", () => finish(false));
-document.getElementById("demo-edit")?.addEventListener("click", edit);
-motion.addEventListener("change", () => {
-  if (motion.matches) {
-    window.clearTimeout(pending);
-    showResponse();
-  }
-  updatePlayback();
-  scheduleLoop();
+document.getElementById("demo-edit")?.addEventListener("click", openEditor);
+window.addEventListener("orbit:language-changed", () => {
+  renderPlan();
+  if (approved) updateToday();
 });
-if (demo) {
-  if (motion.matches) play("start", false);
-  else showResponse();
-  updatePlayback();
-  scheduleLoop();
-}

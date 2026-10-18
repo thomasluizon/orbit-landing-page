@@ -12,23 +12,19 @@ export function mountLandingMotion() {
       smoothWheel: true,
       lerp: 0.15,
       anchors: false,
-      prevent: (node) =>
-        node.closest("dialog") !== null || document.querySelector("dialog[open]") !== null,
+      prevent: (node) => node.closest(".phone-carousel, #ios") !== null,
     });
     lenis.on("scroll", ScrollTrigger.update);
     return () => lenis.destroy();
   });
-  media.add(
-    "(prefers-reduced-motion: no-preference) and (min-width: 67.5rem) and (min-height: 46rem)",
-    () => {
-      const stage = document.getElementById("hero-stage");
-      if (!stage) return;
-      const header = document.getElementById("site-header");
-      const columns = stage.querySelectorAll<HTMLElement>("[data-hero-column]");
+  media.add("(prefers-reduced-motion: no-preference)", () => {
+    const stage = document.getElementById("hero-stage");
+    if (stage) {
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: stage,
-          start: () => `top ${(header?.getBoundingClientRect().bottom ?? 96) + 32}px`,
+          start: () =>
+            `top ${(document.getElementById("site-header")?.getBoundingClientRect().bottom ?? 96) + 16}px`,
           end: "+=560",
           pin: true,
           pinSpacing: false,
@@ -36,55 +32,40 @@ export function mountLandingMotion() {
           invalidateOnRefresh: true,
         },
       });
-      columns.forEach((column, index) => {
-        const cards = column.querySelectorAll<HTMLElement>("[data-hero-float]");
+      stage.querySelectorAll<HTMLElement>("[data-hero-column]").forEach((column, index) => {
         timeline.fromTo(
-          cards,
+          column.querySelectorAll("[data-hero-float]"),
           { y: 24, opacity: 0 },
           { y: 0, opacity: 1, duration: 1, ease: "none", stagger: 0.18 },
           index * 0.08,
         );
       });
-    },
-  );
-  media.add(
-    "(prefers-reduced-motion: no-preference) and ((width < 67.5rem) or (height < 46rem))",
-    () => {
-      document.querySelectorAll<HTMLElement>("[data-hero-column]").forEach((column) => {
-        gsap.fromTo(
-          column.querySelectorAll<HTMLElement>("[data-hero-float]"),
-          { y: 24, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.28,
-            stagger: 0.18,
-            ease: "power1.out",
-            scrollTrigger: { trigger: column, start: "top 92%", once: true },
-          },
-        );
-      });
-    },
-  );
-  media.add("(prefers-reduced-motion: no-preference)", () => {
-    document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((element) => {
+    }
+    document.querySelectorAll<HTMLElement>("[data-example-row]").forEach((row) => {
       gsap.fromTo(
-        element,
-        { y: 12, opacity: 0.75 },
+        row.querySelectorAll("[data-composition-card]"),
+        { y: 48, scale: 0.94, opacity: 0.5 },
         {
           y: 0,
+          scale: 1,
           opacity: 1,
-          duration: 0.28,
-          ease: "power1.out",
-          scrollTrigger: { trigger: element, start: "top 92%", once: true },
+          stagger: 0.12,
+          ease: "none",
+          scrollTrigger: {
+            trigger: row,
+            start: "top 90%",
+            end: "center 55%",
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+          },
         },
       );
     });
   });
   const refresh = () => ScrollTrigger.refresh();
   document.fonts.ready.then(refresh);
-  const device = document.querySelector(".hero-device");
   const deviceSize = new ResizeObserver(refresh);
+  const device = document.querySelector(".hero-device");
   if (device) deviceSize.observe(device);
   document
     .querySelectorAll("details")

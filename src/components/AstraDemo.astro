@@ -1,5 +1,5 @@
 ---
-import { ArrowUp, Pause, Play } from "@lucide/astro";
+import { ArrowUp, Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import PillButton from "./PillButton.astro";
@@ -15,17 +15,6 @@ const en = translations.en;
   <div class="demo-heading">
     <AstraGlyph />
     <h2 id="demo-title" class="t-row" translate="no">Astra</h2>
-    <button
-      id="demo-playback"
-      class="demo-playback"
-      type="button"
-      aria-label={en["demo.pause"]}
-      data-i18n-label="demo.pause"
-      aria-pressed="false"
-    >
-      <Pause size={16} class="demo-pause-icon" aria-hidden="true" />
-      <Play size={16} class="demo-play-icon" aria-hidden="true" />
-    </button>
   </div>
   <div class="demo-thread">
     <div class="demo-exchange" aria-live="polite" aria-atomic="true" aria-busy="false">
@@ -58,6 +47,21 @@ const en = translations.en;
               </p>
             </div>
           </div>
+          <form id="demo-edit-form" class="demo-edit-form" hidden>
+            <label for="demo-edit-name" data-i18n="demo.name">{en["demo.name"]}</label>
+            <input id="demo-edit-name" type="text" maxlength="80" required />
+            <label for="demo-edit-schedule" data-i18n="demo.schedule">{en["demo.schedule"]}</label>
+            <select id="demo-edit-schedule">
+              <option value="morning" data-i18n="demo.start.repeat"
+                >{en["demo.start.repeat"]}</option
+              >
+              <option value="afternoon" data-i18n="demo.afternoon">{en["demo.afternoon"]}</option>
+              <option value="evening" data-i18n="demo.start.alternateRepeat"
+                >{en["demo.start.alternateRepeat"]}</option
+              >
+            </select>
+            <button type="submit" class="demo-save" data-i18n="demo.save">{en["demo.save"]}</button>
+          </form>
           <div class="demo-preview-actions">
             <PillButton id="demo-reject" variant="ghost" size="sm"
               ><span data-i18n="demo.reject">{en["demo.reject"]}</span></PillButton
@@ -77,22 +81,43 @@ const en = translations.en;
     <div id="demo-today" class="demo-today" hidden>
       <p class="product-caption"><Copy name="product.approved" /></p>
       <h3><Copy name="product.today" /></h3>
-      <div class="habit-row">
+      <button type="button" class="habit-row" data-habit-toggle aria-pressed="false">
         <span class="habit-emoji" aria-hidden="true">🚶</span><div>
           <p id="demo-today-habit" class="habit-name"></p><p
             id="demo-today-repeat"
             class="product-caption"
           >
           </p>
-        </div><span class="habit-check" aria-hidden="true"><span class="status-ring"></span></span>
-      </div>
-      <div id="demo-today-second" class="habit-row" hidden>
+        </div><span class="habit-check" aria-hidden="true"
+          ><span class="status-ring"><Check size={16} /></span></span
+        >
+      </button>
+      <button
+        type="button"
+        id="demo-today-second"
+        class="habit-row"
+        data-habit-toggle
+        aria-pressed="false"
+        hidden
+      >
         <span class="habit-emoji" aria-hidden="true">📖</span><div>
           <p class="habit-name" data-i18n="demo.move.secondHabit">
             {en["demo.move.secondHabit"]}
           </p><p id="demo-today-second-repeat" class="product-caption"></p>
-        </div><span class="habit-check" aria-hidden="true"><span class="status-ring"></span></span>
-      </div>
+        </div><span class="habit-check" aria-hidden="true"
+          ><span class="status-ring"><Check size={16} /></span></span
+        >
+      </button>
+    </div>
+    <div id="demo-continue" class="demo-continue" hidden>
+      <p data-i18n="demo.continue">{en["demo.continue"]}</p>
+      <a
+        id="demo-continue-link"
+        class="text-link"
+        href={appUrl}
+        data-app-url={appUrl}
+        data-i18n="demo.continueAction">{en["demo.continueAction"]}</a
+      >
     </div>
   </div>
   <div class="demo-input-area">
@@ -115,10 +140,25 @@ const en = translations.en;
         ))
       }
     </div>
-    <a class="demo-composer" href={appUrl}>
-      <span translate="no" data-i18n="demo.composer">{en["demo.composer"]}</span>
-      <span class="demo-send" aria-hidden="true"><ArrowUp size={16} /></span>
-    </a>
+    <form class="demo-composer" id="demo-composer">
+      <input
+        id="demo-input"
+        type="text"
+        maxlength="120"
+        required
+        autocomplete="off"
+        aria-label={en["demo.inputLabel"]}
+        data-i18n-label="demo.inputLabel"
+        placeholder={en["demo.composer"]}
+        data-i18n-placeholder="demo.composer"
+      />
+      <button
+        type="submit"
+        class="demo-send"
+        aria-label={en["demo.send"]}
+        data-i18n-label="demo.send"><ArrowUp size={16} /></button
+      >
+    </form>
   </div>
 </section>
 
