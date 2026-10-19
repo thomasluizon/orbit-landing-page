@@ -1,28 +1,38 @@
 ---
 import PillButton from "./PillButton.astro";
 import LanguageToggle from "./LanguageToggle.astro";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
-  googlePlayUrl: string;
+  appUrl: string;
 }
-const { googlePlayUrl } = Astro.props;
+const { appUrl } = Astro.props;
+const lockup = orbitLockup
+  .replace(/<title\b[^>]*>[\s\S]*?<\/title>/g, "")
+  .replace(/\saria-labelledby="[^"]*"/g, "");
 ---
 
 <header id="site-header" class="site-header">
   <nav class="header-content" aria-label={translations.en["nav.label"]} data-i18n-label="nav.label">
     <a href="/" class="brand" aria-label="Orbit" translate="no"
-      ><span class="brand-lockup" aria-hidden="true" set:html={orbitLockup} /></a
+      ><span class="brand-lockup" aria-hidden="true" set:html={lockup} /></a
     >
+    <div class="header-links">
+      <a href="#features"><Copy name="nav.features" /></a>
+      <a href="#pricing"><Copy name="nav.pricing" /></a>
+    </div>
     <div class="header-actions">
-      <LanguageToggle /><PillButton
-        href={googlePlayUrl}
-        variant="ghost"
+      <LanguageToggle />
+      <PillButton
+        href={appUrl}
+        variant="secondary"
         size="sm"
-        external
+        class="header-open"
         analyticsEvent="header_app_cta_clicked"
         analyticsSurface="header"
-        ><span data-i18n="header.cta">{translations.en["header.cta"]}</span></PillButton
+        ><span translate="no" data-i18n="header.cta">{translations.en["header.cta"]}</span
+        ></PillButton
       >
     </div>
   </nav>

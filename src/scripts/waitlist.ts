@@ -54,7 +54,9 @@ function setStatus(message: string, kind: "success" | "error") {
 
 function updateSubmitButton(strings: Strings) {
   if (!submitButton) return;
-  submitButton.disabled = submitting || !turnstileToken;
+  submitButton.disabled =
+    submitting ||
+    (TURNSTILE_SITE_KEY ? !turnstileToken : !EMAIL_PATTERN.test(emailInput?.value.trim() ?? ""));
   if (submitLabel)
     submitLabel.textContent = submitting ? strings["ios.submitting"] : strings["ios.button"];
 }
@@ -83,6 +85,15 @@ function isEmailValidationFailure(payload: unknown): boolean {
     "Email" in errors &&
     Array.isArray(errors.Email) &&
     errors.Email.length > 0
+  );
+}
+
+function isChallengeFailure(payload: unknown): boolean {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    "error" in payload &&
+    payload.error === "Invalid verification token"
   );
 }
 
@@ -121,10 +132,7 @@ function initializeTurnstile(): Promise<void> {
     return turnstileInitializationPromise ?? Promise.resolve();
   }
 
-  if (!turnstileContainer || !TURNSTILE_SITE_KEY) {
-    if (!TURNSTILE_SITE_KEY) handleChallengeFailure();
-    return Promise.resolve();
-  }
+  if (!turnstileContainer || !TURNSTILE_SITE_KEY) return Promise.resolve();
 
   turnstileInitializationPromise = (async () => {
     let turnstile: Turnstile;
@@ -159,10 +167,14 @@ function initializeTurnstile(): Promise<void> {
   return turnstileInitializationPromise;
 }
 
-if (form && emailInput && submitButton && status && turnstileContainer) {
+if (form && emailInput && submitButton && status) {
   const startChallenge = () => void initializeTurnstile();
   emailInput.addEventListener("focus", startChallenge);
-  emailInput.addEventListener("input", startChallenge);
+  emailInput.addEventListener("input", () => {
+    updateSubmitButton(translations[getLang()]);
+    startChallenge();
+  });
+  updateSubmitButton(translations[getLang()]);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -176,7 +188,7 @@ if (form && emailInput && submitButton && status && turnstileContainer) {
       return;
     }
 
-    if (!turnstileToken) {
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
       handleChallengeFailure();
       return;
     }
@@ -189,7 +201,11 @@ if (form && emailInput && submitButton && status && turnstileContainer) {
       const response = await fetch(`${API_URL}/api/waitlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, language, turnstileToken }),
+        body: JSON.stringify({
+          email,
+          language,
+          ...(TURNSTILE_SITE_KEY ? { turnstileToken } : {}),
+        }),
       });
 
       if (response.ok) {
@@ -197,7 +213,11 @@ if (form && emailInput && submitButton && status && turnstileContainer) {
         setStatus(strings["ios.success"], "success");
       } else if (response.status === 400) {
         const payload: unknown = await response.json();
-        const key = isEmailValidationFailure(payload) ? "ios.invalidEmail" : "ios.challengeFailed";
+        const key = isEmailValidationFailure(payload)
+          ? "ios.invalidEmail"
+          : isChallengeFailure(payload)
+            ? "ios.challengeFailed"
+            : "ios.error";
         setStatus(strings[key], "error");
       } else {
         setStatus(strings["ios.error"], "error");

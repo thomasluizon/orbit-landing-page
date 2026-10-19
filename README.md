@@ -36,19 +36,13 @@ The canon lives in `orbit-ui-mobile/DESIGN.md`. This repository mirrors its dark
 | Card surface | `rgba(250,250,250,0.04)`                      |
 | Hairline     | `rgba(255,255,255,0.08)`                      |
 
-Type sizes step with viewport width and height. The Astra preview uses the canon's dashed proposed state. See `CLAUDE.md` for token rules and code standards.
+Type sizes step with viewport width. The Astra proposal uses a tonal preview with approval controls. See `CLAUDE.md` for token rules and code standards.
 
 ## Viewport assertions
 
-`src/scripts/landing-viewport.mjs` exports the required viewport sizes, languages and example names, plus `measureLandingViewport(window)` and `assertLandingViewport(sample)`. The measurement function waits for fonts and layout; call it after the selected demo finishes. It reads the rendered document without navigating or starting a browser. These functions are verification code and are not included in the page's client bundle.
+The landing follows a scrolling composition with a centered Astra device, floating product cards, feature sections, pricing, questions and a closing invitation. Node tests check section order, accent actions, bilingual copy, pricing and motion startup. The animation libraries load after paint and interaction. Reduced motion keeps the static composition and does not load the scroll driver.
 
-The rendered verification runner collects one observation per viewport, language and example, then writes the array as JSON. Validate that complete matrix in CI with:
-
-```bash
-npm run check:landing-viewports -- /path/to/observations.json
-```
-
-The validator requires all 120 combinations and rejects document scroll, offscreen boxes, clipped content, overlapping interactive targets, headlines over two lines, or a composition that loses its centred vertical order. `npm test` covers the validator and the Astro composition without a browser. Rendered measurements and keyboard interaction checks belong to the orchestrator's verification pass.
+Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Brazilian Portuguese, including the pinned hero, no horizontal overflow, whole control labels and a static reduced motion page. Rendered evidence and Lighthouse remain part of the orchestrator's verification.
 
 ## Prerequisites
 
@@ -88,8 +82,9 @@ src/
     i18n.ts              # Language cookie, toggle and translated metadata
     demo.ts              # Local scripted examples
     waitlist.ts          # Turnstile and waitlist submission
-    waitlist-dialog.ts   # Fragment navigation and modal dismissal
-    landing-viewport.mjs # Rendered geometry assertions
+    waitlist-section.ts  # Fragment navigation and email focus
+    scroll.ts           # Deferred scroll animation startup
+    landing-motion.ts   # Lenis and GSAP choreography
   styles/
     global.css           # Tailwind v4 @theme token mirror + type roles + base
 eslint-rules/
@@ -140,12 +135,13 @@ Render build contract:
 
 Build-time variables on the Render static site:
 
-| Variable                    | Purpose                                                       |
-| --------------------------- | ------------------------------------------------------------- |
-| `PUBLIC_API_URL`            | Waitlist API endpoint; defaults to `https://api.useorbit.org` |
-| `PUBLIC_APP_URL`            | Web app links; defaults to `https://app.useorbit.org`         |
-| `PUBLIC_POSTHOG_KEY`        | Enables consent-gated PostHog analytics through `/relay/`     |
-| `PUBLIC_TURNSTILE_SITE_KEY` | Enables the waitlist Turnstile widget                         |
+| Variable                     | Purpose                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| `PUBLIC_API_URL`             | Waitlist API endpoint; defaults to `https://api.useorbit.org`                   |
+| `PUBLIC_ANDROID_INSTALL_URL` | Android install links and generated QR; defaults to the production Play listing |
+| `PUBLIC_APP_URL`             | Web app links; defaults to `https://app.useorbit.org`                           |
+| `PUBLIC_POSTHOG_KEY`         | Enables consent-gated PostHog analytics through `/relay/`                       |
+| `PUBLIC_TURNSTILE_SITE_KEY`  | Enables the waitlist Turnstile widget                                           |
 
 Configure release credentials in GitHub Settings > Environments:
 

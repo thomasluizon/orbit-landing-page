@@ -1,6 +1,6 @@
 import { LANGUAGES, translations, type Language } from "../i18n/translations";
 
-import { offersFor } from "../config/pricing";
+import { offersFor, formatPrice } from "../config/pricing";
 
 const COOKIE_KEY = "orbit_lang";
 
@@ -26,7 +26,7 @@ function applyTranslations(lang: Language) {
     const key = element.getAttribute("data-i18n");
     const value = key ? table[key] : undefined;
     if (value !== undefined) {
-      element.textContent = value;
+      if (element.textContent !== value) element.textContent = value;
     } else if (import.meta.env.DEV) {
       console.warn(`[i18n] Missing key "${key}" for "${lang}"`);
     }
@@ -34,7 +34,24 @@ function applyTranslations(lang: Language) {
   document.querySelectorAll<HTMLElement>("[data-i18n-placeholder]").forEach((element) => {
     const key = element.getAttribute("data-i18n-placeholder");
     const value = key ? table[key] : undefined;
-    if (value !== undefined) element.setAttribute("placeholder", value);
+    if (value !== undefined && element.getAttribute("placeholder") !== value)
+      element.setAttribute("placeholder", value);
+  });
+  document.querySelectorAll<HTMLElement>("[data-copy-en]").forEach((element) => {
+    const value = (lang === "pt-BR" ? element.dataset.copyPt : element.dataset.copyEn) ?? "";
+    if (element.textContent !== value) element.textContent = value;
+  });
+  document.querySelectorAll<HTMLElement>("[data-copy-label-en]").forEach((element) => {
+    const value =
+      (lang === "pt-BR" ? element.dataset.copyLabelPt : element.dataset.copyLabelEn) ?? "";
+    if (element.getAttribute("aria-label") !== value) element.setAttribute("aria-label", value);
+  });
+  document.querySelectorAll<HTMLElement>("[data-price]").forEach((element) => {
+    const period = element.dataset.price;
+    if (period === "monthly" || period === "yearly" || period === "free") {
+      const value = formatPrice(lang, period);
+      if (element.textContent !== value) element.textContent = value;
+    }
   });
   applyAttributes(lang);
   applyStructuredData(lang);
@@ -55,7 +72,8 @@ function applyAttributes(lang: Language) {
   ]) {
     document.querySelectorAll<HTMLElement>(selector).forEach((element) => {
       const key = element.getAttribute(keyAttribute);
-      if (key && table[key]) element.setAttribute(attribute, table[key]);
+      if (key && table[key] && element.getAttribute(attribute) !== table[key])
+        element.setAttribute(attribute, table[key]);
     });
   }
 }
@@ -80,10 +98,11 @@ function applyStructuredData(lang: Language) {
 
 let currentLang = getLang();
 setLangCookie(currentLang);
-applyTranslations(currentLang);
+if (document.documentElement.lang !== currentLang) applyTranslations(currentLang);
 
 document.getElementById("lang-toggle")?.addEventListener("click", () => {
   currentLang = currentLang === "en" ? "pt-BR" : "en";
   setLangCookie(currentLang);
   applyTranslations(currentLang);
+  window.dispatchEvent(new CustomEvent("orbit:language-changed"));
 });

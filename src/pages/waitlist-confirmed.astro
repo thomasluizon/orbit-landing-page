@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import PillButton from "../components/PillButton.astro";
 import LanguageToggle from "../components/LanguageToggle.astro";
 import { translations } from "../i18n/translations";
-const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+import { appUrl } from "../config/links";
 const en = translations.en;
 ---
 

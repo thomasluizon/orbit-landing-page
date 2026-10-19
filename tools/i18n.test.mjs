@@ -21,7 +21,7 @@ function element(attributes = {}, textContent = "") {
   };
 }
 
-function harness({ cookie = "", language = "en-US" } = {}) {
+function harness({ cookie = "", language = "en-US", serverRendered = false } = {}) {
   const toggle = element();
   const label = element();
   const headline = element({ "data-i18n": "hero.title" });
@@ -33,24 +33,45 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     {},
     JSON.stringify({ "@graph": [{ "@type": "SoftwareApplication", offers: {} }] }),
   );
+  const landingNode = element();
+  const chartLabel = element();
+  const displayedPrices = ["free", "monthly", "yearly"].map((period) => ({
+    ...element(),
+    dataset: { price: period },
+  }));
+  const languageEvents = [];
+  const queries = [];
   const document = {
     cookie,
     documentElement: {},
     getElementById: (id) => ({ "lang-label": label, "lang-toggle": toggle })[id] ?? null,
-    querySelectorAll: (selector) =>
-      ({
-        "[data-i18n]": [headline, continuation],
-        "[data-i18n-placeholder]": [placeholder],
-        "[data-i18n-content]": [description],
-        "[data-i18n-label]": [nav],
-        'script[type="application/ld+json"]': [graph],
-      })[selector] ?? [],
+    querySelectorAll: (selector) => {
+      queries.push(selector);
+      return (
+        {
+          "[data-i18n]": [headline, continuation],
+          "[data-copy-en]": [landingNode],
+          "[data-copy-label-en]": [chartLabel],
+          "[data-price]": displayedPrices,
+          "[data-i18n-placeholder]": [placeholder],
+          "[data-i18n-content]": [description],
+          "[data-i18n-label]": [nav],
+          'script[type="application/ld+json"]': [graph],
+        }[selector] ?? []
+      );
+    },
   };
   const context = vm.createContext({
     document,
     navigator: { language },
     environment: { DEV: false },
     Intl,
+    window: { dispatchEvent: (event) => languageEvents.push(event.type) },
+    CustomEvent: class {
+      constructor(type) {
+        this.type = type;
+      }
+    },
   });
   const modules = new Map();
   function require(path) {
@@ -64,6 +85,20 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     modules.set(path, exports);
     return exports;
   }
+  const landingTables = require("../i18n/translations").landingCopy;
+  landingNode.dataset = {
+    copyEn: landingTables.en["nav.features"],
+    copyPt: landingTables["pt-BR"]["nav.features"],
+  };
+  chartLabel.dataset = {
+    copyLabelEn: landingTables.en["blocks.metrics.choose"],
+    copyLabelPt: landingTables["pt-BR"]["blocks.metrics.choose"],
+  };
+  if (serverRendered) {
+    document.documentElement.lang = "en";
+    headline.textContent = require("../i18n/translations").translations.en["hero.title"];
+    landingNode.textContent = landingNode.dataset.copyEn;
+  }
   const module = require("./i18n");
   return {
     module,
@@ -76,10 +111,27 @@ function harness({ cookie = "", language = "en-US" } = {}) {
     description,
     nav,
     graph,
+    landingNode,
+    chartLabel,
+    displayedPrices,
+    landingTables,
+    languageEvents,
+    queries,
     tables: require("../i18n/translations").translations,
     prices: require("../config/pricing"),
   };
 }
+
+test("matching server-rendered English avoids a full-page translation scan at startup", () => {
+  const h = harness({ serverRendered: true });
+  assert.deepEqual(h.queries, []);
+  assert.equal(h.headline.textContent, h.tables.en["hero.title"]);
+  assert.equal(h.landingNode.textContent, h.landingTables.en["nav.features"]);
+  h.toggle.listeners.get("click")();
+  assert.ok(h.queries.length > 0);
+  assert.equal(h.headline.textContent, h.tables["pt-BR"]["hero.title"]);
+  assert.equal(h.landingNode.textContent, h.landingTables["pt-BR"]["nav.features"]);
+});
 
 test("language cookies override the browser and invalid cookies use its language", () => {
   assert.equal(harness({ cookie: "orbit_lang=pt-BR", language: "en" }).module.getLang(), "pt-BR");
@@ -168,5 +220,32 @@ test("pt-BR demo repeat labels name every time of day with the same adverbial fo
   for (const key of repeatKeys) {
     const timeOfDay = tables["pt-BR"][key].split(" · ").at(-1);
     assert.match(timeOfDay, /^(?:De manhã|À tarde|À noite)$/u, key);
+  }
+});
+
+test("switching the real language toggle updates every landing copy attribute, chart name and configured price", () => {
+  const h = harness();
+  for (const lang of ["en", "pt-BR", "en"]) {
+    if (h.document.documentElement.lang !== lang) h.toggle.listeners.get("click")();
+    assert.equal(h.landingNode.textContent, h.landingTables[lang]["nav.features"]);
+    assert.equal(
+      h.chartLabel.attributes["aria-label"],
+      h.landingTables[lang]["blocks.metrics.choose"],
+    );
+    for (const price of h.displayedPrices)
+      assert.equal(price.textContent, h.prices.formatPrice(lang, price.dataset.price));
+  }
+  assert.deepEqual(h.languageEvents, ["orbit:language-changed", "orbit:language-changed"]);
+});
+
+test("every new landing string exists in both languages and Astra remains feminine", () => {
+  const { landingTables } = harness();
+  assert.deepEqual(Object.keys(landingTables.en), Object.keys(landingTables["pt-BR"]));
+  for (const [lang, table] of Object.entries(landingTables)) {
+    for (const [key, value] of Object.entries(table)) {
+      assert.ok(value.length > 0, `${lang}: ${key}`);
+      assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
+      if (lang === "pt-BR") assert.doesNotMatch(value, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
+    }
   }
 });

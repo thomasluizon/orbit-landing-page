@@ -1,21 +1,27 @@
 ---
 import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
+import ProductCard from "./ProductCard.astro";
+import PhoneHeader from "./PhoneHeader.astro";
+import HabitRow from "./HabitRow.astro";
+import AstraGlyph from "./AstraGlyph.astro";
+import TrustStrip from "./TrustStrip.astro";
+import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight } from "@lucide/astro";
 interface Props {
-  appUrl: string;
   googlePlayUrl: string;
+  appUrl: string;
 }
-const { appUrl, googlePlayUrl } = Astro.props;
+const { googlePlayUrl, appUrl } = Astro.props;
 const en = translations.en;
 ---
 
-<section id="hero" class="hero">
+<section id="hero" class="hero" data-section="hero">
   <div class="hero-copy">
     <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
-    <p class="hero-description t-secondary" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
+    <p class="hero-description" translate="no" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
-  <AstraDemo />
   <div class="hero-controls">
     <div class="hero-actions">
       <PillButton
@@ -23,26 +29,126 @@ const en = translations.en;
         size="md"
         external
         analyticsEvent="hero_google_play_cta_clicked"
-        analyticsSurface="hero"><span data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
-      >
-      <a
-        class="text-link"
-        href={appUrl}
-        data-i18n="hero.web"
-        data-analytics-event="hero_app_cta_clicked"
-        data-analytics-surface="hero">{en["hero.web"]}</a
+        analyticsSurface="hero"
+        ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
     </div>
-    <p class="hero-meta t-meta">
-      <span data-i18n="hero.platforms">{en["hero.platforms"]}</span>
-      <a
-        href="#ios"
-        id="ios-trigger"
-        class="text-link"
-        aria-haspopup="dialog"
-        aria-controls="ios"
-        data-i18n="hero.ios">{en["hero.ios"]}</a
-      >
-    </p>
   </div>
+  <div class="hero-pin-range">
+    <div class="hero-stage" id="hero-stage">
+      <div class="hero-phone">
+        <div class="hero-device">
+          <div class="device-screen">
+            <div class="phone-screen">
+              <div class="device-status" aria-hidden="true">
+                <span class="device-status-time" data-mock>9:41</span>
+                <span class="device-speaker"></span>
+                <span class="device-status-icons"
+                  ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+                >
+              </div>
+              <div class="phone-carousel" data-phone-carousel>
+                <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
+                  <AstraDemo appUrl={appUrl} />
+                </div>
+                <div
+                  class="phone-slide"
+                  id="phone-today"
+                  data-phone-slide="today"
+                  data-product-screen
+                >
+                  <PhoneHeader>
+                    <div class="phone-today-pager">
+                      <span class="phone-day-chevron" aria-hidden="true"
+                        ><ChevronLeft size={20} /></span
+                      >
+                      <div class="phone-today-date">
+                        <h2><Copy name="product.today" /></h2>
+                        <p class="product-caption"><Copy name="today.date" /></p>
+                      </div>
+                      <span class="phone-day-chevron" aria-hidden="true"
+                        ><ChevronRight size={20} /></span
+                      >
+                    </div>
+                  </PhoneHeader>
+                  <div class="phone-content phone-today-content">
+                    <div class="proactive-line phone-today-astra">
+                      <AstraGlyph size={16} />
+                      <p><Copy name="today.astra" /></p>
+                    </div>
+                    <div class="phone-today-habits">
+                      <HabitRow habit="water" timing="done" time="08:00" data-first-visible />
+                      <HabitRow habit="stretch" timing="done" />
+                      <HabitRow habit="walk" timing="todo" time="18:00" />
+                      <HabitRow habit="read" timing="todo" />
+                      <HabitRow habit="run" days={7} data-last-visible />
+                      <HabitRow habit="walk" timing="todo" data-demo-approved hidden>
+                        <span slot="name" data-approved-name></span>
+                        <span slot="repeat" data-approved-repeat></span>
+                      </HabitRow>
+                      <HabitRow habit="read" timing="todo" data-demo-approved-second hidden>
+                        <span slot="name" data-i18n="demo.move.secondHabit">
+                          {en["demo.move.secondHabit"]}
+                        </span>
+                        <span slot="repeat" data-approved-second-repeat></span>
+                      </HabitRow>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="device-home" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-pager">
+        <div
+          class="carousel-segments"
+          role="group"
+          aria-label={en["carousel.label"]}
+          data-i18n-label="carousel.label"
+        >
+          {
+            (["chat", "today"] as const).map((screen, index) => (
+              <button
+                type="button"
+                class="carousel-segment"
+                data-carousel-segment={index}
+                aria-controls={`phone-${screen}`}
+                aria-current={index === 0 ? "true" : "false"}
+                aria-label={en[`carousel.${screen}`]}
+                data-i18n-label={`carousel.${screen}`}
+              >
+                <span class="carousel-marker" aria-hidden="true" />
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div class="hero-products">
+        <div class="hero-side hero-left" data-hero-column>
+          <p class="hero-phrase phrase-start" data-hero-float>
+            <Copy name="phrase.start" />
+          </p>
+          <div class="hero-float float-reminder" data-hero-float>
+            <ProductCard kind="reminder" />
+          </div>
+        </div>
+        <div class="hero-side hero-right" data-hero-column>
+          <div class="hero-float float-insight" data-hero-float>
+            <ProductCard kind="insight" />
+          </div>
+          <div class="hero-float float-week" data-hero-float>
+            <ProductCard kind="week" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <TrustStrip />
 </section>
+
+<script>
+  import "../scripts/phone-screen";
+  import "../scripts/hero-carousel";
+</script>

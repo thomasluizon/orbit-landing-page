@@ -32,7 +32,7 @@ test("button mode renders both analytics attributes", async () => {
   });
 });
 
-async function compiledControl(path, tag, variant) {
+async function compiledControl(path, tag, variant, size) {
   const source = await readFile(path, "utf8");
   const { ast } = await parse(source);
   const element = findElement(ast, tag);
@@ -48,6 +48,13 @@ async function compiledControl(path, tag, variant) {
     const variantMatch = variantClasses.match(new RegExp(`${variant}:\\s*"([^"]+)"`));
     assert.ok(variantMatch, `${variant} variant has shipping classes`);
     candidates.push(...variantMatch[1].split(/\s+/));
+  }
+  if (size) {
+    assert.match(attribute.value, /sizeClasses\[size\]/);
+    const sizes = source.match(/const sizeClasses[^=]*=\s*\{([^}]+)\}/)[1];
+    const sizeMatch = sizes.match(new RegExp(`${size}:\\s*"([^"]+)"`));
+    assert.ok(sizeMatch, `${size} size has shipping classes`);
+    candidates.push(...sizeMatch[1].split(/\s+/));
   }
   const globalCss = await readFile("src/styles/global.css", "utf8");
   const compiler = await compile(
@@ -87,7 +94,24 @@ function stateDeclarations(css, state) {
 }
 
 for (const tag of ["a", "button"]) {
-  for (const variant of ["primary", "ghost"]) {
+  test(`small ${tag} pills keep their natural width with a separate 44px-wide, 48px-tall target`, async () => {
+    const { css } = await compiledControl("src/components/PillButton.astro", tag, "ghost", "sm");
+    assert.match(css, /height:\s*40px/);
+    assert.doesNotMatch(css, /min-height:\s*48px/);
+    assert.match(
+      css,
+      /\.pill-sm::before\s*\{[^}]*inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/,
+    );
+    assert.match(css, /justify-content:\s*center/);
+    assert.match(css, /padding-inline:\s*18px;/);
+    assert.match(css, /font-size:\s*14px;/);
+    assert.match(css, /font-family:\s*var\(--font-sans\);/);
+    assert.match(css, /border-radius:\s*var\(--radius-full\);/);
+    const global = await readFile("src/styles/global.css", "utf8");
+    assert.match(global, /\.pill-sm::before\s*\{[^}]*inset-block:\s*-4px/);
+    assert.match(global, /\.pill-sm::before\s*\{[^}]*border-radius:\s*inherit;/);
+  });
+  for (const variant of ["primary", "secondary", "ghost"]) {
     const label = `PillButton ${tag} ${variant}`;
     const control = () => compiledControl("src/components/PillButton.astro", tag, variant);
 
@@ -120,6 +144,19 @@ for (const tag of ["a", "button"]) {
     });
   }
 }
+
+test("small pills never impose a drawn width floor through any stylesheet override", async () => {
+  const global = await readFile("src/styles/global.css", "utf8");
+  const landing = await readFile("src/styles/landing.css", "utf8");
+  for (const [, selector, declarations] of `${global}\n${landing}`.matchAll(
+    /([^{}]+)\{([^{}]*)\}/g,
+  )) {
+    if (!/\.pill-sm(?![\w-])/.test(selector)) continue;
+    for (const [, value] of declarations.matchAll(/min-(?:inline-size|width):\s*([^;]+);/g)) {
+      assert.match(value, /^0(?:px)?$/, `${selector.trim()} imposes a drawn width floor: ${value}`);
+    }
+  }
+});
 
 test("IosWaitlist forwards submit and challenge state through PillButton", async () => {
   const { ast } = await parse(await readFile("src/components/IosWaitlist.astro", "utf8"));

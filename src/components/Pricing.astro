@@ -1,0 +1,118 @@
+---
+import { Check } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import PillButton from "./PillButton.astro";
+import { formatPrice, pricingFor } from "../config/pricing";
+import { landingCopy, translations } from "../i18n/translations";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
+---
+
+<section id="pricing" class="section" data-section="pricing" aria-labelledby="pricing-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2>
+    </div>
+    <div
+      class="billing-control"
+      role="radiogroup"
+      aria-label={landingCopy.en["nav.pricing"]}
+      data-copy-label-en={landingCopy.en["nav.pricing"]}
+      data-copy-label-pt={landingCopy["pt-BR"]["nav.pricing"]}
+      data-billing-control
+    >
+      <button
+        class="billing-option"
+        type="button"
+        role="radio"
+        data-billing-period="yearly"
+        aria-label={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-en={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-pt={pricingFor("pt-BR", "yearly").annualLabel}
+        aria-checked="true"
+        tabindex="0"
+      >
+        <Copy name="pricing.annual" />
+        <span
+          class="billing-saving"
+          data-billing-saving
+          data-copy-en={pricingFor("en", "yearly").savingShort}
+          data-copy-pt={pricingFor("pt-BR", "yearly").savingShort}
+          >{pricingFor("en", "yearly").savingShort}</span
+        >
+      </button>
+      <button
+        class="billing-option"
+        type="button"
+        role="radio"
+        data-billing-period="monthly"
+        aria-checked="false"
+        tabindex="-1"
+      >
+        <Copy name="pricing.monthly" />
+      </button>
+    </div>
+    <div class="pricing-grid">
+      <article class="plan-card">
+        <div class="plan-name">
+          <h3 translate="no" data-i18n="plan.free">{translations.en["plan.free"]}</h3>
+        </div>
+        <p class="plan-description"><Copy name="pricing.free.body" /></p>
+        <div class="plan-cost">
+          <p class="plan-price">
+            <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
+          </p>
+        </div>
+        <ul>
+          {
+            (["pricing.free.astra", "pricing.habits", "pricing.review"] as const).map((name) => (
+              <li>
+                <>
+                  <Check size={16} />
+                  <Copy name={name} />
+                </>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="plan-action">
+          <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
+        </div>
+      </article>
+      <article class="plan-card plan-pro" data-plan-period="yearly">
+        <div class="plan-name">
+          <h3 translate="no">Pro</h3>
+          <span class="plan-recommendation" data-plan-recommendation
+            ><Copy name="pricing.recommended" /></span
+          >
+        </div>
+        <p class="plan-description"><Copy name="pricing.pro.body" /></p>
+        <div class="plan-cost" aria-live="polite" aria-atomic="true">
+          <p class="plan-price">
+            <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
+          </p>
+          <p class="plan-annual" data-billed-total>{pricingFor("en", "yearly").billed}</p>
+        </div>
+        <ul>
+          {
+            (["pricing.pro.astra", "pricing.pro.adjust", "pricing.pro.calendar"] as const).map(
+              (name) => (
+                <li>
+                  <>
+                    <Check size={16} />
+                    <Copy name={name} />
+                  </>
+                </li>
+              ),
+            )
+          }
+        </ul>
+        <div class="plan-action">
+          <PillButton href={`${appUrl}/upgrade`}><Copy name="pricing.pro.cta" /></PillButton>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
