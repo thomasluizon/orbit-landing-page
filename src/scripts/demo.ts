@@ -1,8 +1,15 @@
 import { translations, type TranslationKey } from "../i18n/translations";
 import { getLang } from "./i18n";
 import { planFromWords } from "./demo-plan";
+import { bindHabitCompletion } from "./habit-completion";
 
 type Example = "start" | "restart" | "move";
+type AcceptedPlan = {
+  example: Example | "custom";
+  title: string;
+  schedule: TranslationKey;
+  showSecond: boolean;
+};
 const demo = document.getElementById("astra-demo");
 const preview = document.getElementById("demo-preview");
 const today = document.getElementById("demo-today");
@@ -18,7 +25,7 @@ const send = composer?.querySelector<HTMLButtonElement>(".demo-send");
 let current: Example | "custom" = "start";
 let title = "";
 let schedule: TranslationKey = "demo.start.repeat";
-let approved = false;
+let acceptedPlan: AcceptedPlan | null = null;
 
 function syncSend() {
   const hasText = Boolean(input?.value.trim());
@@ -38,8 +45,11 @@ function setCopy(id: string, key: TranslationKey) {
   setText(id, translations[getLang()][key], key);
 }
 
-function habitTitle() {
-  return title || translations[getLang()][`demo.${current === "custom" ? "start" : current}.habit`];
+function habitTitle(example = current, literalTitle = title) {
+  return (
+    literalTitle ||
+    translations[getLang()][`demo.${example === "custom" ? "start" : example}.habit`]
+  );
 }
 
 function hasSecondHabit() {
@@ -65,7 +75,6 @@ function revealProposal() {
 }
 
 function resetProposal() {
-  approved = false;
   if (preview) preview.hidden = false;
   if (today) today.hidden = true;
   if (result) result.hidden = true;
@@ -97,19 +106,31 @@ function syncHabitReaches(list: HTMLElement | null) {
   });
 }
 
-function updateToday() {
-  const normalizedTitle = habitTitle().trim().toLocaleLowerCase(getLang());
-  const showSecond = hasSecondHabit();
-  setText("demo-today-habit", habitTitle());
-  setCopy("demo-today-repeat", schedule);
-  setCopy("demo-today-second-repeat", schedule);
-  document.getElementById("demo-today-second")?.toggleAttribute("hidden", !showSecond);
+function updateToday(plan: AcceptedPlan) {
+  const acceptedTitle = habitTitle(plan.example, plan.title);
+  const normalizedTitle = acceptedTitle.trim().toLocaleLowerCase(getLang());
+  const identity = (
+    plan.title ||
+    translations.en[`demo.${plan.example === "custom" ? "start" : plan.example}.habit`]
+  )
+    .trim()
+    .toLowerCase();
+  setText("demo-today-habit", acceptedTitle);
+  setCopy("demo-today-repeat", plan.schedule);
+  setCopy("demo-today-second-repeat", plan.schedule);
+  const chatRow = document.getElementById("demo-today-habit")?.closest<HTMLElement>(".habit-row");
+  if (chatRow) bindHabitCompletion(chatRow, identity);
+  const secondRow = document.getElementById("demo-today-second");
+  secondRow?.toggleAttribute("hidden", !plan.showSecond);
+  if (secondRow)
+    bindHabitCompletion(secondRow, translations.en["demo.move.secondHabit"].toLowerCase());
   document.querySelectorAll<HTMLElement>("[data-demo-approved]").forEach((row) => {
     row.hidden = false;
+    bindHabitCompletion(row, identity);
     const name = row.querySelector<HTMLElement>("[data-approved-name]");
     const repeat = row.querySelector<HTMLElement>("[data-approved-repeat]");
-    if (name) name.textContent = habitTitle();
-    if (repeat) repeat.textContent = translations[getLang()][schedule];
+    if (name) name.textContent = acceptedTitle;
+    if (repeat) repeat.textContent = translations[getLang()][plan.schedule];
     const originals = row
       .closest(".phone-today-habits")
       ?.querySelectorAll<HTMLElement>(
@@ -121,27 +142,28 @@ function updateToday() {
     const replacesExisting = [...(originals ?? [])].some(matchesTitle);
     originals?.forEach((habit, index) => {
       habit.hidden =
-        current === "move" || matchesTitle(habit) || (!replacesExisting && index === 0);
+        plan.example === "move" || matchesTitle(habit) || (!replacesExisting && index === 0);
     });
   });
   document.querySelectorAll<HTMLElement>("[data-demo-approved-second]").forEach((row) => {
-    row.hidden = !showSecond;
+    row.hidden = !plan.showSecond;
+    bindHabitCompletion(row, translations.en["demo.move.secondHabit"].toLowerCase());
     const repeat = row.querySelector("[data-approved-second-repeat]");
-    if (repeat) repeat.textContent = translations[getLang()][schedule];
+    if (repeat) repeat.textContent = translations[getLang()][plan.schedule];
   });
   syncHabitReaches(today);
   document.querySelectorAll<HTMLElement>(".phone-today-habits").forEach(syncHabitReaches);
 }
 
 function finish(accept: boolean) {
-  approved = accept;
   setCopy("demo-result", accept ? `demo.${current}.approved` : "demo.rejected");
   if (result) result.hidden = false;
   if (preview) preview.hidden = true;
   if (today) today.hidden = !accept;
   if (continuation) continuation.hidden = !accept;
   if (accept) {
-    updateToday();
+    acceptedPlan = { example: current, title, schedule, showSecond: hasSecondHabit() };
+    updateToday(acceptedPlan);
     if (continueLink?.dataset.appUrl) {
       const destination = new URL("/habits/new", continueLink.dataset.appUrl);
       destination.searchParams.set("title", habitTitle());
@@ -205,7 +227,7 @@ document.getElementById("demo-reject")?.addEventListener("click", () => finish(f
 document.getElementById("demo-edit")?.addEventListener("click", openEditor);
 window.addEventListener("orbit:language-changed", () => {
   renderPlan();
-  if (approved) updateToday();
+  if (acceptedPlan) updateToday(acceptedPlan);
 });
 
 if (preview) {

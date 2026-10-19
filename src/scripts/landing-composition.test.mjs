@@ -1235,13 +1235,20 @@ test("habit checks, week bars, calendar days and data previews work when feature
       '[data-privacy-toggle="delete-example"]': privacy[1],
     })[selector] ?? null;
   await reachFeaturesWithoutPhone(() => {
+    const completion = {};
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/habit-completion.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS },
+      }).outputText,
+      { exports: completion },
+    );
     vm.runInNewContext(
       ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
         compilerOptions: { module: ts.ModuleKind.CommonJS },
       }).outputText,
       {
         exports: {},
-        require: () => ({}),
+        require: (path) => (path === "./habit-completion" ? completion : {}),
         window: { addEventListener() {}, dispatchEvent() {} },
         CustomEvent: class {},
         document: {

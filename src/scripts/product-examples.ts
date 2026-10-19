@@ -1,4 +1,5 @@
 import { exampleDate, exampleExportFile } from "../config/product-examples";
+import { toggleHabitCompletion } from "./habit-completion";
 const notifyLayoutChange = () => window.dispatchEvent(new CustomEvent("orbit:layout-changed"));
 
 document.querySelectorAll<HTMLElement>("[data-week-chart]").forEach((chart) => {
@@ -16,11 +17,7 @@ document.querySelectorAll<HTMLElement>("[data-week-chart]").forEach((chart) => {
 });
 
 document.querySelectorAll<HTMLButtonElement>("[data-habit-toggle]").forEach((row) => {
-  row.addEventListener("click", () => {
-    const done = row.getAttribute("aria-pressed") !== "true";
-    row.setAttribute("aria-pressed", String(done));
-    row.querySelector(".status-ring")?.classList.toggle("is-done", done);
-  });
+  row.addEventListener("click", () => toggleHabitCompletion(row));
 });
 
 document.querySelectorAll<HTMLElement>(".orbit-calendar").forEach((calendar) => {
