@@ -164,6 +164,7 @@
   --phone-reach-size: calc(44px / var(--phone-scale));
   --phone-reach-floor: calc(24px / var(--phone-scale));
   container-type: inline-size;
+  contain: strict;
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
@@ -264,7 +265,7 @@
 .phone-screen .demo-edit-field::before {
   inset-block: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
 }
-.phone-screen .demo-edit-field:has(input)::before {
+.phone-screen .demo-edit-name::before {
   inset-block-start: var(--phone-reach-inset);
 }
 .phone-screen .demo-save::before {
@@ -276,14 +277,12 @@
 .phone-screen .demo-today > .habit-row::before {
   inset-block: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
 }
-.phone-screen .phone-today-habits > .habit-row:nth-child(1 of .habit-row:not([hidden]))::before,
-.phone-screen .demo-today > .habit-row:nth-child(1 of .habit-row:not([hidden]))::before {
+.phone-screen .phone-today-habits > .habit-row[data-first-visible]::before,
+.phone-screen .demo-today > .habit-row[data-first-visible]::before {
   inset-block-start: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
 }
-.phone-screen
-  .phone-today-habits
-  > .habit-row:nth-last-child(1 of .habit-row:not([hidden]))::before,
-.phone-screen .demo-today > .habit-row:nth-last-child(1 of .habit-row:not([hidden]))::before {
+.phone-screen .phone-today-habits > .habit-row[data-last-visible]::before,
+.phone-screen .demo-today > .habit-row[data-last-visible]::before {
   inset-block-end: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
 }
 .phone-screen .demo-continue .text-link::before {
@@ -1857,6 +1856,7 @@ button.metric-bar-track:focus-visible {
   scrollbar-width: none;
 }
 .phone-slide {
+  contain: layout paint style;
   display: flex;
   flex-direction: column;
   flex: 0 0 100%;

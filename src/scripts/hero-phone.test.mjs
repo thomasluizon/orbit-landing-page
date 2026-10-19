@@ -22,6 +22,46 @@ const rules = (selector) =>
     .map(([, , declarations]) => declarations);
 const slides = descendants(hero).filter((node) => attributes(node)["data-phone-slide"]);
 
+for (const [kind, forbidden] of [
+  ["relational", /:has\(/],
+  ["filtered sibling", /:nth-(?:last-)?child\([^)]*\bof\b/],
+]) {
+  test(`phone reaches select explicit state without ${kind} selectors`, () => {
+    const reachRules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
+      ([, selector]) => selector.includes(".phone-screen") && selector.includes("::before"),
+    );
+    assert.ok(reachRules.length > 0);
+    for (const [, selector] of reachRules) assert.doesNotMatch(selector, forbidden);
+  });
+}
+
+test("the fixed phone screen contains size, layout, paint and style", () => {
+  assert.equal(declarations(rules(".phone-screen").join("\n")).contain, "strict");
+});
+
+test("stretched phone slides contain layout, paint and style without intrinsic size containment", () => {
+  assert.equal(declarations(rules(".phone-slide").join("\n")).contain, "layout paint style");
+});
+
+test("phone habit reaches mark the visible boundaries before script loading", async () => {
+  const demo = (await parse(source("AstraDemo"))).ast;
+  const lists = [
+    descendants(hero).find((node) => attributes(node).class === "phone-today-habits"),
+    descendants(demo).find((node) => attributes(node).id === "demo-today"),
+  ];
+  for (const list of lists) {
+    const rows = list.children.filter(
+      (node) => node.name === "HabitRow" || attributes(node).class === "habit-row",
+    );
+    const visible = rows.filter((node) => !Object.hasOwn(attributes(node), "hidden"));
+    assert.ok(visible.length > 0);
+    for (const row of rows) {
+      assert.equal(Object.hasOwn(attributes(row), "data-first-visible"), row === visible[0]);
+      assert.equal(Object.hasOwn(attributes(row), "data-last-visible"), row === visible.at(-1));
+    }
+  }
+});
+
 test("every phone screen shares the status, 56px app header and 16px content inset", async () => {
   const device = descendants(hero).find((node) => attributes(node).class === "phone-screen");
   assert.ok(device, "the whole app shares one scaled screen");
@@ -434,7 +474,7 @@ for (let pair = 0; pair < 2; pair++) {
       const targets = [
         reach(218, 48, scale, [
           ".phone-screen .demo-edit-field::before",
-          ".phone-screen .demo-edit-field:has(input)::before",
+          ".phone-screen .demo-edit-name::before",
         ]),
         reach(218, 48, scale, [".phone-screen .demo-edit-field::before"]),
         reach(310, 48, scale, [".phone-screen .demo-save::before"]),
@@ -471,10 +511,8 @@ test("Today rows and the continuation keep bounded reaches clear of neighbours a
       const targets = [0, 1, 2].map((index) =>
         reach(358, 64, scale, [
           `${selector}::before`,
-          ...(index === 0 ? [`${selector}:nth-child(1 of .habit-row:not([hidden]))::before`] : []),
-          ...(index === 2
-            ? [`${selector}:nth-last-child(1 of .habit-row:not([hidden]))::before`]
-            : []),
+          ...(index === 0 ? [`${selector}[data-first-visible]::before`] : []),
+          ...(index === 2 ? [`${selector}[data-last-visible]::before`] : []),
         ]),
       );
       for (let pair = 0; pair < 2; pair++) {

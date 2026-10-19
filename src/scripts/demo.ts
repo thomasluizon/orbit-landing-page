@@ -78,6 +78,15 @@ function play(example: Example) {
   resetProposal();
 }
 
+function syncHabitReaches(list: HTMLElement | null) {
+  const rows = [...(list?.querySelectorAll<HTMLElement>(".habit-row") ?? [])];
+  const visible = rows.filter((row) => !row.hidden);
+  rows.forEach((row) => {
+    row.toggleAttribute("data-first-visible", row === visible[0]);
+    row.toggleAttribute("data-last-visible", row === visible.at(-1));
+  });
+}
+
 function updateToday() {
   setText("demo-today-habit", habitTitle());
   setCopy("demo-today-repeat", schedule);
@@ -103,6 +112,8 @@ function updateToday() {
     const repeat = row.querySelector("[data-approved-second-repeat]");
     if (repeat) repeat.textContent = translations[getLang()][schedule];
   });
+  syncHabitReaches(today);
+  document.querySelectorAll<HTMLElement>(".phone-today-habits").forEach(syncHabitReaches);
 }
 
 function finish(accept: boolean) {

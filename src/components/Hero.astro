@@ -77,11 +77,11 @@ const en = translations.en;
                       <p><Copy name="today.astra" /></p>
                     </div>
                     <div class="phone-today-habits">
-                      <HabitRow habit="water" timing="done" time="08:00" />
+                      <HabitRow habit="water" timing="done" time="08:00" data-first-visible />
                       <HabitRow habit="stretch" timing="done" />
                       <HabitRow habit="walk" timing="todo" time="18:00" />
                       <HabitRow habit="read" timing="todo" />
-                      <HabitRow habit="run" days={7} />
+                      <HabitRow habit="run" days={7} data-last-visible />
                       <HabitRow habit="walk" timing="todo" data-demo-approved hidden>
                         <span slot="name" data-approved-name></span>
                         <span slot="repeat" data-approved-repeat></span>

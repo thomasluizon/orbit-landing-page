@@ -194,6 +194,41 @@ test("exchange growth retains the reveal observer without scrolling the phone or
   }
   assert.doesNotMatch(readFileSync("src/scripts/demo.ts", "utf8"), /scrollIntoView/);
 });
+
+test("habit reach boundaries follow batch, single and custom approvals, rejection and language changes", () => {
+  for (const language of ["en", "pt-BR"]) {
+    const h = harness(language);
+    const checkBoundaries = () => {
+      const lists = [
+        h.get("phone-today").querySelector(".phone-today-habits"),
+        h.get("demo-today"),
+      ];
+      for (const list of lists) {
+        const rows = list.querySelectorAll(".habit-row");
+        const visible = rows.filter((row) => !row.hidden);
+        for (const row of rows) {
+          assert.equal(Object.hasOwn(row.attributes, "data-first-visible"), row === visible[0]);
+          assert.equal(Object.hasOwn(row.attributes, "data-last-visible"), row === visible.at(-1));
+        }
+      }
+    };
+    for (const index of [2, 0, 2, 1]) {
+      h.chips[index].fire("click");
+      h.get("demo-approve").fire("click");
+      checkBoundaries();
+      h.switchLanguage(language === "en" ? "pt-BR" : "en");
+      checkBoundaries();
+      h.chips[0].fire("click");
+      h.get("demo-reject").fire("click");
+      checkBoundaries();
+    }
+    h.get("demo-input").value = "Read every evening";
+    h.get("demo-composer").fire("submit");
+    h.get("demo-approve").fire("click");
+    checkBoundaries();
+  }
+});
+
 for (const language of ["en", "pt-BR"]) {
   test(`${language}: typed requests stay local, can be edited, and approve into Today with a supported app title`, () => {
     const h = harness(language);

@@ -59,7 +59,7 @@ const en = translations.en;
           </div>
           <form id="demo-edit-form" class="demo-edit-form" hidden>
             <label for="demo-edit-name" data-i18n="demo.name">{en["demo.name"]}</label>
-            <label class="demo-edit-field" for="demo-edit-name">
+            <label class="demo-edit-field demo-edit-name" for="demo-edit-name">
               <input id="demo-edit-name" type="text" maxlength="80" required />
             </label>
             <label for="demo-edit-schedule" data-i18n="demo.schedule">{en["demo.schedule"]}</label>
@@ -95,7 +95,14 @@ const en = translations.en;
     <div id="demo-today" class="demo-today" hidden>
       <p class="product-caption"><Copy name="product.approved" /></p>
       <h3><Copy name="product.today" /></h3>
-      <button type="button" class="habit-row" data-habit-toggle aria-pressed="false">
+      <button
+        type="button"
+        class="habit-row"
+        data-habit-toggle
+        data-first-visible
+        data-last-visible
+        aria-pressed="false"
+      >
         <span class="habit-emoji" aria-hidden="true">🚶</span><span class="habit-copy">
           <span id="demo-today-habit" class="habit-name"></span><span
             id="demo-today-repeat"
