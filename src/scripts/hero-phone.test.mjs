@@ -69,7 +69,7 @@ test("one vector layout draws the whole phone at 330 by 715 logical pixels", () 
 
 test("screen fitting follows fractional inner width and caps its scale at one", () => {
   assert.ok(existsSync("src/scripts/phone-screen.ts"));
-  for (const width of [179.6923076923, 259.6923076923, 243.0769230769, 262.4615384615, 322, 400]) {
+  for (const width of [180.3076923077, 259.6923076923, 243.0769230769, 262.4615384615, 322, 400]) {
     let resized;
     const properties = new Map();
     const screen = {
@@ -114,7 +114,7 @@ test("scaled controls compensate their reach and reserve space without intersect
   );
   assert.match(
     reach,
-    /inset-inline:\s*max\(-6px, min\(0px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\)\);/,
+    /inset-inline:\s*min\(0px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\);/,
   );
   assert.match(
     rules(".phone-screen .demo-preview-actions").join("\n"),
@@ -141,13 +141,28 @@ test("scaled controls compensate their reach and reserve space without intersect
       control,
     );
   }
-  for (const scale of [0.5445221445, 0.7869463869, 0.7365967366, 0.7953379953, 322 / 330]) {
+  assert.match(
+    rules(".phone-screen .phone-today-habits").join("\n"),
+    /grid-template-rows:\s*repeat\(5, minmax\(max\(64px, var\(--phone-target-size\)\), 1fr\)\);/,
+  );
+  const geistMedium14pxPillWidths = [
+    [78.112, 61.354, 90.46],
+    [86.974, 74.612, 87.45],
+  ];
+  for (const scale of [0.5463869464, 0.7869463869, 0.7365967366, 0.7953379953, 322 / 330]) {
     assert.ok(Math.abs((44 / scale) * scale - 44) < 1e-10);
     const padding = Math.max(4, (44 / scale - 40) / 2);
     assert.ok((40 + 2 * padding) * scale >= 44 - 1e-10);
-    for (const width of [60, 75, 90]) {
-      const reach = Math.min(6, Math.max(0, (44 / scale - width) / 2));
-      assert.ok(2 * reach <= 12, "adjacent reaches never cross the 12px gap");
+    assert.ok(Math.max(64, 44 / scale) * scale >= 44, "Today rows reserve their whole reach");
+    for (const widths of geistMedium14pxPillWidths) {
+      const targets = widths.map((width) => Math.max(width, 44 / scale));
+      for (let index = 0; index < 2; index++) {
+        const centreDistance = (widths[index] + widths[index + 1]) / 2 + 12;
+        assert.ok(
+          (targets[index] + targets[index + 1]) / 2 <= centreDistance,
+          "neighbouring 44px reaches fit in the 12px gap without intersecting",
+        );
+      }
     }
   }
 });
@@ -183,6 +198,36 @@ test("proposal actions retain the app small pill geometry and separated targets"
     [...actions.matchAll(/variant="([^"]+)"/g)].map(([, variant]) => variant),
     ["ghost", "ghost", "primary"],
   );
+});
+
+test("the proposal shares the thread's single 16px content edge", () => {
+  assert.match(rules(".phone-slide .demo-thread").join("\n"), /padding-inline:\s*16px;/);
+  for (const selector of [".phone-slide .demo-request", ".phone-slide .demo-response > .t-body"])
+    assert.doesNotMatch(rules(selector).join("\n"), /margin-inline(?:-end)?:/);
+  assert.match(rules(".demo-preview").join("\n"), /padding:\s*8px;/);
+  const logicalWidth = Number(rules(".phone-screen")[0]?.match(/inline-size:\s*(\d+)px;/)?.[1]);
+  assert.equal(logicalWidth - 2 * 16, 298);
+  const actionWidth = logicalWidth - 2 * 16 - 2 * 8;
+  assert.equal(actionWidth, 282);
+  assert.ok(actionWidth >= 273, "the Portuguese small pills fit with both 12px gaps");
+});
+
+test("phone spacing keeps only the declarations that render", () => {
+  for (const [selector, property, expected] of [
+    [".device-status", "min-block-size", "40px"],
+    [".demo-exchange", "margin-block-start", "0"],
+    [".demo-composer", "padding", "0 0 0 8px"],
+  ]) {
+    const declarations = rules(selector).join("\n");
+    const values = [
+      ...declarations.matchAll(new RegExp(`(?:^|;)\\s*${property}:\\s*([^;]+);`, "g")),
+    ];
+    assert.deepEqual(
+      values.map(([, value]) => value),
+      [expected],
+    );
+    if (property === "padding") assert.doesNotMatch(declarations, /padding-(?:inline|block):/);
+  }
 });
 
 test("the phone and its pager contain exactly chat and Today", () => {

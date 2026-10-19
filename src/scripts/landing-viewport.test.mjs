@@ -853,6 +853,13 @@ test("the phone derives its width from the pinned height at its real device rati
       width < 768 ? Infinity : (width - 48) / 3,
     );
     const deviceHeight = (deviceWidth * 19.5) / 9;
+    const scale = (deviceWidth - 2 * 4) / 330;
+    assert.ok(scale > 0 && scale <= 1);
+    assert.ok(715 * scale <= deviceHeight - 2 * 4, "the full logical screen fits inside the bezel");
+    assert.ok(
+      273 * scale <= (330 - 2 * 16 - 2 * 8) * scale,
+      "the full action row fits the inset card",
+    );
     assert.ok(Math.abs(deviceHeight / deviceWidth - 19.5 / 9) < 1e-12);
     assert.ok(top - (width <= 640 ? 80 : 96) >= 8, "clearance below the fixed header");
     assert.ok(
@@ -1045,7 +1052,7 @@ test("side-card float budget preserves 24px clearance for every phase and entran
   assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
   for (let width = 768; width <= 1920; width++) {
     const stageWidth = Math.min(896 - 48, width - 96);
-    const phoneWidth = Math.min(330, Math.max(304, (width - 48) / 3));
+    const phoneWidth = Math.min(330, (width - 48) / 3);
     const columnWidth = (stageWidth - phoneWidth - 48) / 2;
     assert.ok(columnWidth - 2 * reserve >= 112, `compact cards fit at ${width}px`);
     const outerInset = (width - stageWidth) / 2 + reserve;
