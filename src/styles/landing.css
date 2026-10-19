@@ -161,39 +161,31 @@
   overflow: clip;
 }
 .phone-screen {
-  --phone-target-size: calc(44px / var(--phone-scale));
+  --phone-reach-size: calc(24px / var(--phone-scale));
   container-type: inline-size;
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
   display: flex;
   flex-direction: column;
-  inline-size: 330px;
-  block-size: 715px;
+  inline-size: 390px;
+  block-size: 845px;
   transform: scale(var(--phone-scale));
   transform-origin: top left;
 }
-.phone-screen .demo-preview-actions .pill-sm::before {
-  zoom: calc(1 / var(--phone-scale));
-  inset-block: min(0px, calc((100% - 44px) / 2));
-  inset-inline: min(0px, calc((100% - 44px) / 2));
+.phone-screen :is(button, a, .demo-composer-field, .demo-edit-field) {
+  position: relative;
 }
-.phone-screen .demo-preview-actions {
-  padding-block: max(0px, calc((var(--phone-target-size) - 40px) / 2));
+.phone-screen :is(button, a, .demo-composer-field, .demo-edit-field)::before {
+  content: "";
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--phone-reach-size)) / 2));
+  inset-inline: min(0px, calc((100% - var(--phone-reach-size)) / 2));
+  border-radius: inherit;
 }
-.phone-screen .demo-chip,
-.phone-screen .demo-send,
-.phone-screen .demo-composer input,
-.phone-screen .demo-edit-form input,
-.phone-screen .demo-edit-form select,
-.phone-screen .demo-save,
-.phone-screen .text-link,
-.phone-screen .habit-row[data-habit-toggle] {
-  min-inline-size: var(--phone-target-size);
-  min-block-size: var(--phone-target-size);
-}
-.phone-screen .phone-today-habits {
-  grid-template-rows: repeat(5, minmax(max(64px, var(--phone-target-size)), 1fr));
+.phone-screen .demo-send::before {
+  inset-inline-start: 0;
+  inset-inline-end: min(0px, calc(100% - var(--phone-reach-size)));
 }
 .device-status {
   display: flex;
@@ -232,13 +224,12 @@
   pointer-events: none;
 }
 .astra-demo {
-  --mock-unit: max(0.75px, calc(100cqi / 390));
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: calc(24 * var(--mock-unit));
+  gap: 24px;
   min-block-size: 0;
-  padding: calc(16 * var(--mock-unit)) calc(16 * var(--mock-unit)) calc(24 * var(--mock-unit));
+  padding: 16px;
 }
 .demo-thread {
   display: flex;
@@ -246,8 +237,8 @@
   flex: 1;
   gap: 16px;
   min-block-size: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding: 16px;
+  overflow: visible;
 }
 .phone-app-header {
   display: flex;
@@ -271,20 +262,29 @@
 .demo-response {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 16px;
+}
+.demo-message {
+  display: flex;
+  align-items: start;
+  gap: 8px;
+  padding: 16px;
+}
+.demo-message > svg {
+  flex-shrink: 0;
 }
 .demo-request {
   justify-self: end;
-  max-inline-size: 27ch;
-  padding: 8px 12px;
+  max-inline-size: 80%;
+  padding: 12px 16px;
   border-radius: var(--radius-lg);
-  background: var(--color-bg-field);
+  background: var(--color-bg-well);
   font-size: var(--fs-base);
 }
 .demo-preview {
   display: grid;
-  gap: calc(16 * var(--mock-unit));
-  padding: 8px;
+  gap: 24px;
+  padding: 24px;
   border-radius: var(--radius-xl);
   background: var(--color-bg-card);
   box-shadow: inset 0 0 0 1px var(--color-hairline);
@@ -294,11 +294,22 @@
 }
 .demo-habits {
   display: grid;
-  gap: 16px;
+  gap: 8px;
 }
 .demo-habit {
+  display: flex;
+  align-items: center;
+  min-block-size: 52px;
+  padding: 12px;
+  gap: 12px;
+}
+.demo-habit-copy {
   display: grid;
   gap: 4px;
+  min-inline-size: 0;
+}
+.demo-preview:has(.demo-edit-form:not([hidden])) :is(.demo-habits, .demo-preview-actions) {
+  display: none;
 }
 .demo-preview-actions {
   display: flex;
@@ -306,18 +317,19 @@
   justify-content: flex-end;
   align-items: center;
   gap: 12px;
-  padding-block: 4px;
 }
 .demo-preview-actions .pill-sm {
   flex-shrink: 0;
   min-inline-size: 0;
   border-radius: var(--radius-full);
-  block-size: 40px;
+  block-size: 44px;
   padding-inline: 18px;
   font-size: var(--fs-sm);
+  font-weight: 500;
+  gap: 7px;
 }
-.demo-preview-actions .pill-sm::before {
-  inset-block: -4px;
+.demo-preview-actions .pill-sm:has(svg) {
+  padding-inline-start: 16px;
 }
 .demo-input-area {
   display: grid;
@@ -325,25 +337,26 @@
   align-content: start;
   flex-shrink: 0;
   gap: 12px;
+  padding: 16px;
+  border-block-start: 1px solid var(--color-hairline);
 }
 .demo-examples {
   display: flex;
   gap: 8px;
   padding-block: 0;
   margin-block: 0;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scrollbar-width: none;
+  overflow: visible;
 }
 .demo-chip {
   position: relative;
   flex-shrink: 0;
-  min-block-size: 44px;
-  padding: calc(8 * var(--mock-unit)) calc(12 * var(--mock-unit));
-  border-radius: calc(8 * var(--mock-unit));
+  min-block-size: 48px;
+  padding: 12px;
+  border-radius: var(--radius-full);
   box-shadow: inset 0 0 0 1px var(--color-hairline);
-  background: var(--color-bg-card);
-  font-size: calc(14 * var(--mock-unit));
+  background: var(--color-bg-well);
+  font-size: var(--fs-sm);
+  font-weight: 500;
   line-height: var(--lh-meta);
   color: var(--color-fg-2);
   white-space: nowrap;
@@ -352,7 +365,7 @@
 }
 .demo-chip[aria-pressed="true"] {
   background: var(--color-bg-well);
-  color: var(--color-fg-1);
+  color: var(--color-fg-2);
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
 }
 .demo-today {
@@ -366,13 +379,13 @@
 .demo-composer {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-block-size: 48px;
-  border-radius: calc(24 * var(--mock-unit));
+  align-items: flex-end;
+  min-block-size: 56px;
+  padding: 4px;
+  border-radius: 28px;
+  background: var(--color-bg-field);
   box-shadow: inset 0 0 0 1px var(--color-border-control);
-  font-size: calc(16 * var(--mock-unit));
+  font-size: 16px;
   color: var(--color-fg-3);
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
@@ -383,12 +396,16 @@
   inline-size: 48px;
   block-size: 48px;
   border-radius: var(--radius-full);
+  background: var(--color-bg-well);
+  color: var(--color-fg-3);
+}
+.demo-composer[data-has-text] .demo-send {
   background: var(--color-primary);
   color: var(--color-fg-on-primary);
 }
 .demo-send svg {
-  inline-size: calc(16 * var(--mock-unit));
-  block-size: calc(16 * var(--mock-unit));
+  inline-size: 20px;
+  block-size: 20px;
 }
 .product-card {
   display: grid;
@@ -1604,7 +1621,7 @@ button.metric-bar-track:focus-visible {
   --hero-float-reserve: 24px;
   --hero-float-entry: 24px;
   --hero-device-width: min(
-    330px,
+    390px,
     calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
     calc(100vw - 64px),
     calc((100vw - 48px) / 3)
@@ -1739,13 +1756,9 @@ button.metric-bar-track:focus-visible {
   display: flex;
   flex: 1;
   min-block-size: 0;
-  overflow-x: auto;
+  overflow: hidden;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  overscroll-behavior: contain;
-}
-.phone-carousel[data-enhanced] {
-  overflow-x: hidden;
 }
 .phone-slide {
   display: flex;
@@ -1768,9 +1781,8 @@ button.metric-bar-track:focus-visible {
   flex: 1;
   min-block-size: 0;
   padding-inline: 16px;
-  padding-block-end: 24px;
-  overflow-y: auto;
-  scrollbar-width: none;
+  padding-block-end: 16px;
+  overflow: visible;
   touch-action: pan-y;
 }
 .phone-today-pager {
@@ -1784,6 +1796,10 @@ button.metric-bar-track:focus-visible {
   place-items: center;
   flex: 0 0 48px;
   block-size: 48px;
+}
+.phone-day-chevron svg {
+  inline-size: 20px;
+  block-size: 20px;
 }
 .phone-today-date {
   flex: 1;
@@ -1820,6 +1836,18 @@ button.metric-bar-track:focus-visible {
   min-inline-size: 0;
   block-size: auto;
   min-block-size: 64px;
+  padding: 12px;
+  gap: 12px;
+  border-radius: var(--radius-xl);
+  box-shadow: inset 0 0 0 1px var(--color-hairline);
+}
+.phone-slide .status-ring {
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: var(--radius-md);
+}
+.phone-slide .status-ring:not(.is-done) {
+  border: 1px solid var(--color-status-empty);
 }
 .phone-slide .habit-copy {
   flex: 1;
@@ -1827,35 +1855,16 @@ button.metric-bar-track:focus-visible {
 .phone-slide .habit-check {
   inline-size: 28px;
 }
-.phone-slide .habit-name,
-.phone-slide .proactive-line p,
-.phone-slide .demo-habit .t-row {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+.phone-slide
+  :is(.habit-name, .product-caption, .proactive-line p, .demo-habit .t-row, .demo-request) {
   min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   white-space: normal;
-}
-.phone-slide .proactive-line p,
-.phone-slide .demo-habit .t-row {
-  overflow-wrap: normal;
-  word-break: normal;
-}
-.phone-slide .habit-copy .product-caption {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 .phone-slide .astra-demo {
   inline-size: 100%;
   gap: 0;
   padding: 0;
-}
-.phone-slide .demo-thread {
-  padding-inline: 16px;
-  scrollbar-width: none;
 }
 .phone-slide .phone-app-header h2 {
   font-size: 16px;
@@ -1869,24 +1878,19 @@ button.metric-bar-track:focus-visible {
 .phone-slide .demo-thread .t-body {
   font-size: 14px;
 }
-.phone-slide .demo-preview {
-  gap: 12px;
-}
-.phone-slide .demo-input-area {
-  gap: 8px;
-  padding: 12px 8px 24px;
-}
 .demo-exchange {
   margin-block-start: 0;
 }
-.demo-composer {
-  padding: 0 0 0 8px;
-  gap: 0;
+.demo-composer-field {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
 }
 .demo-composer input {
   inline-size: 100%;
   min-inline-size: 0;
   min-block-size: 48px;
+  padding: 8px 12px;
   font-size: 16px;
   color: var(--color-fg-1);
 }
@@ -1898,8 +1902,17 @@ button.metric-bar-track:focus-visible {
 }
 .demo-edit-form {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 12px;
   font-size: 14px;
+}
+.demo-edit-field {
+  display: grid;
+  min-inline-size: 0;
+}
+.demo-save {
+  grid-column: 1 / -1;
 }
 .demo-edit-form input,
 .demo-edit-form select,
@@ -1999,7 +2012,7 @@ button.metric-bar-track:focus-visible {
   .hero-stage {
     --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
     --hero-device-width: min(
-      330px,
+      390px,
       calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
       calc(100vw - 64px)
     );
@@ -2023,14 +2036,6 @@ button.metric-bar-track:focus-visible {
 @media (width <= 640px) {
   .hero-stage {
     --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
-  }
-}
-@media (width < 360px) and (height < 600px) {
-  .phone-slide .demo-thread {
-    max-block-size: 200px;
-  }
-  .phone-slide .demo-input-area {
-    margin-block-start: auto;
   }
 }
 .habit-row[data-habit-toggle] {

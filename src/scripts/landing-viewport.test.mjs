@@ -371,29 +371,15 @@ test("Today fills its slide with a flexible zero-minimum habit column", () => {
   );
 });
 
-test("phone text wraps to two lines without splitting words or pushing out the habit check", () => {
+test("phone text wraps fully without clamping or pushing out the habit check", () => {
   const base = unconditionalRules(css);
-  const text = base.match(
-    /\.phone-slide \.habit-name,\s*\.phone-slide \.proactive-line p,\s*\.phone-slide \.demo-habit \.t-row\s*\{([^}]+)\}/,
-  )?.[1];
-  assert.ok(text, "habit titles and the Astra line share a bounded text layout");
-  assert.match(text, /min-inline-size:\s*0\s*;/);
-  assert.match(text, /display:\s*-webkit-box\s*;/);
-  assert.match(text, /-webkit-box-orient:\s*vertical\s*;/);
-  assert.match(text, /-webkit-line-clamp:\s*2\s*;/);
-  assert.match(text, /overflow:\s*hidden\s*;/);
-  assert.match(text, /text-overflow:\s*ellipsis\s*;/);
-  assert.match(text, /white-space:\s*normal\s*;/);
-  assert.match(base, /\.habit-name\s*\{[^}]*overflow-wrap:\s*normal;[^}]*word-break:\s*normal/);
+  assert.match(base, /\.phone-slide\s+:is\(\.habit-name,[^}]*overflow-wrap:\s*anywhere;/);
   assert.match(base, /\.phone-slide \.habit-copy\s*\{[^}]*flex:\s*1\s*;/);
-  assert.match(
-    base,
-    /\.phone-slide \.habit-copy \.product-caption\s*\{[^}]*overflow:\s*hidden;[^}]*white-space:\s*nowrap;[^}]*text-overflow:\s*ellipsis/,
-  );
-  assert.doesNotMatch(
-    css,
-    /\.phone-slide \.(?:habit-emoji|today-pager svg)\s*\{[^}]*display:\s*none/,
-  );
+  for (const rule of stylesheetRules(css)) {
+    if (/\.phone-slide/.test(rule.selector)) {
+      assert.doesNotMatch(rule.declarations, /-webkit-line-clamp|text-overflow:\s*ellipsis/);
+    }
+  }
 });
 
 test("phone screens share the app header and content top inset at every width", () => {
@@ -824,7 +810,7 @@ test("the phone derives its width from the pinned height at its real device rati
   );
   assert.equal(widths.length, 2);
   for (const { declarations } of widths) {
-    assert.match(declarations, /--hero-device-width:\s*min\(\s*330px,/);
+    assert.match(declarations, /--hero-device-width:\s*min\(\s*390px,/);
     assert.match(declarations, /calc\(\(100svh - var\(--hero-pin-top\) - 64px\) \* 9 \/ 19\.5\)/);
     assert.match(declarations, /calc\(100vw - 64px\)/);
   }
@@ -847,17 +833,17 @@ test("the phone derives its width from the pinned height at its real device rati
   ]) {
     const top = width <= 640 ? 96 : 112;
     const deviceWidth = Math.min(
-      330,
+      390,
       ((height - top - 64) * 9) / 19.5,
       width - 64,
       width < 768 ? Infinity : (width - 48) / 3,
     );
     const deviceHeight = (deviceWidth * 19.5) / 9;
-    const scale = (deviceWidth - 2 * 4) / 330;
+    const scale = (deviceWidth - 2 * 4) / 390;
     assert.ok(scale > 0 && scale <= 1);
-    assert.ok(715 * scale <= deviceHeight - 2 * 4, "the full logical screen fits inside the bezel");
+    assert.ok(845 * scale <= deviceHeight - 2 * 4, "the full logical screen fits inside the bezel");
     assert.ok(
-      273 * scale <= (330 - 2 * 16 - 2 * 8) * scale,
+      273 * scale <= (390 - 2 * 16 - 2 * 24) * scale,
       "the full action row fits the inset card",
     );
     assert.ok(Math.abs(deviceHeight / deviceWidth - 19.5 / 9) < 1e-12);
@@ -983,41 +969,20 @@ test("proposal action options stay in one trailing row with a fixed 12px gap", (
   assert.match(css, /\.demo-preview-actions \.pill-sm\s*\{[^}]*flex-shrink:\s*0/);
 });
 
-test("short narrow phones reveal the whole proposal target before the first visible-action scroll", () => {
-  const compact = stylesheetRules(css).filter((rule) =>
-    rule.conditions.includes("@media (width < 360px) and (height < 600px)"),
+test("phone content has no vertical scroller or viewport-dependent thread cap", () => {
+  for (const rule of stylesheetRules(css)) {
+    if (!/\.(?:phone|demo)-/.test(rule.selector)) continue;
+    assert.doesNotMatch(rule.declarations, /overflow-y:\s*(?:auto|scroll)|max-block-size:/);
+  }
+  assert.doesNotMatch(readFileSync("src/components/Hero.astro", "utf8"), /data-lenis-prevent/);
+  assert.doesNotMatch(
+    readFileSync("src/scripts/landing-motion.ts", "utf8"),
+    /closest\("\.phone-carousel/,
   );
-  const thread = compact.find((rule) => rule.selector === ".phone-slide .demo-thread");
-  assert.ok(thread, "the compact chat viewport must constrain the thread, not the pills");
-  const threadHeight = Number(thread.declarations.match(/max-block-size:\s*(\d+)px;/)?.[1]);
-  const input = compact.find((rule) => rule.selector === ".phone-slide .demo-input-area");
-  assert.match(input?.declarations ?? "", /margin-block-start:\s*auto;/);
-  assert.match(
+  assert.doesNotMatch(
     readFileSync("src/scripts/demo.ts", "utf8"),
-    /if \(thread\) thread\.scrollTop = thread\.scrollHeight;/,
+    /scrollIntoView|scrollTop = thread.scrollHeight/,
   );
-
-  const scale = (((568 - 96 - 64) * 9) / 19.5 - 8) / 330;
-  const target = 44 / scale;
-  const actionPadding = (target - 40) / 2;
-  const proposed = 12 * 1.55;
-  const habit = 14 * 1.35 + 4 + 14 * 1.55;
-  const preview = 2 * 8 + proposed + 2 * 12 + habit + target;
-  assert.ok(preview + 16 <= threadHeight, "the complete card and thread top inset fit");
-  const initialReducedMotionScreenTop = 403.44;
-  const header = 40 + 56;
-  const rowCentre = header + threadHeight - 8 - actionPadding - 20;
-  const drawnBottom = initialReducedMotionScreenTop + (rowCentre + 20) * scale;
-  const targetBottom = initialReducedMotionScreenTop + rowCentre * scale + 22;
-  const chipsTop = initialReducedMotionScreenTop + (715 - 36 - 8 - 2 * target) * scale;
-  assert.ok(drawnBottom + 4 <= 568, "the probe finds the row at scroll zero");
-  assert.ok(targetBottom <= 568 - 4, "the full 44px reach clears the viewport bottom");
-  assert.ok(
-    targetBottom < initialReducedMotionScreenTop + 715 * scale,
-    "the reach stays inside the phone",
-  );
-  assert.ok(targetBottom < chipsTop, "proposal targets end above the chips");
-  assert.ok(initialReducedMotionScreenTop + rowCentre * scale + 21.25 < 568);
 });
 
 test("chat chips and composer occupy separate rows with their full targets in vertical flow", async () => {
@@ -1041,7 +1006,7 @@ test("chat chips and composer occupy separate rows with their full targets in ve
     base,
     /\.demo-input-area\s*\{[^}]*display:\s*grid;[^}]*grid-template-rows:\s*max-content max-content;/,
   );
-  assert.match(base, /\.demo-chip\s*\{[^}]*min-block-size:\s*44px;/);
+  assert.match(base, /\.demo-chip\s*\{[^}]*min-block-size:\s*48px;/);
   assert.match(base, /\.demo-examples\s*\{[^}]*padding-block:\s*0;[^}]*margin-block:\s*0;/);
   for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
     if (!/\.demo-(?:input-area|examples|composer|chip)(?![\w:-])/.test(selectors)) continue;
@@ -1050,8 +1015,7 @@ test("chat chips and composer occupy separate rows with their full targets in ve
     assert.doesNotMatch(declarations, /(?:transform|translate|grid-row|grid-area):/, selectors);
   }
   assert.doesNotMatch(css, /\.demo-chip::before/, "the target belongs inside the chip row");
-  assert.match(base, /\.demo-preview-actions\s*\{[^}]*padding-block:\s*4px;/);
-  assert.match(css, /\.demo-preview\s*\{[^}]*padding:\s*8px;/);
+  assert.match(css, /\.demo-preview\s*\{[^}]*padding:\s*24px;/);
 });
 
 test("side-card float budget preserves 24px clearance for every phase and entrance offset", () => {
@@ -1089,7 +1053,7 @@ test("side-card float budget preserves 24px clearance for every phase and entran
   assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
   for (let width = 768; width <= 1920; width++) {
     const stageWidth = Math.min(896 - 48, width - 96);
-    const phoneWidth = Math.min(330, (width - 48) / 3);
+    const phoneWidth = Math.min(390, (width - 48) / 3);
     const columnWidth = (stageWidth - phoneWidth - 48) / 2;
     assert.ok(columnWidth - 2 * reserve >= 112, `compact cards fit at ${width}px`);
     const outerInset = (width - stageWidth) / 2 + reserve;
@@ -1124,21 +1088,18 @@ test("pager focus-visible follows the pill segment and its 44px target stays inv
   assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
 });
 
-test("habit-name rules never split words and have one overflow-wrap declaration", () => {
+test("habit names preserve word boundaries and let unbroken phone input wrap fully", () => {
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)].filter(([, selectors]) =>
     /\.habit-name\b/.test(selectors),
   );
   assert.ok(rules.length);
-  let wraps = 0;
   for (const [, selectors, declarations] of rules) {
-    assert.doesNotMatch(
-      declarations,
-      /overflow-wrap:\s*anywhere|word-break:\s*break-all/,
-      selectors,
-    );
-    const declarationsOfWrap = [...declarations.matchAll(/overflow-wrap:\s*([^;]+);/g)];
-    wraps += declarationsOfWrap.length;
-    declarationsOfWrap.forEach(([, value]) => assert.match(value, /^(?:normal|break-word)$/));
+    assert.doesNotMatch(declarations, /word-break:\s*break-all/, selectors);
+    for (const [, value] of declarations.matchAll(/overflow-wrap:\s*([^;]+);/g)) {
+      assert.match(
+        value,
+        /\.phone-slide/.test(selectors) ? /^anywhere$/ : /^(?:normal|break-word)$/,
+      );
+    }
   }
-  assert.equal(wraps, 1, "a later habit-copy rule must not override the word boundary policy");
 });

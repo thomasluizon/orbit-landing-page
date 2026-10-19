@@ -52,6 +52,8 @@ function harness(language = "en", threadHeight = 415) {
       },
       toggleAttribute(name, on) {
         if (name === "hidden") this.hidden = on;
+        if (on) this.attributes[name] = "";
+        else delete this.attributes[name];
       },
       addEventListener(name, fn) {
         this.listeners.set(name, fn);
@@ -174,47 +176,23 @@ function harness(language = "en", threadHeight = 415) {
     },
   };
 }
-test("exchange growth re-reveals the actions above the chip row at every phone scale", () => {
+test("exchange growth retains the reveal observer without scrolling the phone or page", () => {
   for (const language of ["en", "pt-BR"]) {
-    for (const [width, height] of [
-      [320, 568],
-      [360, 740],
-      [1280, 720],
-      [1352, 762],
-      [1440, 900],
-      [1920, 1080],
-    ]) {
-      const top = width <= 640 ? 96 : 112;
-      const deviceWidth = Math.min(330, ((height - top - 64) * 9) / 19.5, width - 64);
-      const scale = (deviceWidth - 8) / 330;
-      const target = 44 / scale;
-      const composerHeight = Math.max(48, target);
-      const chipsHeight = Math.max(44, target);
-      const threadHeight = 715 - 40 - 56 - (12 + chipsHeight + 8 + composerHeight + 24);
-      const h = harness(language, threadHeight);
-      const observed = h.observers.flatMap((observer) => [...observer.targets]);
-      assert.ok(observed.includes(h.get("demo-preview")));
-      assert.ok(observed.includes(h.thread));
-      assert.ok(observed.includes(h.exchange), "request and reply growth must trigger reveal");
-      for (const contentHeight of [600, 760, 940]) {
-        h.thread.scrollHeight = contentHeight;
-        h.resize(h.exchange);
-        assert.equal(h.thread.scrollTop, contentHeight - threadHeight);
-        const actionReachBottom = (contentHeight - h.thread.scrollTop) * scale;
-        const chipsTop = (threadHeight + 12) * scale;
-        assert.ok(
-          actionReachBottom < chipsTop,
-          `${language} ${width}x${height}: actions clear chips`,
-        );
-      }
-      h.get("demo-edit").fire("click");
-      const editorScrollTop = h.thread.scrollTop;
-      h.thread.scrollHeight += 200;
-      h.resize(h.exchange);
-      assert.equal(h.thread.scrollTop, editorScrollTop, "editing retains its scroll position");
-      assert.equal(h.get("demo-edit-name").focused, true);
-    }
+    const h = harness(language, 600);
+    const observed = h.observers.flatMap((observer) => [...observer.targets]);
+    assert.ok(observed.includes(h.get("demo-preview")));
+    assert.ok(observed.includes(h.thread));
+    assert.ok(observed.includes(h.exchange), "request and reply growth must trigger reveal");
+    h.thread.scrollHeight = 940;
+    h.thread.scrollTop = 200;
+    h.resize(h.exchange);
+    assert.equal(h.thread.scrollTop, 0);
+    h.get("demo-edit").fire("click");
+    h.resize(h.exchange);
+    assert.equal(h.get("demo-edit-name").focused, true);
+    assert.equal(h.thread.scrollTop, 0);
   }
+  assert.doesNotMatch(readFileSync("src/scripts/demo.ts", "utf8"), /scrollIntoView/);
 });
 for (const language of ["en", "pt-BR"]) {
   test(`${language}: typed requests stay local, can be edited, and approve into Today with a supported app title`, () => {
@@ -368,4 +346,21 @@ test("the composer is an editable form with a submit action", () => {
   assert.ok(nodes.some((node) => node.name === "input" && attributes(node).id === "demo-input"));
   assert.ok(nodes.some((node) => node.name === "button" && attributes(node).type === "submit"));
   assert.doesNotMatch(source, /demo-playback/);
+});
+
+test("send is filled and enabled only for a nonempty request, then resets after sending", () => {
+  const h = harness();
+  const input = h.get("demo-input");
+  const composer = h.get("demo-composer");
+  const send = composer.querySelector(".demo-send");
+  for (const words of ["", "   ", "Plan a walk."]) {
+    input.value = words;
+    input.fire("input");
+    assert.equal(send.disabled, !words.trim());
+    assert.equal(Object.hasOwn(composer.attributes, "data-has-text"), Boolean(words.trim()));
+  }
+  composer.fire("submit");
+  assert.equal(input.value, "");
+  assert.equal(send.disabled, true);
+  assert.equal(Object.hasOwn(composer.attributes, "data-has-text"), false);
 });

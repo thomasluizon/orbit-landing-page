@@ -90,7 +90,7 @@ test("each product surface has one primary intent and the viewport controller ar
   );
 });
 
-test("proposal actions keep natural drawn widths and separate 44px targets in one trailing row", () => {
+test("proposal actions keep natural drawn widths and 44px logical height in one trailing row", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
   const selector = ".demo-preview-actions .pill-sm";
@@ -113,9 +113,7 @@ test("proposal actions keep natural drawn widths and separate 44px targets in on
   assert.match(pills[0][2], /padding-inline:\s*18px;/);
   assert.match(pills[0][2], /border-radius:\s*var\(--radius-full\);/);
   const height = Number(pills[0][2].match(/(?:^|;)\s*block-size:\s*(\d+)px;/)?.[1]);
-  const target = rules.find(([, selectors]) => selectors.trim() === `${selector}::before`);
-  const outset = Number(target?.[2].match(/inset-block:\s*-(\d+)px;/)?.[1]);
-  assert.ok(height + 2 * outset >= 44);
+  assert.equal(height, 44);
   const global = readFileSync("src/styles/global.css", "utf8");
   assert.match(
     global,

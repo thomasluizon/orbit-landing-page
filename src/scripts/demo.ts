@@ -13,10 +13,18 @@ const editForm = document.getElementById("demo-edit-form") as HTMLFormElement | 
 const editName = document.getElementById("demo-edit-name") as HTMLInputElement | null;
 const editSchedule = document.getElementById("demo-edit-schedule") as HTMLSelectElement | null;
 const input = document.getElementById("demo-input") as HTMLInputElement | null;
+const composer = document.getElementById("demo-composer");
+const send = composer?.querySelector<HTMLButtonElement>(".demo-send");
 let current: Example | "custom" = "start";
 let title = "";
 let schedule: TranslationKey = "demo.start.repeat";
 let approved = false;
+
+function syncSend() {
+  const hasText = Boolean(input?.value.trim());
+  composer?.toggleAttribute("data-has-text", hasText);
+  if (send) send.disabled = !hasText;
+}
 
 function setText(id: string, text: string, key?: TranslationKey) {
   const element = document.getElementById(id);
@@ -43,7 +51,7 @@ function renderPlan() {
 function revealProposal() {
   if (!preview || preview.hidden || (editForm && !editForm.hidden)) return;
   const thread = preview.closest<HTMLElement>(".demo-thread");
-  if (thread) thread.scrollTop = thread.scrollHeight;
+  if (thread) thread.scrollTop = 0;
 }
 
 function resetProposal() {
@@ -112,7 +120,6 @@ function finish(accept: boolean) {
       continueLink.href = destination.href;
     }
   }
-  document.getElementById("demo-result")?.scrollIntoView({ block: "nearest", behavior: "instant" });
   demo
     ?.querySelector<HTMLButtonElement>(`[data-demo="${current === "custom" ? "start" : current}"]`)
     ?.focus({ preventScroll: true });
@@ -130,7 +137,7 @@ function openEditor() {
           schedule === "demo.restart.repeat"
         ? "evening"
         : "morning";
-  if (!editForm.hidden) editName.focus();
+  if (!editForm.hidden) editName.focus({ preventScroll: true });
 }
 
 editForm?.addEventListener("submit", (event) => {
@@ -146,7 +153,7 @@ editForm?.addEventListener("submit", (event) => {
   renderPlan();
   editForm.hidden = true;
   setCopy("demo-announcement", "demo.edited");
-  document.getElementById("demo-edit")?.focus();
+  document.getElementById("demo-edit")?.focus({ preventScroll: true });
 });
 document.getElementById("demo-composer")?.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -158,10 +165,10 @@ document.getElementById("demo-composer")?.addEventListener("submit", (event) => 
   setCopy("demo-reply", "demo.custom.reply");
   resetProposal();
   if (input) input.value = "";
-  document
-    .getElementById("demo-preview")
-    ?.scrollIntoView({ block: "nearest", behavior: "instant" });
+  syncSend();
 });
+input?.addEventListener("input", syncSend);
+syncSend();
 demo
   ?.querySelectorAll<HTMLButtonElement>("[data-demo]")
   .forEach((chip) => chip.addEventListener("click", () => play(chip.dataset.demo as Example)));

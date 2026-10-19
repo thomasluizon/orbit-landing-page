@@ -13,7 +13,10 @@ const hero = (await parse(source("Hero"))).ast;
 const css = readFileSync("src/styles/landing.css", "utf8");
 const rules = (selector) =>
   [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter(([, selectors]) => selectors.split(",").some((s) => s.trim() === selector))
+    .filter(
+      ([, selectors]) =>
+        selectors.trim() === selector || selectors.split(",").some((s) => s.trim() === selector),
+    )
     .map(([, , declarations]) => declarations);
 const slides = descendants(hero).filter((node) => attributes(node)["data-phone-slide"]);
 
@@ -51,7 +54,7 @@ test("every phone screen shares the status, 56px app header and 16px content ins
   assert.match(source("AstraDemo"), /<PhoneHeader>\s*<AstraGlyph size=\{16\} \/>\s*<h2/);
 });
 
-test("one vector layout draws the whole phone at 330 by 715 logical pixels", () => {
+test("one vector layout draws the whole phone at 390 by 845 logical pixels", () => {
   const screen = descendants(hero).find((node) => attributes(node).class === "device-screen");
   assert.deepEqual(
     screen.children.filter((node) => node.name).map((node) => attributes(node).class),
@@ -59,8 +62,8 @@ test("one vector layout draws the whole phone at 330 by 715 logical pixels", () 
   );
   const layout = rules(".phone-screen");
   assert.equal(layout.length, 1);
-  assert.match(layout[0], /inline-size:\s*330px;/);
-  assert.match(layout[0], /block-size:\s*715px;/);
+  assert.match(layout[0], /inline-size:\s*390px;/);
+  assert.match(layout[0], /block-size:\s*845px;/);
   assert.match(layout[0], /transform:\s*scale\(var\(--phone-scale\)\);/);
   assert.match(layout[0], /transform-origin:\s*top left;/);
   assert.equal((css.match(/transform:\s*scale\(var\(--phone-scale\)\)/g) ?? []).length, 1);
@@ -74,7 +77,7 @@ test("screen fitting follows fractional inner width and caps its scale at one", 
     const properties = new Map();
     const screen = {
       style: { setProperty: (name, value) => properties.set(name, value) },
-      querySelector: () => ({ offsetWidth: 330 }),
+      querySelector: () => ({ offsetWidth: 390 }),
       getBoundingClientRect: () => ({ width }),
     };
     vm.runInNewContext(
@@ -94,101 +97,84 @@ test("screen fitting follows fractional inner width and caps its scale at one", 
         },
       },
     );
-    assert.equal(Number(properties.get("--phone-scale")), Math.min(1, width / 330));
+    assert.equal(Number(properties.get("--phone-scale")), Math.min(1, width / 390));
     resized([{ contentRect: { width: 200.5 } }]);
-    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 330);
+    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 390);
     resized([{ contentRect: { width: 0 } }]);
-    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 330);
+    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 390);
   }
 });
 
-test("scaled controls compensate their reach and reserve space without intersecting targets", () => {
+test("scaled controls use invisible 24px reaches without changing visible geometry", () => {
+  assert.doesNotMatch(css, /--phone-target-size/);
   assert.match(
-    rules(".phone-screen")[0] ?? "",
-    /--phone-target-size:\s*calc\(44px \/ var\(--phone-scale\)\);/,
+    rules(".phone-screen")[0],
+    /--phone-reach-size:\s*calc\(24px \/ var\(--phone-scale\)\);/,
   );
-  const reach = rules(".phone-screen .demo-preview-actions .pill-sm::before").join("\n");
-  assert.match(reach, /zoom:\s*calc\(1 \/ var\(--phone-scale\)\);/);
-  assert.match(reach, /inset-block:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
-  assert.match(reach, /inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
-  assert.doesNotMatch(reach, /(?:padding|min-(?:inline|block)-size):/);
-  assert.doesNotMatch(
-    rules(".demo-preview-actions .pill-sm::before").join("\n"),
-    /!important/,
-    "the later, less specific small-pill reach must not override the phone reach",
+  const reach = rules(
+    ".phone-screen :is(button, a, .demo-composer-field, .demo-edit-field)::before",
+  ).join("\n");
+  assert.match(
+    reach,
+    /inset-block:\s*min\(0px, calc\(\(100% - var\(--phone-reach-size\)\) \/ 2\)\);/,
   );
   assert.match(
-    rules(".phone-screen .demo-preview-actions").join("\n"),
-    /padding-block:\s*max\(0px, calc\(\(var\(--phone-target-size\) - 40px\) \/ 2\)\);/,
+    reach,
+    /inset-inline:\s*min\(0px, calc\(\(100% - var\(--phone-reach-size\)\) \/ 2\)\);/,
   );
-  for (const control of [
-    ".demo-chip",
-    ".demo-send",
-    ".demo-composer input",
-    ".demo-edit-form input",
-    ".demo-edit-form select",
-    ".demo-save",
-    ".text-link",
-    ".habit-row[data-habit-toggle]",
-  ]) {
-    assert.match(
-      rules(`.phone-screen ${control}`).join("\n"),
-      /min-block-size:\s*var\(--phone-target-size\);/,
-      control,
-    );
-    assert.match(
-      rules(`.phone-screen ${control}`).join("\n"),
-      /min-inline-size:\s*var\(--phone-target-size\);/,
-      control,
-    );
+  for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (declarations.includes("var(--phone-reach-size)")) {
+      assert.ok(selectors.includes("::before"));
+      assert.doesNotMatch(declarations, /(?:padding|min-(?:inline|block)-size):/);
+    }
   }
-  assert.match(
-    rules(".phone-screen .phone-today-habits").join("\n"),
-    /grid-template-rows:\s*repeat\(5, minmax\(max\(64px, var\(--phone-target-size\)\), 1fr\)\);/,
-  );
-  const geistMedium14pxPillWidths = [
+  const pillWidths = [
     [78.112, 61.354, 90.46],
     [86.974, 74.612, 87.45],
   ];
-  for (const scale of [
-    0.5463869464,
-    0.8428904429,
-    0.703030303,
-    0.7869463869,
-    0.7365967366,
-    0.7953379953,
-    322 / 330,
-    1,
+  for (const [width, height] of [
+    [320, 568],
+    [360, 740],
+    [768, 720],
+    [1280, 720],
+    [1440, 900],
+    [1920, 1080],
   ]) {
-    assert.ok(Math.abs((44 / scale) * scale - 44) < 1e-10);
-    const padding = Math.max(0, (44 / scale - 40) / 2);
-    assert.ok(Math.abs((40 + 2 * padding) * scale - 44) < 1e-10);
-    assert.ok(Math.max(64, 44 / scale) * scale >= 44, "Today rows reserve their whole reach");
-    for (const widths of geistMedium14pxPillWidths) {
-      const targets = widths.map((width) => {
-        const drawn = width * scale;
-        const displayedInset = Math.min(0, (drawn - 44) / 2);
-        const target = drawn - 2 * displayedInset;
-        assert.equal(target, Math.max(drawn, 44));
-        return target;
-      });
-      const blockInset = Math.min(0, (40 * scale - 44) / 2);
-      assert.ok(Math.abs(40 * scale - 2 * blockInset - 44) < 1e-10);
-      for (let index = 0; index < 2; index++) {
-        const centreDistance = ((widths[index] + widths[index + 1]) / 2 + 12) * scale;
+    const top = width <= 640 ? 96 : 112;
+    const device = Math.min(
+      390,
+      ((height - top - 64) * 9) / 19.5,
+      width - 64,
+      width < 768 ? Infinity : (width - 48) / 3,
+    );
+    const scale = (device - 8) / 390;
+    const target = (size) => Math.max(24, size * scale);
+    for (const widths of pillWidths) {
+      for (let i = 0; i < 2; i++) {
         assert.ok(
-          (targets[index] + targets[index + 1]) / 2 <= centreDistance,
-          "neighbouring 44px reaches fit in the 12px gap without intersecting",
+          (target(widths[i]) + target(widths[i + 1])) / 2 <=
+            ((widths[i] + widths[i + 1]) / 2 + 12) * scale,
         );
       }
+      assert.ok((target(44) - 44 * scale) / 2 <= 24 * scale, "card padding contains the reach");
     }
+    assert.ok(target(48) <= 60 * scale, "chip and composer reaches clear the 12px gap");
+    assert.ok(target(48) <= 56 * scale, "editor reaches clear the 8px row gap");
+    assert.ok(64 * scale >= 24, "the whole Today row is already a sufficient reach");
+    assert.ok((target(48) - 48 * scale) / 2 <= 16 * scale, "composer padding clears the home bar");
   }
+  assert.match(rules(".phone-screen .demo-send::before").join("\n"), /inset-inline-start:\s*0;/);
+  assert.match(source("AstraDemo"), /<label class="demo-composer-field" for="demo-input">/);
+  assert.match(
+    source("AstraDemo"),
+    /<label class="demo-edit-field" for="demo-edit-(?:name|schedule)">/,
+  );
 });
 
 test("proposal actions retain the app small pill geometry and separated targets", () => {
   const pills = rules(".demo-preview-actions .pill-sm");
   assert.ok(pills.length);
-  assert.match(pills[0], /block-size:\s*40px;/);
+  assert.match(pills[0], /block-size:\s*44px;/);
   assert.match(pills[0], /border-radius:\s*var\(--radius-full\);/);
   assert.match(pills[0], /padding-inline:\s*18px;/);
   assert.match(pills[0], /flex-shrink:\s*0;/);
@@ -219,14 +205,14 @@ test("proposal actions retain the app small pill geometry and separated targets"
 });
 
 test("the proposal shares the thread's single 16px content edge", () => {
-  assert.match(rules(".phone-slide .demo-thread").join("\n"), /padding-inline:\s*16px;/);
+  assert.match(rules(".demo-thread").join("\n"), /padding:\s*16px;/);
   for (const selector of [".phone-slide .demo-request", ".phone-slide .demo-response > .t-body"])
     assert.doesNotMatch(rules(selector).join("\n"), /margin-inline(?:-end)?:/);
-  assert.match(rules(".demo-preview").join("\n"), /padding:\s*8px;/);
+  assert.match(rules(".demo-preview").join("\n"), /padding:\s*24px;/);
   const logicalWidth = Number(rules(".phone-screen")[0]?.match(/inline-size:\s*(\d+)px;/)?.[1]);
-  assert.equal(logicalWidth - 2 * 16, 298);
-  const actionWidth = logicalWidth - 2 * 16 - 2 * 8;
-  assert.equal(actionWidth, 282);
+  assert.equal(logicalWidth - 2 * 16, 358);
+  const actionWidth = logicalWidth - 2 * 16 - 2 * 24;
+  assert.equal(actionWidth, 310);
   assert.ok(actionWidth >= 273, "the Portuguese small pills fit with both 12px gaps");
 });
 
@@ -234,7 +220,7 @@ test("phone spacing keeps only the declarations that render", () => {
   for (const [selector, property, expected] of [
     [".device-status", "min-block-size", "40px"],
     [".demo-exchange", "margin-block-start", "0"],
-    [".demo-composer", "padding", "0 0 0 8px"],
+    [".demo-composer", "padding", "4px"],
   ]) {
     const declarations = rules(selector).join("\n");
     const values = [

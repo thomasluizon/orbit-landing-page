@@ -23,44 +23,55 @@ const en = translations.en;
         {en["demo.start.request"]}
       </p>
       <div id="demo-response" class="demo-response">
-        <p id="demo-reply" class="t-body" data-i18n="demo.start.reply">
-          {en["demo.start.reply"]}
-        </p>
+        <div class="demo-message">
+          <AstraGlyph size={24} />
+          <p id="demo-reply" class="t-body" data-i18n="demo.start.reply">
+            {en["demo.start.reply"]}
+          </p>
+        </div>
         <div id="demo-preview" class="demo-preview" data-state="proposed">
           <p class="demo-proposed product-caption" data-i18n="demo.proposed">
             {en["demo.proposed"]}
           </p>
           <div class="demo-habits">
             <div class="demo-habit">
-              <p id="demo-habit" class="t-row" data-i18n="demo.start.habit">
-                {en["demo.start.habit"]}
-              </p>
-              <p id="demo-repeat" class="t-secondary" data-i18n="demo.start.repeat">
-                {en["demo.start.repeat"]}
-              </p>
+              <div class="demo-habit-copy">
+                <p id="demo-habit" class="t-row" data-i18n="demo.start.habit">
+                  {en["demo.start.habit"]}
+                </p>
+                <p id="demo-repeat" class="t-secondary" data-i18n="demo.start.repeat">
+                  {en["demo.start.repeat"]}
+                </p>
+              </div>
             </div>
             <div id="demo-second" class="demo-habit" hidden>
-              <p class="t-row" data-i18n="demo.move.secondHabit">
-                {en["demo.move.secondHabit"]}
-              </p>
-              <p id="demo-second-repeat" class="t-secondary" data-i18n="demo.move.secondRepeat">
-                {en["demo.move.secondRepeat"]}
-              </p>
+              <div class="demo-habit-copy">
+                <p class="t-row" data-i18n="demo.move.secondHabit">
+                  {en["demo.move.secondHabit"]}
+                </p>
+                <p id="demo-second-repeat" class="t-secondary" data-i18n="demo.move.secondRepeat">
+                  {en["demo.move.secondRepeat"]}
+                </p>
+              </div>
             </div>
           </div>
           <form id="demo-edit-form" class="demo-edit-form" hidden>
             <label for="demo-edit-name" data-i18n="demo.name">{en["demo.name"]}</label>
-            <input id="demo-edit-name" type="text" maxlength="80" required />
+            <label class="demo-edit-field" for="demo-edit-name">
+              <input id="demo-edit-name" type="text" maxlength="80" required />
+            </label>
             <label for="demo-edit-schedule" data-i18n="demo.schedule">{en["demo.schedule"]}</label>
-            <select id="demo-edit-schedule">
-              <option value="morning" data-i18n="demo.start.repeat"
-                >{en["demo.start.repeat"]}</option
-              >
-              <option value="afternoon" data-i18n="demo.afternoon">{en["demo.afternoon"]}</option>
-              <option value="evening" data-i18n="demo.start.alternateRepeat"
-                >{en["demo.start.alternateRepeat"]}</option
-              >
-            </select>
+            <label class="demo-edit-field" for="demo-edit-schedule">
+              <select id="demo-edit-schedule">
+                <option value="morning" data-i18n="demo.start.repeat"
+                  >{en["demo.start.repeat"]}</option
+                >
+                <option value="afternoon" data-i18n="demo.afternoon">{en["demo.afternoon"]}</option>
+                <option value="evening" data-i18n="demo.start.alternateRepeat"
+                  >{en["demo.start.alternateRepeat"]}</option
+                >
+              </select>
+            </label>
             <button type="submit" class="demo-save" data-i18n="demo.save">{en["demo.save"]}</button>
           </form>
           <div class="demo-preview-actions">
@@ -142,22 +153,25 @@ const en = translations.en;
       }
     </div>
     <form class="demo-composer" id="demo-composer">
-      <input
-        id="demo-input"
-        type="text"
-        maxlength="120"
-        required
-        autocomplete="off"
-        aria-label={en["demo.inputLabel"]}
-        data-i18n-label="demo.inputLabel"
-        placeholder={en["demo.composer"]}
-        data-i18n-placeholder="demo.composer"
-      />
+      <label class="demo-composer-field" for="demo-input">
+        <input
+          id="demo-input"
+          type="text"
+          maxlength="120"
+          required
+          autocomplete="off"
+          aria-label={en["demo.inputLabel"]}
+          data-i18n-label="demo.inputLabel"
+          placeholder={en["demo.composer"]}
+          data-i18n-placeholder="demo.composer"
+        />
+      </label>
       <button
         type="submit"
         class="demo-send"
+        disabled
         aria-label={en["demo.send"]}
-        data-i18n-label="demo.send"><ArrowUp size={16} /></button
+        data-i18n-label="demo.send"><ArrowUp size={20} /></button
       >
     </form>
   </div>

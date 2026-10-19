@@ -68,7 +68,7 @@ export function mountLandingMotion() {
       smoothWheel: true,
       lerp: 0.15,
       anchors: false,
-      prevent: (node) => node.closest(".phone-carousel, #ios") !== null,
+      prevent: (node) => node.closest("#ios") !== null,
     });
     lenis.on("scroll", ScrollTrigger.update);
     return () => lenis.destroy();
