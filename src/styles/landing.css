@@ -198,7 +198,11 @@
   z-index: 1;
 }
 .phone-screen .demo-preview-actions > button::before {
+  --phone-proposal-inline-start: var(--phone-reach-inset);
+  --phone-proposal-inline-end: var(--phone-reach-inset);
   --phone-proposal-block-start: max(-24px, var(--phone-reach-inset));
+  inset-inline-start: var(--phone-proposal-inline-start);
+  inset-inline-end: var(--phone-proposal-inline-end);
   inset-block-start: var(--phone-proposal-block-start);
   inset-block-end: min(
     0px,
@@ -206,24 +210,44 @@
   );
 }
 .phone-screen .demo-preview-actions > :not(:first-child)::before {
-  inset-inline-start: min(var(--phone-reach-floor-inset), max(-6px, var(--phone-reach-inset)));
+  --phone-proposal-inline-start: max(-6px, var(--phone-reach-inset));
 }
 .phone-screen .demo-preview-actions > :not(:last-child)::before {
-  inset-inline-end: min(var(--phone-reach-floor-inset), max(-6px, var(--phone-reach-inset)));
+  --phone-proposal-inline-end: max(-6px, var(--phone-reach-inset));
+}
+.phone-screen .demo-preview-actions > :first-child::before {
+  inset-inline-start: min(
+    0px,
+    calc(100% - var(--phone-reach-size) - var(--phone-proposal-inline-end))
+  );
+}
+.phone-screen .demo-preview-actions > :last-child::before {
+  inset-inline-end: min(
+    0px,
+    calc(100% - var(--phone-reach-size) - var(--phone-proposal-inline-start))
+  );
 }
 .phone-screen .demo-examples > :not(:first-child)::before {
-  inset-inline-start: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+  inset-inline-start: max(-4px, var(--phone-reach-inset));
 }
 .phone-screen .demo-examples > :not(:last-child)::before {
-  inset-inline-end: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+  inset-inline-end: max(-4px, var(--phone-reach-inset));
 }
 .phone-screen .demo-chip::before {
-  inset-block-start: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
-  inset-block-end: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
+  --phone-chip-block-end: max(-6px, var(--phone-reach-inset));
+  inset-block-start: max(
+    -16px,
+    min(0px, calc(100% - var(--phone-reach-size) - var(--phone-chip-block-end)))
+  );
+  inset-block-end: var(--phone-chip-block-end);
 }
 .phone-screen :is(.demo-composer-field, .demo-send)::before {
-  inset-block-start: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
-  inset-block-end: min(var(--phone-reach-floor-inset), max(-20px, var(--phone-reach-inset)));
+  --phone-composer-block-start: max(-10px, var(--phone-reach-inset));
+  inset-block-start: var(--phone-composer-block-start);
+  inset-block-end: max(
+    -20px,
+    min(0px, calc(100% - var(--phone-reach-size) - var(--phone-composer-block-start)))
+  );
 }
 .phone-screen .demo-composer-field::before {
   inset-inline-end: 0;

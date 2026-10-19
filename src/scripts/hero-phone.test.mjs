@@ -117,7 +117,11 @@ const screenProperties = declarations(rules(".phone-screen")[0]);
 const viewports = [
   [320, 568],
   [360, 740],
+  [360, 780],
+  [412, 915],
   [768, 720],
+  [768, 1024],
+  [1100, 762],
   [1280, 720],
   [1352, 900],
   [1440, 900],
@@ -135,7 +139,11 @@ const scales = viewports.map(([width, height]) => {
 });
 
 function reach(width, height, scale, selectors = []) {
-  const properties = { ...screenProperties, "--phone-scale": String(scale) };
+  const properties = {
+    ...declarations(rules(".device-screen").join("\n")),
+    "--phone-scale": String(scale),
+    ...screenProperties,
+  };
   const insets = {};
   for (const selector of [reachSelector, ...selectors]) {
     for (const [name, value] of Object.entries(declarations(rules(selector).join("\n")))) {
@@ -179,6 +187,15 @@ const expansion = (size, scale, limit = Infinity) =>
     Math.max(0, (24 - size * scale) / 2),
     Math.min(Math.max(0, (44 - size * scale) / 2), limit * scale),
   );
+const remainingExpansion = (size, scale, opposite, limit = Infinity) =>
+  Math.min(Math.max(0, 44 - size * scale - opposite), limit * scale);
+const proposalSelectors = (index) => [
+  ".phone-screen .demo-preview-actions > button::before",
+  ...(index > 0 ? [".phone-screen .demo-preview-actions > :not(:first-child)::before"] : []),
+  ...(index < 2 ? [".phone-screen .demo-preview-actions > :not(:last-child)::before"] : []),
+  ...(index === 0 ? [".phone-screen .demo-preview-actions > :first-child::before"] : []),
+  ...(index === 2 ? [".phone-screen .demo-preview-actions > :last-child::before"] : []),
+];
 
 test("scaled controls derive invisible 44px reaches and a 24px floor without changing artwork", () => {
   assert.doesNotMatch(css, /--phone-target-size/);
@@ -241,27 +258,23 @@ for (const [locale, widths] of Object.entries({
     test(`${locale} proposal pair ${pair + 1} keeps 44px height and limits only shared inline edges`, () => {
       for (const scale of scales) {
         const targets = widths.map((width, index) =>
-          reach(width, 44, scale, [
-            ".phone-screen .demo-preview-actions > button::before",
-            ...(index > 0
-              ? [".phone-screen .demo-preview-actions > :not(:first-child)::before"]
-              : []),
-            ...(index < 2
-              ? [".phone-screen .demo-preview-actions > :not(:last-child)::before"]
-              : []),
-          ]),
+          reach(width, 44, scale, proposalSelectors(index)),
         );
         for (const index of [pair, pair + 1]) {
           const target = targets[index];
           near(target.block, Math.max(44, 44 * scale), "proposal block reach");
           near(
             -target["inline-start"],
-            expansion(widths[index], scale, index > 0 ? 6 : Infinity),
+            index === 0
+              ? remainingExpansion(widths[index], scale, expansion(widths[index], scale, 6))
+              : expansion(widths[index], scale, 6),
             "inline start uses half the 12px gap",
           );
           near(
             -target["inline-end"],
-            expansion(widths[index], scale, index < 2 ? 6 : Infinity),
+            index === 2
+              ? remainingExpansion(widths[index], scale, expansion(widths[index], scale, 6))
+              : expansion(widths[index], scale, 6),
             "inline end uses half the 12px gap",
           );
           assert.ok(-target["block-start"] <= 24 * scale + 1e-8, "reach clears the proposed habit");
@@ -272,6 +285,27 @@ for (const [locale, widths] of Object.entries({
       }
     });
   }
+  test(`${locale} proposal reaches use 44 displayed pixels wherever the neighbours allow`, () => {
+    const transformScale = screenProperties.transform.match(/scale\(var\((--[\w-]+)\)\)/)?.[1];
+    assert.equal(transformScale, "--phone-scale");
+    assert.equal(screenProperties["--phone-reach-size"], `calc(44px / var(${transformScale}))`);
+    assert.equal(screenProperties["--phone-reach-floor"], `calc(24px / var(${transformScale}))`);
+    for (const scale of [...scales, 1]) {
+      widths.forEach((width, index) => {
+        const target = reach(width, 44, scale, proposalSelectors(index));
+        near(target.block, 44, "proposal height uses the artwork scale exactly once");
+        near(
+          target.inline,
+          Math.max(width * scale, index === 1 ? Math.min(44, (width + 12) * scale) : 44),
+          "outer edges use spare space while the middle action stops at both midpoints",
+        );
+        if (index > 0)
+          assert.ok(-target["inline-start"] <= 6 * scale + 1e-8, "start stops at midpoint");
+        if (index < 2)
+          assert.ok(-target["inline-end"] <= 6 * scale + 1e-8, "end stops at midpoint");
+      });
+    }
+  });
 }
 
 for (const [locale, widths] of Object.entries({ en: [112, 110, 96], pt: [92, 110, 128] })) {
@@ -296,8 +330,12 @@ for (const [locale, widths] of Object.entries({ en: [112, 110, 96], pt: [92, 110
             expansion(widths[index], scale, index < 2 ? 4 : Infinity),
             "chip end reach",
           );
-          near(-targets[index]["block-start"], expansion(48, scale, 16), "chip clears thread");
-          near(-targets[index]["block-end"], expansion(48, scale, 8), "chip clears composer");
+          near(
+            -targets[index]["block-start"],
+            remainingExpansion(48, scale, expansion(48, scale, 6), 16),
+            "chip uses space above after limiting its bottom edge",
+          );
+          near(-targets[index]["block-end"], expansion(48, scale, 6), "chip clears composer");
         }
         assert.ok(
           -targets[pair]["inline-end"] - targets[pair + 1]["inline-start"] <= 8 * scale + 1e-8,
@@ -323,11 +361,17 @@ test("composer field and Send reaches stay distinct, inside the composer width a
     assert.ok(-send["inline-end"] <= 4 * scale + 1e-8, "Send stays in the composer");
     const chip = reach(96, 48, scale, [".phone-screen .demo-chip::before"]);
     for (const [target, start, end] of [
-      [field, 8, 20],
+      [field, 10, 20],
       [send, 4, 4],
     ]) {
       near(-target["block-start"], expansion(48, scale, start), "composer start reach");
-      near(-target["block-end"], expansion(48, scale, end), "composer end reach");
+      near(
+        -target["block-end"],
+        target === field
+          ? remainingExpansion(48, scale, expansion(48, scale, start), end)
+          : expansion(48, scale, end),
+        "composer end reach",
+      );
       assert.ok(
         -chip["block-end"] - target["block-start"] <= 16 * scale + 1e-8,
         "chips and composer split their 16px face gap",
@@ -343,6 +387,45 @@ test("composer field and Send reaches stay distinct, inside the composer width a
   assert.match(rules(".demo-examples").join("\n"), /overflow:\s*visible;/);
   assert.match(rules(".phone-screen").join("\n"), /padding-block-end:\s*34px;/);
   assert.match(rules(".device-home").join("\n"), /inset-block-end:\s*15px;/);
+});
+
+test("chips and native composer fields stop at the same midpoint of the drawn 12px gap", () => {
+  const gap = Number(declarations(rules(".demo-input-area").join("\n")).gap.replace("px", ""));
+  const padding = Number(
+    declarations(rules(".demo-composer").join("\n")).padding.replace("px", ""),
+  );
+  assert.equal(gap, 12);
+  assert.equal(padding, 4);
+  for (const scale of scales) {
+    const chip = reach(96, 48, scale, [".phone-screen .demo-chip::before"]);
+    const field = reach(306, 48, scale, [
+      ".phone-screen :is(.demo-composer-field, .demo-send)::before",
+      ".phone-screen .demo-composer-field::before",
+    ]);
+    const midpoint = (48 + gap / 2) * scale;
+    const chipEnd = 48 * scale - chip["block-end"];
+    const fieldStart = (48 + gap + padding) * scale + field["block-start"];
+    assert.ok(chipEnd <= midpoint + 1e-8, "chip ends before the gap midpoint");
+    assert.ok(fieldStart >= midpoint - 1e-8, "field starts after the gap midpoint");
+    assert.ok(chipEnd <= fieldStart + 1e-8, "the displayed targets never intersect");
+    near(chip.block, Math.max(48 * scale, Math.min(44, 70 * scale)), "bounded chip height");
+    near(field.block, Math.max(48 * scale, Math.min(44, 78 * scale)), "bounded field height");
+  }
+});
+
+test("shared proposal and chip edges make the midpoint a hard expansion limit", () => {
+  for (const [selector, limits] of [
+    [".phone-screen .demo-preview-actions > :not(:first-child)::before", [6]],
+    [".phone-screen .demo-preview-actions > :not(:last-child)::before", [6]],
+    [".phone-screen .demo-examples > :not(:first-child)::before", [4]],
+    [".phone-screen .demo-examples > :not(:last-child)::before", [4]],
+    [".phone-screen .demo-chip::before", [6, 16]],
+    [".phone-screen :is(.demo-composer-field, .demo-send)::before", [10, 20]],
+  ]) {
+    const body = rules(selector).join("\n");
+    assert.doesNotMatch(body, /var\(--phone-reach-floor(?:-inset)?\)/, selector);
+    for (const limit of limits) assert.match(body, new RegExp(`max\\(\\s*-${limit}px,`), selector);
+  }
 });
 
 for (let pair = 0; pair < 2; pair++) {
