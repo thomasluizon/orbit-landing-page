@@ -6,18 +6,6 @@
     "reason": "Legal copyright and trademark holder"
   },
   {
-    "path": "src/i18n/translations.ts",
-    "rule": "owner-name",
-    "match": "Thomas",
-    "reason": "Shipped founder attribution in English and Portuguese"
-  },
-  {
-    "path": "src/components/Proof.astro",
-    "rule": "owner-name",
-    "match": "Thomas",
-    "reason": "Shipped founder attribution"
-  },
-  {
     "path": "tools/timeless-allowlist.json",
     "rule": "owner-name",
     "match": "Thomas",
