@@ -108,17 +108,18 @@ test("scaled controls compensate their reach and reserve space without intersect
     /--phone-target-size:\s*calc\(44px \/ var\(--phone-scale\)\);/,
   );
   const reach = rules(".phone-screen .demo-preview-actions .pill-sm::before").join("\n");
-  assert.match(
-    reach,
-    /inset-block:\s*min\(-4px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\);/,
-  );
-  assert.match(
-    reach,
-    /inset-inline:\s*min\(0px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\);/,
+  assert.match(reach, /zoom:\s*calc\(1 \/ var\(--phone-scale\)\);/);
+  assert.match(reach, /inset-block:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
+  assert.match(reach, /inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
+  assert.doesNotMatch(reach, /(?:padding|min-(?:inline|block)-size):/);
+  assert.doesNotMatch(
+    rules(".demo-preview-actions .pill-sm::before").join("\n"),
+    /!important/,
+    "the later, less specific small-pill reach must not override the phone reach",
   );
   assert.match(
     rules(".phone-screen .demo-preview-actions").join("\n"),
-    /padding-block:\s*max\(4px, calc\(\(var\(--phone-target-size\) - 40px\) \/ 2\)\);/,
+    /padding-block:\s*max\(0px, calc\(\(var\(--phone-target-size\) - 40px\) \/ 2\)\);/,
   );
   for (const control of [
     ".demo-chip",
@@ -149,15 +150,32 @@ test("scaled controls compensate their reach and reserve space without intersect
     [78.112, 61.354, 90.46],
     [86.974, 74.612, 87.45],
   ];
-  for (const scale of [0.5463869464, 0.7869463869, 0.7365967366, 0.7953379953, 322 / 330]) {
+  for (const scale of [
+    0.5463869464,
+    0.8428904429,
+    0.703030303,
+    0.7869463869,
+    0.7365967366,
+    0.7953379953,
+    322 / 330,
+    1,
+  ]) {
     assert.ok(Math.abs((44 / scale) * scale - 44) < 1e-10);
-    const padding = Math.max(4, (44 / scale - 40) / 2);
-    assert.ok((40 + 2 * padding) * scale >= 44 - 1e-10);
+    const padding = Math.max(0, (44 / scale - 40) / 2);
+    assert.ok(Math.abs((40 + 2 * padding) * scale - 44) < 1e-10);
     assert.ok(Math.max(64, 44 / scale) * scale >= 44, "Today rows reserve their whole reach");
     for (const widths of geistMedium14pxPillWidths) {
-      const targets = widths.map((width) => Math.max(width, 44 / scale));
+      const targets = widths.map((width) => {
+        const drawn = width * scale;
+        const displayedInset = Math.min(0, (drawn - 44) / 2);
+        const target = drawn - 2 * displayedInset;
+        assert.equal(target, Math.max(drawn, 44));
+        return target;
+      });
+      const blockInset = Math.min(0, (40 * scale - 44) / 2);
+      assert.ok(Math.abs(40 * scale - 2 * blockInset - 44) < 1e-10);
       for (let index = 0; index < 2; index++) {
-        const centreDistance = (widths[index] + widths[index + 1]) / 2 + 12;
+        const centreDistance = ((widths[index] + widths[index + 1]) / 2 + 12) * scale;
         assert.ok(
           (targets[index] + targets[index + 1]) / 2 <= centreDistance,
           "neighbouring 44px reaches fit in the 12px gap without intersecting",

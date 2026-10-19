@@ -983,6 +983,43 @@ test("proposal action options stay in one trailing row with a fixed 12px gap", (
   assert.match(css, /\.demo-preview-actions \.pill-sm\s*\{[^}]*flex-shrink:\s*0/);
 });
 
+test("short narrow phones reveal the whole proposal target before the first visible-action scroll", () => {
+  const compact = stylesheetRules(css).filter((rule) =>
+    rule.conditions.includes("@media (width < 360px) and (height < 600px)"),
+  );
+  const thread = compact.find((rule) => rule.selector === ".phone-slide .demo-thread");
+  assert.ok(thread, "the compact chat viewport must constrain the thread, not the pills");
+  const threadHeight = Number(thread.declarations.match(/max-block-size:\s*(\d+)px;/)?.[1]);
+  const input = compact.find((rule) => rule.selector === ".phone-slide .demo-input-area");
+  assert.match(input?.declarations ?? "", /margin-block-start:\s*auto;/);
+  assert.match(
+    readFileSync("src/scripts/demo.ts", "utf8"),
+    /if \(thread\) thread\.scrollTop = thread\.scrollHeight;/,
+  );
+
+  const scale = (((568 - 96 - 64) * 9) / 19.5 - 8) / 330;
+  const target = 44 / scale;
+  const actionPadding = (target - 40) / 2;
+  const proposed = 12 * 1.55;
+  const habit = 14 * 1.35 + 4 + 14 * 1.55;
+  const preview = 2 * 8 + proposed + 2 * 12 + habit + target;
+  assert.ok(preview + 16 <= threadHeight, "the complete card and thread top inset fit");
+  const initialReducedMotionScreenTop = 403.44;
+  const header = 40 + 56;
+  const rowCentre = header + threadHeight - 8 - actionPadding - 20;
+  const drawnBottom = initialReducedMotionScreenTop + (rowCentre + 20) * scale;
+  const targetBottom = initialReducedMotionScreenTop + rowCentre * scale + 22;
+  const chipsTop = initialReducedMotionScreenTop + (715 - 36 - 8 - 2 * target) * scale;
+  assert.ok(drawnBottom + 4 <= 568, "the probe finds the row at scroll zero");
+  assert.ok(targetBottom <= 568 - 4, "the full 44px reach clears the viewport bottom");
+  assert.ok(
+    targetBottom < initialReducedMotionScreenTop + 715 * scale,
+    "the reach stays inside the phone",
+  );
+  assert.ok(targetBottom < chipsTop, "proposal targets end above the chips");
+  assert.ok(initialReducedMotionScreenTop + rowCentre * scale + 21.25 < 568);
+});
+
 test("chat chips and composer occupy separate rows with their full targets in vertical flow", async () => {
   const { parse } = await import("@astrojs/compiler");
   const { ast } = await parse(readFileSync("src/components/AstraDemo.astro", "utf8"));

@@ -174,11 +174,12 @@
   transform-origin: top left;
 }
 .phone-screen .demo-preview-actions .pill-sm::before {
-  inset-block: min(-4px, calc((100% - var(--phone-target-size)) / 2));
-  inset-inline: min(0px, calc((100% - var(--phone-target-size)) / 2));
+  zoom: calc(1 / var(--phone-scale));
+  inset-block: min(0px, calc((100% - 44px) / 2));
+  inset-inline: min(0px, calc((100% - 44px) / 2));
 }
 .phone-screen .demo-preview-actions {
-  padding-block: max(4px, calc((var(--phone-target-size) - 40px) / 2));
+  padding-block: max(0px, calc((var(--phone-target-size) - 40px) / 2));
 }
 .phone-screen .demo-chip,
 .phone-screen .demo-send,
@@ -2022,6 +2023,14 @@ button.metric-bar-track:focus-visible {
 @media (width <= 640px) {
   .hero-stage {
     --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
+  }
+}
+@media (width < 360px) and (height < 600px) {
+  .phone-slide .demo-thread {
+    max-block-size: 200px;
+  }
+  .phone-slide .demo-input-area {
+    margin-block-start: auto;
   }
 }
 .habit-row[data-habit-toggle] {
