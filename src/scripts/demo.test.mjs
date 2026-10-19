@@ -15,8 +15,9 @@ function visit(node) {
 visit(ast);
 const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
-function harness(language = "en") {
+function harness(language = "en", threadHeight = 415) {
   const events = new Map();
+  const observers = [];
   const element = (attrs = {}) => ({
     hidden: Object.hasOwn(attrs, "hidden"),
     attributes: { ...attrs },
@@ -57,7 +58,21 @@ function harness(language = "en") {
     Object.assign(element(), { dataset: { demo: name } }),
   );
   elements.get("astra-demo").querySelectorAll = () => chips;
-  elements.get("astra-demo").querySelector = () => chips[0];
+  const exchange = element();
+  let scrollTop = 0;
+  const thread = {
+    clientHeight: threadHeight,
+    scrollHeight: threadHeight,
+    get scrollTop() {
+      return scrollTop;
+    },
+    set scrollTop(value) {
+      scrollTop = Math.max(0, Math.min(value, this.scrollHeight - this.clientHeight));
+    },
+  };
+  elements.get("demo-preview").closest = () => thread;
+  elements.get("astra-demo").querySelector = (selector) =>
+    selector === ".demo-exchange" ? exchange : chips[0];
   const copied = [element(), element()];
   const added = Object.assign(element({ hidden: true }), {
     closest: () => null,
@@ -67,7 +82,14 @@ function harness(language = "en") {
   const context = vm.createContext({
     URL,
     ResizeObserver: class {
-      observe() {}
+      targets = new Set();
+      constructor(callback) {
+        this.callback = callback;
+        observers.push(this);
+      }
+      observe(target) {
+        this.targets.add(target);
+      }
     },
     exports: {},
     document: {
@@ -95,6 +117,14 @@ function harness(language = "en") {
     added,
     copied,
     events,
+    exchange,
+    thread,
+    observers,
+    resize(target) {
+      for (const observer of observers) {
+        if (observer.targets.has(target)) observer.callback();
+      }
+    },
     get: (id) => elements.get(id),
     strings: require("../i18n/translations").translations[language],
     switchLanguage(value) {
@@ -103,6 +133,48 @@ function harness(language = "en") {
     },
   };
 }
+test("exchange growth re-reveals the actions above the chip row at every phone scale", () => {
+  for (const language of ["en", "pt-BR"]) {
+    for (const [width, height] of [
+      [320, 568],
+      [360, 740],
+      [1280, 720],
+      [1352, 762],
+      [1440, 900],
+      [1920, 1080],
+    ]) {
+      const top = width <= 640 ? 96 : 112;
+      const deviceWidth = Math.min(330, ((height - top - 64) * 9) / 19.5, width - 64);
+      const scale = (deviceWidth - 8) / 330;
+      const target = 44 / scale;
+      const composerHeight = Math.max(48, target);
+      const chipsHeight = Math.max(44, target);
+      const threadHeight = 715 - 40 - 56 - (12 + chipsHeight + 8 + composerHeight + 24);
+      const h = harness(language, threadHeight);
+      const observed = h.observers.flatMap((observer) => [...observer.targets]);
+      assert.ok(observed.includes(h.get("demo-preview")));
+      assert.ok(observed.includes(h.thread));
+      assert.ok(observed.includes(h.exchange), "request and reply growth must trigger reveal");
+      for (const contentHeight of [600, 760, 940]) {
+        h.thread.scrollHeight = contentHeight;
+        h.resize(h.exchange);
+        assert.equal(h.thread.scrollTop, contentHeight - threadHeight);
+        const actionReachBottom = (contentHeight - h.thread.scrollTop) * scale;
+        const chipsTop = (threadHeight + 12) * scale;
+        assert.ok(
+          actionReachBottom < chipsTop,
+          `${language} ${width}x${height}: actions clear chips`,
+        );
+      }
+      h.get("demo-edit").fire("click");
+      const editorScrollTop = h.thread.scrollTop;
+      h.thread.scrollHeight += 200;
+      h.resize(h.exchange);
+      assert.equal(h.thread.scrollTop, editorScrollTop, "editing retains its scroll position");
+      assert.equal(h.get("demo-edit-name").focused, true);
+    }
+  }
+});
 for (const language of ["en", "pt-BR"]) {
   test(`${language}: typed requests stay local, can be edited, and approve into Today with a supported app title`, () => {
     const h = harness(language);

@@ -178,4 +178,6 @@ if (preview) {
   proposalSize.observe(preview);
   const thread = preview.closest(".demo-thread");
   if (thread) proposalSize.observe(thread);
+  const exchange = demo?.querySelector(".demo-exchange");
+  if (exchange) proposalSize.observe(exchange);
 }
