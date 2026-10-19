@@ -234,7 +234,7 @@ test("FAQ disclosure updates aria-expanded and controls its own answer without r
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   const entry = readFileSync("src/pages/index.astro", "utf8");
-  assert.match(entry, /import "\.\.\/scripts\/faq"/);
+  assert.match(entry, /import\("\.\.\/scripts\/faq"\)/);
   for (const initiallyOpen of [false, true]) {
     const items = keys.map((key, index) => {
       const control = {
@@ -262,6 +262,7 @@ test("FAQ disclosure updates aria-expanded and controls its own answer without r
       };
     });
     vm.runInNewContext(code, {
+      exports: {},
       document: {
         querySelectorAll(selector) {
           assert.equal(selector, ".faq-list details");
@@ -1150,6 +1151,12 @@ async function reachFeaturesWithoutPhone(loadProductExamples) {
         }
       },
       require(path) {
+        if (path === "../scripts/task-queue")
+          return {
+            afterLoad: async (tasks) => {
+              for (const task of tasks) await task();
+            },
+          };
         imports.push(path);
         if (path === "../scripts/product-examples") loadProductExamples();
         return {};

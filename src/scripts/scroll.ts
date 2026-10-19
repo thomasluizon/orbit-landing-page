@@ -1,3 +1,5 @@
+export {};
+
 let loading = false;
 let active = true;
 let dispose: (() => void) | undefined;

@@ -37,20 +37,28 @@ import { appUrl, googlePlayUrl } from "../config/links";
 
 <script>
   import "../scripts/i18n";
-  import "../scripts/pricing";
-  import "../scripts/faq";
-  import "../scripts/back-to-top";
-  import "../scripts/scroll";
-  import "../scripts/waitlist";
-  import "../scripts/waitlist-section";
+  import { afterLoad } from "../scripts/task-queue";
+
+  void afterLoad([
+    () => import("../scripts/pricing"),
+    () => import("../scripts/faq"),
+    () => import("../scripts/back-to-top"),
+    () => import("../scripts/scroll"),
+    () => import("../scripts/waitlist"),
+    () => import("../scripts/waitlist-section"),
+  ]);
 
   const previewObserver = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         previewObserver.unobserve(entry.target);
-        void import("../scripts/product-examples");
-        if (entry.target.matches(".hero-device")) void import("../scripts/demo");
+        void afterLoad([
+          () => import("../scripts/product-examples"),
+          async () => {
+            if (entry.target.matches(".hero-device")) await import("../scripts/demo");
+          },
+        ]);
       }
     },
     { rootMargin: "160px" },

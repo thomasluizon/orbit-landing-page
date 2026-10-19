@@ -3,6 +3,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { updateHeroCarousel } from "./hero-carousel";
 import { mountHeroFloat } from "./hero-float";
+import { afterLoad } from "./task-queue";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -93,7 +94,7 @@ export function mountLandingMotion() {
       timeline.to({}, { duration: 1 });
     }
   });
-  media.add("(prefers-reduced-motion: no-preference)", () => {
+  media.add("(prefers-reduced-motion: no-preference)", (context) => {
     const stage = document.getElementById("hero-stage");
     const disposeFloat = stage ? mountHeroFloat(stage) : undefined;
     if (stage) {
@@ -115,26 +116,50 @@ export function mountLandingMotion() {
         },
       );
     }
-    document.querySelectorAll<HTMLElement>("[data-example-row]").forEach((row) => {
-      gsap.fromTo(
-        row.querySelectorAll("[data-composition-card]"),
-        { y: 48, opacity: 0.5 },
-        {
-          y: 0,
-          opacity: 1,
-          stagger: 0.12,
-          ease: "none",
-          scrollTrigger: {
-            trigger: row,
-            start: "top 90%",
-            end: "center 55%",
-            scrub: true,
-            invalidateOnRefresh: true,
+    const rows = document.querySelectorAll<HTMLElement>("[data-example-row]");
+    const observer = rows.length
+      ? new IntersectionObserver(
+          (entries) => {
+            void afterLoad(
+              entries
+                .filter((entry) => entry.isIntersecting)
+                .map(({ target }) => {
+                  observer?.unobserve(target);
+                  return () => {
+                    if (!active) return;
+                    context.add(() =>
+                      gsap.fromTo(
+                        target.querySelectorAll("[data-composition-card]"),
+                        { y: 48, opacity: 0.5 },
+                        {
+                          y: 0,
+                          opacity: 1,
+                          stagger: 0.12,
+                          ease: "none",
+                          scrollTrigger: {
+                            trigger: target,
+                            start: "top 90%",
+                            end: "center 55%",
+                            scrub: true,
+                            invalidateOnRefresh: true,
+                          },
+                        },
+                      ),
+                    );
+                  };
+                }),
+            );
           },
-        },
-      );
-    });
-    return () => disposeFloat?.();
+          { rootMargin: "160px" },
+        )
+      : undefined;
+    let active = true;
+    rows.forEach((row) => observer?.observe(row));
+    return () => {
+      active = false;
+      observer?.disconnect();
+      disposeFloat?.();
+    };
   });
   const refresh = () => {
     fitCompositions();

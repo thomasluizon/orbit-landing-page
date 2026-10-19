@@ -352,6 +352,112 @@ test("the pinned timeline sends scroll progress in both motion preferences", () 
   }
 });
 
+test("feature motion waits for intersection and separate tasks, and respects media cleanup", () => {
+  for (const reduced of [false, true]) {
+    const tasks = [],
+      animations = [],
+      cleanups = [],
+      observers = [];
+    const rows = [0, 1].map(() => ({ querySelectorAll: () => [] }));
+    let recording = false;
+    const context = {
+      add(callback) {
+        recording = true;
+        callback();
+        recording = false;
+      },
+    };
+    const exports = {};
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText,
+      {
+        exports,
+        require(name) {
+          if (name === "./task-queue")
+            return { afterLoad: (callbacks) => tasks.push(...callbacks) };
+          if (name === "gsap")
+            return {
+              gsap: {
+                registerPlugin() {},
+                matchMedia: () => ({
+                  add(query, callback) {
+                    if (query === "all" || !reduced) {
+                      const cleanup = callback(context);
+                      if (cleanup) cleanups.push(cleanup);
+                    }
+                  },
+                  revert: () => cleanups.forEach((cleanup) => cleanup()),
+                }),
+                fromTo(_targets, _from, to) {
+                  assert.ok(recording, "deferred animations stay in their media context");
+                  animations.push(to.scrollTrigger.trigger);
+                },
+              },
+            };
+          if (name === "gsap/ScrollTrigger") return { ScrollTrigger: { refresh() {} } };
+          if (name === "lenis")
+            return {
+              default: class {
+                on() {}
+                destroy() {}
+              },
+            };
+          return {};
+        },
+        document: {
+          getElementById: () => null,
+          querySelector: () => null,
+          querySelectorAll: (selector) => (selector === "[data-example-row]" ? rows : []),
+          fonts: { ready: Promise.resolve() },
+        },
+        window: { addEventListener() {}, removeEventListener() {} },
+        ResizeObserver: class {
+          disconnect() {}
+        },
+        IntersectionObserver: class {
+          observed = new Set();
+          constructor(callback) {
+            this.callback = callback;
+            observers.push(this);
+          }
+          observe(row) {
+            this.observed.add(row);
+          }
+          unobserve(row) {
+            this.observed.delete(row);
+          }
+          disconnect() {
+            this.disconnected = true;
+          }
+        },
+      },
+    );
+    const dispose = exports.mountLandingMotion();
+    assert.equal(tasks.length, 0);
+    assert.deepEqual(animations, []);
+    if (reduced) {
+      assert.equal(observers.length, 0);
+      dispose();
+      continue;
+    }
+    const observer = observers[0];
+    assert.deepEqual([...observer.observed], rows);
+    observer.callback(rows.map((target) => ({ target, isIntersecting: false })));
+    assert.equal(tasks.length, 0);
+    observer.callback(rows.map((target) => ({ target, isIntersecting: true })));
+    assert.equal(tasks.length, 2);
+    assert.deepEqual(animations, []);
+    tasks.shift()();
+    assert.deepEqual(animations, [rows[0]]);
+    dispose();
+    assert.equal(observer.disconnected, true);
+    tasks.shift()();
+    assert.deepEqual(animations, [rows[0]], "reverted media cannot mount a queued animation");
+  }
+});
+
 function floatHarness({ reduced = false } = {}) {
   const frames = new Map();
   const events = new Map();

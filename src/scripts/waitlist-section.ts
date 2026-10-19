@@ -1,3 +1,5 @@
+export {};
+
 const section = document.getElementById("ios");
 const email = document.getElementById("waitlist-email");
 

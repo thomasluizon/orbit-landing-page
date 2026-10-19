@@ -441,6 +441,7 @@ function harness(reduced = false) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
   }).outputText;
   vm.runInNewContext(compiled, {
+    exports: {},
     window,
     require() {
       result.imports++;

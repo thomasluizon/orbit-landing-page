@@ -29,6 +29,7 @@ function harness(hash = "", reduced = false) {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
     }).outputText,
     {
+      exports: {},
       document: {
         getElementById: (id) => (id === "ios" ? section : email),
         querySelectorAll: () => triggers,

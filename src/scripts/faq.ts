@@ -1,3 +1,5 @@
+export {};
+
 for (const details of document.querySelectorAll<HTMLDetailsElement>(".faq-list details")) {
   const summary = details.querySelector("summary");
   if (!summary) continue;
