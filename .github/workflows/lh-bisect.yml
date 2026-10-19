@@ -1,0 +1,70 @@
+name: LH Bisect
+
+# Throwaway diagnosis for thomasluizon/orbit-tickets#1459: measures total blocking time and the long
+# tasks of index.html on each candidate head with the CI Lighthouse version, and saves the traces.
+on:
+  pull_request:
+    branches: [redesign/main]
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: Measure ${{ matrix.sha }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sha:
+          - 6d21f5898aad2c7df987db5ab8697e29fec18ef2
+          - 7dadb7ba10b369f901f8cad5fcc1040cede00276
+          - 2f2587fdd058b53cf07b01ebc047d0639b97dbca
+          - 2706808c504a56c33e6e926881457f8b52f2307a
+          - 670f8d20384471cb048e20ce34bf7e37ae82b00e
+          - 2348fc5947df3d17ba397c0cbcdb75443eaaa8d3
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ matrix.sha }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Measure index.html three times
+        run: |
+          mkdir -p lh-out
+          npx -y http-server@14.1.1 dist -p 8080 -s &
+          sleep 3
+          for run in 1 2 3; do
+            npx -y lighthouse@12.6.1 http://127.0.0.1:8080/index.html --output=json \
+              --output-path="lh-out/run-$run.json" --save-assets --quiet \
+              --chrome-flags="--headless=new --no-sandbox"
+          done
+          node -e '
+            const fs = require("fs")
+            for (const run of [1, 2, 3]) {
+              const lhr = JSON.parse(fs.readFileSync(`lh-out/run-${run}.json`, "utf8"))
+              const audits = lhr.audits
+              const long = (audits["long-tasks"]?.details?.items ?? []).map((item) => `${item.url} ${Math.round(item.duration)}ms@${Math.round(item.startTime)}`)
+              const boot = (audits["bootup-time"]?.details?.items ?? []).slice(0, 4).map((item) => `${item.url} total ${Math.round(item.total)} script ${Math.round(item.scripting)}`)
+              const work = (audits["mainthread-work-breakdown"]?.details?.items ?? []).map((item) => `${item.group} ${Math.round(item.duration)}`)
+              console.log(`run ${run} TBT ${Math.round(audits["total-blocking-time"].numericValue)} benchmark ${lhr.environment.benchmarkIndex}`)
+              console.log(`  long tasks: ${long.join(" | ")}`)
+              console.log(`  bootup: ${boot.join(" | ")}`)
+              console.log(`  work: ${work.join(" | ")}`)
+            }
+          '
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: lh-${{ matrix.sha }}
+          path: lh-out
+          retention-days: 3
