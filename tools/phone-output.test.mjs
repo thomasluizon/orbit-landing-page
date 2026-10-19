@@ -83,7 +83,8 @@ test("built phone uses one 390 by 845 logical layout without visible hit-area in
   values(".phone-screen", {
     "inline-size": "390px",
     "block-size": "845px",
-    "--phone-reach-size": "calc(24px / var(--phone-scale))",
+    "--phone-reach-size": "calc(44px / var(--phone-scale))",
+    "--phone-reach-floor": "calc(24px / var(--phone-scale))",
     transform: "scale(var(--phone-scale))",
     "transform-origin": "0 0",
   });

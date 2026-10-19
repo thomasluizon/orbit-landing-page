@@ -1031,11 +1031,19 @@ test("chat chips and composer occupy separate rows with their full targets in ve
   assert.match(base, /\.demo-examples\s*\{[^}]*padding-block:\s*0;[^}]*margin-block:\s*0;/);
   for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
     if (!/\.demo-(?:input-area|examples|composer|chip)(?![\w:-])/.test(selectors)) continue;
+    if (selectors.includes("::before")) {
+      assert.doesNotMatch(
+        declarations,
+        /(?:padding|margin|(?:min-)?(?:inline|block)-size|transform|translate|grid-row|grid-area):/,
+        selectors,
+      );
+      continue;
+    }
     assert.doesNotMatch(declarations, /position:\s*(?:absolute|fixed)/, selectors);
     assert.doesNotMatch(declarations, /(?:margin|inset)[\w-]*:[^;]*-\d/, selectors);
     assert.doesNotMatch(declarations, /(?:transform|translate|grid-row|grid-area):/, selectors);
   }
-  assert.doesNotMatch(css, /\.demo-chip::before/, "the target belongs inside the chip row");
+  assert.doesNotMatch(css, /^\.demo-chip::before/gm, "reach expansion is scoped to the phone");
   assert.match(css, /\.demo-preview\s*\{[^}]*padding:\s*24px;/);
 });
 

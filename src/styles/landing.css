@@ -161,7 +161,8 @@
   overflow: clip;
 }
 .phone-screen {
-  --phone-reach-size: calc(24px / var(--phone-scale));
+  --phone-reach-size: calc(44px / var(--phone-scale));
+  --phone-reach-floor: calc(24px / var(--phone-scale));
   container-type: inline-size;
   position: absolute;
   inset-block-start: 0;
@@ -178,15 +179,92 @@
   position: relative;
 }
 .phone-screen :is(button, a, .demo-composer-field, .demo-edit-field)::before {
+  --phone-reach-inset: min(0px, calc((100% - var(--phone-reach-size)) / 2));
+  --phone-reach-floor-inset: min(0px, calc((100% - var(--phone-reach-floor)) / 2));
   content: "";
   position: absolute;
-  inset-block: min(0px, calc((100% - var(--phone-reach-size)) / 2));
-  inset-inline: min(0px, calc((100% - var(--phone-reach-size)) / 2));
+  inset-block: var(--phone-reach-inset);
+  inset-inline: var(--phone-reach-inset);
   border-radius: inherit;
 }
+.phone-screen :is(.demo-composer-field, .demo-edit-field) {
+  isolation: isolate;
+}
+.phone-screen :is(.demo-composer-field, .demo-edit-field)::before {
+  z-index: 0;
+}
+.phone-screen :is(.demo-composer-field, .demo-edit-field) :is(input, select) {
+  position: relative;
+  z-index: 1;
+}
+.phone-screen .demo-preview-actions > button::before {
+  --phone-proposal-block-start: max(-24px, var(--phone-reach-inset));
+  inset-block-start: var(--phone-proposal-block-start);
+  inset-block-end: min(
+    0px,
+    calc(100% - var(--phone-reach-size) - var(--phone-proposal-block-start))
+  );
+}
+.phone-screen .demo-preview-actions > :not(:first-child)::before {
+  inset-inline-start: min(var(--phone-reach-floor-inset), max(-6px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-preview-actions > :not(:last-child)::before {
+  inset-inline-end: min(var(--phone-reach-floor-inset), max(-6px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-examples > :not(:first-child)::before {
+  inset-inline-start: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-examples > :not(:last-child)::before {
+  inset-inline-end: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-chip::before {
+  inset-block-start: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
+  inset-block-end: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
+}
+.phone-screen :is(.demo-composer-field, .demo-send)::before {
+  inset-block-start: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
+  inset-block-end: min(var(--phone-reach-floor-inset), max(-20px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-composer-field::before {
+  inset-inline-end: 0;
+}
 .phone-screen .demo-send::before {
+  inset-block: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
   inset-inline-start: 0;
-  inset-inline-end: min(0px, calc(100% - var(--phone-reach-size)));
+  inset-inline-end: min(
+    0px,
+    calc(100% - var(--phone-reach-floor)),
+    max(-4px, calc(100% - var(--phone-reach-size)))
+  );
+}
+.phone-screen .demo-edit-field::before {
+  inset-block: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-edit-field:has(input)::before {
+  inset-block-start: var(--phone-reach-inset);
+}
+.phone-screen .demo-save::before {
+  inset-block-start: min(var(--phone-reach-floor-inset), max(-4px, var(--phone-reach-inset)));
+}
+.phone-screen .phone-today-habits > .habit-row::before {
+  inset-block: min(var(--phone-reach-floor-inset), max(-6px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-today > .habit-row::before {
+  inset-block: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
+}
+.phone-screen .phone-today-habits > .habit-row:nth-child(1 of .habit-row:not([hidden]))::before,
+.phone-screen .demo-today > .habit-row:nth-child(1 of .habit-row:not([hidden]))::before {
+  inset-block-start: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
+}
+.phone-screen
+  .phone-today-habits
+  > .habit-row:nth-last-child(1 of .habit-row:not([hidden]))::before,
+.phone-screen .demo-today > .habit-row:nth-last-child(1 of .habit-row:not([hidden]))::before {
+  inset-block-end: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
+}
+.phone-screen .demo-continue .text-link::before {
+  inset-block-start: min(var(--phone-reach-floor-inset), max(-8px, var(--phone-reach-inset)));
+  inset-block-end: min(var(--phone-reach-floor-inset), max(-16px, var(--phone-reach-inset)));
 }
 .device-status {
   display: grid;

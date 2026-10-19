@@ -11,11 +11,13 @@ const attributes = (node) =>
 const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
 const hero = (await parse(source("Hero"))).ast;
 const css = readFileSync("src/styles/landing.css", "utf8");
+const normalizeSelector = (value) => value.replace(/\s+/g, " ").trim();
 const rules = (selector) =>
   [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
     .filter(
       ([, selectors]) =>
-        selectors.trim() === selector || selectors.split(",").some((s) => s.trim() === selector),
+        normalizeSelector(selectors) === selector ||
+        selectors.split(",").some((s) => normalizeSelector(s) === selector),
     )
     .map(([, , declarations]) => declarations);
 const slides = descendants(hero).filter((node) => attributes(node)["data-phone-slide"]);
@@ -105,70 +107,311 @@ test("screen fitting follows fractional inner width and caps its scale at one", 
   }
 });
 
-test("scaled controls use invisible 24px reaches without changing visible geometry", () => {
+const reachSelector =
+  ".phone-screen :is(button, a, .demo-composer-field, .demo-edit-field)::before";
+const declarations = (body) =>
+  Object.fromEntries(
+    [...body.matchAll(/([\w-]+):\s*([^;]+);/g)].map(([, key, value]) => [key, value]),
+  );
+const screenProperties = declarations(rules(".phone-screen")[0]);
+const viewports = [
+  [320, 568],
+  [360, 740],
+  [768, 720],
+  [1280, 720],
+  [1352, 900],
+  [1440, 900],
+  [1920, 1080],
+];
+const scales = viewports.map(([width, height]) => {
+  const top = width <= 640 ? 96 : 112;
+  const device = Math.min(
+    390,
+    ((height - top - 64) * 9) / 19.5,
+    width - 64,
+    width < 768 ? Infinity : (width - 48) / 3,
+  );
+  return (device - 8) / 390;
+});
+
+function reach(width, height, scale, selectors = []) {
+  const properties = { ...screenProperties, "--phone-scale": String(scale) };
+  const insets = {};
+  for (const selector of [reachSelector, ...selectors]) {
+    for (const [name, value] of Object.entries(declarations(rules(selector).join("\n")))) {
+      if (name.startsWith("--")) properties[name] = value;
+      if (name === "inset-block" || name === "inset-inline") {
+        insets[`${name}-start`] = value;
+        insets[`${name}-end`] = value;
+      } else if (name.startsWith("inset-")) insets[name] = value;
+    }
+  }
+  const resolve = (value) =>
+    value.replace(/var\((--[\w-]+)\)/g, (_, name) => {
+      assert.ok(properties[name], `defined reach property ${name}`);
+      return `(${resolve(properties[name])})`;
+    });
+  const evaluate = (value, size) => {
+    const expression = resolve(value)
+      .replace(/\bcalc\(/g, "(")
+      .replace(/\b(min|max)\(/g, "Math.$1(")
+      .replace(/([\d.]+)%/g, (_, percent) => String((Number(percent) * size) / 100))
+      .replace(/px\b/g, "");
+    const result = vm.runInNewContext(expression);
+    assert.ok(Number.isFinite(result), expression);
+    return result;
+  };
+  const result = {};
+  for (const axis of ["inline", "block"]) {
+    const size = axis === "inline" ? width : height;
+    for (const edge of ["start", "end"])
+      result[`${axis}-${edge}`] = evaluate(insets[`inset-${axis}-${edge}`] ?? "0", size) * scale;
+    result[axis] = size * scale - result[`${axis}-start`] - result[`${axis}-end`];
+    assert.ok(result[axis] >= 24 - 1e-8, `${axis} reach ${result[axis]} has a 24px floor`);
+  }
+  return result;
+}
+
+const near = (actual, expected, message) =>
+  assert.ok(Math.abs(actual - expected) < 1e-8, `${message}: ${actual} vs ${expected}`);
+const expansion = (size, scale, limit = Infinity) =>
+  Math.max(
+    Math.max(0, (24 - size * scale) / 2),
+    Math.min(Math.max(0, (44 - size * scale) / 2), limit * scale),
+  );
+
+test("scaled controls derive invisible 44px reaches and a 24px floor without changing artwork", () => {
   assert.doesNotMatch(css, /--phone-target-size/);
   assert.match(
     rules(".phone-screen")[0],
-    /--phone-reach-size:\s*calc\(24px \/ var\(--phone-scale\)\);/,
-  );
-  const reach = rules(
-    ".phone-screen :is(button, a, .demo-composer-field, .demo-edit-field)::before",
-  ).join("\n");
-  assert.match(
-    reach,
-    /inset-block:\s*min\(0px, calc\(\(100% - var\(--phone-reach-size\)\) \/ 2\)\);/,
+    /--phone-reach-size:\s*calc\(44px \/ var\(--phone-scale\)\);/,
   );
   assert.match(
-    reach,
-    /inset-inline:\s*min\(0px, calc\(\(100% - var\(--phone-reach-size\)\) \/ 2\)\);/,
+    rules(".phone-screen")[0],
+    /--phone-reach-floor:\s*calc\(24px \/ var\(--phone-scale\)\);/,
   );
   for (const [, selectors, declarations] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (declarations.includes("var(--phone-reach-size)")) {
+    if (/var\(--phone-reach-(?:size|floor|inset|floor-inset)\)/.test(declarations)) {
       assert.ok(selectors.includes("::before"));
       assert.doesNotMatch(declarations, /(?:padding|min-(?:inline|block)-size):/);
     }
   }
-  const pillWidths = [
-    [78.112, 61.354, 90.46],
-    [86.974, 74.612, 87.45],
-  ];
-  for (const [width, height] of [
-    [320, 568],
-    [360, 740],
-    [768, 720],
-    [1280, 720],
-    [1440, 900],
-    [1920, 1080],
-  ]) {
-    const top = width <= 640 ? 96 : 112;
-    const device = Math.min(
-      390,
-      ((height - top - 64) * 9) / 19.5,
-      width - 64,
-      width < 768 ? Infinity : (width - 48) / 3,
-    );
-    const scale = (device - 8) / 390;
-    const target = (size) => Math.max(24, size * scale);
-    for (const widths of pillWidths) {
-      for (let i = 0; i < 2; i++) {
-        assert.ok(
-          (target(widths[i]) + target(widths[i + 1])) / 2 <=
-            ((widths[i] + widths[i + 1]) / 2 + 12) * scale,
-        );
-      }
-      assert.ok((target(44) - 44 * scale) / 2 <= 24 * scale, "card padding contains the reach");
-    }
-    assert.ok(target(48) <= 60 * scale, "chip and composer reaches clear the 12px gap");
-    assert.ok(target(48) <= 56 * scale, "editor reaches clear the 8px row gap");
-    assert.ok(64 * scale >= 24, "the whole Today row is already a sufficient reach");
-    assert.ok((target(48) - 48 * scale) / 2 <= 16 * scale, "composer padding clears the home bar");
-  }
-  assert.match(rules(".phone-screen .demo-send::before").join("\n"), /inset-inline-start:\s*0;/);
   assert.match(source("AstraDemo"), /<label class="demo-composer-field" for="demo-input">/);
   assert.match(
     source("AstraDemo"),
     /<label class="demo-edit-field" for="demo-edit-(?:name|schedule)">/,
   );
+});
+
+for (const [name, tag] of [
+  ["demo-input", "input"],
+  ["demo-edit-name", "input"],
+  ["demo-edit-schedule", "select"],
+]) {
+  test(`${name} receives native pointer events above its label reach`, async () => {
+    const nodes = descendants((await parse(source("AstraDemo"))).ast);
+    const field = nodes.find((node) => attributes(node).id === name);
+    assert.equal(field.name, tag);
+    const label = nodes.find((node) => node.name === "label" && node.children?.includes(field));
+    assert.ok(label);
+    assert.equal(attributes(label).for, name);
+    const native = declarations(
+      rules(".phone-screen :is(.demo-composer-field, .demo-edit-field) :is(input, select)").join(
+        "\n",
+      ),
+    );
+    const wrapper = declarations(
+      rules(".phone-screen :is(.demo-composer-field, .demo-edit-field)").join("\n"),
+    );
+    const pseudo = declarations(
+      rules(".phone-screen :is(.demo-composer-field, .demo-edit-field)::before").join("\n"),
+    );
+    assert.equal(native.position, "relative");
+    assert.equal(wrapper.isolation, "isolate");
+    assert.ok(Number(native["z-index"]) > Number(pseudo["z-index"]));
+    assert.doesNotMatch([native["pointer-events"], pseudo["pointer-events"]].join(" "), /none/);
+  });
+}
+
+for (const [locale, widths] of Object.entries({
+  en: [78.112, 61.354, 90.46],
+  pt: [86.974, 74.612, 87.45],
+})) {
+  for (let pair = 0; pair < 2; pair++) {
+    test(`${locale} proposal pair ${pair + 1} keeps 44px height and limits only shared inline edges`, () => {
+      for (const scale of scales) {
+        const targets = widths.map((width, index) =>
+          reach(width, 44, scale, [
+            ".phone-screen .demo-preview-actions > button::before",
+            ...(index > 0
+              ? [".phone-screen .demo-preview-actions > :not(:first-child)::before"]
+              : []),
+            ...(index < 2
+              ? [".phone-screen .demo-preview-actions > :not(:last-child)::before"]
+              : []),
+          ]),
+        );
+        for (const index of [pair, pair + 1]) {
+          const target = targets[index];
+          near(target.block, Math.max(44, 44 * scale), "proposal block reach");
+          near(
+            -target["inline-start"],
+            expansion(widths[index], scale, index > 0 ? 6 : Infinity),
+            "inline start uses half the 12px gap",
+          );
+          near(
+            -target["inline-end"],
+            expansion(widths[index], scale, index < 2 ? 6 : Infinity),
+            "inline end uses half the 12px gap",
+          );
+          assert.ok(-target["block-start"] <= 24 * scale + 1e-8, "reach clears the proposed habit");
+        }
+        assert.ok(
+          -targets[pair]["inline-end"] - targets[pair + 1]["inline-start"] <= 12 * scale + 1e-8,
+        );
+      }
+    });
+  }
+}
+
+for (const [locale, widths] of Object.entries({ en: [112, 110, 96], pt: [92, 110, 128] })) {
+  for (let pair = 0; pair < 2; pair++) {
+    test(`${locale} chip pair ${pair + 1} limits shared edges to half the 8px gap`, () => {
+      for (const scale of scales) {
+        const targets = widths.map((width, index) =>
+          reach(width, 48, scale, [
+            ".phone-screen .demo-chip::before",
+            ...(index > 0 ? [".phone-screen .demo-examples > :not(:first-child)::before"] : []),
+            ...(index < 2 ? [".phone-screen .demo-examples > :not(:last-child)::before"] : []),
+          ]),
+        );
+        for (const index of [pair, pair + 1]) {
+          near(
+            -targets[index]["inline-start"],
+            expansion(widths[index], scale, index > 0 ? 4 : Infinity),
+            "chip start reach",
+          );
+          near(
+            -targets[index]["inline-end"],
+            expansion(widths[index], scale, index < 2 ? 4 : Infinity),
+            "chip end reach",
+          );
+          near(-targets[index]["block-start"], expansion(48, scale, 16), "chip clears thread");
+          near(-targets[index]["block-end"], expansion(48, scale, 8), "chip clears composer");
+        }
+        assert.ok(
+          -targets[pair]["inline-end"] - targets[pair + 1]["inline-start"] <= 8 * scale + 1e-8,
+        );
+      }
+    });
+  }
+}
+
+test("composer field and Send reaches stay distinct, inside the composer width and above the home area", () => {
+  assert.match(rules(".phone-screen .demo-send::before").join("\n"), /inset-inline-start:\s*0;/);
+  for (const scale of scales) {
+    const shared = ".phone-screen :is(.demo-composer-field, .demo-send)::before";
+    const field = reach(306, 48, scale, [shared, ".phone-screen .demo-composer-field::before"]);
+    const send = reach(48, 48, scale, [shared, ".phone-screen .demo-send::before"]);
+    near(field["inline-end"], 0, "field stops at Send");
+    near(send["inline-start"], 0, "Send starts at its visible circle");
+    near(
+      send.inline,
+      Math.max(48 * scale, 24, Math.min(44, 52 * scale)),
+      "Send uses available composer width",
+    );
+    assert.ok(-send["inline-end"] <= 4 * scale + 1e-8, "Send stays in the composer");
+    const chip = reach(96, 48, scale, [".phone-screen .demo-chip::before"]);
+    for (const [target, start, end] of [
+      [field, 8, 20],
+      [send, 4, 4],
+    ]) {
+      near(-target["block-start"], expansion(48, scale, start), "composer start reach");
+      near(-target["block-end"], expansion(48, scale, end), "composer end reach");
+      assert.ok(
+        -chip["block-end"] - target["block-start"] <= 16 * scale + 1e-8,
+        "chips and composer split their 16px face gap",
+      );
+      assert.ok(
+        -target["block-end"] <= 20 * scale + 1e-8,
+        "4px composer padding plus 16px area padding contain reach",
+      );
+    }
+    for (const edge of ["block-start", "block-end"])
+      assert.ok(-send[edge] <= 4 * scale + 1e-8, "Send stays within composer padding");
+  }
+  assert.match(rules(".demo-examples").join("\n"), /overflow:\s*visible;/);
+  assert.match(rules(".phone-screen").join("\n"), /padding-block-end:\s*34px;/);
+  assert.match(rules(".device-home").join("\n"), /inset-block-end:\s*15px;/);
+});
+
+for (let pair = 0; pair < 2; pair++) {
+  test(`editor pair ${pair + 1} splits the 8px row gap without swallowing native faces or labels`, () => {
+    for (const scale of scales) {
+      const targets = [
+        reach(218, 48, scale, [
+          ".phone-screen .demo-edit-field::before",
+          ".phone-screen .demo-edit-field:has(input)::before",
+        ]),
+        reach(218, 48, scale, [".phone-screen .demo-edit-field::before"]),
+        reach(310, 48, scale, [".phone-screen .demo-save::before"]),
+      ];
+      for (const index of [pair, pair + 1]) {
+        near(
+          -targets[index]["block-start"],
+          expansion(48, scale, index === 0 ? Infinity : 4),
+          "editor start reach",
+        );
+        near(
+          -targets[index]["block-end"],
+          expansion(48, scale, index === 2 ? Infinity : 4),
+          "editor end reach",
+        );
+        assert.ok(
+          -targets[index]["inline-start"] <= 12 * scale + 1e-8,
+          "reach clears the visible field label",
+        );
+      }
+      assert.ok(-targets[pair]["block-end"] - targets[pair + 1]["block-start"] <= 8 * scale + 1e-8);
+    }
+    assert.match(rules(".demo-edit-form").join("\n"), /gap:\s*8px 12px;/);
+  });
+}
+
+test("Today rows and the continuation keep bounded reaches clear of neighbours and the home area", () => {
+  for (const scale of scales) {
+    for (const [container, gap] of [
+      [".phone-today-habits", 12],
+      [".demo-today", 16],
+    ]) {
+      const selector = `.phone-screen ${container} > .habit-row`;
+      const targets = [0, 1, 2].map((index) =>
+        reach(358, 64, scale, [
+          `${selector}::before`,
+          ...(index === 0 ? [`${selector}:nth-child(1 of .habit-row:not([hidden]))::before`] : []),
+          ...(index === 2
+            ? [`${selector}:nth-last-child(1 of .habit-row:not([hidden]))::before`]
+            : []),
+        ]),
+      );
+      for (let pair = 0; pair < 2; pair++) {
+        near(-targets[pair]["block-end"], expansion(64, scale, gap / 2), "habit end reach");
+        near(-targets[pair + 1]["block-start"], expansion(64, scale, gap / 2), "habit start reach");
+        assert.ok(
+          -targets[pair]["block-end"] - targets[pair + 1]["block-start"] <= gap * scale + 1e-8,
+        );
+      }
+      near(-targets[0]["block-start"], expansion(64, scale, 16), "first visible habit reach");
+      near(-targets[2]["block-end"], expansion(64, scale, 16), "last visible habit reach");
+      assert.ok(
+        -targets[2]["block-end"] <= 16 * scale + 1e-8,
+        "last visible habit stays above safe area",
+      );
+    }
+    const link = reach(200, 48, scale, [".phone-screen .demo-continue .text-link::before"]);
+    near(-link["block-start"], expansion(48, scale, 8), "link clears continuation text");
+    near(-link["block-end"], expansion(48, scale, 16), "link stays in thread padding");
+  }
 });
 
 test("proposal actions retain the app small pill geometry and separated targets", () => {
