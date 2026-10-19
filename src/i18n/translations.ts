@@ -216,7 +216,6 @@ const landingEn = {
   "product.todo": "To do",
   "product.read": "Read",
   "example.calendar": "Plan the month with your Google Calendar.",
-  "example.data": "Export or delete your data whenever you want.",
   "example.metrics": "See your progress by week, month or year.",
   "example.breakdown": "Astra splits what you want into small habits.",
   "example.streak": "A saved freeze protects your streak.",
@@ -313,14 +312,6 @@ const landingEn = {
   "orbit.streak": "Current streak",
   "orbit.freezes": "Saved freezes",
   "orbit.repair": "Repair a gap with a freeze",
-  "orbit.exportReady": "Your export is ready.",
-  "orbit.downloadExample": "Download example",
-  "orbit.deleteTitle": "Delete your account?",
-  "orbit.deleteBody": "Your habits, logs and goals are permanently deleted.",
-  "orbit.deleteExample": "Delete example account",
-  "orbit.deleted": "This example account was deleted.",
-  "orbit.exampleDate": "Example date: {date}",
-  "orbit.cancel": "Cancel",
   "orbit.selectedDay": "Selected day: {date}",
   "orbit.events": "In your calendar",
   "orbit.teamMeeting": "Team meeting",
@@ -329,8 +320,6 @@ const landingEn = {
   "orbit.firstHabit": "First habit",
   "orbit.earned": "Earned",
   "blocks.breakdown.request": "Help me keep the house in order.",
-  "orbit.export": "Export data",
-  "orbit.delete": "Delete account",
 } as const;
 
 export type LandingKey = keyof typeof landingEn;
@@ -343,7 +332,6 @@ const landingPt: Record<LandingKey, string> = {
   "product.todo": "A fazer",
   "product.read": "Ler",
   "example.calendar": "Planeje o mês junto com o Google Agenda.",
-  "example.data": "Exporte ou apague seus dados quando quiser.",
   "example.metrics": "Veja seu progresso por semana, mês ou ano.",
   "example.breakdown": "A Astra divide cada plano em pequenos hábitos.",
   "example.streak": "Um congelamento salvo protege sua sequência.",
@@ -441,14 +429,6 @@ const landingPt: Record<LandingKey, string> = {
   "orbit.streak": "Sequência atual",
   "orbit.freezes": "Congelamentos guardados",
   "orbit.repair": "Repare uma falha com um congelamento",
-  "orbit.exportReady": "Seus dados estão prontos para baixar.",
-  "orbit.downloadExample": "Baixar exemplo",
-  "orbit.deleteTitle": "Apagar sua conta?",
-  "orbit.deleteBody": "Seus hábitos, registros e metas são apagados de vez.",
-  "orbit.deleteExample": "Apagar conta de exemplo",
-  "orbit.deleted": "Esta conta de exemplo foi apagada.",
-  "orbit.exampleDate": "Data do exemplo: {date}",
-  "orbit.cancel": "Cancelar",
   "orbit.selectedDay": "Dia selecionado: {date}",
   "orbit.events": "Na sua agenda",
   "orbit.teamMeeting": "Reunião de equipe",
@@ -457,8 +437,6 @@ const landingPt: Record<LandingKey, string> = {
   "orbit.firstHabit": "Primeiro hábito",
   "orbit.earned": "Conquistado",
   "blocks.breakdown.request": "Me ajuda a cuidar da casa.",
-  "orbit.export": "Exportar dados",
-  "orbit.delete": "Excluir conta",
 };
 
 export const landingCopy = { en: landingEn, "pt-BR": landingPt };
