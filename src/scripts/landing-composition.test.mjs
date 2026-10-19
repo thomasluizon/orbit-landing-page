@@ -75,6 +75,29 @@ test("the owning page follows Pierre's section order with Orbit product composit
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
 });
 
+test("the feature section contains six alternating rows without a privacy product", () => {
+  const features = sections.find((node) => attributes(node)["data-section"] === "features");
+  assert.ok(features);
+  const featureNodes = descendants(features);
+  const rows = featureNodes.filter((node) => Object.hasOwn(attributes(node), "data-example-row"));
+  assert.deepEqual(
+    rows.map((node) => [attributes(node)["data-example-row"], attributes(node)["data-card-side"]]),
+    [
+      ["calendar", "left"],
+      ["metrics", "right"],
+      ["breakdown", "left"],
+      ["streak", "right"],
+      ["goal", "left"],
+      ["achievements", "right"],
+    ],
+  );
+  assert.ok(
+    featureNodes.every(
+      (node) => node.name !== "OrbitProduct" || attributes(node).kind !== "privacy",
+    ),
+  );
+});
+
 test("each product surface has one primary intent and the viewport controller arbitrates their accent", () => {
   for (const section of sections) {
     const actions = descendants(section).filter(
@@ -1166,7 +1189,7 @@ async function reachFeaturesWithoutPhone(loadProductExamples) {
   assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
 }
 
-test("habit checks, week bars, calendar days and data previews work when features are reached without the phone", async () => {
+test("habit checks, week bars and calendar days work when features are reached without the phone", async () => {
   const item = (extra = {}) => ({
     hidden: false,
     dataset: {},
@@ -1180,9 +1203,6 @@ test("habit checks, week bars, calendar days and data previews work when feature
     },
     getAttribute(name) {
       return this.attrs[name];
-    },
-    removeAttribute(name) {
-      if (name === "hidden") this.hidden = false;
     },
     click() {
       this.listeners.get("click")();
@@ -1215,25 +1235,6 @@ test("habit checks, week bars, calendar days and data previews work when feature
     querySelector: (selector) =>
       selector === "[data-calendar-readout]" ? dayReadout : calendarEvents,
   });
-  const panels = new Map([
-    ["export-example", item()],
-    ["delete-example", item()],
-  ]);
-  const privacy = ["export-example", "delete-example"].map((id) =>
-    item({ dataset: { privacyToggle: id } }),
-  );
-  const cancel = item(),
-    confirm = item(),
-    actions = item(),
-    deleted = item({ hidden: true });
-  const querySelector = (selector) =>
-    ({
-      "[data-delete-cancel]": cancel,
-      "[data-delete-example]": confirm,
-      "[data-delete-result]": deleted,
-      ".privacy-actions": actions,
-      '[data-privacy-toggle="delete-example"]': privacy[1],
-    })[selector] ?? null;
   await reachFeaturesWithoutPhone(() => {
     const completion = {};
     vm.runInNewContext(
@@ -1253,14 +1254,11 @@ test("habit checks, week bars, calendar days and data previews work when feature
         CustomEvent: class {},
         document: {
           documentElement: { lang: "pt-BR" },
-          getElementById: (id) => panels.get(id),
-          querySelector,
           querySelectorAll: (selector) =>
             ({
               "[data-week-chart]": [week],
               "[data-habit-toggle]": [habit],
               ".orbit-calendar": [calendar],
-              "[data-privacy-toggle]": privacy,
             })[selector] ?? [],
         },
       },
@@ -1280,16 +1278,6 @@ test("habit checks, week bars, calendar days and data previews work when feature
   assert.equal(calendarEvents.hidden, true);
   dates[0].click();
   assert.equal(calendarEvents.hidden, false);
-  privacy[0].click();
-  assert.equal(panels.get("export-example").hidden, true);
-  privacy[0].click();
-  assert.equal(panels.get("export-example").hidden, false);
-  cancel.click();
-  assert.equal(panels.get("delete-example").hidden, true);
-  privacy[1].click();
-  confirm.click();
-  assert.equal(deleted.hidden, false);
-  assert.equal(actions.hidden, true);
 });
 
 test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {

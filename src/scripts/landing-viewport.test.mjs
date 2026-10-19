@@ -769,11 +769,7 @@ test("feature cards retain card padding and inset their interactive content from
   }
   assert.match(
     css,
-    /\.example-app \.habit-row\[data-habit-toggle\],\s*\.example-app \.orbit-list-row\[type="button"\]\s*\{[^}]*padding:\s*8px 12px;[^}]*min-block-size:\s*48px/,
-  );
-  assert.match(
-    css,
-    /\.example-app \.text-link\s*\{[^}]*padding:\s*8px 12px;[^}]*border-radius:\s*var\(--radius-sm\)/,
+    /\.example-app \.habit-row\[data-habit-toggle\]\s*\{[^}]*padding:\s*8px 12px;[^}]*min-block-size:\s*48px/,
   );
   assert.match(
     css,

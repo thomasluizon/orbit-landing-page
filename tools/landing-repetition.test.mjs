@@ -74,7 +74,7 @@ for (const language of ["en", "pt-BR"]) {
 
 test("each feature sentence has exactly one small example card", () => {
   const rows = nodes.filter((node) => attrs(node)["data-example-row"]);
-  assert.equal(rows.length, 7);
+  assert.equal(rows.length, 6);
   for (const row of rows) {
     const cards = descendants(row).filter((node) =>
       Object.hasOwn(attrs(node), "data-composition-card"),

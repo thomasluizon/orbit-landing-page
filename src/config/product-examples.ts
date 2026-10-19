@@ -25,4 +25,3 @@ export const exampleBreakdown = [
 ] as const;
 
 export const exampleDate = "2026-08-18";
-export const exampleExportFile = `orbit-data-export-${exampleDate}.json`;

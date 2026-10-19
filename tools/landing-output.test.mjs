@@ -249,7 +249,7 @@ test("the built examples contain exactly one product and one localized sentence 
   const attrs = (node) =>
     Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
   const rows = descendants(ast).filter((node) => attrs(node)["data-example-row"]);
-  assert.equal(rows.length, 7);
+  assert.equal(rows.length, 6);
   for (const [index, row] of rows.entries()) {
     assert.equal(attrs(row)["data-card-side"], index % 2 ? "right" : "left");
     const nodes = descendants(row);

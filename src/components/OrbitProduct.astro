@@ -1,25 +1,21 @@
 ---
-import { Check, Snowflake, Download, Trash2, Trophy, FileCheck } from "@lucide/astro";
+import { Check, Snowflake, Trophy } from "@lucide/astro";
 import Copy from "./Copy.astro";
-import { exampleDate, exampleExportFile } from "../config/product-examples";
+import { exampleDate } from "../config/product-examples";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "calendar" | "progress" | "privacy" | "achievements";
+  kind: "calendar" | "progress" | "achievements";
 }
 const { kind } = Astro.props;
 const cells = Array.from({ length: 42 }, (_, index) => index - 4);
-function datedCopy(
-  key: "orbit.exampleDate" | "orbit.selectedDay",
-  day = 18,
-  language: "en" | "pt-BR" = "en",
-) {
+function datedCopy(day: number, language: "en" | "pt-BR" = "en") {
   const date = new Intl.DateTimeFormat(language, {
     day: "numeric",
     month: "long",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${exampleDate.slice(0, 8)}${day}`));
-  return landingCopy[language][key].replace("{date}", date);
+  return landingCopy[language]["orbit.selectedDay"].replace("{date}", date);
 }
 ---
 
@@ -66,9 +62,9 @@ function datedCopy(
                   data-calendar-day={day}
                   data-calendar-week={Math.floor(index / 7)}
                   aria-pressed={day === 17}
-                  aria-label={datedCopy("orbit.selectedDay", day)}
-                  data-copy-label-en={datedCopy("orbit.selectedDay", day)}
-                  data-copy-label-pt={datedCopy("orbit.selectedDay", day, "pt-BR")}
+                  aria-label={datedCopy(day)}
+                  data-copy-label-en={datedCopy(day)}
+                  data-copy-label-pt={datedCopy(day, "pt-BR")}
                 >
                   {day}
                   {day < 18 && (
@@ -84,10 +80,10 @@ function datedCopy(
             <h3
               data-calendar-readout
               aria-live="polite"
-              data-copy-en={datedCopy("orbit.selectedDay", 17)}
-              data-copy-pt={datedCopy("orbit.selectedDay", 17, "pt-BR")}
+              data-copy-en={datedCopy(17)}
+              data-copy-pt={datedCopy(17, "pt-BR")}
             >
-              {datedCopy("orbit.selectedDay", 17)}
+              {datedCopy(17)}
             </h3>
             <div data-calendar-events data-composition-secondary>
               <>
@@ -105,85 +101,6 @@ function datedCopy(
           </div>
         </div>
       </>
-    )
-  }
-  {
-    kind === "privacy" && (
-      <div class="product-block" data-composition-card>
-        <div class="privacy-controls">
-          <button
-            type="button"
-            class="orbit-list-row"
-            data-privacy-toggle="export-example"
-            aria-expanded="true"
-            aria-controls="export-example"
-          >
-            <>
-              <Download size={20} aria-hidden="true" />
-              <Copy name="orbit.export" />
-            </>
-          </button>
-          <button
-            type="button"
-            class="orbit-list-row"
-            data-privacy-toggle="delete-example"
-            aria-expanded="true"
-            aria-controls="delete-example"
-          >
-            <>
-              <Trash2 size={20} aria-hidden="true" />
-              <Copy name="orbit.delete" />
-            </>
-          </button>
-        </div>
-        <div id="export-example" class="privacy-panel">
-          <div class="orbit-list-row">
-            <>
-              <FileCheck size={24} aria-hidden="true" />
-              <div class="orbit-row-copy">
-                <>
-                  <h3>
-                    <Copy name="orbit.exportReady" />
-                  </h3>
-                  <p class="product-caption export-filename">{exampleExportFile}</p>
-                </>
-              </div>
-            </>
-          </div>
-          <button type="button" class="text-link" data-download-example>
-            <Copy name="orbit.downloadExample" />
-          </button>
-        </div>
-        <div id="delete-example" class="privacy-panel">
-          <h3>
-            <Copy name="orbit.deleteTitle" />
-          </h3>
-          <p class="product-caption">
-            <Copy name="orbit.deleteBody" />
-          </p>
-          <p
-            class="product-caption"
-            data-composition-secondary
-            data-copy-en={datedCopy("orbit.exampleDate")}
-            data-copy-pt={datedCopy("orbit.exampleDate", 18, "pt-BR")}
-          >
-            {datedCopy("orbit.exampleDate")}
-          </p>
-          <div class="privacy-actions">
-            <>
-              <button type="button" class="text-link" data-delete-cancel>
-                <Copy name="orbit.cancel" />
-              </button>
-              <button type="button" class="text-link" data-delete-example>
-                <Copy name="orbit.deleteExample" />
-              </button>
-            </>
-          </div>
-          <p data-delete-result role="status" hidden>
-            <Copy name="orbit.deleted" />
-          </p>
-        </div>
-      </div>
     )
   }
   {

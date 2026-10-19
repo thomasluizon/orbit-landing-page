@@ -1994,12 +1994,6 @@ button.metric-bar-track:focus-visible {
   .float-week {
     display: none;
   }
-  .example-app .privacy-controls,
-  .example-app .privacy-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
 }
 @media (width < 768px) {
   .header-links {
@@ -2070,20 +2064,9 @@ button.metric-bar-track:focus-visible {
   background: var(--color-primary-dim);
   color: var(--color-primary-soft);
 }
-.orbit-list-row[type="button"] {
-  cursor: pointer;
-  text-align: start;
-  border-radius: var(--radius-sm);
-}
-.example-app .habit-row[data-habit-toggle],
-.example-app .orbit-list-row[type="button"] {
+.example-app .habit-row[data-habit-toggle] {
   padding: 8px 12px;
   min-block-size: 48px;
-}
-.example-app .text-link {
-  justify-self: start;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
 }
 .example-app .orbit-date:focus-visible {
   outline-offset: -2px;
@@ -2098,20 +2081,6 @@ button.metric-bar-track:focus-visible {
 }
 .example-app :where(button, a):is(:active, :focus-visible) {
   background: var(--color-bg-hover);
-}
-.privacy-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.privacy-actions .text-link,
-.privacy-actions .text-link > [data-copy-en] {
-  white-space: normal;
-  text-align: start;
-}
-.export-filename {
-  overflow-wrap: anywhere;
 }
 .orbit-date {
   cursor: pointer;
@@ -2153,8 +2122,7 @@ button.metric-bar-track:focus-visible {
 }
 @media (hover: hover) and (pointer: fine) {
   .habit-row[data-habit-toggle]:hover,
-  .orbit-date:hover,
-  .orbit-list-row[type="button"]:hover {
+  .orbit-date:hover {
     background: var(--color-bg-hover);
   }
   .example-app :where(button, a):hover {
@@ -2173,8 +2141,7 @@ button.metric-bar-track:focus-visible {
   }
 }
 
-.calendar-day-card,
-.privacy-panel {
+.calendar-day-card {
   display: grid;
   gap: 8px;
 }

@@ -1,4 +1,3 @@
-import { exampleDate, exampleExportFile } from "../config/product-examples";
 import { toggleHabitCompletion } from "./habit-completion";
 const notifyLayoutChange = () => window.dispatchEvent(new CustomEvent("orbit:layout-changed"));
 
@@ -39,38 +38,4 @@ document.querySelectorAll<HTMLElement>(".orbit-calendar").forEach((calendar) => 
       notifyLayoutChange();
     }),
   );
-});
-
-document.querySelectorAll<HTMLButtonElement>("[data-privacy-toggle]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const panel = document.getElementById(button.dataset.privacyToggle ?? "");
-    if (!panel) return;
-    panel.hidden = !panel.hidden;
-    button.setAttribute("aria-expanded", String(!panel.hidden));
-    notifyLayoutChange();
-  });
-});
-document.querySelector("[data-delete-cancel]")?.addEventListener("click", () => {
-  document.querySelector<HTMLButtonElement>('[data-privacy-toggle="delete-example"]')?.click();
-});
-document.querySelector("[data-delete-example]")?.addEventListener("click", () => {
-  document.querySelector<HTMLElement>("[data-delete-result]")?.removeAttribute("hidden");
-  const actions = document.querySelector<HTMLElement>(".privacy-actions");
-  if (actions) actions.hidden = true;
-  notifyLayoutChange();
-});
-
-document.querySelector("[data-download-example]")?.addEventListener("click", () => {
-  const data = {
-    exportedAtUtc: exampleDate,
-    habits: [{ title: "Walk" }, { title: "Drink water" }],
-  };
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-  );
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = exampleExportFile;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
