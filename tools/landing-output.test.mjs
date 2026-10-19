@@ -227,7 +227,7 @@ test("the complete local script graph stays inside the raw byte budget", () => {
   assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
 });
 
-test("the built billing control leads with recommended Yearly and its daily price, billed total and saving", () => {
+test("the built billing control leads with Yearly and puts its saving only on that option", () => {
   const pro = html.match(/<article class="plan-card plan-pro"[^>]*>([\s\S]*?)<\/article>/)?.[1];
   assert.ok(pro);
   const group = html.match(/<div\b[^>]*data-billing-control[^>]*>[\s\S]*?<\/div>/)?.[0];
@@ -236,7 +236,8 @@ test("the built billing control leads with recommended Yearly and its daily pric
   assert.match(group, /data-billing-period="yearly"[^>]*aria-checked="true"[^>]*tabindex="0"/);
   assert.match(pro, /data-pro-price[^>]*>[^<]+\/day/);
   assert.match(pro, /data-billed-total[^>]*>[^<]+billed yearly/);
-  assert.match(pro, /data-annual-saving[^>]*>Save \d+%/);
+  assert.match(group, /data-billing-saving/);
+  assert.doesNotMatch(pro, /data-annual-saving/);
   assert.doesNotMatch(pro, /data-annual-(?:equivalent|saving)[^>]*hidden/);
   assert.match(pro, /data-copy-en="Try Pro" data-copy-pt="Testar o Pro"/);
 });

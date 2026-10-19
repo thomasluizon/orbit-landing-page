@@ -345,8 +345,8 @@ test("composition fitting follows font, size, locale and interaction changes in 
 
 test("composition fitting changes only visibility and preserves the canvas visual primitives", () => {
   assert.equal((css.match(/\/\*/g) ?? []).length, 0);
-  const folded = stylesheetRules(css).filter((rule) =>
-    rule.selector.includes("[data-composition-folded]"),
+  const folded = stylesheetRules(css).filter(
+    (rule) => rule.selector === ".example-app [data-composition-folded]",
   );
   assert.equal(folded.length, 1);
   assert.equal(folded[0].declarations.trim(), "display: none;");
@@ -358,10 +358,7 @@ test("composition fitting changes only visibility and preserves the canvas visua
   assert.match(global, /--spacing:\s*4px;/);
   assert.match(css, /\.orbit-composition\s*\{[^}]*gap:\s*12px;/);
   assert.match(css, /\.product-block\s*\{[^}]*gap:\s*8px;[^}]*padding:\s*16px;/);
-  assert.match(
-    css,
-    /\.chart-bar,\s*\.metric-bar,\s*\.orbit-month-chart > span,\s*\.orbit-wrapped-bars > span\s*\{\s*background:\s*var\(--color-primary\);/,
-  );
+  assert.match(css, /\.metric-bar\s*\{\s*background:\s*var\(--color-primary\);/);
 });
 
 test("Today fills its slide with a flexible zero-minimum habit column", () => {

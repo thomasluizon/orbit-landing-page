@@ -91,8 +91,8 @@ function harness({ cookie = "", language = "en-US", serverRendered = false } = {
     copyPt: landingTables["pt-BR"]["nav.features"],
   };
   chartLabel.dataset = {
-    copyLabelEn: landingTables.en["product.chart"],
-    copyLabelPt: landingTables["pt-BR"]["product.chart"],
+    copyLabelEn: landingTables.en["blocks.metrics.choose"],
+    copyLabelPt: landingTables["pt-BR"]["blocks.metrics.choose"],
   };
   if (serverRendered) {
     document.documentElement.lang = "en";
@@ -228,7 +228,10 @@ test("switching the real language toggle updates every landing copy attribute, c
   for (const lang of ["en", "pt-BR", "en"]) {
     if (h.document.documentElement.lang !== lang) h.toggle.listeners.get("click")();
     assert.equal(h.landingNode.textContent, h.landingTables[lang]["nav.features"]);
-    assert.equal(h.chartLabel.attributes["aria-label"], h.landingTables[lang]["product.chart"]);
+    assert.equal(
+      h.chartLabel.attributes["aria-label"],
+      h.landingTables[lang]["blocks.metrics.choose"],
+    );
     for (const price of h.displayedPrices)
       assert.equal(price.textContent, h.prices.formatPrice(lang, price.dataset.price));
   }

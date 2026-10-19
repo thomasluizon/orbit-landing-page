@@ -57,6 +57,8 @@ import { appUrl, googlePlayUrl } from "../config/links";
           () => import("../scripts/product-examples"),
           async () => {
             if (entry.target.matches(".hero-device")) await import("../scripts/demo");
+            if (entry.target.matches('[data-section="features"]'))
+              await import("../scripts/product-metrics");
           },
         ]);
       }

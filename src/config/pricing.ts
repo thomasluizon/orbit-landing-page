@@ -68,6 +68,8 @@ export function pricingFor(language: PriceLanguage, period: "monthly" | "yearly"
       "{price}",
       formatPrice(language, period),
     ),
+    annualLabel: copy["pricing.annualLabel"].replace("{percent}", String(annualSavings(language))),
+    savingShort: copy["pricing.savingShort"].replace("{percent}", String(annualSavings(language))),
     saving: copy["pricing.saving"].replace("{percent}", String(annualSavings(language))),
   };
 }

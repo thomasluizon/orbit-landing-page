@@ -301,7 +301,7 @@ for (const language of ["en", "pt-BR"]) {
       assert.equal(h.get("demo-continue").hidden, true);
     }
   });
-  test(`${language}: single approvals replace the first sample and retain the other rows in order`, () => {
+  test(`${language}: single approvals replace the matching habit and retain the other rows in order`, () => {
     const h = harness(language);
     const samples = h.visibleRows();
     assert.equal(samples.length, 5);
@@ -310,7 +310,11 @@ for (const language of ["en", "pt-BR"]) {
       h.chips[index].fire("click");
       h.get("demo-approve").fire("click");
       const rows = h.visibleRows();
-      assert.deepEqual(rows.slice(0, -1), samples.slice(1));
+      const title = h.strings[`demo.${example}.habit`];
+      assert.deepEqual(
+        rows.slice(0, -1),
+        samples.filter((row) => row.querySelector(".habit-name").textContent.trim() !== title),
+      );
       assert.equal(
         rows.at(-1).querySelector(".habit-name").textContent.trim(),
         h.strings[`demo.${example}.habit`],
@@ -359,7 +363,13 @@ for (const language of ["en", "pt-BR"]) {
     );
     h.chips[0].fire("click");
     h.get("demo-approve").fire("click");
-    assert.deepEqual(h.visibleRows(), [...samples.slice(1), approved[0]]);
+    assert.deepEqual(h.visibleRows(), [
+      ...samples.filter(
+        (row) =>
+          row.querySelector(".habit-name").textContent.trim() !== h.strings["demo.start.habit"],
+      ),
+      approved[0],
+    ]);
     assert.equal(approved[1].hidden, true);
     assert.equal(h.phoneRows().length, count);
   });
@@ -399,3 +409,69 @@ test("send is filled and enabled only for a nonempty request, then resets after 
   assert.equal(send.disabled, true);
   assert.equal(Object.hasOwn(composer.attributes, "data-has-text"), false);
 });
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: every demo state lists each habit once in each phone list`, () => {
+    const h = harness(language);
+    const check = () => {
+      for (const list of [h.get("phone-today"), h.get("demo-today")]) {
+        const names = list
+          .querySelectorAll(".habit-row")
+          .filter((row) => !row.hidden)
+          .map((row) =>
+            row.querySelector(".habit-name").textContent.trim().toLocaleLowerCase(language),
+          );
+        assert.equal(new Set(names).size, names.length, names.join(", "));
+      }
+    };
+    check();
+    for (const index of [0, 1, 2, 0]) {
+      h.chips[index].fire("click");
+      check();
+      h.get("demo-approve").fire("click");
+      check();
+      h.switchLanguage(language === "en" ? "pt-BR" : "en");
+      check();
+      h.switchLanguage(language);
+      h.chips[index].fire("click");
+      h.get("demo-reject").fire("click");
+      check();
+    }
+    for (const name of [
+      h.landing["product.read"],
+      h.landing["product.water"],
+      h.strings["demo.move.secondHabit"],
+    ]) {
+      h.chips[2].fire("click");
+      h.get("demo-edit").fire("click");
+      h.get("demo-edit-name").value = name;
+      h.get("demo-edit-schedule").value = "evening";
+      h.get("demo-edit-form").fire("submit");
+      h.get("demo-approve").fire("click");
+      check();
+      h.get("demo-input").value = name;
+      h.get("demo-composer").fire("submit");
+      h.get("demo-approve").fire("click");
+      check();
+    }
+  });
+}
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: editing a batch merges duplicate names before approval`, () => {
+    const h = harness(language);
+    h.chips[2].fire("click");
+    h.get("demo-edit").fire("click");
+    h.get("demo-edit-name").value = h.strings["demo.move.secondHabit"];
+    h.get("demo-edit-schedule").value = "evening";
+    h.get("demo-edit-form").fire("submit");
+    assert.equal(h.get("demo-second").hidden, true);
+    h.switchLanguage(language === "en" ? "pt-BR" : "en");
+    assert.equal(h.get("demo-second").hidden, false);
+    h.switchLanguage(language);
+    assert.equal(h.get("demo-second").hidden, true);
+    h.get("demo-approve").fire("click");
+    assert.equal(h.visibleRows().length, 1);
+    assert.equal(h.get("demo-today-second").hidden, true);
+  });
+}

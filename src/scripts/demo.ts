@@ -42,7 +42,17 @@ function habitTitle() {
   return title || translations[getLang()][`demo.${current === "custom" ? "start" : current}.habit`];
 }
 
+function hasSecondHabit() {
+  const language = getLang();
+  return (
+    current === "move" &&
+    habitTitle().trim().toLocaleLowerCase(language) !==
+      translations[language]["demo.move.secondHabit"].toLocaleLowerCase(language)
+  );
+}
+
 function renderPlan() {
+  document.getElementById("demo-second")?.toggleAttribute("hidden", !hasSecondHabit());
   setText("demo-habit", habitTitle());
   setCopy("demo-repeat", schedule);
   setCopy("demo-second-repeat", schedule);
@@ -88,10 +98,12 @@ function syncHabitReaches(list: HTMLElement | null) {
 }
 
 function updateToday() {
+  const normalizedTitle = habitTitle().trim().toLocaleLowerCase(getLang());
+  const showSecond = hasSecondHabit();
   setText("demo-today-habit", habitTitle());
   setCopy("demo-today-repeat", schedule);
   setCopy("demo-today-second-repeat", schedule);
-  document.getElementById("demo-today-second")?.toggleAttribute("hidden", current !== "move");
+  document.getElementById("demo-today-second")?.toggleAttribute("hidden", !showSecond);
   document.querySelectorAll<HTMLElement>("[data-demo-approved]").forEach((row) => {
     row.hidden = false;
     const name = row.querySelector<HTMLElement>("[data-approved-name]");
@@ -103,12 +115,17 @@ function updateToday() {
       ?.querySelectorAll<HTMLElement>(
         "[data-habit-toggle]:not([data-demo-approved]):not([data-demo-approved-second])",
       );
+    const matchesTitle = (habit: HTMLElement) =>
+      habit.querySelector(".habit-name")?.textContent?.trim().toLocaleLowerCase(getLang()) ===
+      normalizedTitle;
+    const replacesExisting = [...(originals ?? [])].some(matchesTitle);
     originals?.forEach((habit, index) => {
-      habit.hidden = index === 0 || current === "move";
+      habit.hidden =
+        current === "move" || matchesTitle(habit) || (!replacesExisting && index === 0);
     });
   });
   document.querySelectorAll<HTMLElement>("[data-demo-approved-second]").forEach((row) => {
-    row.hidden = current !== "move";
+    row.hidden = !showSecond;
     const repeat = row.querySelector("[data-approved-second-repeat]");
     if (repeat) repeat.textContent = translations[getLang()][schedule];
   });

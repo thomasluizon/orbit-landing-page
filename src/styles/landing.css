@@ -615,35 +615,6 @@
   color: var(--color-bg);
   border: 0;
 }
-.week-chart {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
-  block-size: 128px;
-  padding-block-start: 16px;
-}
-.chart-column {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 8px;
-}
-.chart-track {
-  display: flex;
-  align-items: end;
-}
-.chart-bar {
-  inline-size: 100%;
-  block-size: var(--bar-height);
-  border-radius: var(--radius-sm);
-  background: var(--color-fg-2);
-}
-.chart-day {
-  color: var(--color-fg-3);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  text-align: center;
-  white-space: nowrap;
-}
 .product-icon {
   display: grid;
   place-items: center;
@@ -724,37 +695,41 @@
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px;
-  max-inline-size: var(--landing-content);
+  gap: 24px;
+  max-inline-size: 824px;
   inline-size: 100%;
   justify-self: center;
 }
 .billing-control {
   display: grid;
-  gap: 12px;
-  inline-size: min(480px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  inline-size: min(400px, 100%);
   justify-self: center;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-well);
 }
 .billing-option {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-inline-size: 48px;
-  min-block-size: 56px;
-  padding: 12px 16px;
+  min-inline-size: 0;
+  min-block-size: 48px;
+  padding: 4px 8px;
   font-size: var(--fs-sm);
   font-weight: 500;
-  border-radius: var(--radius-full);
-  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .billing-option[aria-checked="true"] {
-  background: var(--color-primary-dim);
+  background: var(--color-bg-hover);
   color: var(--color-fg-1);
-  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  box-shadow: inset 0 0 0 2px var(--color-primary);
 }
 .billing-option:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -772,7 +747,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 32px;
+  gap: 16px;
   padding: 24px;
   border-radius: var(--radius-xl);
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
@@ -792,8 +767,10 @@
   inline-size: 100%;
 }
 .plan-name h3 {
-  font-size: var(--fs-3xl);
-  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: 1.2;
 }
 .plan-description {
   color: var(--color-fg-2);
@@ -819,7 +796,7 @@
 .plan-card ul {
   display: grid;
   align-content: start;
-  gap: 16px;
+  gap: 8px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -1214,8 +1191,7 @@ button.metric-bar-track:focus-visible {
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-.breakdown-list,
-.goal-habits {
+.breakdown-list {
   display: grid;
   gap: 8px;
 }
@@ -1331,39 +1307,6 @@ button.metric-bar-track:focus-visible {
   line-height: var(--lh-tight);
   color: var(--color-fg-1);
 }
-.orbit-streak-strip {
-  display: grid;
-  grid-template-columns: repeat(14, minmax(0, 1fr));
-  gap: 4px;
-}
-.orbit-streak-strip > span {
-  display: grid;
-  place-items: center;
-  block-size: 24px;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-hover);
-  color: var(--color-fg-1);
-}
-.orbit-streak-strip [data-frozen] {
-  color: var(--color-status-frozen);
-}
-.orbit-streak-strip [data-missed] {
-  background: var(--color-bg-well);
-  color: var(--color-fg-3);
-}
-.orbit-month-chart {
-  display: flex;
-  align-items: end;
-  gap: 4px;
-  block-size: 64px;
-}
-.orbit-month-chart > span {
-  flex: 1;
-  block-size: var(--bar-height);
-  min-block-size: 4px;
-  border-radius: var(--radius-sm);
-  background: var(--color-fg-2);
-}
 .habit-check {
   display: grid;
   place-items: center;
@@ -1464,9 +1407,6 @@ button.metric-bar-track:focus-visible {
   min-block-size: 0;
   gap: 0;
 }
-.example-app .orbit-wrapped-bars {
-  block-size: 48px;
-}
 .example-app .breakdown-proposal {
   gap: 8px;
 }
@@ -1500,18 +1440,12 @@ button.metric-bar-track:focus-visible {
   }
 }
 .plan-cost {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
 }
 .plan-pro .price-value {
   font-size: var(--fs-3xl);
-}
-.plan-saving {
-  inline-size: 100%;
-  font-size: var(--fs-sm);
-  color: var(--color-fg-1);
 }
 .closing-copy {
   display: grid;
@@ -1539,59 +1473,22 @@ button.metric-bar-track:focus-visible {
 .cookie-preferences {
   cursor: pointer;
 }
-.orbit-wrapped {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-card);
-}
-.orbit-wrapped-bars {
-  display: flex;
-  align-items: end;
-  gap: 8px;
-  block-size: 64px;
-}
-.orbit-wrapped-bars > span {
-  flex: 1;
-  block-size: var(--bar-height);
-  min-block-size: 4px;
-  border-radius: var(--radius-sm);
-  background: var(--color-fg-2);
-}
 @media (width < 48rem) {
   .plan-pro .price-value {
     font-size: var(--fs-2xl);
   }
 }
-.billing-recommendation,
-.billing-saving,
-.billing-monthly-price {
+.billing-saving {
   font-size: var(--fs-xs);
   color: var(--color-primary-text);
 }
-.billing-recommendation {
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-hover);
-}
-.billing-saving,
-.billing-monthly-price {
-  margin-inline-start: auto;
-}
-.plan-pro {
-  position: relative;
-  margin-block-start: 16px;
-}
 .plan-recommendation {
-  position: absolute;
-  inset-block-start: -16px;
-  inset-inline-start: 24px;
-  padding: 6px 16px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   background: var(--color-primary);
   color: var(--color-fg-on-primary);
   font-size: var(--fs-xs);
+  white-space: nowrap;
 }
 .product-footer {
   display: grid;
@@ -2092,17 +1989,6 @@ button.metric-bar-track:focus-visible {
 .hero-side .habit-check {
   inline-size: 28px;
 }
-.hero-side .week-chart {
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  block-size: 96px;
-  padding-block-start: 8px;
-}
-.hero-side .chart-column {
-  min-inline-size: 0;
-}
-.hero-side .chart-track {
-  padding-inline: 4px;
-}
 .hero-side .product-top {
   padding-block: 0;
 }
@@ -2111,7 +1997,7 @@ button.metric-bar-track:focus-visible {
   .float-week {
     display: none;
   }
-  .example-app .orbit-privacy > .product-block:first-child,
+  .example-app .privacy-controls,
   .example-app .privacy-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2177,27 +2063,7 @@ button.metric-bar-track:focus-visible {
 .status-ring:not(.is-done) svg {
   display: none;
 }
-.week-chart {
-  gap: 0;
-  grid-template-columns: repeat(7, minmax(24px, 1fr));
-  overflow-x: auto;
-}
-.chart-column {
-  min-inline-size: 24px;
-  padding-inline: 4px;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-}
-.chart-track {
-  min-block-size: 48px;
-}
-.chart-column[aria-pressed="true"] {
-  background: var(--color-primary-dim);
-}
-.chart-bar,
-.metric-bar,
-.orbit-month-chart > span,
-.orbit-wrapped-bars > span {
+.metric-bar {
   background: var(--color-primary);
 }
 .metric-bar[data-selected="true"] {
@@ -2291,8 +2157,7 @@ button.metric-bar-track:focus-visible {
 @media (hover: hover) and (pointer: fine) {
   .habit-row[data-habit-toggle]:hover,
   .orbit-date:hover,
-  .orbit-list-row[type="button"]:hover,
-  .chart-column:hover {
+  .orbit-list-row[type="button"]:hover {
     background: var(--color-bg-hover);
   }
   .example-app :where(button, a):hover {
@@ -2309,4 +2174,44 @@ button.metric-bar-track:focus-visible {
     transform: none !important;
     opacity: 1 !important;
   }
+}
+
+.calendar-day-card,
+.privacy-panel {
+  display: grid;
+  gap: 8px;
+}
+.week-days {
+  display: grid;
+  block-size: 96px;
+  align-items: center;
+  grid-template-columns: repeat(7, minmax(24px, 1fr));
+  gap: 0;
+  overflow-x: auto;
+}
+.week-day {
+  min-inline-size: 24px;
+  min-block-size: 48px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.week-day[aria-pressed="true"] {
+  background: var(--color-primary-dim);
+}
+.week-day:active {
+  background: var(--color-bg-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .week-day:hover {
+    background: var(--color-bg-hover);
+  }
+}
+
+.example-app .orbit-month-grid:not(:has([data-composition-folded])) {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 280px;
+}
+.example-app .metric-bars {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 96px;
 }

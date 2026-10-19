@@ -7,6 +7,7 @@ let current = -1;
 
 function select(index: number, animate = true) {
   if (index === current || !slides[index]) return;
+  const left = index === 0 ? 0 : index * (carousel?.clientWidth ?? 0);
   current = index;
   slides.forEach((slide, i) => {
     slide.inert = i !== current;
@@ -14,7 +15,7 @@ function select(index: number, animate = true) {
   });
   segments.forEach((segment, i) => segment.setAttribute("aria-current", String(i === current)));
   carousel?.scrollTo({
-    left: index * carousel.clientWidth,
+    left,
     behavior: animate && !reduced.matches ? "smooth" : "instant",
   });
 }

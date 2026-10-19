@@ -5,24 +5,18 @@ function mountBillingControl() {
   if (!group) return;
   const options = [...group.querySelectorAll<HTMLButtonElement>("[data-billing-period]")];
   const price = document.querySelector<HTMLElement>("[data-pro-price]");
-  const saving = document.querySelector<HTMLElement>("[data-annual-saving]");
   const billed = document.querySelector<HTMLElement>("[data-billed-total]");
   const recommendation = document.querySelector<HTMLElement>("[data-plan-recommendation]");
   const billingSaving = document.querySelector<HTMLElement>("[data-billing-saving]");
-  const monthlyPrice = document.querySelector<HTMLElement>("[data-billing-monthly-price]");
-  if (!price || !saving || !billed) return;
+  if (!price || !billed) return;
   let selected: "monthly" | "yearly" = "yearly";
   const render = () => {
     const language = document.documentElement.lang === "pt-BR" ? "pt-BR" : "en";
     const display = pricingFor(language, selected);
     price.textContent = display.primary;
-    if (recommendation) recommendation.hidden = selected === "monthly";
     recommendation?.closest("article")?.setAttribute("data-plan-period", selected);
-    if (billingSaving) billingSaving.textContent = display.saving;
-    if (monthlyPrice) monthlyPrice.textContent = pricingFor(language, "monthly").primary;
-    saving.hidden = selected === "monthly";
+    if (billingSaving) billingSaving.textContent = display.savingShort;
     billed.textContent = display.billed;
-    saving.textContent = display.saving;
     options.forEach((option) => {
       const active = option.dataset.billingPeriod === selected;
       option.setAttribute("aria-checked", String(active));

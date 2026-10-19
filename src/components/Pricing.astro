@@ -13,11 +13,7 @@ const { appUrl } = Astro.props;
 <section id="pricing" class="section" data-section="pricing" aria-labelledby="pricing-title">
   <div class="section-inner">
     <div class="section-heading">
-      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2><p
-        class="section-description"
-      >
-        <Copy name="pricing.body" />
-      </p>
+      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2>
     </div>
     <div
       class="billing-control"
@@ -32,12 +28,20 @@ const { appUrl } = Astro.props;
         type="button"
         role="radio"
         data-billing-period="yearly"
+        aria-label={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-en={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-pt={pricingFor("pt-BR", "yearly").annualLabel}
         aria-checked="true"
         tabindex="0"
       >
         <Copy name="pricing.annual" />
-        <span class="billing-recommendation"><Copy name="pricing.recommended" /></span>
-        <span class="billing-saving" data-billing-saving>{pricingFor("en", "yearly").saving}</span>
+        <span
+          class="billing-saving"
+          data-billing-saving
+          data-copy-en={pricingFor("en", "yearly").savingShort}
+          data-copy-pt={pricingFor("pt-BR", "yearly").savingShort}
+          >{pricingFor("en", "yearly").savingShort}</span
+        >
       </button>
       <button
         class="billing-option"
@@ -48,9 +52,6 @@ const { appUrl } = Astro.props;
         tabindex="-1"
       >
         <Copy name="pricing.monthly" />
-        <span class="billing-monthly-price" data-billing-monthly-price
-          >{pricingFor("en", "monthly").primary}</span
-        >
       </button>
     </div>
     <div class="pricing-grid">
@@ -59,10 +60,11 @@ const { appUrl } = Astro.props;
           <h3 translate="no" data-i18n="plan.free">{translations.en["plan.free"]}</h3>
         </div>
         <p class="plan-description"><Copy name="pricing.free.body" /></p>
-        <p class="plan-price">
-          <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
-        </p>
-        <p class="plan-annual"><Copy name="trust.free" /></p>
+        <div class="plan-cost">
+          <p class="plan-price">
+            <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
+          </p>
+        </div>
         <ul>
           {
             (["pricing.free.astra", "pricing.habits", "pricing.review"] as const).map((name) => (
@@ -80,11 +82,11 @@ const { appUrl } = Astro.props;
         </div>
       </article>
       <article class="plan-card plan-pro" data-plan-period="yearly">
-        <span class="plan-recommendation" data-plan-recommendation
-          ><Copy name="pricing.recommended" /></span
-        >
         <div class="plan-name">
           <h3 translate="no">Pro</h3>
+          <span class="plan-recommendation" data-plan-recommendation
+            ><Copy name="pricing.recommended" /></span
+          >
         </div>
         <p class="plan-description"><Copy name="pricing.pro.body" /></p>
         <div class="plan-cost" aria-live="polite" aria-atomic="true">
@@ -92,7 +94,6 @@ const { appUrl } = Astro.props;
             <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
           </p>
           <p class="plan-annual" data-billed-total>{pricingFor("en", "yearly").billed}</p>
-          <p class="plan-saving" data-annual-saving>{pricingFor("en", "yearly").saving}</p>
         </div>
         <ul>
           {

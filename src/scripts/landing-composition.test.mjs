@@ -470,14 +470,9 @@ function billingHarness(language = "en") {
     .filter((node) => attributes(node).role === "radio")
     .map(element);
   const fields = Object.fromEntries(
-    [
-      "data-pro-price",
-      "data-annual-saving",
-      "data-billed-total",
-      "data-billing-saving",
-      "data-billing-monthly-price",
-      "data-plan-recommendation",
-    ].map((name) => [name, element(pricing.find((node) => Object.hasOwn(attributes(node), name)))]),
+    ["data-pro-price", "data-billed-total", "data-billing-saving", "data-plan-recommendation"].map(
+      (name) => [name, element(pricing.find((node) => Object.hasOwn(attributes(node), name)))],
+    ),
   );
   const free = element(pricing.find((node) => attributes(node)["data-price"] === "free"));
   const translated = pricing.filter((node) => attributes(node)["data-i18n"]).map(element);
@@ -566,20 +561,13 @@ test("the free plan title and all plan mentions follow the actual language toggl
   const h = billingHarness();
   const title = h.translated.find((field) => field.getAttribute("data-i18n") === "plan.free");
   assert.ok(title, "the free plan heading must use a localized plan name");
-  const description = h.copied.find((field) => field.attributes.name === "pricing.body");
-  const caption = h.copied.find((field) => field.attributes.name === "trust.free");
+  const caption = h.copied.find((field) => field.attributes.name === "pricing.free.body");
   for (const language of ["en", "pt-BR", "en"]) {
     h.changeLanguage(language);
     assert.equal(title.textContent, language === "pt-BR" ? "Grátis" : "Free");
     assert.equal(
       caption.textContent,
-      language === "pt-BR" ? "Comece no plano grátis" : "Start with Free",
-    );
-    assert.equal(
-      description.textContent,
-      language === "pt-BR"
-        ? "O plano anual sai mais barato por dia."
-        : "Pay less each day with Yearly.",
+      language === "pt-BR" ? "Para começar." : "For getting started.",
     );
   }
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
@@ -632,8 +620,9 @@ test("Astra examples expose selectable bars, a static breakdown and a derived go
   assert.match(source, /blocks.metrics.completion/);
   assert.match(source, /blocks.metrics.active/);
   assert.doesNotMatch(source, /frequency-control|breakdown-approve|breakdown-reset/);
-  assert.match(source, /blocks.goal.derived/);
-  assert.match(source, /exampleGoal\.habits\.map/);
+  assert.match(source, /blocks.goal.linked/);
+  assert.match(source, /exampleGoal\.linkedHabitCount/);
+  assert.doesNotMatch(source, /<HabitRow/);
   assert.ok(block.some((node) => attributes(node).role === "progressbar"));
 });
 
@@ -648,10 +637,7 @@ test("example figures derive from the chart and linked habit fixtures", () => {
   assert.equal(fixture.exampleWeek.length, 7);
   assert.equal(Math.round(fixture.exampleWeek.reduce((sum, point) => sum + point, 0) / 7), 78);
   assert.equal(fixture.exampleWeek.filter((value) => value > 0).length, 6);
-  assert.equal(
-    fixture.exampleGoal.progress,
-    Math.min(...fixture.exampleGoal.habits.map((habit) => habit.streak)),
-  );
+  assert.equal(fixture.exampleGoal.linkedHabitCount, 3);
   assert.equal(fixture.exampleGoal.progress, 9);
   assert.equal(fixture.exampleGoal.target, 30);
   const css = readFileSync("src/styles/landing.css", "utf8");
@@ -781,7 +767,7 @@ async function metricsHarness() {
   const events = new Map();
   let observer;
   vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
+    ts.transpileModule(readFileSync("src/scripts/product-metrics.ts", "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
     }).outputText,
     {
@@ -791,7 +777,10 @@ async function metricsHarness() {
         querySelectorAll: (selector) =>
           selector === '[data-example-block="metrics"]' ? [block] : [],
       },
-      window: { addEventListener: (name, callback) => events.set(name, callback) },
+      window: {
+        requestAnimationFrame: (callback) => callback(),
+        addEventListener: (name, callback) => events.set(name, callback),
+      },
       require: () => ({ getLang: () => "en" }),
       ResizeObserver: class {
         constructor(callback) {
@@ -939,12 +928,11 @@ test("every billing period shows its configured daily price and actual billed to
     assert.equal(h.fields["data-pro-price"].textContent, monthly);
     assert.equal(h.fields["data-billed-total"].textContent, totalMonthly);
     assert.equal(h.fields["data-billed-total"].hidden, false);
-    assert.equal(h.fields["data-billing-monthly-price"].textContent, monthly);
     assert.equal(
       h.fields["data-billing-saving"].textContent,
-      h.prices.pricingFor(language, "yearly").saving,
+      h.prices.pricingFor(language, "yearly").savingShort,
     );
-    assert.equal(h.fields["data-plan-recommendation"].hidden, true);
+    assert.equal(h.fields["data-plan-recommendation"].hidden, false);
     h.options[0].click();
     assert.equal(h.fields["data-plan-recommendation"].hidden, false);
   }
@@ -957,7 +945,7 @@ test("every billing period shows its configured daily price and actual billed to
   assert.equal(attributes(options[0])["data-billing-period"], "yearly");
   assert.equal(attributes(options[0])["aria-checked"], "true");
   assert.ok(
-    descendants(options[0]).some((node) => attributes(node).name === "pricing.recommended"),
+    !descendants(options[0]).some((node) => attributes(node).name === "pricing.recommended"),
   );
   assert.ok(
     descendants(options[0]).some((node) => Object.hasOwn(attributes(node), "data-billing-saving")),
@@ -965,7 +953,7 @@ test("every billing period shows its configured daily price and actual billed to
   assert.match(readFileSync("src/components/Pricing.astro", "utf8"), /data-plan-recommendation/);
 });
 
-test("billing options are compact single-line pills with Yearly recommended and selected first", () => {
+test("billing options share one row with equal single-line segments and Yearly selected first", () => {
   const group = descendants(components.get("Pricing")).find(
     (node) => attributes(node).role === "radiogroup",
   );
@@ -982,28 +970,29 @@ test("billing options are compact single-line pills with Yearly recommended and 
     options.map((node) => attributes(node).tabindex),
     ["0", "-1"],
   );
-  assert.ok(
-    descendants(options[0]).some((node) => attributes(node).class === "billing-recommendation"),
+  assert.equal(
+    descendants(options[0]).filter((node) => Object.hasOwn(attributes(node), "data-billing-saving"))
+      .length,
+    1,
   );
-  assert.ok(
-    descendants(options[1]).some((node) =>
-      Object.hasOwn(attributes(node), "data-billing-monthly-price"),
-    ),
-  );
+  assert.equal(descendants(options[1]).filter((node) => node.name === "Copy").length, 1);
   const css = readFileSync("src/styles/landing.css", "utf8");
   const optionRules = [...css.matchAll(/(?:^|\n)\.billing-option\s*\{([^}]+)\}/g)];
   assert.equal(optionRules.length, 1);
   const rule = optionRules[0][1];
   assert.match(rule, /display:\s*flex/);
-  assert.match(rule, /min-block-size:\s*56px/);
-  assert.match(rule, /border-radius:\s*var\(--radius-full\)/);
+  assert.match(rule, /min-block-size:\s*48px/);
+  assert.match(rule, /border-radius:\s*var\(--radius-sm\)/);
   assert.match(rule, /white-space:\s*nowrap/);
   assert.doesNotMatch(rule, /flex-wrap:\s*wrap|flex-direction:\s*column/);
   assert.match(
     css,
-    /\.billing-option\[aria-checked="true"\]\s*\{[^}]*background:\s*var\(--color-primary-dim\);[^}]*box-shadow:\s*inset 0 0 0 1\.5px var\(--color-primary\)/,
+    /\.billing-option\[aria-checked="true"\]\s*\{[^}]*background:\s*var\(--color-bg-hover\);[^}]*box-shadow:\s*inset 0 0 0 2px var\(--color-primary\)/,
   );
-  assert.match(css, /\.billing-recommendation\s*\{[^}]*border-radius:\s*var\(--radius-sm\)/);
+  assert.match(
+    css,
+    /\.billing-control\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/,
+  );
 });
 
 test("the footer groups product and legal links with its own QR and no source-code link", () => {

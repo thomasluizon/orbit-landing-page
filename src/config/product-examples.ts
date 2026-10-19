@@ -9,18 +9,13 @@ export const exampleDays = [
 ];
 
 export const exampleWeek = exampleDays.map(({ done, total }) => Math.round((done / total) * 100));
-export const exampleMonth = Array.from({ length: 30 }, (_, index) => exampleWeek[index % 7]);
 
-const linkedHabits = [
-  { habit: "walk", streak: 12 },
-  { habit: "run", streak: 9 },
-  { habit: "stretch", streak: 14 },
-] as const;
+const linkedStreaks = [12, 9, 14];
 
 export const exampleGoal = {
   target: 30,
-  progress: Math.min(...linkedHabits.map((habit) => habit.streak)),
-  habits: linkedHabits,
+  progress: Math.min(...linkedStreaks),
+  linkedHabitCount: linkedStreaks.length,
 };
 
 export const exampleBreakdown = [

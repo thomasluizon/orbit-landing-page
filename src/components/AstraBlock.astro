@@ -1,6 +1,5 @@
 ---
 import Copy from "./Copy.astro";
-import HabitRow from "./HabitRow.astro";
 import {
   exampleWeek,
   exampleDays,
@@ -104,7 +103,7 @@ function doneLabel(language: Language, index: number) {
               </>
             </div>
           </div>
-          <dl class="metric-figures" data-composition-card data-composition-secondary>
+          <dl class="metric-figures" data-composition-secondary>
             <div>
               <>
                 <dt>
@@ -136,7 +135,7 @@ function doneLabel(language: Language, index: number) {
           <p class="demo-request">
             <Copy name="blocks.breakdown.request" />
           </p>
-          <div class="breakdown-proposal" data-composition-card>
+          <div class="breakdown-proposal">
             <p class="product-caption" data-i18n="demo.proposed">
               {translations.en["demo.proposed"]}
             </p>
@@ -183,17 +182,22 @@ function doneLabel(language: Language, index: number) {
               style={`--goal-progress: ${(exampleGoal.progress / exampleGoal.target) * 100}%`}
             />
           </div>
-          <p class="product-caption" data-composition-secondary>
-            <Copy name="blocks.goal.derived" />
+          <p
+            class="product-caption"
+            data-copy-en={landingCopy.en["blocks.goal.linked"].replace(
+              "{count}",
+              String(exampleGoal.linkedHabitCount),
+            )}
+            data-copy-pt={landingCopy["pt-BR"]["blocks.goal.linked"].replace(
+              "{count}",
+              String(exampleGoal.linkedHabitCount),
+            )}
+          >
+            {landingCopy.en["blocks.goal.linked"].replace(
+              "{count}",
+              String(exampleGoal.linkedHabitCount),
+            )}
           </p>
-          <div class="goal-habits" data-composition-card>
-            <h4 class="product-caption">
-              <Copy name="blocks.goal.linked" />
-            </h4>
-            {exampleGoal.habits.map(({ habit, streak }) => (
-              <HabitRow habit={habit} days={streak} />
-            ))}
-          </div>
         </>
       )
     }

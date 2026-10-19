@@ -146,6 +146,7 @@ for (const scheduler of [false, true]) {
       previews.map(({ name }) => name),
       ["product-examples", "demo"],
     );
+    assert.ok(!h.bindings.some(({ name }) => name === "product-metrics"));
     assert.ok(previews.every(({ task }) => task > 0));
     assert.notEqual(previews[0].task, previews[1].task);
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
@@ -157,6 +158,7 @@ for (const scheduler of [false, true]) {
     h.load();
     await h.drain();
     assert.ok(h.bindings.some(({ name }) => name === "product-examples"));
+    assert.ok(h.bindings.some(({ name }) => name === "product-metrics"));
     assert.ok(!h.bindings.some(({ name }) => name === "demo"));
   });
 }

@@ -7,7 +7,7 @@ interface Props {
   kind: "week" | "reminder" | "insight";
 }
 const { kind } = Astro.props;
-import { exampleWeek, exampleDays } from "../config/product-examples";
+import { exampleDays } from "../config/product-examples";
 import type { LandingKey } from "../i18n/translations";
 function dayLabel(index: number, language: "en" | "pt-BR") {
   return (
@@ -32,30 +32,24 @@ function dayLabel(index: number, language: "en" | "pt-BR") {
           </>
         </div>
         <div
-          class="week-chart"
-          aria-description={landingCopy.en["product.chart"]}
+          class="week-days"
           data-week-chart
           role="group"
           aria-label={landingCopy.en["blocks.metrics.choose"]}
           data-copy-label-en={landingCopy.en["blocks.metrics.choose"]}
           data-copy-label-pt={landingCopy["pt-BR"]["blocks.metrics.choose"]}
         >
-          {exampleWeek.map((height, index) => (
+          {exampleDays.map((_, index) => (
             <button
               type="button"
-              class="chart-column"
+              class="week-day"
               data-week-day={index}
               aria-pressed={index === 6}
               aria-label={dayLabel(index, "en")}
               data-copy-label-en={dayLabel(index, "en")}
               data-copy-label-pt={dayLabel(index, "pt-BR")}
             >
-              <span class="chart-track">
-                <span class="chart-bar" style={`--bar-height: ${height}%`} />
-              </span>
-              <span class="chart-day" aria-hidden="true">
-                {index + 12}
-              </span>
+              <span aria-hidden="true">{index + 12}</span>
             </button>
           ))}
         </div>
