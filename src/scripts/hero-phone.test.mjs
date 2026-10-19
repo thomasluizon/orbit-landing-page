@@ -218,7 +218,7 @@ test("the proposal shares the thread's single 16px content edge", () => {
 
 test("phone spacing keeps only the declarations that render", () => {
   for (const [selector, property, expected] of [
-    [".device-status", "min-block-size", "40px"],
+    [".device-status", "min-block-size", "54px"],
     [".demo-exchange", "margin-block-start", "0"],
     [".demo-composer", "padding", "4px"],
   ]) {

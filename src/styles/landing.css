@@ -170,6 +170,7 @@
   flex-direction: column;
   inline-size: 390px;
   block-size: 845px;
+  padding-block-end: 34px;
   transform: scale(var(--phone-scale));
   transform-origin: top left;
 }
@@ -188,19 +189,27 @@
   inset-inline-end: min(0px, calc(100% - var(--phone-reach-size)));
 }
 .device-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr);
+  place-items: center;
   flex-shrink: 0;
-  padding-inline: 16px;
-  font-size: var(--fs-xs);
+  min-block-size: 54px;
+  padding-inline: 24px;
+  font-size: 10px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+.device-status-time {
+  grid-column: 1;
+}
 .device-status-icons {
+  grid-column: 3;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+}
+.device-status-icons svg {
+  inline-size: 12px;
 }
 .device-speaker {
   position: absolute;
@@ -214,7 +223,7 @@
 }
 .device-home {
   position: absolute;
-  inset-block-end: 8px;
+  inset-block-end: 15px;
   inset-inline: 0;
   inline-size: 96px;
   block-size: 4px;
@@ -268,7 +277,7 @@
   display: flex;
   align-items: start;
   gap: 8px;
-  padding: 16px;
+  padding: 0;
 }
 .demo-message > svg {
   flex-shrink: 0;
@@ -305,6 +314,7 @@
 }
 .demo-habit-copy {
   display: grid;
+  flex: 1;
   gap: 4px;
   min-inline-size: 0;
 }
@@ -1647,22 +1657,6 @@ button.metric-bar-track:focus-visible {
 .device-screen {
   border-radius: clamp(20px, 3vw, 40px);
 }
-.device-status {
-  min-block-size: 40px;
-  padding-inline: 8px;
-  font-size: 10px;
-}
-.device-status-icons {
-  gap: 2px;
-}
-.device-status-icons svg {
-  inline-size: 12px;
-}
-.device-speaker {
-  inline-size: 24%;
-  block-size: 20px;
-  inset-block-start: 8px;
-}
 .hero-products {
   display: contents;
 }
@@ -1855,10 +1849,20 @@ button.metric-bar-track:focus-visible {
 .phone-slide .habit-check {
   inline-size: 28px;
 }
-.phone-slide
-  :is(.habit-name, .product-caption, .proactive-line p, .demo-habit .t-row, .demo-request) {
+.phone-slide .habit-name,
+.phone-slide .proactive-line p,
+.phone-slide .demo-habit .t-row,
+.phone-slide .demo-request,
+.phone-slide .demo-request-text {
+  inline-size: 100%;
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
   white-space: normal;
 }
 .phone-slide .astra-demo {
@@ -2000,6 +2004,12 @@ button.metric-bar-track:focus-visible {
   .float-reminder,
   .float-week {
     display: none;
+  }
+  .example-app .orbit-privacy > .product-block:first-child,
+  .example-app .privacy-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 }
 @media (width < 768px) {

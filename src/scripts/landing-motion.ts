@@ -23,10 +23,10 @@ export function calendarWeekRange(
 }
 
 export function fitComposition(app: HTMLElement, viewportWidth: number, viewportHeight: number) {
+  if (viewportWidth <= 0 || viewportHeight <= 0) return;
   app
     .querySelectorAll<HTMLElement>("[data-composition-folded]")
     .forEach((item) => item.removeAttribute("data-composition-folded"));
-  if (viewportWidth < 768) return;
   const availableHeight = Math.floor(viewportHeight * 0.8);
   const grid = app.querySelector<HTMLElement>(".orbit-month-grid");
   if (grid) {

@@ -188,11 +188,11 @@ function measuredComposition({ height = 720, secondaryHeight = 80, calendar = tr
   return { app, cells, secondary };
 }
 
-test("composition fitting selects complete weeks on desktop and restores normal phone flow", () => {
+test("composition fitting selects complete weeks within the height budget at every width", () => {
   const { fitComposition } = compositionFitHarness();
   assert.equal(typeof fitComposition, "function");
-  for (const width of [768, 1024, 1280, 1920]) {
-    for (let height = 720; height <= 900; height++) {
+  for (const width of [320, 390, 412, 767, 768, 1024, 1280, 1352, 1920]) {
+    for (let height = 568; height <= 900; height++) {
       const composition = measuredComposition();
       fitComposition(composition.app, width, height);
       assert.ok(composition.app.getBoundingClientRect().height <= height * 0.8);
@@ -203,7 +203,7 @@ test("composition fitting selects complete weeks on desktop and restores normal 
           1,
         );
       }
-      fitComposition(composition.app, 767, 568);
+      fitComposition(composition.app, width, 900);
       assert.ok(composition.cells.every((cell) => !cell.folded));
       assert.equal(composition.secondary.folded, false);
       assert.equal(composition.app.getBoundingClientRect().height, 720);
@@ -221,18 +221,21 @@ test("composition fitting folds secondary content only after measuring an excess
   const { fitComposition } = compositionFitHarness();
   assert.equal(typeof fitComposition, "function");
   for (const calendar of [false, true]) {
-    const composition = measuredComposition({ height: calendar ? 800 : 620, calendar });
-    fitComposition(composition.app, 768, 720);
+    const composition = measuredComposition({ height: calendar ? 720 : 488, calendar });
+    fitComposition(composition.app, 320, 568);
     assert.equal(composition.secondary.folded, true);
+    assert.ok(composition.app.getBoundingClientRect().height <= 454);
+    fitComposition(composition.app, 768, 720);
+    assert.equal(composition.secondary.folded, false);
     assert.ok(composition.app.getBoundingClientRect().height <= 576);
     fitComposition(composition.app, 320, 568);
-    assert.equal(composition.secondary.folded, false);
+    assert.equal(composition.secondary.folded, true);
   }
 });
 
-test("measured composition fitting has a desktop width guard and never writes a height or scale", () => {
+test("measured composition fitting uses the same height budget on mobile and desktop", () => {
   const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.match(source, /if \(viewportWidth < 768\) return;/);
+  assert.doesNotMatch(source, /viewportWidth\s*[<>]=?\s*[1-9]/);
   assert.match(source, /viewportHeight \* 0\.8/);
   assert.match(source, /fitComposition\(app, window\.innerWidth, window\.innerHeight\)/);
   assert.doesNotMatch(source, /--composition-|\.style\.|\bscale\s*:|maxBlockSize|80svh/);
@@ -309,7 +312,7 @@ test("composition fitting follows font, size, locale and interaction changes in 
     );
     const dispose = exports.mountLandingMotion();
     assert.deepEqual(observed, [composition.app]);
-    assert.ok(composition.cells.every((cell) => !cell.folded));
+    assert.ok(composition.app.getBoundingClientRect().height <= 454);
     window.innerWidth = 768;
     window.innerHeight = 720;
     await Promise.resolve();
@@ -324,9 +327,11 @@ test("composition fitting follows font, size, locale and interaction changes in 
       listeners.get("orbit:layout-changed"),
     ]) {
       window.innerWidth = 320;
+      window.innerHeight = 568;
       refresh();
-      assert.ok(composition.cells.every((cell) => !cell.folded));
+      assert.ok(composition.app.getBoundingClientRect().height <= 454);
       window.innerWidth = 768;
+      window.innerHeight = 720;
       refresh();
       assert.ok(composition.app.getBoundingClientRect().height <= 576);
     }
@@ -371,15 +376,30 @@ test("Today fills its slide with a flexible zero-minimum habit column", () => {
   );
 });
 
-test("phone text wraps fully without clamping or pushing out the habit check", () => {
+test("phone text uses whole-word two-line ellipses without pushing out the habit check", () => {
   const base = unconditionalRules(css);
-  assert.match(base, /\.phone-slide\s+:is\(\.habit-name,[^}]*overflow-wrap:\s*anywhere;/);
-  assert.match(base, /\.phone-slide \.habit-copy\s*\{[^}]*flex:\s*1\s*;/);
-  for (const rule of stylesheetRules(css)) {
-    if (/\.phone-slide/.test(rule.selector)) {
-      assert.doesNotMatch(rule.declarations, /-webkit-line-clamp|text-overflow:\s*ellipsis/);
-    }
+  const text = stylesheetRules(base).find((rule) =>
+    rule.selector.includes(".phone-slide .habit-name,"),
+  );
+  assert.ok(text);
+  for (const selector of [".proactive-line p", ".demo-habit .t-row", ".demo-request"]) {
+    assert.ok(text.selector.includes(`.phone-slide ${selector}`));
   }
+  for (const declaration of [
+    "inline-size: 100%",
+    "min-inline-size: 0",
+    "display: -webkit-box",
+    "-webkit-box-orient: vertical",
+    "-webkit-line-clamp: 2",
+    "overflow: hidden",
+    "text-overflow: ellipsis",
+    "overflow-wrap: normal",
+    "word-break: normal",
+    "white-space: normal",
+  ]) {
+    assert.ok(text.declarations.includes(`${declaration};`), declaration);
+  }
+  assert.match(base, /\.phone-slide \.habit-copy\s*\{[^}]*flex:\s*1\s*;/);
 });
 
 test("phone screens share the app header and content top inset at every width", () => {
@@ -1088,7 +1108,7 @@ test("pager focus-visible follows the pill segment and its 44px target stays inv
   assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
 });
 
-test("habit names preserve word boundaries and let unbroken phone input wrap fully", () => {
+test("habit names preserve word boundaries across every surface", () => {
   const rules = [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)].filter(([, selectors]) =>
     /\.habit-name\b/.test(selectors),
   );
@@ -1096,10 +1116,7 @@ test("habit names preserve word boundaries and let unbroken phone input wrap ful
   for (const [, selectors, declarations] of rules) {
     assert.doesNotMatch(declarations, /word-break:\s*break-all/, selectors);
     for (const [, value] of declarations.matchAll(/overflow-wrap:\s*([^;]+);/g)) {
-      assert.match(
-        value,
-        /\.phone-slide/.test(selectors) ? /^anywhere$/ : /^(?:normal|break-word)$/,
-      );
+      assert.equal(value, "normal", selectors);
     }
   }
 });

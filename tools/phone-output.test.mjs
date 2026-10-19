@@ -31,7 +31,12 @@ for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
   const selector = parents.pop();
   if (!selector || selector.startsWith("@")) continue;
   rules.push({
-    selectors: splitSelectors(selector),
+    selectors: splitSelectors(selector).flatMap((value) => {
+      const match = value.match(/^(.*):is\(([^()]*)\)(.*)$/);
+      return match
+        ? [value, ...splitSelectors(match[2]).map((item) => `${match[1]}${item}${match[3]}`)]
+        : [value];
+    }),
     conditions: [...parents],
     declarations: Object.fromEntries(
       [...text.matchAll(/(?:^|;)\s*([\w-]+)\s*:\s*([^;]+)/g)].map(([, name, value]) => [
@@ -181,7 +186,6 @@ test("built composer keeps the field and 48px send circle within its padded 56px
 test("built thread and shared headers use the app spacing", () => {
   values(".demo-thread", { padding: "16px", gap: "16px", overflow: "visible" });
   values(".demo-exchange", { gap: "16px" });
-  values(".demo-message", { padding: "16px", gap: "8px" });
   values(".demo-request", {
     padding: "12px 16px",
     "max-inline-size": "80%",
@@ -216,7 +220,93 @@ test("built Today uses a 16px screen inset and bordered habit rows with 28px rou
   });
 });
 
-test("built phone has no vertical scroll container, clamped text or page-scroll exclusion", () => {
+test("built person-typed text fills its row and truncates after two whole-word lines", () => {
+  for (const selector of [
+    ".phone-slide .habit-name",
+    ".phone-slide .demo-habit .t-row",
+    ".phone-slide .demo-request",
+    ".phone-slide .demo-request-text",
+    ".phone-slide .proactive-line p",
+  ]) {
+    values(selector, {
+      "overflow-wrap": "normal",
+      "word-break": "normal",
+      "inline-size": "100%",
+      "min-inline-size": "0",
+      display: "-webkit-box",
+      "-webkit-box-orient": "vertical",
+      "-webkit-line-clamp": "2",
+      overflow: "hidden",
+      "text-overflow": "ellipsis",
+      "white-space": "normal",
+    });
+  }
+  values(".phone-slide .habit-copy", { flex: "1" });
+  values(".demo-habit-copy", { flex: "1", "min-inline-size": "0" });
+  const request = nodes.find((node) => attrs(node).id === "demo-request");
+  assert.ok(attrs(request).class.includes("demo-request-text"));
+  assert.ok(byClass("demo-request")[0].children.includes(request));
+  for (const name of ["habit-name", "demo-habit-copy", "demo-request"]) {
+    assert.ok(byClass(name).some((node) => descendants(byClass("phone-screen")[0]).includes(node)));
+  }
+});
+
+test("built phone reserves a shared 34px safe area with a centred home indicator", () => {
+  values(".phone-screen", { "padding-block-end": "34px" });
+  values(".device-home", {
+    position: "absolute",
+    "inset-block-end": "15px",
+    "block-size": "4px",
+  });
+  values(".phone-carousel", { flex: "1", "min-block-size": "0" });
+  const phone = byClass("phone-screen")[0];
+  assert.deepEqual(
+    phone.children.filter((node) => node.type === "element").map((node) => attrs(node).class),
+    ["device-status", "phone-carousel", "device-home"],
+  );
+  const carousel = descendants(byClass("phone-carousel")[0]);
+  for (const name of ["demo-input-area", "phone-today-content", "phone-today-pager"]) {
+    assert.ok(
+      byClass(name).every((node) => carousel.includes(node)),
+      name,
+    );
+  }
+});
+
+test("built status bar centres time and icons beside the island and above both app headers", () => {
+  values(".device-status", {
+    display: "grid",
+    "grid-template-columns": "minmax(0,1fr) 96px minmax(0,1fr)",
+    "place-items": "center",
+    "min-block-size": "54px",
+    "padding-inline": "24px",
+    "flex-shrink": "0",
+  });
+  values(".device-status-time", { "grid-column": "1" });
+  values(".device-status-icons", { "grid-column": "3" });
+  values(".device-speaker", { "inline-size": "96px", "inset-block-start": "12px" });
+  const status = byClass("device-status")[0];
+  for (const name of ["device-status-time", "device-status-icons", "device-speaker"]) {
+    assert.equal(byClass(name).length, 1);
+    assert.ok(descendants(status).includes(byClass(name)[0]));
+  }
+  const carousel = byClass("phone-carousel")[0];
+  assert.ok(nodes.indexOf(status) < nodes.indexOf(carousel));
+  assert.ok(byClass("phone-app-header").every((node) => descendants(carousel).includes(node)));
+});
+
+test("built Astra message aligns its glyph with the thread and proposal inset", () => {
+  values(".demo-message", { padding: "0", gap: "8px" });
+  values(".demo-thread", { padding: "16px" });
+  values(".demo-request", { padding: "12px 16px" });
+  const response = byClass("demo-response")[0];
+  for (const name of ["demo-message", "demo-preview"]) {
+    assert.ok(response.children.includes(byClass(name)[0]));
+  }
+  assert.equal(byClass("demo-message")[0].children.find((node) => node.name)?.name, "svg");
+});
+
+test("built phone has no vertical scroll container or page-scroll exclusion", () => {
   const phone = byClass("phone-screen")[0];
   const classes = new Set(
     descendants(phone).flatMap((node) => (attrs(node).class ?? "").split(/\s+/)),
@@ -231,7 +321,14 @@ test("built phone has no vertical scroll container, clamped text or page-scroll 
       continue;
     assert.doesNotMatch(body["overflow-y"] ?? "", /auto|scroll/, selectors.join(","));
     assert.doesNotMatch(body.overflow ?? "", /auto|scroll/, selectors.join(","));
-    assert.equal(body["-webkit-line-clamp"], undefined, selectors.join(","));
   }
   assert.ok(!descendants(phone).some((node) => Object.hasOwn(attrs(node), "data-lenis-prevent")));
+  assert.doesNotMatch(
+    readFileSync("src/scripts/hero-carousel.ts", "utf8"),
+    /addEventListener\(\s*["']wheel["']|preventDefault/,
+  );
+  assert.doesNotMatch(
+    readFileSync("src/scripts/landing-motion.ts", "utf8"),
+    /closest\(["']\.phone-carousel/,
+  );
 });
