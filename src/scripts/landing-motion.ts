@@ -74,26 +74,36 @@ export function mountLandingMotion() {
     lenis.on("scroll", ScrollTrigger.update);
     return () => lenis.destroy();
   });
-  media.add("all", () => {
-    const stage = document.getElementById("hero-stage");
-    if (stage) {
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: stage,
-          start: () =>
-            `top ${(document.getElementById("site-header")?.getBoundingClientRect().bottom ?? 96) + 16}px`,
-          end: "+=560",
-          pin: true,
-          pinSpacing: false,
-          scrub: true,
-          invalidateOnRefresh: true,
-          onUpdate: (trigger) => updateHeroCarousel(trigger.progress),
-          onRefresh: (trigger) => updateHeroCarousel(trigger.progress),
-        },
-      });
-      timeline.to({}, { duration: 1 });
-    }
-  });
+  media.add(
+    {
+      pinned: "(width > 640px) and (height >= 584px), (width <= 640px) and (height >= 568px)",
+      flow: "(width > 640px) and (height < 584px), (width <= 640px) and (height < 568px)",
+    },
+    (context) => {
+      const stage = document.getElementById("hero-stage");
+      if (stage) {
+        const timeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: stage,
+            ...(context.conditions?.pinned
+              ? {
+                  start: () =>
+                    `top ${(document.getElementById("site-header")?.getBoundingClientRect().bottom ?? 96) + 16}px`,
+                  end: "+=560",
+                  pin: true,
+                  pinSpacing: false,
+                }
+              : { start: "top bottom", end: "bottom top", pin: false }),
+            scrub: true,
+            invalidateOnRefresh: true,
+            onUpdate: (trigger) => updateHeroCarousel(trigger.progress),
+            onRefresh: (trigger) => updateHeroCarousel(trigger.progress),
+          },
+        });
+        timeline.to({}, { duration: 1 });
+      }
+    },
+  );
   media.add("(prefers-reduced-motion: no-preference)", (context) => {
     const stage = document.getElementById("hero-stage");
     const disposeFloat = stage ? mountHeroFloat(stage) : undefined;

@@ -1731,11 +1731,15 @@ button.metric-bar-track:focus-visible {
   --hero-device-bezel: 4px;
   --hero-float-reserve: 24px;
   --hero-float-entry: 24px;
-  --hero-device-width: min(
-    390px,
-    calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
-    calc(100vw - 64px),
-    calc((100vw - 48px) / 3)
+  --hero-device-min-width: 188px;
+  --hero-device-width: max(
+    var(--hero-device-min-width),
+    min(
+      390px,
+      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
+      calc(100vw - 64px),
+      calc((100vw - 48px) / 3)
+    )
   );
   position: relative;
   display: grid;
@@ -2123,10 +2127,9 @@ button.metric-bar-track:focus-visible {
   }
   .hero-stage {
     --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
-    --hero-device-width: min(
-      390px,
-      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
-      calc(100vw - 64px)
+    --hero-device-width: max(
+      var(--hero-device-min-width),
+      min(390px, calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5), calc(100vw - 64px))
     );
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
@@ -2150,6 +2153,12 @@ button.metric-bar-track:focus-visible {
     --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
   }
 }
+@media (width > 640px) and (height < 584px), (width <= 640px) and (height < 568px) {
+  .hero-pin-range {
+    padding-block-end: 0;
+  }
+}
+
 .habit-row[data-habit-toggle] {
   inline-size: 100%;
   min-block-size: 56px;

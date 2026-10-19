@@ -273,7 +273,8 @@ test("composition fitting follows font, size, locale and interaction changes in 
                 registerPlugin() {},
                 matchMedia: () => ({
                   add(query, callback) {
-                    if (query === "all" || !reduced) callback();
+                    if (typeof query === "object") callback({ conditions: { pinned: true } });
+                    else if (query === "all" || !reduced) callback();
                   },
                   revert() {},
                 }),
@@ -831,7 +832,10 @@ test("the phone derives its width from the pinned height at its real device rati
   );
   assert.equal(widths.length, 2);
   for (const { declarations } of widths) {
-    assert.match(declarations, /--hero-device-width:\s*min\(\s*390px,/);
+    assert.match(
+      declarations,
+      /--hero-device-width:\s*max\(\s*var\(--hero-device-min-width\),\s*min\(\s*390px,/,
+    );
     assert.match(declarations, /calc\(\(100svh - var\(--hero-pin-top\) - 64px\) \* 9 \/ 19\.5\)/);
     assert.match(declarations, /calc\(100vw - 64px\)/);
   }

@@ -278,79 +278,137 @@ test("production has no autonomous carousel, playback controls or repeating anim
   );
 });
 
-test("the pinned timeline sends scroll progress in both motion preferences", () => {
-  for (const reduced of [false, true]) {
-    const triggers = [],
-      progresses = [],
-      lenisInstances = [];
-    const stage = { querySelectorAll: () => [] };
-    const exports = {};
-    let reverted = false;
-    class Lenis {
-      constructor() {
-        lenisInstances.push(this);
+for (const [width, height, pinned] of [
+  [1440, 900, true],
+  [1100, 762, true],
+  [412, 915, true],
+  [390, 844, true],
+  [320, 568, true],
+  [844, 390, false],
+  [568, 320, false],
+  [844, 583, false],
+  [844, 584, true],
+  [568, 567, false],
+]) {
+  test(`${width}x${height} drives screens with scroll in ${pinned ? "pinned" : "flow"} mode for both motion preferences`, () => {
+    for (const reduced of [false, true]) {
+      const triggers = [],
+        progresses = [],
+        lenisInstances = [];
+      const stage = { querySelectorAll: () => [] };
+      const exports = {};
+      let reverted = false;
+      class Lenis {
+        constructor() {
+          lenisInstances.push(this);
+        }
+        on() {}
+        destroy() {
+          this.destroyed = true;
+        }
       }
-      on() {}
-      destroy() {
-        this.destroyed = true;
+      const gsap = {
+        registerPlugin() {},
+        matchMedia: () => ({
+          add(query, fn) {
+            if (typeof query === "object") {
+              const conditions = Object.fromEntries(
+                Object.entries(query).map(([name, value]) => [
+                  name,
+                  value
+                    .split(",")
+                    .some((alternative) =>
+                      [
+                        ...alternative.matchAll(/\((width|height)\s*(<=|>=|<|>)\s*(\d+)px\)/g),
+                      ].every(([, axis, operator, boundary]) =>
+                        vm.runInNewContext(
+                          `${axis === "width" ? width : height} ${operator} ${boundary}`,
+                        ),
+                      ),
+                    ),
+                ]),
+              );
+              assert.equal(conditions.pinned, pinned);
+              assert.equal(conditions.flow, !pinned);
+              const css = readFileSync("src/styles/landing.css", "utf8");
+              assert.ok(
+                css.includes(`@media ${query.flow}`),
+                "flow spacing shares the driver's fit boundaries",
+              );
+              fn({ conditions });
+            } else if (query === "all" || !reduced) fn();
+          },
+          revert() {
+            reverted = true;
+          },
+        }),
+        timeline(options) {
+          triggers.push(options.scrollTrigger);
+          return { to() {} };
+        },
+        fromTo() {},
+      };
+      vm.runInNewContext(
+        ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
+          compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+        }).outputText,
+        {
+          exports,
+          require: (name) =>
+            name === "gsap"
+              ? { gsap }
+              : name === "gsap/ScrollTrigger"
+                ? { ScrollTrigger: { refresh() {}, update() {} } }
+                : name === "lenis"
+                  ? { default: Lenis }
+                  : name === "./hero-float"
+                    ? { mountHeroFloat: () => () => {} }
+                    : { updateHeroCarousel: (progress) => progresses.push(progress) },
+          document: {
+            getElementById: (id) =>
+              id === "hero-stage"
+                ? stage
+                : id === "site-header"
+                  ? {
+                      getBoundingClientRect: () => ({ bottom: width <= 640 ? 80 : 96 }),
+                    }
+                  : null,
+            querySelectorAll: () => [],
+            querySelector: () => null,
+            fonts: { ready: Promise.resolve() },
+          },
+          window: { addEventListener() {}, removeEventListener() {} },
+          ResizeObserver: class {
+            disconnect() {}
+          },
+        },
+      );
+      const dispose = exports.mountLandingMotion();
+      assert.equal(triggers.length, 1);
+      assert.equal(triggers[0].pin, pinned);
+      if (pinned) {
+        assert.equal(triggers[0].start(), `top ${width <= 640 ? 96 : 112}px`);
+        assert.equal(triggers[0].end, "+=560");
+        assert.equal(triggers[0].pinSpacing, false);
+      } else {
+        assert.equal(triggers[0].start, "top bottom");
+        assert.equal(triggers[0].end, "bottom top");
       }
+      assert.deepEqual(
+        progresses,
+        [],
+        "constructing the driver does not autonomously advance screens",
+      );
+      assert.equal(triggers[0].scrub, true);
+      triggers[0].onUpdate({ progress: 0.625 });
+      triggers[0].onRefresh({ progress: 0.25 });
+      assert.deepEqual(progresses, [0.625, 0.25]);
+      assert.equal(lenisInstances.length, reduced ? 0 : 1);
+      dispose();
+      assert.equal(reverted, true);
     }
-    const gsap = {
-      registerPlugin() {},
-      matchMedia: () => ({
-        add(query, fn) {
-          if (query === "all" || !reduced) fn();
-        },
-        revert() {
-          reverted = true;
-        },
-      }),
-      timeline(options) {
-        triggers.push(options.scrollTrigger);
-        return { to() {} };
-      },
-      fromTo() {},
-    };
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/landing-motion.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-      }).outputText,
-      {
-        exports,
-        require: (name) =>
-          name === "gsap"
-            ? { gsap }
-            : name === "gsap/ScrollTrigger"
-              ? { ScrollTrigger: { refresh() {}, update() {} } }
-              : name === "lenis"
-                ? { default: Lenis }
-                : name === "./hero-float"
-                  ? { mountHeroFloat: () => () => {} }
-                  : { updateHeroCarousel: (progress) => progresses.push(progress) },
-        document: {
-          getElementById: (id) => (id === "hero-stage" ? stage : null),
-          querySelectorAll: () => [],
-          querySelector: () => null,
-          fonts: { ready: Promise.resolve() },
-        },
-        window: { addEventListener() {}, removeEventListener() {} },
-        ResizeObserver: class {
-          disconnect() {}
-        },
-      },
-    );
-    const dispose = exports.mountLandingMotion();
-    assert.equal(triggers.length, 1);
-    assert.equal(triggers[0].pin, true);
-    assert.equal(triggers[0].scrub, true);
-    triggers[0].onUpdate({ progress: 0.625 });
-    triggers[0].onRefresh({ progress: 0.25 });
-    assert.deepEqual(progresses, [0.625, 0.25]);
-    assert.equal(lenisInstances.length, reduced ? 0 : 1);
-    dispose();
-    assert.equal(reverted, true);
-  }
-});
+  });
+}
 
 test("feature motion waits for intersection and separate tasks, and respects media cleanup", () => {
   for (const reduced of [false, true]) {

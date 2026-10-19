@@ -114,7 +114,9 @@ test("one vector layout draws the whole phone at 390 by 845 logical pixels", () 
 
 test("screen fitting follows fractional inner width and caps its scale at one", () => {
   assert.ok(existsSync("src/scripts/phone-screen.ts"));
-  for (const width of [180.3076923077, 259.6923076923, 243.0769230769, 262.4615384615, 322, 400]) {
+  for (const width of [
+    180, 180.3076923077, 259.6923076923, 243.0769230769, 262.4615384615, 322, 400,
+  ]) {
     let resized;
     const properties = new Map();
     const screen = {
@@ -156,6 +158,9 @@ const declarations = (body) =>
 const screenProperties = declarations(rules(".phone-screen")[0]);
 const viewports = [
   [320, 568],
+  [390, 844],
+  [844, 390],
+  [568, 320],
   [360, 740],
   [360, 780],
   [412, 915],
@@ -167,16 +172,64 @@ const viewports = [
   [1440, 900],
   [1920, 1080],
 ];
-const scales = viewports.map(([width, height]) => {
-  const top = width <= 640 ? 96 : 112;
-  const device = Math.min(
-    390,
-    ((height - top - 64) * 9) / 19.5,
-    width - 64,
-    width < 768 ? Infinity : (width - 48) / 3,
+const minimumScale = 24 / 52;
+const stageRules = [];
+const parents = [];
+for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
+  if (boundary === "{") parents.push(text.trim());
+  else {
+    const selector = parents.pop();
+    if (selector === ".hero-stage") stageRules.push({ body: text, conditions: [...parents] });
+  }
+}
+const matchesViewport = (conditions, width, height) =>
+  conditions.every((condition) =>
+    [...condition.matchAll(/\((width|height)\s*(<=|>=|<|>)\s*(\d+)px\)/g)].every(
+      ([, axis, operator, boundary]) =>
+        vm.runInNewContext(`${axis === "width" ? width : height} ${operator} ${boundary}`),
+    ),
+  );
+const viewportScale = (width, height) => {
+  const properties = Object.assign(
+    {},
+    ...stageRules
+      .filter(({ conditions }) => matchesViewport(conditions, width, height))
+      .map(({ body }) => declarations(body)),
+  );
+  const resolve = (value) =>
+    value.replace(/var\((--[\w-]+)\)/g, (_, name) => `(${resolve(properties[name])})`);
+  const device = vm.runInNewContext(
+    resolve(properties["--hero-device-width"])
+      .replace(/env\(safe-area-inset-top\)/g, "0px")
+      .replace(/\bcalc\(/g, "(")
+      .replace(/\b(min|max)\(/g, "Math.$1(")
+      .replace(/([\d.]+)svh/g, (_, value) => String((Number(value) * height) / 100))
+      .replace(/([\d.]+)vw/g, (_, value) => String((Number(value) * width) / 100))
+      .replace(/px\b/g, ""),
   );
   return (device - 8) / 390;
-});
+};
+const scales = viewports.map(([width, height]) => viewportScale(width, height));
+
+for (const [width, height] of viewports) {
+  for (const locale of ["en", "pt"]) {
+    test(`${locale} ${width}x${height} keeps the phone scale above the smallest bounded target floor`, () => {
+      assert.ok(viewportScale(width, height) >= minimumScale - 1e-8);
+    });
+  }
+}
+
+for (const [width, height, expected] of [
+  [1440, 900, 0.8362919132149901],
+  [1100, 762, 0.6729783037475345],
+  [412, 915, 0.8717948717948718],
+  [390, 844, 0.7889546351084812],
+  [320, 568, 0.46232741617357],
+]) {
+  test(`${width}x${height} retains the original phone scale`, () => {
+    near(viewportScale(width, height), expected, "unchanged phone scale");
+  });
+}
 
 function reach(width, height, scale, selectors = []) {
   const properties = {
@@ -693,3 +746,107 @@ test("no side card repeats phone copy in either locale", async () => {
     }
   }
 });
+
+for (const [width, height] of [
+  [844, 390],
+  [568, 320],
+]) {
+  for (const locale of ["en", "pt"]) {
+    test(`${locale} ${width}x${height} keeps all bounded target groups at 24px without overlapping reaches`, () => {
+      const scale = viewportScale(width, height);
+      const box = (x, y, width, height, selectors = []) => {
+        const target = reach(width, height, scale, selectors);
+        return {
+          left: x * scale + target["inline-start"],
+          right: (x + width) * scale - target["inline-end"],
+          top: y * scale + target["block-start"],
+          bottom: (y + height) * scale - target["block-end"],
+        };
+      };
+      const row = (widths, height, gap, selectors) => {
+        let x = 0;
+        return widths.map((width, index) => {
+          const target = box(x, 0, width, height, selectors(index));
+          x += width + gap;
+          return target;
+        });
+      };
+      const proposalWidths = locale === "en" ? [78.112, 61.354, 90.46] : [86.974, 74.612, 87.45];
+      const chipWidths = locale === "en" ? [112, 110, 96] : [92, 110, 128];
+      const chips = row(chipWidths, 48, 8, (index) => [
+        ".phone-screen .demo-chip::before",
+        ...(index > 0 ? [".phone-screen .demo-examples > :not(:first-child)::before"] : []),
+        ...(index < 2 ? [".phone-screen .demo-examples > :not(:last-child)::before"] : []),
+      ]);
+      const composerSelectors = [".phone-screen :is(.demo-composer-field, .demo-send)::before"];
+      const proposal = row(proposalWidths, 44, 12, proposalSelectors);
+      const input = [
+        ...chips,
+        box(4, 48 + 12 + 4, 302, 48, [
+          ...composerSelectors,
+          ".phone-screen .demo-composer-field::before",
+        ]),
+        box(306, 48 + 12 + 4, 48, 48, [...composerSelectors, ".phone-screen .demo-send::before"]),
+      ];
+      const editor = [
+        box(92, 0, 218, 48, [
+          ".phone-screen .demo-edit-field::before",
+          ".phone-screen .demo-edit-name::before",
+        ]),
+        box(92, 56, 218, 48, [".phone-screen .demo-edit-field::before"]),
+        box(0, 112, 310, 48, [".phone-screen .demo-save::before"]),
+      ];
+      const continuation = [
+        box(0, 0, 200, 48, [".phone-screen .demo-continue .text-link::before"]),
+      ];
+      const padding = (selector) =>
+        Number(declarations(rules(selector).join("\n")).padding.replace("px", ""));
+      const inputSeparation = padding(".demo-thread") + 1 + padding(".demo-input-area");
+      const withInput = (targets, logicalBottom, separation = inputSeparation) => [
+        ...targets,
+        ...input.map((target) => ({
+          ...target,
+          top: target.top + (logicalBottom + separation) * scale,
+          bottom: target.bottom + (logicalBottom + separation) * scale,
+        })),
+      ];
+      const groups = [
+        withInput(proposal, 44, inputSeparation + padding(".demo-preview")),
+        withInput(editor, 160, inputSeparation + padding(".demo-preview")),
+        withInput(continuation, 48),
+      ];
+      for (const [container, gap, count] of [
+        [".phone-today-habits", 12, 7],
+        [".demo-today", 16, 2],
+      ]) {
+        const selector = `.phone-screen ${container} > .habit-row`;
+        const habits = Array.from({ length: count }, (_, index) =>
+          box(0, index * (64 + gap), 358, 64, [
+            `${selector}::before`,
+            ...(index === 0 ? [`${selector}[data-first-visible]::before`] : []),
+            ...(index === count - 1 ? [`${selector}[data-last-visible]::before`] : []),
+          ]),
+        );
+        groups.push(
+          container === ".demo-today" ? withInput(habits, count * (64 + gap) - gap) : habits,
+        );
+      }
+      for (const targets of groups) {
+        for (let a = 0; a < targets.length; a++) {
+          const first = targets[a];
+          assert.ok(first.right - first.left >= 24 - 1e-8);
+          assert.ok(first.bottom - first.top >= 24 - 1e-8);
+          for (const second of targets.slice(a + 1)) {
+            assert.ok(
+              first.right <= second.left + 1e-8 ||
+                second.right <= first.left + 1e-8 ||
+                first.bottom <= second.top + 1e-8 ||
+                second.bottom <= first.top + 1e-8,
+              "adjacent target reaches remain distinct",
+            );
+          }
+        }
+      }
+    });
+  }
+}
