@@ -82,6 +82,16 @@ const en = translations.en;
                       <HabitRow habit="walk" timing="todo" time="18:00" />
                       <HabitRow habit="read" timing="todo" />
                       <HabitRow habit="run" days={7} />
+                      <HabitRow habit="walk" timing="todo" data-demo-approved hidden>
+                        <span slot="name" data-approved-name></span>
+                        <span slot="repeat" data-approved-repeat></span>
+                      </HabitRow>
+                      <HabitRow habit="read" timing="todo" data-demo-approved-second hidden>
+                        <span slot="name" data-i18n="demo.move.secondHabit">
+                          {en["demo.move.secondHabit"]}
+                        </span>
+                        <span slot="repeat" data-approved-second-repeat></span>
+                      </HabitRow>
                     </div>
                   </div>
                 </div>

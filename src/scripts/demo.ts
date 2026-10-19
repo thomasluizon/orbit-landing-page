@@ -82,7 +82,7 @@ function updateToday() {
     if (name) name.textContent = habitTitle();
     if (repeat) repeat.textContent = translations[getLang()][schedule];
     const originals = row
-      .closest(".product-card")
+      .closest(".phone-today-habits")
       ?.querySelectorAll<HTMLElement>(
         "[data-habit-toggle]:not([data-demo-approved]):not([data-demo-approved-second])",
       );

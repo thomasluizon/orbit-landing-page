@@ -2,35 +2,47 @@
 import { Check } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
-interface Props {
+import type { HTMLAttributes } from "astro/types";
+interface Props extends HTMLAttributes<"button"> {
   habit: "walk" | "water" | "run" | "stretch" | "read";
   timing?: "morning" | "done" | "todo";
   time?: string;
   days?: number;
 }
-const { habit, timing = "morning", time, days } = Astro.props;
+const { habit, timing = "morning", time, days, ...attributes } = Astro.props;
 const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘", read: "📖" };
 ---
 
-<button type="button" class="habit-row" data-habit-toggle aria-pressed={timing === "done"}>
+<button
+  {...attributes}
+  type="button"
+  class="habit-row"
+  data-habit-toggle
+  aria-pressed={timing === "done"}
+>
   <span class="habit-emoji" aria-hidden="true">{emoji[habit]}</span>
   <span class="habit-copy">
-    <span class="habit-name"><Copy name={`product.${habit}`} /></span>
+    <span class="habit-name"><slot name="name"><Copy name={`product.${habit}`} /></slot></span>
     <span class="product-caption">
-      {
-        days !== undefined ? (
-          <span
-            data-copy-en={landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
-            data-copy-pt={landingCopy["pt-BR"]["blocks.goal.days"].replace("{days}", String(days))}
-          >
-            {landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
-          </span>
-        ) : time ? (
-          <time>{time}</time>
-        ) : (
-          <Copy name={`product.${timing}`} />
-        )
-      }
+      <slot name="repeat">
+        {
+          days !== undefined ? (
+            <span
+              data-copy-en={landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
+              data-copy-pt={landingCopy["pt-BR"]["blocks.goal.days"].replace(
+                "{days}",
+                String(days),
+              )}
+            >
+              {landingCopy.en["blocks.goal.days"].replace("{days}", String(days))}
+            </span>
+          ) : time ? (
+            <time>{time}</time>
+          ) : (
+            <Copy name={`product.${timing}`} />
+          )
+        }
+      </slot>
     </span>
   </span>
   <span class="habit-check" aria-hidden="true"

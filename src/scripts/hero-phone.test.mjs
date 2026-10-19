@@ -260,7 +260,9 @@ test("the phone and its pager contain exactly chat and Today", () => {
 test("Today fills the screen with one Astra line and five mixed-state habit rows", () => {
   const today = slides.find((node) => attributes(node)["data-phone-slide"] === "today");
   const nodes = descendants(today);
-  const rows = nodes.filter((node) => node.name === "HabitRow");
+  const rows = nodes.filter(
+    (node) => node.name === "HabitRow" && !Object.hasOwn(attributes(node), "hidden"),
+  );
   assert.equal(rows.length, 5);
   assert.ok(rows.some((node) => attributes(node).timing === "done"));
   assert.ok(rows.some((node) => attributes(node).timing === "todo"));

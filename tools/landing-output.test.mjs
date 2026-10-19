@@ -286,8 +286,9 @@ test("the built hero has two shared headers, two pager segments and a full Today
     segments.map((node) => attrs(node)["aria-controls"]),
     ["phone-chat", "phone-today"],
   );
-  const habits = descendants(screens[1]).filter((node) =>
-    Object.hasOwn(attrs(node), "data-habit-toggle"),
+  const habits = descendants(screens[1]).filter(
+    (node) =>
+      Object.hasOwn(attrs(node), "data-habit-toggle") && !Object.hasOwn(attrs(node), "hidden"),
   );
   assert.equal(habits.length, 5);
   assert.deepEqual(
