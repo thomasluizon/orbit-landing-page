@@ -150,6 +150,7 @@
   box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
 }
 .device-screen {
+  --phone-scale: 1;
   container-type: inline-size;
   position: relative;
   display: flex;
@@ -158,6 +159,37 @@
   border-radius: calc(56px - var(--hero-device-bezel));
   background: var(--color-bg);
   overflow: clip;
+}
+.phone-screen {
+  --phone-target-size: calc(44px / var(--phone-scale));
+  container-type: inline-size;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: 330px;
+  block-size: 715px;
+  transform: scale(var(--phone-scale));
+  transform-origin: top left;
+}
+.phone-screen .demo-preview-actions .pill-sm::before {
+  inset-block: min(-4px, calc((100% - var(--phone-target-size)) / 2));
+  inset-inline: max(-6px, min(0px, calc((100% - var(--phone-target-size)) / 2)));
+}
+.phone-screen .demo-preview-actions {
+  padding-block: max(4px, calc((var(--phone-target-size) - 40px) / 2));
+}
+.phone-screen .demo-chip,
+.phone-screen .demo-send,
+.phone-screen .demo-composer input,
+.phone-screen .demo-edit-form input,
+.phone-screen .demo-edit-form select,
+.phone-screen .demo-save,
+.phone-screen .text-link,
+.phone-screen .habit-row[data-habit-toggle] {
+  min-inline-size: var(--phone-target-size);
+  min-block-size: var(--phone-target-size);
 }
 .device-status {
   display: flex;

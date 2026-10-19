@@ -18,7 +18,8 @@ const rules = (selector) =>
 const slides = descendants(hero).filter((node) => attributes(node)["data-phone-slide"]);
 
 test("every phone screen shares the status, 56px app header and 16px content inset", async () => {
-  const device = descendants(hero).find((node) => attributes(node).class === "device-screen");
+  const device = descendants(hero).find((node) => attributes(node).class === "phone-screen");
+  assert.ok(device, "the whole app shares one scaled screen");
   assert.deepEqual(
     device.children
       .filter((node) => node.name)
@@ -48,6 +49,107 @@ test("every phone screen shares the status, 56px app header and 16px content ins
     assert.ok(attributes(children[1]).class?.split(" ").includes("phone-content"));
   }
   assert.match(source("AstraDemo"), /<PhoneHeader>\s*<AstraGlyph size=\{16\} \/>\s*<h2/);
+});
+
+test("one vector layout draws the whole phone at 330 by 715 logical pixels", () => {
+  const screen = descendants(hero).find((node) => attributes(node).class === "device-screen");
+  assert.deepEqual(
+    screen.children.filter((node) => node.name).map((node) => attributes(node).class),
+    ["phone-screen"],
+  );
+  const layout = rules(".phone-screen");
+  assert.equal(layout.length, 1);
+  assert.match(layout[0], /inline-size:\s*330px;/);
+  assert.match(layout[0], /block-size:\s*715px;/);
+  assert.match(layout[0], /transform:\s*scale\(var\(--phone-scale\)\);/);
+  assert.match(layout[0], /transform-origin:\s*top left;/);
+  assert.equal((css.match(/transform:\s*scale\(var\(--phone-scale\)\)/g) ?? []).length, 1);
+  assert.match(source("Hero"), /import "\.\.\/scripts\/phone-screen"/);
+});
+
+test("screen fitting follows fractional inner width and caps its scale at one", () => {
+  assert.ok(existsSync("src/scripts/phone-screen.ts"));
+  for (const width of [179.6923076923, 259.6923076923, 243.0769230769, 262.4615384615, 322, 400]) {
+    let resized;
+    const properties = new Map();
+    const screen = {
+      style: { setProperty: (name, value) => properties.set(name, value) },
+      querySelector: () => ({ offsetWidth: 330 }),
+      getBoundingClientRect: () => ({ width }),
+    };
+    vm.runInNewContext(
+      ts.transpileModule(readFileSync("src/scripts/phone-screen.ts", "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      }).outputText,
+      {
+        exports: {},
+        document: { querySelector: () => screen },
+        ResizeObserver: class {
+          constructor(fn) {
+            resized = fn;
+          }
+          observe(target) {
+            assert.equal(target, screen);
+          }
+        },
+      },
+    );
+    assert.equal(Number(properties.get("--phone-scale")), Math.min(1, width / 330));
+    resized([{ contentRect: { width: 200.5 } }]);
+    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 330);
+    resized([{ contentRect: { width: 0 } }]);
+    assert.equal(Number(properties.get("--phone-scale")), 200.5 / 330);
+  }
+});
+
+test("scaled controls compensate their reach and reserve space without intersecting targets", () => {
+  assert.match(
+    rules(".phone-screen")[0] ?? "",
+    /--phone-target-size:\s*calc\(44px \/ var\(--phone-scale\)\);/,
+  );
+  const reach = rules(".phone-screen .demo-preview-actions .pill-sm::before").join("\n");
+  assert.match(
+    reach,
+    /inset-block:\s*min\(-4px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\);/,
+  );
+  assert.match(
+    reach,
+    /inset-inline:\s*max\(-6px, min\(0px, calc\(\(100% - var\(--phone-target-size\)\) \/ 2\)\)\);/,
+  );
+  assert.match(
+    rules(".phone-screen .demo-preview-actions").join("\n"),
+    /padding-block:\s*max\(4px, calc\(\(var\(--phone-target-size\) - 40px\) \/ 2\)\);/,
+  );
+  for (const control of [
+    ".demo-chip",
+    ".demo-send",
+    ".demo-composer input",
+    ".demo-edit-form input",
+    ".demo-edit-form select",
+    ".demo-save",
+    ".text-link",
+    ".habit-row[data-habit-toggle]",
+  ]) {
+    assert.match(
+      rules(`.phone-screen ${control}`).join("\n"),
+      /min-block-size:\s*var\(--phone-target-size\);/,
+      control,
+    );
+    assert.match(
+      rules(`.phone-screen ${control}`).join("\n"),
+      /min-inline-size:\s*var\(--phone-target-size\);/,
+      control,
+    );
+  }
+  for (const scale of [0.5445221445, 0.7869463869, 0.7365967366, 0.7953379953, 322 / 330]) {
+    assert.ok(Math.abs((44 / scale) * scale - 44) < 1e-10);
+    const padding = Math.max(4, (44 / scale - 40) / 2);
+    assert.ok((40 + 2 * padding) * scale >= 44 - 1e-10);
+    for (const width of [60, 75, 90]) {
+      const reach = Math.min(6, Math.max(0, (44 / scale - width) / 2));
+      assert.ok(2 * reach <= 12, "adjacent reaches never cross the 12px gap");
+    }
+  }
 });
 
 test("proposal actions retain the app small pill geometry and separated targets", () => {

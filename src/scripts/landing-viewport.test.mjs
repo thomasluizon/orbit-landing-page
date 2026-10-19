@@ -966,7 +966,7 @@ test("back to top appears past the hero and yields to footer links and consent",
 });
 
 test("proposal action options stay in one trailing row with a fixed 12px gap", () => {
-  const rows = [...css.matchAll(/\.demo-preview-actions\s*\{([^}]+)\}/g)];
+  const rows = [...css.matchAll(/^\.demo-preview-actions\s*\{([^}]+)\}/gm)];
   assert.ok(rows.length);
   for (const [, declarations] of rows) {
     assert.match(declarations, /flex-wrap:\s*nowrap\s*;/);
