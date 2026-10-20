@@ -121,6 +121,8 @@ for (const [opening, closing] of [
   ["<script>", "</script \n>"],
   ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
   ['<ScRiPt data-startup="true">', "</sCrIpT\t\n bar>"],
+  ["<script>", "</script/foo>"],
+  ["<script>", "</script/ >"],
 ]) {
   test(`startup extraction accepts ${opening} and ${closing.trim()}`, async () => {
     const page = readFileSync("src/pages/index.astro", "utf8")

@@ -35,6 +35,8 @@ for (const [opening, closing] of [
   ["<script", "</script \n>"],
   ["<ScRiPt", "</sCrIpT\t>"],
   ["<ScRiPt", "</sCrIpT\t\n bar>"],
+  ["<script", "</script/foo>"],
+  ["<script", "</script/ >"],
 ]) {
   test(`built script extraction accepts ${opening} and ${closing.trim()}`, () => {
     for (const source of [html, readFileSync("dist/waitlist-confirmed/index.html", "utf8")]) {
@@ -261,7 +263,7 @@ test("confirmation uses native hidden state for both response paths", async () =
   }
 });
 
-test("the complete local script graph stays inside the raw byte budget", () => {
+function scriptBytesFrom(page) {
   const seen = new Set();
   function bytesFor(path) {
     if (seen.has(path)) return 0;
@@ -274,13 +276,26 @@ test("the complete local script graph stays inside the raw byte budget", () => {
     return bytes;
   }
   let bytes = 0;
-  for (const { attributes, body } of scriptsFrom(html)) {
+  for (const { attributes, body } of scriptsFrom(page)) {
     if (attributes.type === "application/ld+json") continue;
     const path = attributes.src;
     bytes += path ? bytesFor(path) : Buffer.byteLength(body);
   }
-  assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
-});
+  return bytes;
+}
+
+for (const closing of ["</script>", "</script/foo>", "</script/ >"]) {
+  test(`the complete local script graph stays inside the raw byte budget with ${closing}`, () => {
+    const page = html.replaceAll("</script>", closing);
+    const bytes = scriptBytesFrom(page);
+    assert.ok(bytes > 0, "the budget must count the script graph");
+    assert.equal(bytes, scriptBytesFrom(html), "every script must count toward the budget");
+    assert.ok(bytes <= 24000, `${bytes} script bytes exceed 24000`);
+    const oversized = scriptBytesFrom(`${page}<script>${" ".repeat(24001)}${closing}`);
+    assert.equal(oversized, bytes + 24001, "the budget must count oversized inline scripts");
+    assert.ok(oversized > 24000, "an oversized script must exceed the budget");
+  });
+}
 
 test("the built billing control leads with Yearly and puts its saving only on that option", () => {
   const pro = html.match(/<article class="plan-card plan-pro"[^>]*>([\s\S]*?)<\/article>/)?.[1];
