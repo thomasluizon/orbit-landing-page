@@ -1,117 +1,127 @@
 ---
 import { Check } from "@lucide/astro";
+import Copy from "./Copy.astro";
 import PillButton from "./PillButton.astro";
-
+import { formatPrice, pricingFor } from "../config/pricing";
+import { landingCopy, translations } from "../i18n/translations";
 interface Props {
   appUrl: string;
 }
-
 const { appUrl } = Astro.props;
-
-const freeFeatures = [
-  { key: "pricing.free.f1", text: "Up to 10 habits" },
-  { key: "pricing.free.f2", text: "20 AI messages a month" },
-  { key: "pricing.free.f3", text: "Streaks, XP, and achievements" },
-  { key: "pricing.free.f4", text: "Social and accountability buddies" },
-];
-
-const proFeatures = [
-  { key: "pricing.pro.f1", text: "Unlimited habits" },
-  { key: "pricing.pro.f2", text: "500 AI messages a month" },
-  { key: "pricing.pro.f3", text: "Sub-habits, goals, and calendar sync" },
-  { key: "pricing.pro.f4", text: "AI memory, MCP, and API keys" },
-];
 ---
 
-<section id="pricing" class="py-20 sm:py-24">
-  <div class="page-container">
-    <div class="reveal mx-auto max-w-[560px] text-center lg:mx-0 lg:text-left">
-      <p class="t-eyebrow" data-i18n="pricing.eyebrow">Pricing</p>
-      <h2 class="t-display mt-3 [text-wrap:balance]" data-i18n="pricing.title">
-        Start free. Upgrade when it clicks.
-      </h2>
-      <p class="t-body mt-3 text-primary" data-i18n="pricing.trial">
-        7-day Pro trial, no card required
-      </p>
+<section id="pricing" class="section" data-section="pricing" aria-labelledby="pricing-title">
+  <div class="section-inner">
+    <div class="section-heading">
+      <h2 id="pricing-title" class="section-title"><Copy name="pricing.title" /></h2>
     </div>
-
-    <div class="reveal-stagger mt-10 grid gap-4 md:grid-cols-2">
-      <div
-        class="flex flex-col rounded-[20px] bg-bg-card p-7 sm:p-8"
-        style="box-shadow: inset 0 0 0 1px var(--color-hairline);"
+    <div
+      class="billing-control"
+      role="radiogroup"
+      aria-label={landingCopy.en["nav.pricing"]}
+      data-copy-label-en={landingCopy.en["nav.pricing"]}
+      data-copy-label-pt={landingCopy["pt-BR"]["nav.pricing"]}
+      data-billing-control
+    >
+      <button
+        class="billing-option"
+        type="button"
+        role="radio"
+        data-billing-period="yearly"
+        aria-label={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-en={pricingFor("en", "yearly").annualLabel}
+        data-copy-label-pt={pricingFor("pt-BR", "yearly").annualLabel}
+        aria-checked="true"
+        tabindex="0"
       >
-        <h3 class="t-h2" data-i18n="pricing.free.name">Free</h3>
-        <p class="mt-1 font-sans text-[14px] text-fg-3" data-i18n="pricing.free.tagline">
-          Everything you need to get going.
-        </p>
-        <ul class="mt-6 flex flex-1 flex-col gap-3.5">
-          {
-            freeFeatures.map((feature) => (
-              <li class="flex items-center gap-3">
-                <Check size={17} stroke-width={2.2} class="shrink-0 text-fg-3" />
-                <span class="font-sans text-[14px] text-fg-2" data-i18n={feature.key}>
-                  {feature.text}
-                </span>
-              </li>
-            ))
-          }
-        </ul>
-        <PillButton
-          href={appUrl}
-          variant="ghost"
-          size="sm"
-          class="mt-8 self-start"
-          analyticsEvent="pricing_free_cta_clicked"
-          analyticsSurface="pricing_free"
+        <Copy name="pricing.annual" />
+        <span
+          class="billing-saving"
+          data-billing-saving
+          data-copy-en={pricingFor("en", "yearly").savingShort}
+          data-copy-pt={pricingFor("pt-BR", "yearly").savingShort}
+          >{pricingFor("en", "yearly").savingShort}</span
         >
-          <span data-i18n="pricing.free.cta">Start free</span>
-        </PillButton>
-      </div>
-
-      <div
-        class="relative flex flex-col rounded-[20px] p-7 sm:p-8"
-        style="background: rgba(var(--primary-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(var(--primary-rgb), 0.3);"
+      </button>
+      <button
+        class="billing-option"
+        type="button"
+        role="radio"
+        data-billing-period="monthly"
+        aria-checked="false"
+        tabindex="-1"
       >
-        <div class="flex items-center justify-between">
-          <h3 class="t-h2" data-i18n="pricing.pro.name">Pro</h3>
-          <span
-            class="rounded-full px-[10px] py-[4px] font-sans text-[10.5px] font-semibold tracking-[0.06em] text-fg-1 uppercase"
-            style="background: rgba(var(--primary-rgb), 0.2);"
-            data-i18n="pricing.pro.badge"
-          >
-            Most popular
-          </span>
+        <Copy name="pricing.monthly" />
+      </button>
+    </div>
+    <div class="pricing-grid">
+      <article class="plan-card">
+        <div class="plan-name">
+          <h3 translate="no" data-i18n="plan.free">{translations.en["plan.free"]}</h3>
         </div>
-        <p class="mt-1 font-sans text-[14px] text-fg-3" data-i18n="pricing.pro.tagline">
-          The full coach, unlocked.
-        </p>
-        <ul class="mt-6 flex flex-1 flex-col gap-3.5">
+        <p class="plan-description"><Copy name="pricing.free.body" /></p>
+        <div class="plan-cost">
+          <p class="plan-price">
+            <span class="price-value" data-price="free">{formatPrice("en", "free")}</span>
+          </p>
+        </div>
+        <ul>
           {
-            proFeatures.map((feature) => (
-              <li class="flex items-center gap-3">
-                <Check size={17} stroke-width={2.2} class="shrink-0 text-primary" />
-                <span class="font-sans text-[14px] text-fg-1" data-i18n={feature.key}>
-                  {feature.text}
-                </span>
+            (["pricing.free.astra", "pricing.habits", "pricing.review"] as const).map((name) => (
+              <li>
+                <>
+                  <Check size={16} />
+                  <Copy name={name} />
+                </>
               </li>
             ))
           }
         </ul>
-        <PillButton
-          href={appUrl}
-          glow
-          size="sm"
-          class="mt-8 self-start"
-          analyticsEvent="pricing_pro_cta_clicked"
-          analyticsSurface="pricing_pro"
-        >
-          <span data-i18n="pricing.pro.cta">Start 7-day trial</span>
-        </PillButton>
-      </div>
+        <div class="plan-action">
+          <PillButton
+            href={appUrl}
+            variant="ghost"
+            analyticsEvent="pricing_free_cta_clicked"
+            analyticsSurface="pricing_free"><Copy name="action.start" /></PillButton
+          >
+        </div>
+      </article>
+      <article class="plan-card plan-pro" data-plan-period="yearly">
+        <div class="plan-name">
+          <h3 translate="no">Pro</h3>
+          <span class="plan-recommendation" data-plan-recommendation
+            ><Copy name="pricing.recommended" /></span
+          >
+        </div>
+        <p class="plan-description"><Copy name="pricing.pro.body" /></p>
+        <div class="plan-cost" aria-live="polite" aria-atomic="true">
+          <p class="plan-price">
+            <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
+          </p>
+          <p class="plan-annual" data-billed-total>{pricingFor("en", "yearly").billed}</p>
+        </div>
+        <ul>
+          {
+            (["pricing.pro.astra", "pricing.pro.adjust", "pricing.pro.calendar"] as const).map(
+              (name) => (
+                <li>
+                  <>
+                    <Check size={16} />
+                    <Copy name={name} />
+                  </>
+                </li>
+              ),
+            )
+          }
+        </ul>
+        <div class="plan-action">
+          <PillButton
+            href={`${appUrl}/upgrade`}
+            analyticsEvent="pricing_pro_cta_clicked"
+            analyticsSurface="pricing_pro"><Copy name="pricing.pro.cta" /></PillButton
+          >
+        </div>
+      </article>
     </div>
-
-    <p class="reveal mt-5 text-center font-sans text-[13px] text-fg-3" data-i18n="pricing.note">
-      No credit card to start the trial. Cancel anytime.
-    </p>
   </div>
 </section>

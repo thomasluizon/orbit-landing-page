@@ -8,19 +8,20 @@
   "scripts": {
     "prepare": "lefthook install || true",
     "dev": "astro dev",
-    "build": "astro build && node --test tools/sitemap-output.test.mjs",
+    "build": "astro build && node --test tools/sitemap-output.test.mjs tools/landing-output.test.mjs tools/demo-output.test.mjs tools/phone-output.test.mjs tools/landing-repetition.test.mjs",
     "preview": "astro preview",
-    "test": "node --test .github/tests/release-verification.test.mjs tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/waitlist.test.mjs",
+    "test": "node --test .github/tests/release-verification.test.mjs tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/brand-assets.test.mjs src/styles/tokens.test.mjs tools/waitlist.test.mjs tools/i18n.test.mjs src/scripts/waitlist-section.test.mjs src/scripts/hero-carousel.test.mjs src/scripts/hero-phone.test.mjs src/scripts/html.test.mjs src/scripts/landing-composition.test.mjs src/scripts/landing-viewport.test.mjs src/scripts/landing-startup.test.mjs tools/landing-performance.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "brand:generate": "node tools/generate-brand-assets.mjs"
   },
   "overrides": {
     "esbuild": "^0.28.1",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "svgo": "^4.1.0",
     "yaml-language-server": {
       "yaml": "^2.8.3"
@@ -31,6 +32,9 @@
     "@lucide/astro": "^1.26.0",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^7.3.5",
+    "gsap": "3.15.0",
+    "lenis": "1.3.27",
+    "qrcode-generator": "^2.0.4",
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
@@ -40,8 +44,11 @@
     "eslint": "^10.5.0",
     "eslint-plugin-astro": "^3.2.1",
     "lefthook": "^2.1.10",
+    "parse5": "8.0.1",
+    "png-to-ico": "^3.0.2",
     "prettier": "^3.8.4",
     "prettier-plugin-astro": "^0.14.1",
+    "sharp": "^0.35.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.61.0"
   }

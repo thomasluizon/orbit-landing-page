@@ -5,7 +5,7 @@ import vm from "node:vm";
 import ts from "typescript";
 
 const scripts = new Map();
-for (const path of ["../i18n/translations", "./i18n", "./waitlist"]) {
+for (const path of ["../config/pricing", "../i18n/translations", "./i18n", "./waitlist"]) {
   const source = await readFile(new URL(`../src/scripts/${path}.ts`, import.meta.url), "utf8");
   scripts.set(
     path,
@@ -15,7 +15,11 @@ for (const path of ["../i18n/translations", "./i18n", "./waitlist"]) {
   );
 }
 
-function createHarness(language, responses, { renderFailures = 0 } = {}) {
+function createHarness(
+  language,
+  responses,
+  { renderFailures = 0, siteKey = "test-site-key" } = {},
+) {
   const requests = [];
   const resets = [];
   let challenge;
@@ -38,8 +42,9 @@ function createHarness(language, responses, { renderFailures = 0 } = {}) {
       },
     });
   }
+  if (!siteKey) elements.delete("waitlist-turnstile");
   const context = vm.createContext({
-    environment: { PUBLIC_TURNSTILE_SITE_KEY: "test-site-key" },
+    environment: { PUBLIC_TURNSTILE_SITE_KEY: siteKey },
     navigator: { language },
     document: {
       cookie: `orbit_lang=${language}`,
@@ -105,11 +110,71 @@ function createHarness(language, responses, { renderFailures = 0 } = {}) {
   };
 }
 
-// https://github.com/thomasluizon/orbit-tickets/issues/107 specifies error/requestId, not error wording.
 const challengeRejection = () =>
-  Response.json({ error: "test challenge rejection", requestId: "test-request" }, { status: 400 });
+  Response.json(
+    { error: "Invalid verification token", requestId: "test-request" },
+    { status: 400 },
+  );
 
 for (const language of ["en", "pt-BR"]) {
+  test(`${language}: without a site key, valid email enables submission without a challenge or token`, async () => {
+    for (const siteKey of [undefined, ""]) {
+      const harness = createHarness(language, [new Response(null, { status: 200 })], {
+        siteKey: siteKey ?? "",
+      });
+      const email = harness.elements.get("waitlist-email");
+      email.value = "invalid";
+      harness.triggerChallenge("input");
+      assert.equal(harness.elements.get("waitlist-submit").disabled, true);
+      email.value = " person@example.com ";
+      harness.triggerChallenge("input");
+      assert.equal(harness.elements.get("waitlist-submit").disabled, false);
+      assert.equal(harness.renderCalls, 0);
+      assert.equal(harness.elements.get("waitlist-status").textContent, "");
+      await harness.submit();
+      assert.deepEqual(JSON.parse(harness.requests[0].body), {
+        email: "person@example.com",
+        language,
+      });
+      assert.deepEqual(harness.resets, []);
+      assert.equal(harness.formResets, 1);
+      assert.equal(
+        harness.elements.get("waitlist-status").textContent,
+        harness.strings["ios.success"],
+      );
+    }
+  });
+
+  test(`${language}: unrecognized API failures keep the generic error with protection on or off`, async () => {
+    for (const siteKey of ["", "test-site-key"]) {
+      for (const payload of [
+        { error: "Unrelated request failure" },
+        { type: "ValidationFailure", errors: { Language: ["Unsupported language"] } },
+      ]) {
+        const harness = createHarness(language, [Response.json(payload, { status: 400 })], {
+          siteKey,
+        });
+        if (siteKey) await harness.solve("valid-token");
+        await harness.submit();
+        assert.equal(harness.requests.length, 1);
+        assert.equal(
+          harness.elements.get("waitlist-status").textContent,
+          harness.strings["ios.error"],
+        );
+      }
+    }
+  });
+
+  test(`${language}: a challenge rejection without a configured widget still names the challenge`, async () => {
+    const harness = createHarness(language, [challengeRejection()], { siteKey: "" });
+    await harness.submit();
+    assert.equal(harness.requests.length, 1);
+    assert.equal(
+      harness.elements.get("waitlist-status").textContent,
+      harness.strings["ios.challengeFailed"],
+    );
+  });
+
   test(`${language}: a render throw allows a later input to retry`, async () => {
     const harness = createHarness(language, [], { renderFailures: 1 });
     harness.triggerChallenge("focus");

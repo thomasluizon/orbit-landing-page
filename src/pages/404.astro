@@ -1,26 +1,24 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PillButton from "../components/PillButton.astro";
-import SatelliteGlyph from "../components/SatelliteGlyph.astro";
+import LanguageToggle from "../components/LanguageToggle.astro";
+import { translations } from "../i18n/translations";
+const en = translations.en;
 ---
 
-<Layout
-  title="Orbit - Page Not Found"
-  description="The page you're looking for doesn't exist."
-  noindex
->
-  <main class="flex min-h-dvh flex-col items-center justify-center px-6 text-center">
-    <SatelliteGlyph size={96} class="satellite-bob" />
-    <h1 class="t-display mt-8">404</h1>
-    <p class="t-body mt-3 max-w-[400px] text-fg-2">
-      The page you're looking for doesn't exist or has been moved.
-    </p>
-    <div class="mt-8">
-      <PillButton href="/" glow>Back to Home</PillButton>
+<Layout title={en["meta.notFound"]} titleKey="meta.notFound" noindex>
+  <main class="simple-page page-container">
+    <div class="simple-page-tools">
+      <a href="/" class="brand" translate="no"
+        ><img src="/logo.png" alt="" width="48" height="48" /><span>Orbit</span></a
+      ><LanguageToggle />
     </div>
+    <p class="t-meta">404</p>
+    <h1 class="t-display" data-i18n="notFound.title">{en["notFound.title"]}</h1>
+    <p class="t-body text-fg-2" data-i18n="notFound.body">{en["notFound.body"]}</p>
+    <PillButton href="/"><span data-i18n="notFound.cta">{en["notFound.cta"]}</span></PillButton>
   </main>
 </Layout>
-
 <script>
   import "../scripts/i18n";
 </script>

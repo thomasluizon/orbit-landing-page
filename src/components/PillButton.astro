@@ -1,12 +1,13 @@
 ---
-type PillVariant = "primary" | "ghost";
+type PillVariant = "primary" | "secondary" | "ghost";
 type PillSize = "md" | "sm";
 
 interface Props {
   href?: string;
+  type?: "button" | "submit";
+  disabled?: boolean;
   variant?: PillVariant;
   size?: PillSize;
-  glow?: boolean;
   external?: boolean;
   class?: string;
   ariaLabel?: string;
@@ -17,9 +18,10 @@ interface Props {
 
 const {
   href,
+  type = "button",
+  disabled = false,
   variant = "primary",
-  size = "md",
-  glow = false,
+  size = "sm",
   external = false,
   class: className = "",
   ariaLabel,
@@ -30,20 +32,16 @@ const {
 
 const variantClasses: Record<PillVariant, string> = {
   primary:
-    "bg-primary text-fg-on-primary hover:bg-primary-pressed hover:-translate-y-px active:translate-y-0 active:scale-[0.98]",
+    "bg-primary text-fg-on-primary hover:bg-primary-hover active:bg-primary-pressed active:scale-[0.96]",
+  secondary: "bg-fg-1 text-bg hover:bg-fg-2 active:bg-fg-3 active:scale-[0.96]",
   ghost:
-    "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-card active:scale-[0.98]",
+    "bg-transparent text-fg-1 shadow-[inset_0_0_0_1.5px_var(--color-hairline-strong)] hover:bg-bg-hover active:scale-[0.96]",
 };
 
 const sizeClasses: Record<PillSize, string> = {
-  md: variant === "primary" ? "px-[26px] py-[15px] text-[16px]" : "px-[26px] py-[14px] text-[16px]",
-  sm: "min-h-[44px] px-[18px] text-[14px]",
+  md: "pill-md h-[50px] px-[26px] text-[16px] gap-[9px]",
+  sm: "pill-sm h-[40px] px-[18px] text-[14px] gap-[7px]",
 };
-
-const glowClasses =
-  glow && variant === "primary"
-    ? "pill-breathe shadow-[var(--primary-glow)] hover:shadow-[var(--primary-glow-hover)]"
-    : "";
 ---
 
 {
@@ -54,13 +52,14 @@ const glowClasses =
       rel={external ? "noopener noreferrer" : undefined}
       aria-label={ariaLabel}
       id={id}
+      data-primary-action={variant === "primary" || undefined}
+      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
-        glowClasses,
         className,
       ]}
     >
@@ -68,16 +67,18 @@ const glowClasses =
     </a>
   ) : (
     <button
-      type="button"
+      type={type}
+      disabled={disabled}
       aria-label={ariaLabel}
       id={id}
+      data-primary-action={variant === "primary" || undefined}
+      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
-        "inline-flex cursor-pointer items-center justify-center gap-[9px] rounded-full font-sans font-medium transition-[background-color,opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-standard",
+        "control-transition relative inline-flex cursor-pointer items-center justify-center rounded-full font-sans font-medium whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-70",
         variantClasses[variant],
         sizeClasses[size],
-        glowClasses,
         className,
       ]}
     >
@@ -85,3 +86,7 @@ const glowClasses =
     </button>
   )
 }
+
+<script>
+  import "../scripts/primary-actions";
+</script>
