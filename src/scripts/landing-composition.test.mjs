@@ -1119,7 +1119,10 @@ test("every current copy key has locale parity", () => {
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
 });
 
-async function reachFeaturesWithoutPhone(loadProductExamples) {
+async function reachFeaturesWithoutPhone(
+  loadProductExamples,
+  source = readFileSync("src/pages/index.astro", "utf8"),
+) {
   const featureSection = sections.find((node) => attributes(node)["data-section"] === "features");
   assert.ok(featureSection);
   const targets = [
@@ -1133,9 +1136,7 @@ async function reachFeaturesWithoutPhone(loadProductExamples) {
     selector.split(",").some((part) => target.matches(part.trim()));
   const observers = [];
   const imports = [];
-  const script = readFileSync("src/pages/index.astro", "utf8").match(
-    /<script>([\s\S]*?)<\/script>/,
-  )[1];
+  const script = source.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1];
   vm.runInNewContext(
     ts.transpileModule(script, {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
@@ -1187,6 +1188,23 @@ async function reachFeaturesWithoutPhone(loadProductExamples) {
     "reaching features must load their controls without the hero ever intersecting",
   );
   assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
+}
+
+for (const [opening, closing] of [
+  ["<SCRIPT>", "</SCRIPT>"],
+  ["<script>", "</script \n>"],
+  ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
+]) {
+  test(`feature composition extraction accepts ${opening} and ${closing.trim()}`, async () => {
+    const source = readFileSync("src/pages/index.astro", "utf8")
+      .replace("<script>", opening)
+      .replace("</script>", closing);
+    let loaded = false;
+    await reachFeaturesWithoutPhone(() => {
+      loaded = true;
+    }, source);
+    assert.equal(loaded, true);
+  });
 }
 
 test("habit checks, week bars and calendar days work when features are reached without the phone", async () => {

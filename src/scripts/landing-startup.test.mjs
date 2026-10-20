@@ -7,7 +7,11 @@ import ts from "typescript";
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
-function harness({ scheduler = false, readyState = "loading" } = {}) {
+function harness({
+  scheduler = false,
+  readyState = "loading",
+  page = readFileSync("src/pages/index.astro", "utf8"),
+} = {}) {
   const bindings = [];
   const continuations = [];
   const listeners = new Map();
@@ -75,9 +79,7 @@ function harness({ scheduler = false, readyState = "loading" } = {}) {
     return exports;
   }
   context.require = require;
-  const source = readFileSync("src/pages/index.astro", "utf8").match(
-    /<script>([\s\S]*?)<\/script>/,
-  )[1];
+  const source = page.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1];
   vm.runInContext(
     ts.transpileModule(source, {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -111,6 +113,26 @@ function harness({ scheduler = false, readyState = "loading" } = {}) {
       assert.fail("startup tasks must finish");
     },
   };
+}
+
+for (const [opening, closing] of [
+  ["<SCRIPT>", "</SCRIPT>"],
+  ["<script>", "</script \n>"],
+  ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
+]) {
+  test(`startup extraction accepts ${opening} and ${closing.trim()}`, async () => {
+    const page = readFileSync("src/pages/index.astro", "utf8")
+      .replace("<script>", opening)
+      .replace("</script>", closing);
+    const h = harness({ page });
+    assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+    h.intersect(1);
+    h.load();
+    await h.drain();
+    for (const name of [...deferred, "product-examples", "product-metrics"])
+      assert.ok(h.bindings.some((binding) => binding.name === name));
+    assert.ok(!h.bindings.some(({ name }) => name === "demo"));
+  });
 }
 
 for (const scheduler of [false, true]) {
