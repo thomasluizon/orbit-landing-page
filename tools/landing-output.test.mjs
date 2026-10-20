@@ -4,10 +4,51 @@ import test from "node:test";
 import sharp from "sharp";
 
 const html = readFileSync("dist/index.html", "utf8");
-const prose = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "").replace(/<[^>]+>/g, " ");
+function proseFrom(source) {
+  let previous;
+  do {
+    previous = source;
+    source = source.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, "");
+  } while (source !== previous);
+  return source.replace(/<[^>]+>/g, " ");
+}
+function scriptsFrom(source) {
+  return [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
+}
+const prose = proseFrom(html);
 const structured = [
-  ...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g),
+  ...html.matchAll(/<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script\s*>/gi),
 ].map((match) => JSON.parse(match[1]));
+
+for (const hidden of [
+  "<SCRIPT>hidden</SCRIPT>",
+  "<script>hidden</script \n>",
+  "<STYLE>hidden</sTyLe\t>",
+  "<scr<script>inner</script>ipt>hidden</script>",
+  "<sty<style>inner</style>le>hidden</style>",
+]) {
+  test(`prose extraction removes the complete hidden block ${hidden}`, () => {
+    assert.equal(proseFrom(`<p>Before</p>${hidden}<p>After</p>`), " Before  After ");
+  });
+}
+
+for (const [opening, closing] of [
+  ["<SCRIPT", "</SCRIPT>"],
+  ["<script", "</script \n>"],
+  ["<ScRiPt", "</sCrIpT\t>"],
+]) {
+  test(`built script extraction accepts ${opening} and ${closing.trim()}`, () => {
+    for (const source of [html, readFileSync("dist/waitlist-confirmed/index.html", "utf8")]) {
+      const expected = scriptsFrom(source).map(([, attributes, body]) => [attributes, body]);
+      assert.ok(expected.length > 0);
+      const variant = source.replaceAll("<script", opening).replaceAll("</script>", closing);
+      assert.deepEqual(
+        scriptsFrom(variant).map(([, attributes, body]) => [attributes, body]),
+        expected,
+      );
+    }
+  });
+}
 
 test("the built header lockup paints pale ink with only the moon in the accent", async () => {
   const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
@@ -162,8 +203,8 @@ test("confirmation uses native hidden state for both response paths", async () =
       ([, attributes, id]) => [id, attributes],
     ),
   );
-  const script = [...page.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
-    .map(([, code]) => code)
+  const script = scriptsFrom(page)
+    .map(([, , code]) => code)
     .find((code) => code.includes('get("status")'));
   assert.ok(script, "confirmation chooses the response state");
   const { parse } = await import("@astrojs/compiler");
@@ -219,7 +260,7 @@ test("the complete local script graph stays inside the raw byte budget", () => {
     return bytes;
   }
   let bytes = 0;
-  for (const [, attributes, body] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+  for (const [, attributes, body] of scriptsFrom(html)) {
     if (attributes.includes("application/ld+json")) continue;
     const path = attributes.match(/src="([^"]+)"/)?.[1];
     bytes += path ? bytesFor(path) : Buffer.byteLength(body);
@@ -369,7 +410,7 @@ test("the built stylesheet lets the closing data request sentence wrap inside it
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
   ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
-  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, css]) => css);
+  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
   const target = ".closing-legal p .text-link>[data-copy-en]";
   const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
     ([, selectors, body]) =>
