@@ -57,7 +57,3 @@ await writeFile(
   await renderAsset(180, { background: canvasColor, scale: 0.6 }),
 );
 await writeFile("public/logo.png", await renderAsset(96));
-await sharp("src/assets/og-background.png")
-  .composite([{ input: await renderAsset(112), left: 434, top: 340 }])
-  .png({ compressionLevel: 9 })
-  .toFile("public/og-image.png");
