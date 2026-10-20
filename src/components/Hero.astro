@@ -1,136 +1,154 @@
 ---
-import AppMockup from "./AppMockup.astro";
+import AstraDemo from "./AstraDemo.astro";
 import PillButton from "./PillButton.astro";
-import SatelliteGlyph from "./SatelliteGlyph.astro";
-import Starfield from "./Starfield.astro";
-
+import ProductCard from "./ProductCard.astro";
+import PhoneHeader from "./PhoneHeader.astro";
+import HabitRow from "./HabitRow.astro";
+import AstraGlyph from "./AstraGlyph.astro";
+import TrustStrip from "./TrustStrip.astro";
+import Copy from "./Copy.astro";
+import { translations } from "../i18n/translations";
+import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight } from "@lucide/astro";
 interface Props {
-  appUrl: string;
   googlePlayUrl: string;
+  appUrl: string;
 }
-
-const { appUrl, googlePlayUrl } = Astro.props;
-
-const heroStars = [
-  { top: "14%", left: "6%", size: 2, duration: "4.2s" },
-  { top: "26%", left: "16%", size: 1.5, delay: "1.1s" },
-  { top: "9%", left: "28%", size: 2, accent: true, duration: "5s", delay: "0.4s" },
-  { top: "38%", left: "38%", size: 1.5, delay: "2s" },
-  { top: "7%", left: "55%", size: 2, duration: "4.6s" },
-  { top: "20%", left: "70%", size: 1.5, accent: true, delay: "1.6s" },
-  { top: "12%", left: "88%", size: 2, duration: "5.4s", delay: "0.8s" },
-  { top: "46%", left: "90%", size: 1.5, delay: "2.4s" },
-  { top: "58%", left: "4%", size: 2, accent: true, duration: "4.8s", delay: "0.2s" },
-  { top: "72%", left: "12%", size: 1.5, delay: "1.4s" },
-  { top: "84%", left: "30%", size: 2, duration: "5.2s" },
-  { top: "66%", left: "48%", size: 1.5, delay: "0.6s" },
-  { top: "78%", left: "64%", size: 2, accent: true, duration: "4.4s", delay: "1.9s" },
-  { top: "88%", left: "82%", size: 1.5, delay: "2.8s" },
-  { top: "52%", left: "76%", size: 1.5, duration: "5.6s", delay: "1.2s" },
-  { top: "33%", left: "52%", size: 1.5, delay: "3.2s" },
-];
+const { googlePlayUrl, appUrl } = Astro.props;
+const en = translations.en;
 ---
 
-<section class="relative pt-[104px] pb-16 sm:pb-20 lg:flex lg:min-h-dvh lg:items-center lg:pt-16">
-  <div
-    class="pointer-events-none absolute inset-x-0 top-0 h-[340px]"
-    style="background: var(--gradient-header);"
-    aria-hidden="true"
-  >
+<section id="hero" class="hero" data-section="hero">
+  <div class="hero-copy">
+    <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
+    <p class="hero-description" translate="no" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
-  <Starfield stars={heroStars} />
-
-  <div
-    class="page-container relative grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:gap-10"
-  >
-    <div class="text-center lg:text-left">
-      <p class="t-eyebrow hero-rise" data-i18n="hero.eyebrow">Meet Astra, your AI coach</p>
-      <h1 class="t-hero hero-rise mt-4 [text-wrap:balance]" style="animation-delay: 60ms;">
-        <span class="block" data-i18n="hero.title1">The habit tracker</span>
-        <span class="block" data-i18n="hero.title2">you can talk to</span>
-      </h1>
-      <p
-        class="t-body hero-rise mx-auto mt-6 max-w-[480px] text-fg-2 [text-wrap:pretty] lg:mx-0"
-        style="animation-delay: 120ms;"
-        data-i18n="hero.subtitle"
+  <div class="hero-controls">
+    <div class="hero-actions">
+      <PillButton
+        href={googlePlayUrl}
+        size="md"
+        external
+        analyticsEvent="hero_google_play_cta_clicked"
+        analyticsSurface="hero"
+        ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
-        Astra is an AI coach that acts, not just chats. Say "I ran today" and it logs it. Ask "how
-        am I doing?" and it reads your real streaks. Type, speak, or connect your own AI assistant.
-      </p>
-      <div
-        class="hero-rise mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start"
-        style="animation-delay: 180ms;"
-      >
-        <PillButton
-          href={appUrl}
-          glow
-          analyticsEvent="hero_app_cta_clicked"
-          analyticsSurface="hero"
-        >
-          <span data-i18n="hero.cta">Start free</span>
-        </PillButton>
-        <PillButton
-          href={googlePlayUrl}
-          variant="ghost"
-          external
-          ariaLabel="Open Orbit on Google Play"
-          analyticsEvent="hero_google_play_cta_clicked"
-          analyticsSurface="hero"
-        >
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path
-              d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 3.658L16.8 9.99l-2.302 2.302L5.864 3.658z"
-            ></path>
-          </svg>
-          <span data-i18n="hero.android">Google Play</span>
-        </PillButton>
-      </div>
-      <p class="t-meta hero-rise mt-4" style="animation-delay: 220ms;" data-i18n="hero.ctaNote">
-        7-day Pro trial, no card required
-      </p>
-    </div>
-
-    <div
-      class="hero-rise relative mx-auto lg:mx-0 lg:justify-self-end"
-      style="animation-delay: 240ms;"
-    >
-      <svg
-        class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2"
-        viewBox="0 0 700 500"
-        fill="none"
-        aria-hidden="true"
-      >
-        <ellipse
-          cx="350"
-          cy="250"
-          rx="268"
-          ry="148"
-          stroke="var(--color-hairline)"
-          stroke-width="1"
-          transform="rotate(-14 350 250)"></ellipse>
-        <ellipse
-          cx="350"
-          cy="250"
-          rx="322"
-          ry="182"
-          stroke="var(--color-hairline)"
-          stroke-width="1"
-          opacity="0.6"
-          transform="rotate(-14 350 250)"></ellipse>
-      </svg>
-      <div
-        class="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 -translate-y-1/2 rotate-[-14deg]"
-        aria-hidden="true"
-      >
-        <span
-          class="orbit-dot h-[6px] w-[6px] rounded-full bg-primary"
-          style="box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.8);"></span>
-        <span
-          class="orbit-dot orbit-dot-outer h-[4px] w-[4px] rounded-full"
-          style="background: color-mix(in srgb, var(--color-primary) 55%, white);"></span>
-      </div>
-      <SatelliteGlyph size={72} class="satellite-bob absolute -top-10 -right-6 sm:-right-12" />
-      <AppMockup />
     </div>
   </div>
+  <div class="hero-pin-range">
+    <div class="hero-stage" id="hero-stage">
+      <div class="hero-phone">
+        <div class="hero-device">
+          <div class="device-screen">
+            <div class="phone-screen">
+              <div class="device-status" aria-hidden="true">
+                <span class="device-status-time" data-mock>9:41</span>
+                <span class="device-speaker"></span>
+                <span class="device-status-icons"
+                  ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+                >
+              </div>
+              <div class="phone-carousel" data-phone-carousel>
+                <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
+                  <AstraDemo appUrl={appUrl} />
+                </div>
+                <div
+                  class="phone-slide"
+                  id="phone-today"
+                  data-phone-slide="today"
+                  data-product-screen
+                >
+                  <PhoneHeader>
+                    <div class="phone-today-pager">
+                      <span class="phone-day-chevron" aria-hidden="true"
+                        ><ChevronLeft size={20} /></span
+                      >
+                      <div class="phone-today-date">
+                        <h2><Copy name="product.today" /></h2>
+                        <p class="product-caption"><Copy name="today.date" /></p>
+                      </div>
+                      <span class="phone-day-chevron" aria-hidden="true"
+                        ><ChevronRight size={20} /></span
+                      >
+                    </div>
+                  </PhoneHeader>
+                  <div class="phone-content phone-today-content">
+                    <div class="proactive-line phone-today-astra">
+                      <AstraGlyph size={16} />
+                      <p><Copy name="today.astra" /></p>
+                    </div>
+                    <div class="phone-today-habits">
+                      <HabitRow habit="water" timing="done" time="08:00" data-first-visible />
+                      <HabitRow habit="stretch" timing="done" />
+                      <HabitRow habit="walk" timing="todo" time="18:00" />
+                      <HabitRow habit="read" timing="todo" />
+                      <HabitRow habit="run" days={7} data-last-visible />
+                      <HabitRow habit="walk" timing="todo" data-demo-approved hidden>
+                        <span slot="name" data-approved-name></span>
+                        <span slot="repeat" data-approved-repeat></span>
+                      </HabitRow>
+                      <HabitRow habit="read" timing="todo" data-demo-approved-second hidden>
+                        <span slot="name" data-i18n="demo.move.secondHabit">
+                          {en["demo.move.secondHabit"]}
+                        </span>
+                        <span slot="repeat" data-approved-second-repeat></span>
+                      </HabitRow>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="device-home" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-pager">
+        <div
+          class="carousel-segments"
+          role="group"
+          aria-label={en["carousel.label"]}
+          data-i18n-label="carousel.label"
+        >
+          {
+            (["chat", "today"] as const).map((screen, index) => (
+              <button
+                type="button"
+                class="carousel-segment"
+                data-carousel-segment={index}
+                aria-controls={`phone-${screen}`}
+                aria-current={index === 0 ? "true" : "false"}
+                aria-label={en[`carousel.${screen}`]}
+                data-i18n-label={`carousel.${screen}`}
+              >
+                <span class="carousel-marker" aria-hidden="true" />
+              </button>
+            ))
+          }
+        </div>
+      </div>
+      <div class="hero-products">
+        <div class="hero-side hero-left" data-hero-column>
+          <p class="hero-phrase phrase-start" data-hero-float>
+            <Copy name="phrase.start" />
+          </p>
+          <div class="hero-float float-reminder" data-hero-float>
+            <ProductCard kind="reminder" />
+          </div>
+        </div>
+        <div class="hero-side hero-right" data-hero-column>
+          <div class="hero-float float-insight" data-hero-float>
+            <ProductCard kind="insight" />
+          </div>
+          <div class="hero-float float-week" data-hero-float>
+            <ProductCard kind="week" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <TrustStrip />
 </section>
+
+<script>
+  import "../scripts/phone-screen";
+  import "../scripts/hero-carousel";
+</script>

@@ -1,0 +1,162 @@
+---
+import { Check, Snowflake, Trophy } from "@lucide/astro";
+import Copy from "./Copy.astro";
+import { exampleDate } from "../config/product-examples";
+import { landingCopy } from "../i18n/translations";
+interface Props {
+  kind: "calendar" | "progress" | "achievements";
+}
+const { kind } = Astro.props;
+const cells = Array.from({ length: 42 }, (_, index) => index - 4);
+function datedCopy(day: number, language: "en" | "pt-BR" = "en") {
+  const date = new Intl.DateTimeFormat(language, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${exampleDate.slice(0, 8)}${day}`));
+  return landingCopy[language]["orbit.selectedDay"].replace("{date}", date);
+}
+---
+
+<div class:list={["orbit-composition", `orbit-${kind}`]} data-mock="true" data-product-kind={kind}>
+  {
+    kind === "calendar" && (
+      <>
+        <div class="product-block orbit-product" data-composition-card>
+          <div>
+            <>
+              <h3>
+                <Copy name="orbit.calendar" />
+              </h3>
+              <p class="product-caption">
+                <Copy name="orbit.google" />
+              </p>
+            </>
+          </div>
+          <p class="orbit-month-title">
+            <Copy name="orbit.august" />
+          </p>
+          <div
+            class="orbit-month-grid"
+            role="group"
+            aria-label={landingCopy.en["orbit.calendar"]}
+            data-copy-label-en={landingCopy.en["orbit.calendar"]}
+            data-copy-label-pt={landingCopy["pt-BR"]["orbit.calendar"]}
+          >
+            {landingCopy.en["product.days"].split(" ").map((day, index) => (
+              <span
+                class="product-caption"
+                aria-hidden="true"
+                data-copy-en={day}
+                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
+              >
+                {day}
+              </span>
+            ))}
+            {cells.map((day, index) =>
+              day > 0 && day <= 31 ? (
+                <button
+                  type="button"
+                  class="orbit-date"
+                  data-calendar-day={day}
+                  data-calendar-week={Math.floor(index / 7)}
+                  aria-pressed={day === 17}
+                  aria-label={datedCopy(day)}
+                  data-copy-label-en={datedCopy(day)}
+                  data-copy-label-pt={datedCopy(day, "pt-BR")}
+                >
+                  {day}
+                  {day < 18 && (
+                    <span class:list={["orbit-date-dot", { "is-done": day % 4 !== 0 }]} />
+                  )}
+                </button>
+              ) : (
+                <span data-calendar-week={Math.floor(index / 7)} />
+              ),
+            )}
+          </div>
+          <div class="calendar-day-card">
+            <h3
+              data-calendar-readout
+              aria-live="polite"
+              data-copy-en={datedCopy(17)}
+              data-copy-pt={datedCopy(17, "pt-BR")}
+            >
+              {datedCopy(17)}
+            </h3>
+            <div data-calendar-events data-composition-secondary>
+              <>
+                <p class="product-caption">
+                  <Copy name="orbit.events" />
+                </p>
+                <p>
+                  <Copy name="orbit.teamMeeting" /> <span class="product-caption">10:00</span>
+                </p>
+                <p>
+                  <Copy name="orbit.dentist" /> <span class="product-caption">15:30</span>
+                </p>
+              </>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+  {
+    kind === "progress" && (
+      <div class="product-block orbit-product" data-composition-card>
+        <h3>
+          <Copy name="orbit.progress" />
+        </h3>
+        <div class="orbit-streak">
+          <span class="orbit-streak-number">12</span>
+          <Copy name="orbit.streak" />
+        </div>
+        <div class="orbit-list-row">
+          <Snowflake size={24} aria-hidden="true" />
+          <div class="orbit-row-copy">
+            <h3>
+              <Copy name="orbit.freezes" /> · 2
+            </h3>
+            <p class="product-caption">
+              <Copy name="orbit.repair" />
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  {
+    kind === "achievements" && (
+      <div class="product-block" data-composition-card>
+        <div class="orbit-list-row">
+          <>
+            <Trophy size={24} aria-hidden="true" />
+            <h3>
+              <Copy name="orbit.achievements" />
+            </h3>
+          </>
+        </div>
+        {(["orbit.firstWeek", "orbit.firstHabit"] as const).map((name) => (
+          <div class="orbit-list-row">
+            <span class="status-ring is-done" aria-hidden="true">
+              <Check size={16} />
+            </span>
+            <div>
+              <p>
+                <Copy name={name} />
+              </p>
+              <p class="product-caption">
+                <Copy name="orbit.earned" />
+              </p>
+            </div>
+          </div>
+        ))}
+        <p class="product-caption">
+          <Copy name="orbit.wrapped" />
+        </p>
+      </div>
+    )
+  }
+</div>

@@ -1,0 +1,31 @@
+# Orbit
+
+> Orbit is an AI that tracks habits, with Astra to help you start, adjust a routine, or return after a missed day.
+
+Orbit is for people who find keeping a routine hard, including people with ADHD. It was built by a software engineer with ADHD who wanted a simple, forgiving habit tracker.
+
+## Habits and Astra
+
+Ask Astra, Orbit's AI assistant, to create, log, or adjust habits by text or voice. Review each proposed change in a preview: approve, edit, or reject it before it is saved. Astra can be wrong.
+
+The habit list stays available between conversations. Mark habits done even offline, choose when they repeat, and track habits you want to stop. Break habits into subhabits and checklists, link them to goals, and follow streaks and completion history. The Android widget puts habits on your home screen.
+
+Orbit also provides a Model Context Protocol (MCP) server for connecting compatible AI assistants.
+
+## Platforms
+
+Orbit runs on Android and the web. Install it from Google Play or open the web app to sign up. An iOS waitlist is available on the landing page.
+
+## Pricing
+
+Free includes habits, subhabits, goals, streaks, Orbit Wrapped, and access to Astra. Pro offers more Astra messages, Google Calendar sync, periodic retrospectives, and proactive check ins.
+
+Pro costs US$9.99 per month or US$69.99 per year. A Pro trial starts without a card. Cancel your subscription anytime.
+
+## Links
+
+- [Landing page](https://useorbit.org/)
+- [Web app and sign up](https://app.useorbit.org/)
+- [Android app on Google Play](https://play.google.com/store/apps/details?id=org.useorbit.app)
+- [Privacy policy](https://app.useorbit.org/privacy)
+- [Terms](https://app.useorbit.org/terms)

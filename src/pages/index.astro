@@ -1,58 +1,71 @@
 ---
+import { ArrowUp } from "@lucide/astro";
 import Layout from "../layouts/Layout.astro";
-import Cta from "../components/Cta.astro";
-import Faq from "../components/Faq.astro";
-import Features from "../components/Features.astro";
-import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import FeatureRows from "../components/FeatureRows.astro";
+import Pricing from "../components/Pricing.astro";
+import Faq from "../components/Faq.astro";
+import FinalCta from "../components/FinalCta.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
-import Mcp from "../components/Mcp.astro";
-import Platforms from "../components/Platforms.astro";
-import Pricing from "../components/Pricing.astro";
-import Proof from "../components/Proof.astro";
 import { translations } from "../i18n/translations";
-
-const appUrl = import.meta.env.PUBLIC_APP_URL || "https://app.useorbit.org";
-const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
-
-const en = translations.en;
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: [1, 2, 3, 4, 5, 6, 7].map((n) => ({
-    "@type": "Question",
-    name: en[`faq.q${n}` as keyof typeof en],
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: en[`faq.a${n}` as keyof typeof en],
-    },
-  })),
-};
+import { appUrl, googlePlayUrl } from "../config/links";
 ---
 
-<Layout extraJsonLd={faqJsonLd}>
-  <a href="#main-content" class="skip-to-content">Skip to content</a>
-  <Header appUrl={appUrl} />
-  <main id="main-content">
-    <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
-    <Features />
-    <Mcp />
-    <Proof />
-    <Pricing appUrl={appUrl} />
-    <Platforms appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
-    <IosWaitlist />
-    <Faq />
-    <Cta appUrl={appUrl} />
-  </main>
-  <Footer appUrl={appUrl} />
+<Layout withAstraGlyph>
+  <div class="landing-shell">
+    <a href="#main-content" class="skip-to-content" data-i18n="skip">{translations.en.skip}</a>
+    <Header appUrl={appUrl} />
+    <main id="main-content" tabindex="-1">
+      <Hero googlePlayUrl={googlePlayUrl} appUrl={appUrl} />
+      <FeatureRows />
+      <Pricing appUrl={appUrl} />
+      <IosWaitlist />
+      <Faq />
+      <FinalCta appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
+    </main>
+    <button
+      type="button"
+      id="back-to-top"
+      class="back-to-top"
+      hidden
+      aria-label={translations.en["back.top"]}
+      data-i18n-label="back.top"><ArrowUp size={20} /></button
+    >
+  </div>
 </Layout>
 
 <script>
-  import "../scripts/counter";
-  import "../scripts/header-scroll";
   import "../scripts/i18n";
-  import "../scripts/reveal";
-  import "../scripts/tilt";
-  import "../scripts/waitlist";
+  import { afterLoad } from "../scripts/task-queue";
+
+  void afterLoad([
+    () => import("../scripts/pricing"),
+    () => import("../scripts/faq"),
+    () => import("../scripts/back-to-top"),
+    () => import("../scripts/scroll"),
+    () => import("../scripts/waitlist"),
+    () => import("../scripts/waitlist-section"),
+  ]);
+
+  const previewObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        previewObserver.unobserve(entry.target);
+        void afterLoad([
+          () => import("../scripts/product-examples"),
+          async () => {
+            if (entry.target.matches(".hero-device")) await import("../scripts/demo");
+            if (entry.target.matches('[data-section="features"]'))
+              await import("../scripts/product-metrics");
+          },
+        ]);
+      }
+    },
+    { rootMargin: "160px" },
+  );
+  document
+    .querySelectorAll('.hero-device, [data-section="features"]')
+    .forEach((surface) => previewObserver.observe(surface));
 </script>

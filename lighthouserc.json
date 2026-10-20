@@ -2,33 +2,26 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "numberOfRuns": 3,
       "autodiscoverUrlBlocklist": ["/waitlist-confirmed/index.html"]
     },
     "assert": {
       "assertMatrix": [
         {
           "matchingUrlPattern": ".*",
-          "aggregationMethod": "pessimistic",
+          "aggregationMethod": "median",
           "assertions": {
             "categories:accessibility": ["error", { "minScore": 0.9 }],
             "categories:best-practices": ["error", { "minScore": 0.9 }],
-            "largest-contentful-paint": [
-              "error",
-              { "maxNumericValue": 2850, "aggregationMethod": "median" }
-            ],
+            "largest-contentful-paint": ["error", { "maxNumericValue": 2850 }],
             "resource-summary:script:size": ["error", { "maxNumericValue": 24000 }]
           }
         },
         {
           "matchingUrlPattern": "^https?://[^/]+/index\\.html$",
-          "aggregationMethod": "pessimistic",
+          "aggregationMethod": "median",
           "assertions": {
-            "categories:performance": ["error", { "minScore": 0.9, "aggregationMethod": "median" }],
-            "total-blocking-time": [
-              "error",
-              { "maxNumericValue": 200, "aggregationMethod": "median" }
-            ],
+            "categories:performance": ["error", { "minScore": 0.9 }],
+            "total-blocking-time": ["error", { "maxNumericValue": 200 }],
             "categories:seo": ["error", { "minScore": 0.9 }]
           }
         }

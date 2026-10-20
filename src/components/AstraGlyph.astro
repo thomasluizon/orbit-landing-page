@@ -1,0 +1,41 @@
+---
+import astraMark from "../../public/brand/astra-mark.svg?raw";
+import astraMark16 from "../../public/brand/astra-mark-16.svg?raw";
+interface Props {
+  definition?: boolean;
+  class?: string;
+  size?: 16 | 20 | 24 | 48;
+}
+const { definition = false, class: className, size = 24 } = Astro.props;
+const [regular, small] = [astraMark, astraMark16].map((asset) => ({
+  viewBox: asset.match(/viewBox="([^"]+)"/)![1],
+  paths: asset.slice(asset.indexOf("<path"), asset.lastIndexOf("</svg>")),
+}));
+const mark = size === 16 ? small : regular;
+---
+
+{
+  definition ? (
+    <svg width="0" height="0" aria-hidden="true" class="glyph-definitions">
+      <defs>
+        <symbol id="astra-mark" viewBox={regular.viewBox}>
+          <Fragment set:html={regular.paths} />
+        </symbol>
+        <symbol id="astra-mark-16" viewBox={small.viewBox}>
+          <Fragment set:html={small.paths} />
+        </symbol>
+      </defs>
+    </svg>
+  ) : (
+    <svg
+      viewBox={mark.viewBox}
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+      class={className}
+    >
+      <use href={size === 16 ? "#astra-mark-16" : "#astra-mark"} />
+    </svg>
+  )
+}
