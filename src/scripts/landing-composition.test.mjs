@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 import { parse } from "@astrojs/compiler";
+import { scriptsFrom } from "./html.test-helper.mjs";
 
 const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
@@ -1136,7 +1137,7 @@ async function reachFeaturesWithoutPhone(
     selector.split(",").some((part) => target.matches(part.trim()));
   const observers = [];
   const imports = [];
-  const script = source.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1];
+  const script = scriptsFrom(source)[0].body;
   vm.runInNewContext(
     ts.transpileModule(script, {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
@@ -1194,6 +1195,9 @@ for (const [opening, closing] of [
   ["<SCRIPT>", "</SCRIPT>"],
   ["<script>", "</script \n>"],
   ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
+  ['<ScRiPt data-startup="true">', "</sCrIpT\t\n bar>"],
+  ["<script>", "</script/foo>"],
+  ["<script>", "</script/ >"],
 ]) {
   test(`feature composition extraction accepts ${opening} and ${closing.trim()}`, async () => {
     const source = readFileSync("src/pages/index.astro", "utf8")
