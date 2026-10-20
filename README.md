@@ -46,7 +46,7 @@ Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Bra
 
 ## Prerequisites
 
-- **Node.js** >= 22.19.0
+- **Node.js** `^22.22.3 || ^24.16.0 || >=26.3.0` (the `engines` range in `package.json`)
 
 ## Getting Started
 
@@ -128,7 +128,7 @@ Render build contract:
 
 | Setting           | Value                     |
 | ----------------- | ------------------------- |
-| Node.js           | `NODE_VERSION=22.19.0`    |
+| Node.js           | `NODE_VERSION=22.22.3`    |
 | Build command     | `npm ci && npm run build` |
 | Publish directory | `dist`                    |
 | Auto-deploy       | Disabled                  |
