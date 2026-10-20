@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
@@ -79,7 +80,7 @@ function harness({
     return exports;
   }
   context.require = require;
-  const source = page.match(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/i)[1];
+  const source = scriptsFrom(page)[0].body;
   vm.runInContext(
     ts.transpileModule(source, {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -119,6 +120,7 @@ for (const [opening, closing] of [
   ["<SCRIPT>", "</SCRIPT>"],
   ["<script>", "</script \n>"],
   ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
+  ['<ScRiPt data-startup="true">', "</sCrIpT\t\n bar>"],
 ]) {
   test(`startup extraction accepts ${opening} and ${closing.trim()}`, async () => {
     const page = readFileSync("src/pages/index.astro", "utf8")
