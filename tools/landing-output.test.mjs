@@ -130,6 +130,24 @@ test("the single closing web app action keeps the existing app event and footer 
   assert.ok(action.includes('data-copy-pt="Abrir no navegador"'));
 });
 
+for (const [plan, copy, path] of [
+  ["free", "Start free", ""],
+  ["pro", "Try Pro", "/upgrade"],
+]) {
+  test(`the built ${plan} pricing action keeps its attribution, copy and destination`, () => {
+    const pricing = html.match(/<section\b[^>]*id="pricing"[^>]*>[\s\S]*?<\/section>/)?.[0];
+    assert.ok(pricing);
+    const actions = [...pricing.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)].map(([tag]) => tag);
+    assert.equal(actions.length, 2);
+    const action = actions.find((tag) => tag.includes(`data-copy-en="${copy}"`));
+    assert.ok(action, `${plan} pricing retains its copy`);
+    assert.ok(action.includes(`data-analytics-event="pricing_${plan}_cta_clicked"`));
+    assert.ok(action.includes(`data-analytics-surface="pricing_${plan}"`));
+    const appUrl = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+    assert.ok(action.includes(`href="${appUrl}${path}"`));
+  });
+}
+
 test("the built homepage follows the scrolling Astra composition with the dedicated waitlist section", () => {
   assert.match(html, /class="landing-shell"/);
   assert.match(html, /id="astra-demo"/);

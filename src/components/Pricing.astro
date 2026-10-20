@@ -78,7 +78,12 @@ const { appUrl } = Astro.props;
           }
         </ul>
         <div class="plan-action">
-          <PillButton href={appUrl} variant="ghost"><Copy name="action.start" /></PillButton>
+          <PillButton
+            href={appUrl}
+            variant="ghost"
+            analyticsEvent="pricing_free_cta_clicked"
+            analyticsSurface="pricing_free"><Copy name="action.start" /></PillButton
+          >
         </div>
       </article>
       <article class="plan-card plan-pro" data-plan-period="yearly">
@@ -110,7 +115,11 @@ const { appUrl } = Astro.props;
           }
         </ul>
         <div class="plan-action">
-          <PillButton href={`${appUrl}/upgrade`}><Copy name="pricing.pro.cta" /></PillButton>
+          <PillButton
+            href={`${appUrl}/upgrade`}
+            analyticsEvent="pricing_pro_cta_clicked"
+            analyticsSurface="pricing_pro"><Copy name="pricing.pro.cta" /></PillButton
+          >
         </div>
       </article>
     </div>

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
+import { parse } from "@astrojs/compiler";
 import ts from "typescript";
 
 class FakeEventTarget {
@@ -217,6 +218,71 @@ async function executeProductionScripts(harness) {
     }).outputText;
     vm.runInContext(script, harness.context);
   }
+}
+
+async function pricingControls() {
+  const { ast } = await parse(await readFile("src/components/Pricing.astro", "utf8"));
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const buttons = descendants(ast).filter((node) => node.name === "PillButton");
+  assert.equal(buttons.length, 2);
+  return buttons.map((button) => {
+    const attributes = Object.fromEntries(
+      button.attributes.map(({ name, value }) => [name, value]),
+    );
+    const control = new FakeElement();
+    control.dataset.analyticsEvent = attributes.analyticsEvent;
+    control.dataset.analyticsSurface = attributes.analyticsSurface;
+    return control;
+  });
+}
+
+for (const [index, plan] of ["free", "pro"].entries()) {
+  test(`allowing consent captures the ${plan} pricing control's event and surface`, async () => {
+    const control = (await pricingControls())[index];
+    const harness = createHarness();
+    await executeProductionScripts(harness);
+    harness.window.dispatchEvent({ type: "load" });
+    harness.acceptButton.click();
+    harness.completePostHogLoad();
+    harness.capturedCalls.length = 0;
+    harness.document.dispatchEvent({ type: "click", target: control });
+
+    assert.deepEqual(harness.capturedCalls, [
+      {
+        eventName: `pricing_${plan}_cta_clicked`,
+        properties: { surface: `pricing_${plan}` },
+        options: { transport: "sendBeacon", send_instantly: true },
+      },
+    ]);
+
+    harness.preferencesButton.click();
+    harness.declineButton.click();
+    harness.capturedCalls.length = 0;
+    harness.networkRequests.length = 0;
+    harness.document.dispatchEvent({ type: "click", target: control });
+    assert.deepEqual(harness.capturedCalls, []);
+    assert.deepEqual(harness.networkRequests, []);
+  });
+
+  test(`declining consent prevents ${plan} pricing capture now and after reload`, async () => {
+    const control = (await pricingControls())[index];
+    const harness = createHarness();
+    await executeProductionScripts(harness);
+    harness.window.dispatchEvent({ type: "load" });
+    harness.declineButton.click();
+    harness.completePostHogLoad();
+    harness.document.dispatchEvent({ type: "click", target: control });
+    assert.deepEqual(harness.capturedCalls, []);
+    assert.deepEqual(harness.networkRequests, []);
+
+    const reload = createHarness("declined");
+    await executeProductionScripts(reload);
+    reload.window.dispatchEvent({ type: "load" });
+    reload.completePostHogLoad();
+    reload.document.dispatchEvent({ type: "click", target: control });
+    assert.deepEqual(reload.capturedCalls, []);
+    assert.deepEqual(reload.networkRequests, []);
+  });
 }
 
 test("a first-time visitor makes no PostHog request and captures nothing before consent", async () => {
