@@ -136,7 +136,9 @@ for (const [environment, scheme, packageName] of [
       assert.equal(intent.package, packageName);
       assert.equal(decodeURIComponent(intent["S.browser_fallback_url"]), play);
       assert.equal(intent.url.pathname, path.split("?")[0]);
-      assert.equal(intent.url.search, new URL(app + path).search);
+      const web = new URL(app + path);
+      assert.equal(nativeTitle(intent.url), web.searchParams.get("title"));
+      assert.deepEqual([...intent.url.searchParams.keys()], [...web.searchParams.keys()]);
     }
   });
 }
@@ -152,10 +154,7 @@ test("current accepted href is read on each click, with nested and keyboard targ
   h.click(link);
   assert.equal(h.assignments.length, 3);
   assert.equal(decodedIntent(h.assignments[1]).url.pathname, "/upgrade");
-  assert.equal(
-    decodedIntent(h.assignments[2]).url.searchParams.get("title"),
-    demo.searchParams.get("title"),
-  );
+  assert.equal(nativeTitle(decodedIntent(h.assignments[2]).url), demo.searchParams.get("title"));
 });
 test("browser fallback is encoded independently, including configured store query values", () => {
   const environment = {
@@ -170,26 +169,77 @@ test("browser fallback is encoded independently, including configured store quer
     encodeURIComponent(environment.PUBLIC_ANDROID_INSTALL_URL),
   );
 });
-test("lossy receiver titles stay HTTPS, with no intent directive injection", () => {
-  const h = harness();
-  for (const title of [
-    "Read & reflect",
-    "a+b",
-    "a#b",
-    "%26",
-    "100%",
+function nativeTitle(url) {
+  const value = url.searchParams.get("title");
+  return value === null ? null : decodeURIComponent(decodeURIComponent(decodeURIComponent(value)));
+}
+const nativeTitleVectors = [
+  ["", "title="],
+  ["Walk", "title=Walk"],
+  ["Walk today", "title=Walk%25252520today"],
+  [
+    " Olá 🌙 ",
+    "title=%25252520Ol%252525C3%252525A1%25252520%252525F0%2525259F%2525258C%25252599%25252520",
+  ],
+  ["Read & reflect", "title=Read%25252520%25252526%25252520reflect"],
+  ["a+b", "title=a%2525252Bb"],
+  ["a#b", "title=a%25252523b"],
+  ["100%", "title=100%25252525"],
+  ["%26", "title=%2525252526"],
+  ["%2526", "title=%252525252526"],
+  ["a;b", "title=a%2525253Bb"],
+  ["a?b", "title=a%2525253Fb"],
+  ["a=b", "title=a%2525253Db"],
+  ["a/b\\c", "title=a%2525252Fb%2525255Cc"],
+  [
+    "emoji 👩🏽‍🚀",
+    "title=emoji%25252520%252525F0%2525259F%25252591%252525A9%252525F0%2525259F%2525258F%252525BD%252525E2%25252580%2525258D%252525F0%2525259F%2525259A%25252580",
+  ],
+  ["'!()*", "title='!()*"],
+  ["line\nbreak", "title=line%2525250Abreak"],
+  ["trailing ", "title=trailing%25252520"],
+  ["\tline\nnext\r", "title=%25252509line%2525250Anext%2525250D"],
+  ["nonbreaking space", "title=nonbreaking%252525C2%252525A0space"],
+  [
+    "中文字",
+    "title=%252525E4%252525B8%252525AD%252525E6%25252596%25252587%252525E5%252525AD%25252597",
+  ],
+  [
     "#Intent;scheme=evil;package=evil;S.browser_fallback_url=https://evil.invalid;end",
-    "line\nbreak",
-    "trailing ",
-  ]) {
-    const url = new URL("/habits/new", production.PUBLIC_APP_URL);
-    url.searchParams.set("title", title);
-    const link = h.anchor(url.href);
-    assert.equal(h.click(link).defaultPrevented, false, title);
-    assert.equal(link.href, url.href);
-  }
-  assert.deepEqual(h.assignments, []);
-});
+    "title=%25252523Intent%2525253Bscheme%2525253Devil%2525253Bpackage%2525253Devil%2525253BS.browser_fallback_url%2525253Dhttps%2525253A%2525252F%2525252Fevil.invalid%2525253Bend",
+  ],
+  [" \n", "title=%25252520%2525250A"],
+  [" a\u0000b ", "title=%25252520a%25252500b%25252520"],
+];
+for (const environment of [production, staging]) {
+  test(`${environment.PUBLIC_APP_URL}: Expo Router 57.0.24 title vectors dispatch once without directive injection`, () => {
+    const h = harness(environment);
+    for (const [title, query] of nativeTitleVectors) {
+      const url = new URL("/habits/new", environment.PUBLIC_APP_URL);
+      url.searchParams.set("title", title);
+      const link = h.anchor(url.href);
+      const before = h.assignments.length;
+      assert.equal(h.click(link).defaultPrevented, true, title);
+      assert.equal(h.assignments.length, before + 1, title);
+      assert.equal(link.href, url.href);
+      const intent = decodedIntent(h.assignments.at(-1));
+      assert.equal(intent.url.pathname, "/habits/new");
+      assert.equal(intent.url.search, `?${query}`);
+      assert.equal(intent.url.hash, "");
+      assert.deepEqual([...intent.url.searchParams.keys()], ["title"]);
+      assert.equal(nativeTitle(intent.url), title);
+      assert.equal(
+        intent.package,
+        new URL(environment.PUBLIC_ANDROID_INSTALL_URL).searchParams.get("id"),
+      );
+      assert.equal(intent.scheme, environment === staging ? "orbit-staging" : "orbit");
+      assert.equal(
+        intent["S.browser_fallback_url"],
+        encodeURIComponent(environment.PUBLIC_ANDROID_INSTALL_URL),
+      );
+    }
+  });
+}
 test("desktop, iOS, unknown and unsupported activations retain ordinary link semantics", () => {
   for (const ua of [
     "",

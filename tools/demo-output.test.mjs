@@ -655,9 +655,44 @@ for (const language of ["en", "pt-BR"]) {
     const h = harness(language);
     const link = h.get("demo-continue-link");
     assert.ok(link.hasAttribute("data-app-entry"));
-    for (const title of ["Walk today", "Olá 🌙;walk?today", "Read & reflect", "a+b#%26"]) {
+    for (const [input, query] of [
+      ["Walk today", "title=Walk%25252520today"],
+      ["Read & reflect", "title=Read%25252520%25252526%25252520reflect"],
+      ["a+b", "title=a%2525252Bb"],
+      ["a#b", "title=a%25252523b"],
+      ["100%", "title=100%25252525"],
+      ["%26", "title=%2525252526"],
+      ["%2526", "title=%252525252526"],
+      ["a;b", "title=a%2525253Bb"],
+      ["a?b", "title=a%2525253Fb"],
+      ["a=b", "title=a%2525253Db"],
+      ["a/b\\c", "title=a%2525252Fb%2525255Cc"],
+      [
+        "emoji 👩🏽‍🚀",
+        "title=emoji%25252520%252525F0%2525259F%25252591%252525A9%252525F0%2525259F%2525258F%252525BD%252525E2%25252580%2525258D%252525F0%2525259F%2525259A%25252580",
+      ],
+      ["'!()*", "title='!()*"],
+      ["nonbreaking space", "title=nonbreaking%252525C2%252525A0space"],
+      [
+        "中文字",
+        "title=%252525E4%252525B8%252525AD%252525E6%25252596%25252587%252525E5%252525AD%25252597",
+      ],
+      [
+        "#Intent;scheme=evil;package=evil;S.browser_fallback_url=https://evil.invalid;end",
+        "title=%25252523Intent%2525253Bscheme%2525253Devil%2525253Bpackage%2525253Devil%2525253BS.browser_fallback_url%2525253Dhttps%2525253A%2525252F%2525252Fevil.invalid%2525253Bend",
+      ],
+      ["  Walk today  ", "title=Walk%25252520today"],
+      ["line\nnext\tstep", "title=line%2525250Anext%25252509step"],
+      ["Walk".repeat(100), `title=${"Walk".repeat(20)}`],
+      [
+        "Olá 🌙;walk?today",
+        "title=Ol%252525C3%252525A1%25252520%252525F0%2525259F%2525258C%25252599%2525253Bwalk%2525253Ftoday",
+      ],
+      ["a+b#%26", "title=a%2525252Bb%25252523%2525252526"],
+    ]) {
+      const title = input.trim().slice(0, 80);
       h.get("demo-edit").fire("click");
-      h.get("demo-edit-name").value = title;
+      h.get("demo-edit-name").value = input;
       h.get("demo-edit-schedule").value = "evening";
       h.get("demo-edit-form").fire("submit");
       h.get("demo-approve").fire("click");
@@ -665,14 +700,31 @@ for (const language of ["en", "pt-BR"]) {
       assert.equal(destination.pathname, "/habits/new");
       assert.equal(destination.searchParams.get("title"), title);
       const before = h.intents.length;
-      const lossy = /[&#+%]/u.test(title);
-      assert.equal(h.enter().defaultPrevented, !lossy);
-      assert.equal(h.intents.length, before + (lossy ? 0 : 1));
-      if (!lossy) {
-        const uri = h.intents.at(-1).split("#Intent;")[0].replace("intent:", "orbit:");
-        assert.equal(new URL(uri).pathname, "/habits/new");
-        assert.equal(new URL(uri).searchParams.get("title"), title);
-      }
+      const href = link.href;
+      assert.equal(h.enter().defaultPrevented, true);
+      assert.equal(h.intents.length, before + 1);
+      assert.equal(link.href, href, "the accepted HTTPS destination remains unchanged");
+      const [route, directives] = h.intents.at(-1).split("#Intent;");
+      const app = new URL(link.dataset.appUrl);
+      const staging = app.hostname === "app-staging.useorbit.org";
+      const scheme = staging ? "orbit-staging" : "orbit";
+      const packageName = staging ? "org.useorbit.app.staging" : "org.useorbit.app";
+      const fallback =
+        process.env.PUBLIC_ANDROID_INSTALL_URL ||
+        "https://play.google.com/store/apps/details?id=org.useorbit.app";
+      assert.equal(
+        directives,
+        `scheme=${scheme};package=${packageName};S.browser_fallback_url=${encodeURIComponent(fallback)};end`,
+      );
+      const uri = new URL(route.replace("intent:", `${scheme}:`));
+      assert.equal(uri.pathname, "/habits/new");
+      assert.equal(uri.search, `?${query}`);
+      assert.equal(uri.hash, "");
+      assert.deepEqual([...uri.searchParams.keys()], ["title"]);
+      assert.equal(
+        decodeURIComponent(decodeURIComponent(decodeURIComponent(uri.searchParams.get("title")))),
+        title,
+      );
       h.get("demo-reject").fire("click");
       assert.equal(h.get("demo-continue").hidden, true);
     }

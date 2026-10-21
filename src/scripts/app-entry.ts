@@ -6,10 +6,9 @@ function supportedDestination(destination: URL) {
   if (destination.pathname === "/" || destination.pathname === "/upgrade")
     return !destination.search;
   const entries = [...destination.searchParams];
-  if (destination.pathname !== "/habits/new" || entries.length !== 1 || entries[0][0] !== "title")
-    return false;
-  // https://github.com/expo/expo/blob/main/packages/expo-router/src/fork/extractPathFromURL.ts decodes query values before reparsing them; keep lossy titles on the web.
-  return !/[&#+%]|\s$/u.test(entries[0][1]) && !/[\r\n\t]/u.test(entries[0][1]);
+  return (
+    destination.pathname === "/habits/new" && entries.length === 1 && entries[0][0] === "title"
+  );
 }
 
 function entryIntent(href: string) {
@@ -24,7 +23,15 @@ function entryIntent(href: string) {
       !supportedDestination(destination)
     )
       return;
-    const route = `${destination.pathname}${destination.search}`.replaceAll(";", "%3B");
+    // https://www.npmjs.com/package/expo-router/v/57.0.24 decodes via URLSearchParams, extraction, query parsing and local params; compensate only for the native title.
+    const title = destination.searchParams.get("title") ?? "";
+    const encodedTitle = encodeURIComponent(
+      encodeURIComponent(encodeURIComponent(encodeURIComponent(title))),
+    );
+    const route =
+      destination.pathname === "/habits/new"
+        ? `${destination.pathname}?title=${encodedTitle}`
+        : destination.pathname;
     return `intent://${route}#Intent;scheme=${target.scheme};package=${target.packageName};S.browser_fallback_url=${encodeURIComponent(target.fallback)};end`;
   } catch {
     return;
