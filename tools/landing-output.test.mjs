@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import vm from "node:vm";
 import sharp from "sharp";
+import { parse } from "@astrojs/compiler";
+import qrcode from "qrcode-generator";
 import { scriptsFrom } from "../src/scripts/html.test-helper.mjs";
 
 const html = readFileSync("dist/index.html", "utf8");
@@ -90,8 +93,8 @@ for (const [event, region, label] of [
     "final.cta",
   ],
   [
-    "hero_google_play_cta_clicked",
-    /<main\b[^>]*id="main-content"[^>]*>[\s\S]*?<\/main>/,
+    "hero_app_cta_clicked",
+    /<section\b[^>]*data-section="hero"[^>]*>[\s\S]*?<\/section>/,
     "hero.cta",
   ],
 ]) {
@@ -105,27 +108,25 @@ for (const [event, region, label] of [
       .find((tag) => tag.includes(attribute));
     assert.ok(
       label === "final.cta"
-        ? anchor?.includes('data-copy-en="Open in your browser"')
+        ? anchor?.includes('data-copy-en="Open Orbit"')
         : anchor?.includes(`data-i18n="${label}"`),
     );
-    const destination =
-      event !== "hero_google_play_cta_clicked"
-        ? process.env.PUBLIC_APP_URL || "https://app.useorbit.org"
-        : process.env.PUBLIC_ANDROID_INSTALL_URL ||
-          "https://play.google.com/store/apps/details?id=org.useorbit.app";
+    const destination = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+    assert.ok(anchor.includes("data-app-entry"));
+    assert.doesNotMatch(anchor, /target="_blank"/);
     assert.ok(anchor.includes(`href="${destination}"`));
   });
 }
 
-test("the single closing web app action keeps the existing app event and footer surface", () => {
+test("generic hero and closing app actions retain distinct surface attribution", () => {
   const event = 'data-analytics-event="hero_app_cta_clicked"';
-  assert.equal(html.split(event).length - 1, 1);
+  assert.equal(html.split(event).length - 1, 2);
   const action = [...html.matchAll(/<a\b[^>]*>[\s\S]*?<\/a>/g)]
     .map(([tag]) => tag)
-    .find((tag) => tag.includes(event));
+    .find((tag) => tag.includes(event) && tag.includes('data-analytics-surface="footer"'));
   assert.ok(action.includes('data-analytics-surface="footer"'));
-  assert.ok(action.includes('data-copy-en="Open in your browser"'));
-  assert.ok(action.includes('data-copy-pt="Abrir no navegador"'));
+  assert.ok(action.includes('data-copy-en="Open Orbit"'));
+  assert.ok(action.includes('data-copy-pt="Abrir Orbit"'));
 });
 
 for (const [plan, copy, path] of [
@@ -452,4 +453,187 @@ test("the built stylesheet lets the closing data request sentence wrap inside it
     wraps,
     "the closing data request copy must wrap, or it widens the closing block past a 320px viewport",
   );
+});
+
+test("the built eight-entry inventory opts in only the intended HTTPS anchors", async () => {
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const expectedApp = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+  const expectedPlay =
+    process.env.PUBLIC_ANDROID_INSTALL_URL ||
+    "https://play.google.com/store/apps/details?id=org.useorbit.app";
+  const home = descendants((await parse(html)).ast);
+  const confirmed = descendants(
+    (await parse(readFileSync("dist/waitlist-confirmed/index.html", "utf8"))).ast,
+  );
+  const entry = (nodes) => nodes.filter((node) => Object.hasOwn(attrs(node), "data-app-entry"));
+  const homeEntries = entry(home);
+  assert.equal(homeEntries.length, 7);
+  assert.deepEqual(
+    homeEntries.map((node) => attrs(node).href),
+    [
+      expectedApp,
+      expectedApp,
+      expectedApp,
+      expectedApp,
+      `${expectedApp}/upgrade`,
+      expectedApp,
+      expectedApp,
+    ],
+  );
+  assert.ok(homeEntries.every((node) => node.name === "a" && !attrs(node).target));
+  assert.deepEqual(
+    entry(confirmed).map((node) => attrs(node).href),
+    [expectedApp],
+  );
+  assert.equal(attrs(homeEntries[2]).id, "demo-continue-link");
+  assert.deepEqual(
+    homeEntries.map((node) => attrs(node)["data-analytics-surface"]),
+    ["header", "hero", undefined, "pricing_free", "pricing_pro", "footer", undefined],
+  );
+  for (const href of [
+    expectedPlay,
+    `${expectedApp}/privacy`,
+    `${expectedApp}/terms`,
+    "#ios",
+    "#features",
+    "mailto:contact@useorbit.org",
+  ]) {
+    const links = home.filter((node) => node.name === "a" && attrs(node).href === href);
+    assert.ok(links.length > 0, href);
+    assert.ok(
+      links.every((node) => !Object.hasOwn(attrs(node), "data-app-entry")),
+      href,
+    );
+  }
+  const installs = home.filter((node) => node.name === "a" && attrs(node).href === expectedPlay);
+  assert.equal(installs.length, 2, "explicit Android link and clickable QR remain Play-only");
+  const qr = installs.find((node) => attrs(node).class === "footer-qr");
+  assert.ok(
+    descendants(qr).some(
+      (node) =>
+        attrs(node)["data-copy-en"] === "Install on Android" &&
+        attrs(node)["data-copy-pt"] === "Instalar no Android",
+    ),
+  );
+  const expectedQr = qrcode(0, "H");
+  expectedQr.addData(expectedPlay);
+  expectedQr.make();
+  assert.equal(
+    readFileSync("dist/orbit-install-qr.svg", "utf8"),
+    expectedQr.createSvgTag({ cellSize: 4, margin: 16, scalable: true }),
+  );
+  assert.equal(
+    structured[0]["@graph"].find((entry) => entry.operatingSystem === "Android").installUrl,
+    expectedPlay,
+  );
+  const retry = confirmed.find((node) => node.name === "a" && attrs(node).href === "/#ios");
+  assert.ok(retry);
+  assert.ok(!Object.hasOwn(attrs(retry), "data-app-entry"));
+  assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
+});
+
+test("both built pages eagerly bind app entry and preserve consent-gated surface capture", () => {
+  for (const file of ["dist/index.html", "dist/waitlist-confirmed/index.html"]) {
+    const page = readFileSync(file, "utf8");
+    for (const choice of ["accepted", "declined"]) {
+      const clickListeners = [];
+      const windowListeners = new Map();
+      const assignments = [];
+      const captured = [];
+      class Element {
+        constructor(anchor) {
+          this.anchor = anchor;
+        }
+        closest(selector) {
+          if (selector === "a[data-app-entry]") return this.anchor;
+          if (selector === "a[data-analytics-event], button[data-analytics-event]")
+            return this.anchor;
+          throw new Error(`Unexpected selector: ${selector}`);
+        }
+      }
+      const context = vm.createContext({
+        URL,
+        Element,
+        navigator: { userAgent: "Mozilla/5.0 (Linux; Android 15) Chrome/140.0" },
+        localStorage: { getItem: () => choice },
+        CustomEvent: class {
+          constructor(type) {
+            this.type = type;
+          }
+        },
+        IntersectionObserver: class {
+          observe() {}
+        },
+        document: {
+          getElementById: () => null,
+          querySelectorAll: () => [],
+          addEventListener(name, listener) {
+            assert.equal(name, "click");
+            clickListeners.push(listener);
+          },
+        },
+        window: {
+          addEventListener: (name, listener) => windowListeners.set(name, listener),
+          dispatchEvent() {},
+          location: { assign: (uri) => assignments.push(uri) },
+        },
+      });
+      for (const { attributes, body } of scriptsFrom(page)) {
+        if (attributes.type === "module" && !attributes.src)
+          vm.runInContext(`(function() {${body}\n})()`, context);
+      }
+      assert.equal(
+        clickListeners.length,
+        2,
+        "consent and routing bind before deferred page startup",
+      );
+      assert.deepEqual(assignments, []);
+      windowListeners.get("orbit:analytics-ready")({
+        detail: {
+          opt_out_capturing() {},
+          capture: (event, properties, options) =>
+            captured.push(JSON.parse(JSON.stringify({ event, properties, options }))),
+        },
+      });
+      const app = process.env.PUBLIC_APP_URL || "https://app.useorbit.org";
+      const root = new URL(app);
+      const enhanced = ["app.useorbit.org", "app-staging.useorbit.org"].includes(root.hostname);
+      const surfaces = file === "dist/index.html" ? ["hero", "footer"] : [undefined];
+      for (const surface of surfaces) {
+        const anchor = {
+          href: app,
+          target: "",
+          hasAttribute: () => false,
+          dataset: surface
+            ? { analyticsEvent: "hero_app_cta_clicked", analyticsSurface: surface }
+            : {},
+        };
+        const event = {
+          target: new Element(anchor),
+          button: 0,
+          isTrusted: true,
+          defaultPrevented: false,
+          preventDefault() {
+            this.defaultPrevented = true;
+          },
+        };
+        for (const listener of clickListeners) listener(event);
+        assert.equal(event.defaultPrevented, enhanced);
+        assert.equal(anchor.href, app);
+      }
+      assert.equal(assignments.length, enhanced ? surfaces.length : 0);
+      assert.deepEqual(
+        captured,
+        choice === "accepted"
+          ? surfaces.filter(Boolean).map((surface) => ({
+              event: "hero_app_cta_clicked",
+              properties: { surface },
+              options: { transport: "sendBeacon", send_instantly: true },
+            }))
+          : [],
+      );
+    }
+  }
 });

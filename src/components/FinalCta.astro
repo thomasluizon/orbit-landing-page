@@ -18,6 +18,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
       </div>
       <PillButton
         href={appUrl}
+        appEntry
         size="sm"
         analyticsEvent="hero_app_cta_clicked"
         analyticsSurface="footer"><Copy name="final.cta" /></PillButton
@@ -36,7 +37,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
           data-copy-label-pt="Produto"
         >
           <h3><Copy name="footer.product" /></h3>
-          <a href={appUrl} class="text-link" data-i18n="header.cta">Open Orbit</a>
+          <a href={appUrl} data-app-entry class="text-link" data-i18n="header.cta">Open Orbit</a>
           <a href={googlePlayUrl} class="text-link"><Copy name="footer.android" /></a>
           <a href="#ios" id="ios-trigger" data-ios-trigger class="text-link" data-i18n="hero.ios"
             >iPhone waitlist</a
@@ -65,7 +66,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
               alt=""
             /></span
           >
-          <Copy name="footer.qr" />
+          <Copy name="footer.android" />
         </a>
       </div>
       <div class="closing-legal">

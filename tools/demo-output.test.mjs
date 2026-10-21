@@ -75,7 +75,12 @@ function harness(language = "en", threadHeight = 415) {
         this.focused = true;
       },
       scrollIntoView() {},
+      hasAttribute(name) {
+        return Object.hasOwn(this.attributes, name);
+      },
       matches(selector) {
+        if (selector === "a[data-app-entry]")
+          return this.name === "a" && this.hasAttribute("data-app-entry");
         for (const [, excluded] of selector.matchAll(/:not\(([^)]+)\)/g)) {
           if (this.matches(excluded)) return false;
         }
@@ -122,8 +127,19 @@ function harness(language = "en", threadHeight = 415) {
       scrollTop = Math.max(0, Math.min(value, this.scrollHeight - this.clientHeight));
     },
   });
+  const intents = [];
   const context = vm.createContext({
     URL,
+    environment: {
+      PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+      PUBLIC_ANDROID_INSTALL_URL: process.env.PUBLIC_ANDROID_INSTALL_URL,
+    },
+    navigator: { userAgent: "Mozilla/5.0 (Linux; Android 15) Chrome/140.0" },
+    Element: class {
+      static [Symbol.hasInstance](value) {
+        return Boolean(value?.attributes);
+      }
+    },
     ResizeObserver: class {
       targets = new Set();
       constructor(callback) {
@@ -136,15 +152,21 @@ function harness(language = "en", threadHeight = 415) {
     },
     exports: {},
     document,
-    window: { addEventListener: (name, fn) => events.set(name, fn) },
+    window: {
+      addEventListener: (name, fn) => events.set(name, fn),
+      location: { assign: (value) => intents.push(value) },
+    },
   });
   const modules = new Map();
   function require(path) {
     if (path === "./i18n") return { getLang: () => language };
     if (modules.has(path)) return modules.get(path);
-    const code = ts.transpileModule(readFileSync(`src/scripts/${path}.ts`, "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText;
+    const code = ts.transpileModule(
+      readFileSync(`src/scripts/${path}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
+      {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      },
+    ).outputText;
     const exports = {};
     vm.runInContext(`(function(exports,require){${code}\n})`, context)(exports, require);
     modules.set(path, exports);
@@ -162,8 +184,23 @@ function harness(language = "en", threadHeight = 415) {
   translate();
   require("./product-examples");
   require("./demo");
+  require("./app-entry");
   return {
     elements,
+    intents,
+    enter() {
+      const event = {
+        target: elements.get("demo-continue-link"),
+        isTrusted: true,
+        button: 0,
+        defaultPrevented: false,
+        preventDefault() {
+          this.defaultPrevented = true;
+        },
+      };
+      document.listeners.get("click")(event);
+      return event;
+    },
     chips,
     phoneRows: () => elements.get("phone-today").querySelectorAll("[data-habit-toggle]"),
     visibleRows: () =>
@@ -610,5 +647,86 @@ for (const language of ["en", "pt-BR"]) {
     h.get("demo-approve").fire("click");
     assert.equal(h.visibleRows().length, 1);
     assert.equal(h.get("demo-today-second").hidden, true);
+  });
+}
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: the app-entry owner consumes the latest edited and accepted demo href`, () => {
+    const h = harness(language);
+    const link = h.get("demo-continue-link");
+    assert.ok(link.hasAttribute("data-app-entry"));
+    for (const [input, query] of [
+      ["Walk today", "title=Walk%25252520today"],
+      ["Read & reflect", "title=Read%25252520%25252526%25252520reflect"],
+      ["a+b", "title=a%2525252Bb"],
+      ["a#b", "title=a%25252523b"],
+      ["100%", "title=100%25252525"],
+      ["%26", "title=%2525252526"],
+      ["%2526", "title=%252525252526"],
+      ["a;b", "title=a%2525253Bb"],
+      ["a?b", "title=a%2525253Fb"],
+      ["a=b", "title=a%2525253Db"],
+      ["a/b\\c", "title=a%2525252Fb%2525255Cc"],
+      [
+        "emoji 👩🏽‍🚀",
+        "title=emoji%25252520%252525F0%2525259F%25252591%252525A9%252525F0%2525259F%2525258F%252525BD%252525E2%25252580%2525258D%252525F0%2525259F%2525259A%25252580",
+      ],
+      ["'!()*", "title='!()*"],
+      ["nonbreaking space", "title=nonbreaking%252525C2%252525A0space"],
+      [
+        "中文字",
+        "title=%252525E4%252525B8%252525AD%252525E6%25252596%25252587%252525E5%252525AD%25252597",
+      ],
+      [
+        "#Intent;scheme=evil;package=evil;S.browser_fallback_url=https://evil.invalid;end",
+        "title=%25252523Intent%2525253Bscheme%2525253Devil%2525253Bpackage%2525253Devil%2525253BS.browser_fallback_url%2525253Dhttps%2525253A%2525252F%2525252Fevil.invalid%2525253Bend",
+      ],
+      ["  Walk today  ", "title=Walk%25252520today"],
+      ["line\nnext\tstep", "title=line%2525250Anext%25252509step"],
+      ["Walk".repeat(100), `title=${"Walk".repeat(20)}`],
+      [
+        "Olá 🌙;walk?today",
+        "title=Ol%252525C3%252525A1%25252520%252525F0%2525259F%2525258C%25252599%2525253Bwalk%2525253Ftoday",
+      ],
+      ["a+b#%26", "title=a%2525252Bb%25252523%2525252526"],
+    ]) {
+      const title = input.trim().slice(0, 80);
+      h.get("demo-edit").fire("click");
+      h.get("demo-edit-name").value = input;
+      h.get("demo-edit-schedule").value = "evening";
+      h.get("demo-edit-form").fire("submit");
+      h.get("demo-approve").fire("click");
+      const destination = new URL(link.href);
+      assert.equal(destination.pathname, "/habits/new");
+      assert.equal(destination.searchParams.get("title"), title);
+      const before = h.intents.length;
+      const href = link.href;
+      assert.equal(h.enter().defaultPrevented, true);
+      assert.equal(h.intents.length, before + 1);
+      assert.equal(link.href, href, "the accepted HTTPS destination remains unchanged");
+      const [route, directives] = h.intents.at(-1).split("#Intent;");
+      const app = new URL(link.dataset.appUrl);
+      const staging = app.hostname === "app-staging.useorbit.org";
+      const scheme = staging ? "orbit-staging" : "orbit";
+      const packageName = staging ? "org.useorbit.app.staging" : "org.useorbit.app";
+      const fallback =
+        process.env.PUBLIC_ANDROID_INSTALL_URL ||
+        "https://play.google.com/store/apps/details?id=org.useorbit.app";
+      assert.equal(
+        directives,
+        `scheme=${scheme};package=${packageName};S.browser_fallback_url=${encodeURIComponent(fallback)};end`,
+      );
+      const uri = new URL(route.replace("intent:", `${scheme}:`));
+      assert.equal(uri.pathname, "/habits/new");
+      assert.equal(uri.search, `?${query}`);
+      assert.equal(uri.hash, "");
+      assert.deepEqual([...uri.searchParams.keys()], ["title"]);
+      assert.equal(
+        decodeURIComponent(decodeURIComponent(decodeURIComponent(uri.searchParams.get("title")))),
+        title,
+      );
+      h.get("demo-reject").fire("click");
+      assert.equal(h.get("demo-continue").hidden, true);
+    }
   });
 }

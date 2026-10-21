@@ -308,12 +308,18 @@ test("FAQ disclosure updates aria-expanded and controls its own answer without r
   }
 });
 
-test("the header opens Orbit while the hero has only its install action", async () => {
+test("the header and hero preserve their app-entry intent", async () => {
   const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
   const action = descendants(header).find((node) => node.name === "PillButton");
   assert.equal(attributes(action).href, "appUrl");
   assert.equal(attributes(action).variant, "secondary");
   assert.equal(attributes(action).analyticsEvent, "header_app_cta_clicked");
+  const heroAction = descendants(sections[0]).find((node) => node.name === "PillButton");
+  assert.equal(attributes(heroAction).href, "appUrl");
+  assert.equal(attributes(heroAction).analyticsEvent, "hero_app_cta_clicked");
+  assert.equal(attributes(heroAction).analyticsSurface, "hero");
+  assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
+  assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
   assert.equal(
     descendants(sections[0]).filter(
       (node) => node.name === "a" && attributes(node).id !== "demo-continue-link",
@@ -1029,7 +1035,6 @@ test("the footer groups product and legal links with its own QR and no source-co
     "footer.android",
     "footer.cookies",
     "footer.controller",
-    "footer.qr",
   ])
     assert.ok(footer.includes(key));
   assert.match(footer, /href="#ios"/);
