@@ -23,6 +23,7 @@
     "esbuild": "^0.28.1",
     "sharp": "^0.35.5",
     "svgo": "^4.1.0",
+    "vite": "8.1.6",
     "yaml-language-server": {
       "yaml": "^2.8.3"
     }
