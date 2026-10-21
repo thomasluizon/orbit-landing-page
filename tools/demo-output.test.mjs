@@ -75,7 +75,12 @@ function harness(language = "en", threadHeight = 415) {
         this.focused = true;
       },
       scrollIntoView() {},
+      hasAttribute(name) {
+        return Object.hasOwn(this.attributes, name);
+      },
       matches(selector) {
+        if (selector === "a[data-app-entry]")
+          return this.name === "a" && this.hasAttribute("data-app-entry");
         for (const [, excluded] of selector.matchAll(/:not\(([^)]+)\)/g)) {
           if (this.matches(excluded)) return false;
         }
@@ -122,8 +127,19 @@ function harness(language = "en", threadHeight = 415) {
       scrollTop = Math.max(0, Math.min(value, this.scrollHeight - this.clientHeight));
     },
   });
+  const intents = [];
   const context = vm.createContext({
     URL,
+    environment: {
+      PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
+      PUBLIC_ANDROID_INSTALL_URL: process.env.PUBLIC_ANDROID_INSTALL_URL,
+    },
+    navigator: { userAgent: "Mozilla/5.0 (Linux; Android 15) Chrome/140.0" },
+    Element: class {
+      static [Symbol.hasInstance](value) {
+        return Boolean(value?.attributes);
+      }
+    },
     ResizeObserver: class {
       targets = new Set();
       constructor(callback) {
@@ -136,15 +152,21 @@ function harness(language = "en", threadHeight = 415) {
     },
     exports: {},
     document,
-    window: { addEventListener: (name, fn) => events.set(name, fn) },
+    window: {
+      addEventListener: (name, fn) => events.set(name, fn),
+      location: { assign: (value) => intents.push(value) },
+    },
   });
   const modules = new Map();
   function require(path) {
     if (path === "./i18n") return { getLang: () => language };
     if (modules.has(path)) return modules.get(path);
-    const code = ts.transpileModule(readFileSync(`src/scripts/${path}.ts`, "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText;
+    const code = ts.transpileModule(
+      readFileSync(`src/scripts/${path}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
+      {
+        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      },
+    ).outputText;
     const exports = {};
     vm.runInContext(`(function(exports,require){${code}\n})`, context)(exports, require);
     modules.set(path, exports);
@@ -162,8 +184,23 @@ function harness(language = "en", threadHeight = 415) {
   translate();
   require("./product-examples");
   require("./demo");
+  require("./app-entry");
   return {
     elements,
+    intents,
+    enter() {
+      const event = {
+        target: elements.get("demo-continue-link"),
+        isTrusted: true,
+        button: 0,
+        defaultPrevented: false,
+        preventDefault() {
+          this.defaultPrevented = true;
+        },
+      };
+      document.listeners.get("click")(event);
+      return event;
+    },
     chips,
     phoneRows: () => elements.get("phone-today").querySelectorAll("[data-habit-toggle]"),
     visibleRows: () =>
@@ -610,5 +647,34 @@ for (const language of ["en", "pt-BR"]) {
     h.get("demo-approve").fire("click");
     assert.equal(h.visibleRows().length, 1);
     assert.equal(h.get("demo-today-second").hidden, true);
+  });
+}
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: the app-entry owner consumes the latest edited and accepted demo href`, () => {
+    const h = harness(language);
+    const link = h.get("demo-continue-link");
+    assert.ok(link.hasAttribute("data-app-entry"));
+    for (const title of ["Walk today", "Olá 🌙;walk?today", "Read & reflect", "a+b#%26"]) {
+      h.get("demo-edit").fire("click");
+      h.get("demo-edit-name").value = title;
+      h.get("demo-edit-schedule").value = "evening";
+      h.get("demo-edit-form").fire("submit");
+      h.get("demo-approve").fire("click");
+      const destination = new URL(link.href);
+      assert.equal(destination.pathname, "/habits/new");
+      assert.equal(destination.searchParams.get("title"), title);
+      const before = h.intents.length;
+      const lossy = /[&#+%]/u.test(title);
+      assert.equal(h.enter().defaultPrevented, !lossy);
+      assert.equal(h.intents.length, before + (lossy ? 0 : 1));
+      if (!lossy) {
+        const uri = h.intents.at(-1).split("#Intent;")[0].replace("intent:", "orbit:");
+        assert.equal(new URL(uri).pathname, "/habits/new");
+        assert.equal(new URL(uri).searchParams.get("title"), title);
+      }
+      h.get("demo-reject").fire("click");
+      assert.equal(h.get("demo-continue").hidden, true);
+    }
   });
 }

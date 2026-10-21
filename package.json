@@ -10,7 +10,7 @@
     "dev": "astro dev",
     "build": "astro build && node --test tools/sitemap-output.test.mjs tools/landing-output.test.mjs tools/demo-output.test.mjs tools/phone-output.test.mjs tools/landing-repetition.test.mjs",
     "preview": "astro preview",
-    "test": "node --test .github/tests/release-verification.test.mjs tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/brand-assets.test.mjs src/styles/tokens.test.mjs tools/waitlist.test.mjs tools/i18n.test.mjs src/scripts/waitlist-section.test.mjs src/scripts/hero-carousel.test.mjs src/scripts/hero-phone.test.mjs src/scripts/html.test.mjs src/scripts/landing-composition.test.mjs src/scripts/landing-viewport.test.mjs src/scripts/landing-startup.test.mjs tools/landing-performance.test.mjs",
+    "test": "node --test .github/tests/release-verification.test.mjs tools/__tests__/check-timeless.test.mjs tools/consent.test.mjs tools/pill-button.test.mjs tools/sitemap-filter.test.mjs tools/brand-assets.test.mjs src/styles/tokens.test.mjs tools/waitlist.test.mjs tools/i18n.test.mjs src/scripts/waitlist-section.test.mjs src/scripts/hero-carousel.test.mjs src/scripts/hero-phone.test.mjs src/scripts/html.test.mjs src/scripts/app-entry.test.mjs src/scripts/landing-composition.test.mjs src/scripts/landing-viewport.test.mjs src/scripts/landing-startup.test.mjs tools/landing-performance.test.mjs",
     "astro": "astro",
     "check": "astro check",
     "lint": "eslint .",

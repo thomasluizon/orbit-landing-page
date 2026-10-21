@@ -10,10 +10,9 @@ import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight } from "@lucide/astro";
 interface Props {
-  googlePlayUrl: string;
   appUrl: string;
 }
-const { googlePlayUrl, appUrl } = Astro.props;
+const { appUrl } = Astro.props;
 const en = translations.en;
 ---
 
@@ -25,10 +24,10 @@ const en = translations.en;
   <div class="hero-controls">
     <div class="hero-actions">
       <PillButton
-        href={googlePlayUrl}
+        href={appUrl}
+        appEntry
         size="md"
-        external
-        analyticsEvent="hero_google_play_cta_clicked"
+        analyticsEvent="hero_app_cta_clicked"
         analyticsSurface="hero"
         ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >

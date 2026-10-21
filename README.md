@@ -139,7 +139,7 @@ Build-time variables on the Render static site:
 | ---------------------------- | ------------------------------------------------------------------------------- |
 | `PUBLIC_API_URL`             | Waitlist API endpoint; defaults to `https://api.useorbit.org`                   |
 | `PUBLIC_ANDROID_INSTALL_URL` | Android install links and generated QR; defaults to the production Play listing |
-| `PUBLIC_APP_URL`             | Web app links; defaults to `https://app.useorbit.org`                           |
+| `PUBLIC_APP_URL`             | HTTPS app-entry links; defaults to `https://app.useorbit.org`                   |
 | `PUBLIC_POSTHOG_KEY`         | Enables consent-gated PostHog analytics through `/relay/`                       |
 | `PUBLIC_TURNSTILE_SITE_KEY`  | Enables the waitlist Turnstile widget                                           |
 
@@ -160,6 +160,27 @@ The Render static site definition in [`orbit-api/infra`](https://github.com/thom
 - Security headers on all paths: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, and `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`.
 - Asset caching on `/_astro/*`: `Cache-Control: public, max-age=31536000, immutable`. Other paths use `Cache-Control: public, max-age=0, must-revalidate`.
 - PostHog rewrites: `/relay/static/*` to `https://us-assets.i.posthog.com/static/*`, `/relay/array/*` to `https://us-assets.i.posthog.com/array/*`, and `/relay/*` to `https://us.i.posthog.com/*`.
+
+## App entry and Android installation
+
+The header, hero, Free and Pro pricing actions, accepted demo continuation, closing action, footer Open Orbit link and successful waitlist confirmation keep configured HTTPS app hrefs in delivered HTML. Their explicit `data-app-entry` opt-in loads through the shared pill module immediately, without waiting for motion or analytics. Desktop, iPhone, iPad, unknown devices, JavaScript-disabled and pre-hydration activation use those web links. Modified clicks, middle clicks, copied links, new tabs and context-menu actions retain normal anchor behavior. Legal, consent privacy, waitlist, contact and local/demo-edit controls do not opt in.
+
+On a trusted, unmodified Chrome for Android click or Enter activation, the handler uses [Chrome's documented Android intent mechanism](https://developer.chrome.com/docs/android/intents) synchronously, with one package-bound custom scheme and an independently encoded `S.browser_fallback_url`. The browser owns launch and fallback; a UA match or assigned location proves neither installation nor successful handoff. Chrome for Android is the documented acceptance target. Other Android browser signatures and known embedded-browser signatures retain web navigation. A browser can share Chrome’s signature, so physical verification is still required; universal support is not claimed. There are no launch timers, retries, installed-app probes, visibility checks or extra network requests.
+
+The two existing build-time variables select a coherent target:
+
+| `PUBLIC_APP_URL`                   | `PUBLIC_ANDROID_INSTALL_URL`                                             | Scheme / package                             |
+| ---------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
+| `https://app.useorbit.org`         | `https://play.google.com/store/apps/details?id=org.useorbit.app`         | `orbit` / `org.useorbit.app`                 |
+| `https://app-staging.useorbit.org` | `https://play.google.com/store/apps/details?id=org.useorbit.app.staging` | `orbit-staging` / `org.useorbit.app.staging` |
+
+The configured Play URL must use HTTPS, the Play details path and exactly one matching package id. Preview origins, malformed URLs, crossed pairs and unsupported destinations retain HTTPS navigation. Only root, `/upgrade` and `/habits/new?title=...` qualify. The handler reads the current href when activated, so approved demo edits replace the destination. Serialized query values stay data and cannot add intent directives. The installed Expo Router receiver decodes custom-scheme query values before reparsing them: titles containing `&`, `+`, `#`, `%`, tabs, line breaks or trailing whitespace therefore keep their complete HTTPS continuation. This preserves the draft instead of handing a changed title to native.
+
+The explicit Install on Android footer link, clickable QR, generated QR payload and Android structured `installUrl` always use the configured Play URL, including on iPhone. The Play fallback opens the listing; it does not restore Pro or a demo draft after a new installation. Consent-gated CTA capture retains its existing `{surface}` shape; hero and closing actions share the generic app event with distinct hero/footer surfaces. No destination, title or install outcome is added to telemetry.
+
+Native interface evidence comes from UI commit `084495ce1398eed96199f674b4f3202bf8dab99a`: `apps/mobile/app.json`, `app.config.js`, `app/+native-intent.tsx`, `app/habits/new.tsx` and the existing upgrade route; installed Expo Router 57.0.24 and config-plugins 57.0.9 establish route parsing and BROWSABLE scheme production. Source and Node VM tests do not prove a generated manifest, installed binary, native navigation or Play delivery.
+
+Release uses the existing GitHub Actions **Release landing** workflow: stage the carrying branch, then record the exact landing commit, browser/version, Android package/version, installed/absent state and observed root, Pro and demo paths on a physical device. Also verify desktop/iOS HTTPS navigation, manual web/store fallback, both languages, keyboard activation and the QR label at narrow/wide widths and 200% text. Browser/device and rendered evidence remain a release acceptance boundary. Production follows normal checks/review and the existing manual `main` release. No new variables, console changes, app release or infrastructure migration are required. Removing the targeted handler leaves the HTTPS anchors as the rollback path.
 
 ## Related Repositories
 

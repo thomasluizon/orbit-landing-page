@@ -80,6 +80,7 @@ const { appUrl } = Astro.props;
         <div class="plan-action">
           <PillButton
             href={appUrl}
+            appEntry
             variant="ghost"
             analyticsEvent="pricing_free_cta_clicked"
             analyticsSurface="pricing_free"><Copy name="action.start" /></PillButton
@@ -117,6 +118,7 @@ const { appUrl } = Astro.props;
         <div class="plan-action">
           <PillButton
             href={`${appUrl}/upgrade`}
+            appEntry
             analyticsEvent="pricing_pro_cta_clicked"
             analyticsSurface="pricing_pro"><Copy name="pricing.pro.cta" /></PillButton
           >

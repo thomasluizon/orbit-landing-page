@@ -4,6 +4,7 @@ type PillSize = "md" | "sm";
 
 interface Props {
   href?: string;
+  appEntry?: boolean;
   type?: "button" | "submit";
   disabled?: boolean;
   variant?: PillVariant;
@@ -18,6 +19,7 @@ interface Props {
 
 const {
   href,
+  appEntry = false,
   type = "button",
   disabled = false,
   variant = "primary",
@@ -48,6 +50,7 @@ const sizeClasses: Record<PillSize, string> = {
   href ? (
     <a
       href={href}
+      data-app-entry={appEntry || undefined}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
       aria-label={ariaLabel}
@@ -89,4 +92,5 @@ const sizeClasses: Record<PillSize, string> = {
 
 <script>
   import "../scripts/primary-actions";
+  import "../scripts/app-entry";
 </script>
