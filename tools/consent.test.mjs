@@ -106,8 +106,28 @@ function createHarness(initialChoice = null, values = new Map()) {
   ];
 
   const window = new FakeEventTarget();
-  window.setTimeout = (callback) => callback();
-  window.clearTimeout = () => {};
+  let now = 0;
+  let nextTimer = 0;
+  const timers = new Map();
+  window.setTimeout = (callback, delay = 0) => {
+    const id = ++nextTimer;
+    timers.set(id, { callback, at: now + delay });
+    return id;
+  };
+  window.clearTimeout = (id) => timers.delete(id);
+  function advanceTime(duration) {
+    const destination = now + duration;
+    while (true) {
+      const next = [...timers.entries()]
+        .filter(([, timer]) => timer.at <= destination)
+        .sort((a, b) => a[1].at - b[1].at)[0];
+      if (!next) break;
+      now = next[1].at;
+      timers.delete(next[0]);
+      next[1].callback();
+    }
+    now = destination;
+  }
   window.requestIdleCallback = (callback) => callback();
 
   const localStorage = {
@@ -123,6 +143,7 @@ function createHarness(initialChoice = null, values = new Map()) {
     exports: {},
     localStorage,
     location: { origin: "https://useorbit.org" },
+    performance: { now: () => now },
     requestAnimationFrame: (callback) => callback(),
     window,
   });
@@ -189,6 +210,8 @@ function createHarness(initialChoice = null, values = new Map()) {
 
   return {
     acceptButton,
+    advanceTime,
+    pendingTimers: () => timers.size,
     banner,
     capturedCalls,
     capturedEvents,
@@ -566,4 +589,168 @@ test("reopening consent and keeping Allow continues CTA capture", async () => {
   assert.equal(h.values.get("orbit_analytics_consent"), "accepted");
   assert.deepEqual(h.capturedEvents.slice(-1), ["pricing_free_cta_clicked"]);
   assert.equal(h.preferencesButton.focused, true);
+});
+
+function ctaCaptures(harness) {
+  return harness.capturedCalls.filter(({ eventName }) => !eventName.startsWith("$"));
+}
+
+const freePricingCapture = {
+  eventName: "pricing_free_cta_clicked",
+  properties: { surface: "pricing_free" },
+  options: { transport: "sendBeacon", send_instantly: true },
+};
+
+test("a newly accepted CTA click before SDK readiness is captured exactly once on ready", async () => {
+  const h = createHarness();
+  const cta = (await pricingControls())[0];
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.acceptButton.click();
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(h.capturedCalls, []);
+  const loaded = h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+  h.window.dispatchEvent(
+    new FakeCustomEvent("orbit:analytics-ready", { detail: loaded.analytics }),
+  );
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+});
+
+test("a returning accepted visitor's CTA before the page settles is captured on ready", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  const cta = (await pricingControls())[0];
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(h.networkRequests, []);
+  h.window.dispatchEvent({ type: "load" });
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+});
+
+for (const choice of [null, "declined"]) {
+  test(`CTA clicks with ${choice ?? "no"} consent are never retrospectively captured after acceptance`, async () => {
+    const h = createHarness(choice);
+    await executeProductionScripts(h);
+    const cta = (await pricingControls())[0];
+    h.window.dispatchEvent({ type: "load" });
+    h.document.dispatchEvent({ type: "click", target: cta });
+    h.preferencesButton.click();
+    h.acceptButton.click();
+    h.completePostHogLoad();
+    assert.deepEqual(ctaCaptures(h), []);
+    h.document.dispatchEvent({ type: "click", target: cta });
+    assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+  });
+}
+
+test("keeping acceptance while the SDK loads preserves the pending CTA", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  const cta = (await pricingControls())[0];
+  h.document.dispatchEvent({ type: "click", target: cta });
+  h.preferencesButton.click();
+  h.acceptButton.click();
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+});
+
+for (const reacceptBeforeReady of [false, true]) {
+  test(`withdrawal discards pending clicks with reacceptance ${reacceptBeforeReady ? "before" : "after"} ready`, async () => {
+    const h = createHarness("accepted");
+    await executeProductionScripts(h);
+    h.window.dispatchEvent({ type: "load" });
+    const cta = (await pricingControls())[0];
+    h.document.dispatchEvent({ type: "click", target: cta });
+    h.preferencesButton.click();
+    h.declineButton.click();
+    h.document.dispatchEvent({ type: "click", target: cta });
+    if (reacceptBeforeReady) {
+      h.preferencesButton.click();
+      h.acceptButton.click();
+    }
+    h.completePostHogLoad();
+    assert.deepEqual(ctaCaptures(h), []);
+    if (!reacceptBeforeReady) {
+      h.preferencesButton.click();
+      h.acceptButton.click();
+    }
+    h.document.dispatchEvent({ type: "click", target: cta });
+    assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+  });
+}
+
+test("the pending CTA queue retains only the latest 20 events in order", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  const controls = await pricingControls();
+  for (let index = 0; index < 25; index++) {
+    h.document.dispatchEvent({ type: "click", target: controls[index < 5 ? 0 : index % 2] });
+  }
+  h.completePostHogLoad();
+  assert.deepEqual(
+    ctaCaptures(h),
+    Array.from({ length: 20 }, (_, index) => {
+      const plan = index % 2 === 0 ? "pro" : "free";
+      return {
+        eventName: `pricing_${plan}_cta_clicked`,
+        properties: { surface: `pricing_${plan}` },
+        options: { transport: "sendBeacon", send_instantly: true },
+      };
+    }),
+  );
+});
+
+test("a pending CTA just under 30 seconds old still captures", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.document.dispatchEvent({ type: "click", target: (await pricingControls())[0] });
+  h.advanceTime(29_999);
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+  assert.equal(h.pendingTimers(), 0);
+});
+
+test("the queue expires at 30 seconds even when PostHog never loads", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  const cta = (await pricingControls())[0];
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.equal(h.pendingTimers(), 1);
+  h.advanceTime(30_000);
+  assert.equal(h.pendingTimers(), 0);
+  assert.deepEqual(h.capturedEvents, []);
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), []);
+});
+
+test("expiry removes old pending clicks while retaining a newer click", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  const [free, pro] = await pricingControls();
+  h.document.dispatchEvent({ type: "click", target: pro });
+  h.advanceTime(15_000);
+  h.document.dispatchEvent({ type: "click", target: free });
+  h.advanceTime(15_000);
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+  assert.equal(h.pendingTimers(), 0);
+});
+
+test("pagehide discards pending CTA events even if the same document resumes", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  const cta = (await pricingControls())[0];
+  h.document.dispatchEvent({ type: "click", target: cta });
+  h.window.dispatchEvent({ type: "pagehide" });
+  h.completePostHogLoad();
+  assert.deepEqual(ctaCaptures(h), []);
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
 });
