@@ -35,6 +35,7 @@ const RETRYABLE_ERROR_PREFIXES = ["300", "600"];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Strings = Record<TranslationKey, string>;
+type StatusKind = "success" | "challenge-error" | "submission-error";
 
 interface Turnstile {
   render(
@@ -70,7 +71,7 @@ let turnstileWidgetId: string | null = null;
 let turnstileLoadPromise: Promise<Turnstile> | null = null;
 let turnstileInitializationPromise: Promise<void> | null = null;
 let submitting = false;
-let statusKind: "success" | "error" = "success";
+let statusKind: StatusKind = "success";
 let scriptAttempts = 0;
 let nextScriptAttemptAt = 0;
 let renderAttempts = 0;
@@ -80,7 +81,7 @@ let widgetStopped = false;
 let widgetGeneration = 0;
 let widgetConfiguration: ReturnType<typeof getWidgetConfiguration> | null = null;
 
-function setStatus(message: string, kind: "success" | "error") {
+function setStatus(message: string, kind: StatusKind) {
   if (!status) return;
   statusKind = kind;
   if (status.textContent !== message) status.textContent = message;
@@ -103,7 +104,7 @@ function resetChallenge(strings: Strings) {
 
 function handleChallengeFailure() {
   const strings = translations[getLang()];
-  setStatus(strings["ios.challengeFailed"], "error");
+  setStatus(strings["ios.challengeFailed"], "challenge-error");
   turnstileToken = "";
   updateSubmitButton(strings);
   return true;
@@ -219,7 +220,7 @@ function widgetCallbacks(generation: number) {
       if (!isCurrent()) return;
       turnstileToken = token;
       widgetFailures = 0;
-      if (statusKind === "error") setStatus("", "success");
+      if (statusKind === "challenge-error") setStatus("", "success");
       updateSubmitButton(translations[getLang()]);
     },
     "error-callback": (code: string) => (isCurrent() ? handleWidgetError(code) : true),
@@ -316,7 +317,7 @@ if (form && emailInput && submitButton && status) {
     const email = emailInput.value.trim();
 
     if (!EMAIL_PATTERN.test(email)) {
-      setStatus(strings["ios.invalidEmail"], "error");
+      setStatus(strings["ios.invalidEmail"], "submission-error");
       emailInput.focus();
       return;
     }
@@ -351,12 +352,15 @@ if (form && emailInput && submitButton && status) {
           : isChallengeFailure(payload)
             ? "ios.challengeFailed"
             : "ios.error";
-        setStatus(strings[key], "error");
+        setStatus(
+          strings[key],
+          key === "ios.challengeFailed" ? "challenge-error" : "submission-error",
+        );
       } else {
-        setStatus(strings["ios.error"], "error");
+        setStatus(strings["ios.error"], "submission-error");
       }
     } catch {
-      setStatus(strings["ios.error"], "error");
+      setStatus(strings["ios.error"], "submission-error");
     } finally {
       submitting = false;
       resetChallenge(strings);

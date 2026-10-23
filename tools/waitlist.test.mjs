@@ -339,7 +339,10 @@ for (const language of ["en", "pt-BR"]) {
 
     await harness.solve("fresh-token");
     assert.equal(harness.elements.get("waitlist-submit").disabled, false);
+    assert.equal(harness.elements.get("waitlist-status").textContent, "");
+    assert.notEqual(harness.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
     await harness.submit();
+    harness.challenge.callback("renewed-token");
     assert.equal(
       harness.elements.get("waitlist-status").textContent,
       harness.strings["ios.success"],
@@ -375,6 +378,15 @@ for (const language of ["en", "pt-BR"]) {
       harness.strings["ios.invalidEmail"],
     );
     assert.deepEqual(harness.resets, ["test-widget"]);
+    harness.challenge.callback("renewed-token");
+    assert.equal(harness.requests.length, 1);
+    assert.equal(harness.elements.get("waitlist-email").value, "person@example.com");
+    assert.equal(harness.elements.get("waitlist-submit").disabled, false);
+    assert.equal(
+      harness.elements.get("waitlist-status").textContent,
+      harness.strings["ios.invalidEmail"],
+    );
+    assert.equal(harness.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
   });
 
   test(`${language}: invalid local email never sends a request`, async () => {
@@ -394,6 +406,12 @@ for (const language of ["en", "pt-BR"]) {
     await harness.submit();
     assert.equal(harness.elements.get("waitlist-status").textContent, harness.strings["ios.error"]);
     assert.deepEqual(harness.resets, ["test-widget"]);
+    harness.challenge.callback("renewed-token");
+    assert.equal(harness.requests.length, 1);
+    assert.equal(harness.elements.get("waitlist-email").value, "person@example.com");
+    assert.equal(harness.elements.get("waitlist-submit").disabled, false);
+    assert.equal(harness.elements.get("waitlist-status").textContent, harness.strings["ios.error"]);
+    assert.equal(harness.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
   });
 
   test(`${language}: an unreadable 400 response shows the generic error`, async () => {
