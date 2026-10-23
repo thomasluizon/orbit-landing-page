@@ -31,6 +31,17 @@
             ],
             "categories:seo": ["error", { "minScore": 0.9 }]
           }
+        },
+        {
+          "matchingUrlPattern": "^https?://[^/]+/404\\.html$",
+          "aggregationMethod": "pessimistic",
+          "assertions": {
+            "categories:performance": ["error", { "minScore": 0.9, "aggregationMethod": "median" }],
+            "total-blocking-time": [
+              "error",
+              { "maxNumericValue": 200, "aggregationMethod": "median" }
+            ]
+          }
         }
       ]
     }
