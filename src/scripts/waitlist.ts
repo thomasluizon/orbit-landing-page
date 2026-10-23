@@ -180,7 +180,8 @@ function loadTurnstile(allowRetry: boolean): Promise<Turnstile> {
 }
 
 function getWidgetConfiguration() {
-  const width = turnstileContainer?.getBoundingClientRect().width ?? 0;
+  const width =
+    turnstileContainer?.getBoundingClientRect().width || form?.getBoundingClientRect().width || 0;
   return {
     size: width < 300 ? ("compact" as const) : ("flexible" as const),
     language: getLang() === "pt-BR" ? "pt-br" : "en",
@@ -205,7 +206,8 @@ function handleWidgetError(code: string) {
   console.error("[Turnstile] error-callback", code);
   handleChallengeFailure();
   const retryable =
-    ERROR_RETRYABLE[code] ?? RETRYABLE_ERROR_PREFIXES.some((prefix) => code.startsWith(prefix));
+    ERROR_RETRYABLE[code] === true ||
+    RETRYABLE_ERROR_PREFIXES.some((prefix) => code.startsWith(prefix));
   if (!retryable || ++widgetFailures >= WIDGET_MAX_FAILURES) stopWidget();
   return true;
 }

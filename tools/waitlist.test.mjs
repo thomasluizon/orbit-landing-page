@@ -4,6 +4,15 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
+const landingStyles = await readFile(new URL("../src/styles/landing.css", import.meta.url), "utf8");
+const gutter = Number(landingStyles.match(/--landing-gutter: (\d+)px/)[1]);
+const narrowPadding = Number(
+  landingStyles.match(/\.ios-section \.waitlist-content \{\s+padding: \d+px (\d+)px/)[1],
+);
+const cardBorder = Number(
+  landingStyles.match(/\.ios-section \.waitlist-content \{[^}]*border: (\d+)px/)[1],
+);
+const narrowContentWidth = (viewport) => viewport - 2 * (gutter + narrowPadding + cardBorder);
 const scripts = new Map();
 for (const path of ["../config/pricing", "../i18n/translations", "./i18n", "./waitlist"]) {
   const source = await readFile(new URL(`../src/scripts/${path}.ts`, import.meta.url), "utf8");
@@ -40,6 +49,7 @@ function createHarness(
   let challenge;
   let renderCalls = 0;
   let formResets = 0;
+  let widgetPresent = false;
   const elements = new Map();
   for (const id of ["form", "email", "submit", "submit-label", "status", "turnstile"]) {
     elements.set(`waitlist-${id}`, {
@@ -52,7 +62,9 @@ function createHarness(
         this.listeners.set(type, listener);
       },
       focus() {},
-      getBoundingClientRect: () => ({ width }),
+      getBoundingClientRect: () => ({
+        width: id === "turnstile" && !widgetPresent ? 0 : width,
+      }),
       reset() {
         formResets++;
       },
@@ -80,12 +92,14 @@ function createHarness(
       assert.equal(container, elements.get("waitlist-turnstile"));
       renderCalls++;
       if (renderCalls <= renderFailures) throw new Error("Turnstile render failed");
+      widgetPresent = true;
       challenge = options;
       if (renderError) vendorError(options);
       return "test-widget";
     },
     reset: (id) => resets.push(id),
     remove: (id) => {
+      widgetPresent = false;
       removals.push(id);
       cancel(vendorTimer);
     },
@@ -262,7 +276,7 @@ for (const language of ["en", "pt-BR"]) {
     assert.equal(harness.statusUpdates, 1);
   });
 
-  test(`${language}: unrecognized API failures keep the generic error with protection on or off`, async () => {
+  test(`${language}: unrecognized API failures keep the generic error`, async () => {
     for (const siteKey of ["test-site-key"]) {
       for (const payload of [
         { error: "Unrelated request failure" },
@@ -493,8 +507,9 @@ for (const language of ["en", "pt-BR"]) {
 
   test(`${language}: widget sizing follows the measured content box on resize and rotation`, async () => {
     for (const [viewport, contentWidth, size, widgetWidth] of [
-      [320, 272, "compact", 150],
-      [360, 312, "flexible", 312],
+      [320, narrowContentWidth(320), "compact", 150],
+      [360, narrowContentWidth(360), "compact", 150],
+      [480, 366, "flexible", 366],
     ]) {
       const h = createHarness(language, [], { width: contentWidth });
       await h.solve("portrait-token");
