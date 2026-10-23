@@ -256,6 +256,7 @@ body {
 .waitlist-content,
 .waitlist-content > div,
 #waitlist-form {
+  min-inline-size: 0;
   display: grid;
   gap: 16px;
 }
@@ -276,6 +277,7 @@ body {
   color: var(--color-fg-3);
 }
 #waitlist-turnstile {
+  min-inline-size: 0;
   inline-size: 100%;
   min-block-size: 65px;
 }
