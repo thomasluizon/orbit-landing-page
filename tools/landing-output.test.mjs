@@ -556,6 +556,7 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
       const context = vm.createContext({
         URL,
         Element,
+        performance,
         navigator: { userAgent: "Mozilla/5.0 (Linux; Android 15) Chrome/140.0" },
         localStorage: { getItem: () => choice },
         CustomEvent: class {
@@ -575,6 +576,8 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
           },
         },
         window: {
+          setTimeout,
+          clearTimeout,
           addEventListener: (name, listener) => windowListeners.set(name, listener),
           dispatchEvent() {},
           location: { assign: (uri) => assignments.push(uri) },
