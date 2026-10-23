@@ -12,6 +12,12 @@ declare global {
 
 const CONSENT_STORAGE_KEY = "orbit_analytics_consent";
 const EXIT_DURATION_MS = 160;
+const MAX_PENDING_EVENTS = 20;
+const MAX_EVENT_AGE_MS = 30_000;
+
+type PendingEvent = { eventName: string; surface: string; queuedAt: number };
+const pendingEvents: PendingEvent[] = [];
+let expiryTimer: number | undefined;
 
 const banner = document.getElementById("consent-banner");
 const acceptButton = document.getElementById("consent-accept");
@@ -74,10 +80,39 @@ function scheduleAfterPageSettles(callback: () => void) {
   }
 }
 
+function discardPendingEvents() {
+  pendingEvents.length = 0;
+  window.clearTimeout(expiryTimer);
+  expiryTimer = undefined;
+}
+
+function expirePendingEvents() {
+  window.clearTimeout(expiryTimer);
+  const cutoff = performance.now() - MAX_EVENT_AGE_MS;
+  while (pendingEvents[0] && pendingEvents[0].queuedAt <= cutoff) pendingEvents.shift();
+  const oldest = pendingEvents[0];
+  expiryTimer = oldest
+    ? window.setTimeout(expirePendingEvents, oldest.queuedAt + MAX_EVENT_AGE_MS - performance.now())
+    : undefined;
+}
+
+function captureEvent(eventName: string, surface: string) {
+  analytics?.capture(eventName, { surface }, { transport: "sendBeacon", send_instantly: true });
+}
+
 window.addEventListener("orbit:analytics-ready", (event) => {
   analytics = event.detail;
-  if (readConsentChoice() === "declined") analytics.opt_out_capturing();
+  const choice = readConsentChoice();
+  if (choice === "declined") analytics.opt_out_capturing();
+  if (choice === "accepted") {
+    expirePendingEvents();
+    for (const { eventName, surface } of pendingEvents) captureEvent(eventName, surface);
+  }
+  discardPendingEvents();
 });
+
+window.addEventListener("orbit:analytics-consent-revoked", discardPendingEvents);
+window.addEventListener("pagehide", discardPendingEvents);
 
 preferencesButton?.addEventListener("click", () => {
   reopened = true;
@@ -107,13 +142,18 @@ if (choice === "accepted") {
 }
 
 document.addEventListener("click", (event) => {
-  if (!analytics || readConsentChoice() !== "accepted" || !(event.target instanceof Element))
-    return;
+  if (readConsentChoice() !== "accepted" || !(event.target instanceof Element)) return;
   const control = event.target.closest<HTMLElement>(
     "a[data-analytics-event], button[data-analytics-event]",
   );
   const eventName = control?.dataset.analyticsEvent;
   const surface = control?.dataset.analyticsSurface;
   if (!eventName || !surface) return;
-  analytics.capture(eventName, { surface }, { transport: "sendBeacon", send_instantly: true });
+  if (analytics) {
+    captureEvent(eventName, surface);
+  } else {
+    pendingEvents.push({ eventName, surface, queuedAt: performance.now() });
+    if (pendingEvents.length > MAX_PENDING_EVENTS) pendingEvents.shift();
+    expirePendingEvents();
+  }
 });

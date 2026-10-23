@@ -1,5 +1,6 @@
 ---
 import Copy from "./Copy.astro";
+import CookiePreferences from "./CookiePreferences.astro";
 import PillButton from "./PillButton.astro";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
@@ -49,12 +50,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
             >Privacy policy</a
           >
           <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">Terms</a>
-          <button
-            type="button"
-            class="text-link cookie-preferences"
-            id="cookie-preferences"
-            aria-controls="consent-banner"><Copy name="footer.cookies" /></button
-          >
+          <CookiePreferences />
         </div>
         <a class="footer-qr" href={googlePlayUrl}>
           <span class="footer-qr-code"
