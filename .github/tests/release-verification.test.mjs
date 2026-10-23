@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 const workflow = readFileSync(new URL("../workflows/release.yml", import.meta.url), "utf8");
@@ -8,6 +11,249 @@ const sha = "6f1d70422e37f343093fa5ef6561f483e4b6dc20";
 const previousSha = "30c06d7e14c6fa9d749464510e8e16674c9028ff";
 const serviceOrigin = "https://orbit-landing-staging.onrender.com";
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+
+function releaseJob(environment) {
+  return workflow.split(`  ${environment}:\n`)[1].split(/^  \w+:$/m)[0];
+}
+
+function releaseHarness(environment, { staging = {}, force = "false", head = sha } = {}) {
+  const job = releaseJob(environment);
+  const body = job.split("node --input-type=module <<'NODE'\n")[1].split("          NODE")[0];
+  const deploys = [];
+  const requests = [];
+  const summaries = [];
+  const productionOrigin = "https://orbit-landing.onrender.com";
+  const env = {
+    RELEASE_SHA: sha,
+    RELEASE_BRANCH: "main",
+    FORCE_UNSTAGED: force,
+    RENDER_API_KEY: "render-token",
+    RENDER_PRODUCTION_SERVICE_ID: "production-service",
+    RENDER_STAGING_SERVICE_ID: "staging-service",
+    GH_TOKEN: "github-token",
+    GITHUB_REPOSITORY: "owner/landing",
+    GITHUB_RUN_ID: "1",
+    GITHUB_STEP_SUMMARY: "/summary",
+    PUBLIC_APP_URL: "https://app-staging.useorbit.org",
+    PUBLIC_ANDROID_INSTALL_URL:
+      "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
+  };
+  const marker = (commit) =>
+    layout
+      .match(/<meta name="orbit-build" content=\{renderBuildCommit\} \/>/)[0]
+      .replace("{renderBuildCommit}", `"${commit}"`);
+  const fetch = async (url, options = {}) => {
+    const parsed = new URL(url);
+    requests.push({ url: parsed, options });
+    if (parsed.origin === new URL(serviceOrigin).origin && !deploys.length) {
+      if (staging.error) throw staging.error;
+      return new Response(staging.html ?? marker(staging.commit ?? sha), {
+        status: staging.status ?? 200,
+      });
+    }
+    if ([serviceOrigin, productionOrigin, "https://useorbit.org"].includes(parsed.origin)) {
+      return new Response(marker(deploys.at(-1).commitId));
+    }
+    let result;
+    if (parsed.hostname === "api.render.com") {
+      const origin = parsed.pathname.includes("staging-service") ? serviceOrigin : productionOrigin;
+      if (parsed.pathname.endsWith("/env-vars")) {
+        result = ["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"].map((key) => ({
+          envVar: { key, value: env[key] },
+        }));
+      } else if (parsed.pathname.endsWith("/deploys") && options.method === "POST") {
+        deploys.push(JSON.parse(options.body));
+        result = { id: "deploy-1" };
+      } else if (parsed.pathname.endsWith("/deploys/deploy-1")) {
+        result = { status: "live", commit: { id: deploys.at(-1).commitId } };
+      } else if (/\/services\/(production|staging)-service$/.test(parsed.pathname)) {
+        result = { autoDeploy: "no", branch: "main", serviceDetails: { url: origin } };
+      } else {
+        throw new Error(`Unexpected Render request: ${url}`);
+      }
+    } else if (parsed.pathname.endsWith("/deployments") && options.method === "POST") {
+      result = { id: 1, sha: JSON.parse(options.body).ref };
+    } else if (parsed.pathname.endsWith("/deployments/1/statuses")) {
+      result = {};
+    } else {
+      throw new Error(`Unexpected request: ${url}`);
+    }
+    return Response.json(result);
+  };
+  const run = new AsyncFunction(
+    "process",
+    "execFileSync",
+    "appendFileSync",
+    "fetch",
+    "console",
+    body.replace(/^\s*import .*;$/gm, ""),
+  );
+  return {
+    deploys,
+    requests,
+    summaries,
+    run: () =>
+      run(
+        { env },
+        () => head,
+        (path, content) => {
+          assert.equal(path, env.GITHUB_STEP_SUMMARY);
+          summaries.push(content);
+        },
+        fetch,
+        { log() {} },
+      ),
+  };
+}
+
+for (const environment of ["staging", "production"]) {
+  test(`${environment}: deploys the input SHA after the branch head moves`, async () => {
+    const release = releaseHarness(environment, { head: previousSha });
+    await release.run();
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+    assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
+    const deployment = release.requests.find(({ url }) => url.pathname.endsWith("/deployments"));
+    assert.equal(JSON.parse(deployment.options.body).ref, sha);
+  });
+}
+
+for (const [reason, staging] of [
+  ["a different commit", { commit: previousSha }],
+  ["an unhealthy response", { status: 503 }],
+  ["a redirect", { status: 302 }],
+  ["a missing marker", { html: "<html></html>" }],
+  ["a network failure", { error: new Error("connection reset") }],
+]) {
+  test(`production: rejects ${reason} on staging before deploying`, async () => {
+    const release = releaseHarness("production", { staging });
+    await assert.rejects(release.run());
+    assert.deepEqual(release.deploys, []);
+    assert.ok(release.requests.every(({ options }) => !options.method));
+    assert.match(release.summaries.join("\n"), /force_unstaged: false/);
+  });
+}
+
+test("production: admits the healthy staging SHA and records admission", async () => {
+  const release = releaseHarness("production");
+  await release.run();
+  const probe = release.requests.find(({ url }) => url.origin === serviceOrigin);
+  assert.ok(probe);
+  assert.equal(probe.options.redirect, "manual");
+  assert.equal(probe.options.cache, "no-store");
+  assert.ok(probe.url.searchParams.get("orbit-verify"));
+  assert.match(release.summaries.join("\n"), new RegExp(`Staging served ${sha}`));
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+});
+
+test("production: records an explicit override and deploys without staging admission", async () => {
+  const release = releaseHarness("production", {
+    force: "true",
+    staging: { error: new Error("staging unavailable") },
+  });
+  await release.run();
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  assert.match(release.summaries.join("\n"), /force_unstaged: true/);
+  assert.ok(release.requests.every(({ url }) => !url.href.includes("staging")));
+});
+
+function shellStep(environment, name) {
+  const step = releaseJob(environment)
+    .split(`- name: ${name}\n`)[1]
+    ?.split(/\n      - /)[0];
+  assert.ok(step, `Missing step: ${name}`);
+  const script = step.split("        run: |\n")[1];
+  assert.ok(script, `Missing shell script: ${name}`);
+  return script.replace(/^          /gm, "");
+}
+
+function shellHarness(t, environment) {
+  const cwd = mkdtempSync(join(tmpdir(), "landing-release-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const git = (...args) => execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
+  git("init", "--initial-branch=main");
+  git("config", "user.name", "Release Test");
+  git("config", "user.email", "release@example.org");
+  git("commit", "--allow-empty", "-m", "Planned commit");
+  const planned = git("rev-parse", "HEAD");
+  git("commit", "--allow-empty", "-m", "New branch head");
+  git("update-ref", "refs/remotes/origin/main", "HEAD");
+  git("checkout", "--quiet", "--detach", planned);
+  const output = join(cwd, "output");
+  const env = {
+    ...process.env,
+    GITHUB_REF: "refs/heads/main",
+    GITHUB_OUTPUT: output,
+    RELEASE_ENVIRONMENT: environment,
+    RELEASE_BRANCH: "main",
+    RELEASE_SHA: planned,
+    DISPATCH_SHA: planned,
+  };
+  return {
+    planned,
+    git,
+    output: () => readFileSync(output, "utf8"),
+    step: (name, overrides = {}) =>
+      spawnSync("bash", ["-e", "-c", shellStep(environment, name)], {
+        cwd,
+        env: { ...env, ...overrides },
+        encoding: "utf8",
+      }),
+  };
+}
+
+for (const environment of ["staging", "production"]) {
+  test(`${environment}: checks out the selected SHA with branch history`, () => {
+    const checkout = releaseJob(environment)
+      .split("- uses: actions/checkout@")[1]
+      .split("\n      - ")[0];
+    assert.match(checkout, /ref: \$\{\{ steps\.selection\.outputs\.sha \}\}/);
+    assert.match(checkout, /fetch-depth: 0/);
+  });
+
+  test(`${environment}: validates the selected SHA and branch ancestry`, (t) => {
+    const shell = shellHarness(t, environment);
+    assert.equal(shell.step("Validate release selection").status, 0);
+    assert.match(shell.output(), new RegExp(`sha=${shell.planned}`));
+    assert.equal(shell.step("Verify selected commit").status, 0);
+    const different = shell.git("rev-parse", "refs/remotes/origin/main");
+    const mismatch = shell.step("Verify selected commit", { RELEASE_SHA: different });
+    assert.equal(mismatch.status, 1);
+    assert.match(mismatch.stderr, /Checkout does not match/);
+    const unrelatedCommit = shell.git(
+      "commit-tree",
+      shell.git("rev-parse", "HEAD^{tree}"),
+      "-m",
+      "Unrelated commit",
+    );
+    shell.git("update-ref", "refs/remotes/origin/main", unrelatedCommit);
+    const unrelated = shell.step("Verify selected commit");
+    assert.notEqual(unrelated.status, 0);
+  });
+
+  test(`${environment}: rejects invalid selections before checkout`, (t) => {
+    const shell = shellHarness(t, environment);
+    for (const overrides of [
+      { RELEASE_SHA: "main" },
+      { RELEASE_SHA: shell.planned.slice(0, 7) },
+      { RELEASE_SHA: "g".repeat(40) },
+      { RELEASE_BRANCH: "refs/heads/main" },
+      { RELEASE_BRANCH: "" },
+      { RELEASE_BRANCH: "main..other" },
+      { GITHUB_REF: "refs/heads/other" },
+    ]) {
+      assert.notEqual(shell.step("Validate release selection", overrides).status, 0);
+    }
+    const empty = shell.step("Validate release selection", { RELEASE_SHA: "" });
+    assert.equal(empty.status, environment === "production" ? 0 : 1);
+    if (environment === "production") {
+      assert.match(shell.output(), new RegExp(`sha=${shell.planned}`));
+      assert.notEqual(
+        shell.step("Validate release selection", { RELEASE_BRANCH: "feature" }).status,
+        0,
+      );
+    }
+  });
+}
 
 function verifier(environment) {
   const job = workflow.split(`  ${environment}:\n`)[1].split(/^  \w+:$/m)[0];
