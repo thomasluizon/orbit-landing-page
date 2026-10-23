@@ -1033,10 +1033,20 @@ test("the footer groups product and legal links with its own QR and no source-co
     "footer.product",
     "footer.legal",
     "footer.android",
-    "footer.cookies",
     "footer.controller",
   ])
     assert.ok(footer.includes(key));
+  const legalColumn = descendants(components.get("FinalCta")).find(
+    (node) =>
+      node.name === "div" &&
+      attributes(node).class === "footer-column" &&
+      descendants(node).some((child) => attributes(child).name === "footer.legal"),
+  );
+  assert.ok(legalColumn);
+  assert.equal(
+    descendants(legalColumn).filter((node) => node.name === "CookiePreferences").length,
+    1,
+  );
   assert.match(footer, /href="#ios"/);
   assert.match(footer, /src="\/orbit-install-qr.svg"/);
 });
