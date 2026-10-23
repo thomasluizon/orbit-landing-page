@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import CookiePreferences from "../components/CookiePreferences.astro";
 import PillButton from "../components/PillButton.astro";
 import LanguageToggle from "../components/LanguageToggle.astro";
 import { translations } from "../i18n/translations";
@@ -17,6 +18,7 @@ const en = translations.en;
     <h1 class="t-display" data-i18n="notFound.title">{en["notFound.title"]}</h1>
     <p class="t-body text-fg-2" data-i18n="notFound.body">{en["notFound.body"]}</p>
     <PillButton href="/"><span data-i18n="notFound.cta">{en["notFound.cta"]}</span></PillButton>
+    <footer><CookiePreferences /></footer>
   </main>
 </Layout>
 <script>

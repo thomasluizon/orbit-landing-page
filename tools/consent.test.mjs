@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { dirname, resolve } from "node:path";
 import vm from "node:vm";
 import { parse } from "@astrojs/compiler";
 import ts from "typescript";
@@ -510,4 +511,59 @@ test("withdrawal before the page settles cancels deferred analytics initializati
   assert.equal(h.context.localStorage.getItem("orbit_analytics_consent"), "declined");
   assert.deepEqual(h.networkRequests, []);
   assert.equal(h.completePostHogLoad(), null);
+});
+
+async function pageNodes(path) {
+  const source = await readFile(path, "utf8");
+  const imports = new Map(
+    [...source.matchAll(/import (\w+) from "(\.[^"]+\.astro)";/g)].map(([, name, relative]) => [
+      name,
+      resolve(dirname(path), relative),
+    ]),
+  );
+  const { ast } = await parse(source);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const nodes = descendants(ast);
+  const children = await Promise.all(
+    nodes.filter((node) => imports.has(node.name)).map((node) => pageNodes(imports.get(node.name))),
+  );
+  return [...nodes, ...children.flat()];
+}
+
+for (const page of ["index", "waitlist-confirmed", "404"]) {
+  test(`${page} exposes one bilingual cookie preferences button connected to the shared banner`, async () => {
+    const nodes = await pageNodes(`src/pages/${page}.astro`);
+    const attribute = (node, name) => node.attributes?.find((entry) => entry.name === name)?.value;
+    const controls = nodes.filter((node) => attribute(node, "id") === "cookie-preferences");
+    assert.equal(controls.length, 1, `${page} must expose one preferences control`);
+    assert.equal(controls[0].name, "button");
+    assert.equal(attribute(controls[0], "type"), "button");
+    assert.equal(attribute(controls[0], "aria-controls"), "consent-banner");
+    assert.equal(nodes.filter((node) => attribute(node, "id") === "consent-banner").length, 1);
+    const copy = controls[0].children.find((node) => node.name === "Copy");
+    const source = await readFile("src/i18n/translations.ts", "utf8");
+    const script = ts.transpileModule(source, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText;
+    const context = vm.createContext({ exports: {} });
+    vm.runInContext(script, context);
+    const key = attribute(copy, "name");
+    assert.equal(context.exports.landingCopy.en[key], "Cookie preferences");
+    assert.equal(context.exports.landingCopy["pt-BR"][key], "Preferências de cookies");
+  });
+}
+
+test("reopening consent and keeping Allow continues CTA capture", async () => {
+  const h = createHarness("accepted");
+  await executeProductionScripts(h);
+  h.window.dispatchEvent({ type: "load" });
+  h.completePostHogLoad();
+  h.preferencesButton.click();
+  h.acceptButton.click();
+  h.capturedCalls.length = 0;
+  const cta = (await pricingControls())[0];
+  h.document.dispatchEvent({ type: "click", target: cta });
+  assert.equal(h.values.get("orbit_analytics_consent"), "accepted");
+  assert.deepEqual(h.capturedEvents.slice(-1), ["pricing_free_cta_clicked"]);
+  assert.equal(h.preferencesButton.focused, true);
 });

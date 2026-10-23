@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import CookiePreferences from "../components/CookiePreferences.astro";
 import PillButton from "../components/PillButton.astro";
 import LanguageToggle from "../components/LanguageToggle.astro";
 import { translations } from "../i18n/translations";
@@ -35,6 +36,7 @@ const en = translations.en;
         ></PillButton
       >
     </div>
+    <footer><CookiePreferences /></footer>
   </main>
 </Layout>
 <script is:inline>
