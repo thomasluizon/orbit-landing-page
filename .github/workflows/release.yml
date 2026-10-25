@@ -109,7 +109,6 @@ jobs:
           import { appendFileSync } from "node:fs";
 
           const sha = process.env.RELEASE_SHA;
-          const triggeredAt = Date.now();
           const {
             RENDER_API_KEY, RENDER_PRODUCTION_SERVICE_ID, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
             RENDER_STAGING_SERVICE_ID, FORCE_UNSTAGED, GITHUB_STEP_SUMMARY,
@@ -133,6 +132,15 @@ jobs:
           const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
           const isTransient = (error) => error.retryable ?? ["TypeError", "TimeoutError", "AbortError"].includes(error.name);
+          const maxRetryAfterMs = 60_000;
+          const wasNotSent = (error) => error.name === "TypeError" && ["ENOTFOUND", "ECONNREFUSED"].includes(error.cause?.code);
+
+          function retryDelay(error, attempt) {
+            const seconds = error.retryAfter;
+            return typeof seconds === "string" && /^\d+$/.test(seconds)
+              ? Math.min(Number(seconds) * 1_000, maxRetryAfterMs)
+              : 2_000 * attempt;
+          }
 
           async function jsonRequest(url, options = {}) {
             const idempotent = url.startsWith("https://api.render.com/") && ["GET", "PATCH"].includes(options.method ?? "GET");
@@ -142,6 +150,8 @@ jobs:
                 const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
                 if (!response.ok) {
                   throw Object.assign(new Error(`${url}: HTTP ${response.status}`), {
+                    status: response.status,
+                    retryAfter: response.status === 429 ? response.headers.get("Retry-After") : null,
                     retryable: response.status === 429 || (response.status >= 500 && response.status <= 599),
                   });
                 }
@@ -150,21 +160,20 @@ jobs:
               } catch (error) {
                 if (attempt === attempts || !isTransient(error)) throw error;
                 console.log(`Render request failed (${attempt}/${attempts}): ${error.message}`);
-                await sleep(2_000 * attempt);
+                await sleep(retryDelay(error, attempt));
               }
             }
           }
 
-          async function findRecentDeploy(triggeredAt) {
+          async function readDeploys(triggeredAt) {
             const url = new URL(`${renderUrl}/deploys`);
             url.searchParams.set("limit", "100");
             url.searchParams.set("createdAfter", new Date(triggeredAt).toISOString());
+            const deploys = [];
             for (let page = 0; page < 10; page++) {
               const recent = await jsonRequest(url.href, { headers: renderHeaders });
-              const deploy = recent.find(({ deploy }) =>
-                deploy?.id && deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
-              if (deploy) return deploy.deploy;
-              if (recent.length < 100) return null;
+              deploys.push(...recent.map(({ deploy }) => deploy));
+              if (recent.length < 100) return deploys;
               const cursor = recent.at(-1)?.cursor;
               if (!cursor) throw new Error("Render deploy lookup omitted a pagination cursor");
               url.searchParams.set("cursor", cursor);
@@ -172,10 +181,23 @@ jobs:
             throw new Error("Render deploy lookup exceeded 10 pages; refusing to repeat the deploy request");
           }
 
-          async function triggerDeploy(triggeredAt) {
+          async function reconcileDeploy(triggeredAt, existingIds) {
+            for (let lookup = 0; lookup < 30; lookup++) {
+              await sleep(5_000);
+              const recent = await readDeploys(triggeredAt);
+              const deploy = recent.find((deploy) => deploy?.id && !existingIds.has(deploy.id) &&
+                deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
+              if (deploy) return deploy;
+            }
+            throw new Error(`Ambiguous Render deploy outcome for commit ${sha}; check the service's deploys before dispatching again`);
+          }
+
+          async function triggerDeploy() {
+            const triggeredAt = Date.now();
+            const existing = await jsonRequest(`${renderUrl}/deploys?limit=100`, { headers: renderHeaders });
+            const existingIds = new Set(existing.map(({ deploy }) => deploy.id));
             for (let attempt = 1; attempt <= 4; attempt++) {
               let deploy;
-              let failure;
               try {
                 deploy = await jsonRequest(`${renderUrl}/deploys`, {
                   method: "POST",
@@ -184,17 +206,17 @@ jobs:
                 });
               } catch (error) {
                 if (!isTransient(error)) throw error;
-                failure = error;
-                console.log(`Render deploy request failed (${attempt}/4): ${error.message}; checking recent deploys`);
+                if (error.status === 429 || wasNotSent(error)) {
+                  if (attempt === 4) throw error;
+                  console.log(`Render refused deploy request (${attempt}/4): ${error.message}`);
+                  await sleep(retryDelay(error, attempt));
+                  continue;
+                }
+                console.log(`Render deploy response ambiguous: ${error.message}; checking recent deploys without another POST`);
+                return reconcileDeploy(triggeredAt, existingIds);
               }
               if (deploy?.id) return deploy;
-              for (let lookup = 0; lookup < 30; lookup++) {
-                await sleep(5_000);
-                deploy = await findRecentDeploy(triggeredAt);
-                if (deploy) return deploy;
-              }
-              if (!failure) throw new Error(`Render did not create a deploy for ${sha}`);
-              if (attempt === 4) throw failure;
+              return reconcileDeploy(triggeredAt, existingIds);
             }
           }
 
@@ -232,7 +254,7 @@ jobs:
           const serviceOrigin = service.serviceDetails?.url;
           if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
 
-          const deploy = await triggerDeploy(triggeredAt);
+          const deploy = await triggerDeploy();
           console.log(`Render deploy ${deploy.id} for ${sha}`);
 
           let live = false;
@@ -389,7 +411,6 @@ jobs:
           import { appendFileSync } from "node:fs";
 
           const sha = process.env.RELEASE_SHA;
-          const triggeredAt = Date.now();
           const {
             RENDER_API_KEY, RENDER_STAGING_SERVICE_ID, RELEASE_BRANCH, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
             GITHUB_STEP_SUMMARY,
@@ -412,6 +433,15 @@ jobs:
           const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
           const isTransient = (error) => error.retryable ?? ["TypeError", "TimeoutError", "AbortError"].includes(error.name);
+          const maxRetryAfterMs = 60_000;
+          const wasNotSent = (error) => error.name === "TypeError" && ["ENOTFOUND", "ECONNREFUSED"].includes(error.cause?.code);
+
+          function retryDelay(error, attempt) {
+            const seconds = error.retryAfter;
+            return typeof seconds === "string" && /^\d+$/.test(seconds)
+              ? Math.min(Number(seconds) * 1_000, maxRetryAfterMs)
+              : 2_000 * attempt;
+          }
 
           async function jsonRequest(url, options = {}) {
             const idempotent = url.startsWith("https://api.render.com/") && ["GET", "PATCH"].includes(options.method ?? "GET");
@@ -421,6 +451,8 @@ jobs:
                 const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
                 if (!response.ok) {
                   throw Object.assign(new Error(`${url}: HTTP ${response.status}`), {
+                    status: response.status,
+                    retryAfter: response.status === 429 ? response.headers.get("Retry-After") : null,
                     retryable: response.status === 429 || (response.status >= 500 && response.status <= 599),
                   });
                 }
@@ -429,21 +461,20 @@ jobs:
               } catch (error) {
                 if (attempt === attempts || !isTransient(error)) throw error;
                 console.log(`Render request failed (${attempt}/${attempts}): ${error.message}`);
-                await sleep(2_000 * attempt);
+                await sleep(retryDelay(error, attempt));
               }
             }
           }
 
-          async function findRecentDeploy(triggeredAt) {
+          async function readDeploys(triggeredAt) {
             const url = new URL(`${renderUrl}/deploys`);
             url.searchParams.set("limit", "100");
             url.searchParams.set("createdAfter", new Date(triggeredAt).toISOString());
+            const deploys = [];
             for (let page = 0; page < 10; page++) {
               const recent = await jsonRequest(url.href, { headers: renderHeaders });
-              const deploy = recent.find(({ deploy }) =>
-                deploy?.id && deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
-              if (deploy) return deploy.deploy;
-              if (recent.length < 100) return null;
+              deploys.push(...recent.map(({ deploy }) => deploy));
+              if (recent.length < 100) return deploys;
               const cursor = recent.at(-1)?.cursor;
               if (!cursor) throw new Error("Render deploy lookup omitted a pagination cursor");
               url.searchParams.set("cursor", cursor);
@@ -451,10 +482,23 @@ jobs:
             throw new Error("Render deploy lookup exceeded 10 pages; refusing to repeat the deploy request");
           }
 
-          async function triggerDeploy(triggeredAt) {
+          async function reconcileDeploy(triggeredAt, existingIds) {
+            for (let lookup = 0; lookup < 30; lookup++) {
+              await sleep(5_000);
+              const recent = await readDeploys(triggeredAt);
+              const deploy = recent.find((deploy) => deploy?.id && !existingIds.has(deploy.id) &&
+                deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
+              if (deploy) return deploy;
+            }
+            throw new Error(`Ambiguous Render deploy outcome for commit ${sha}; check the service's deploys before dispatching again`);
+          }
+
+          async function triggerDeploy() {
+            const triggeredAt = Date.now();
+            const existing = await jsonRequest(`${renderUrl}/deploys?limit=100`, { headers: renderHeaders });
+            const existingIds = new Set(existing.map(({ deploy }) => deploy.id));
             for (let attempt = 1; attempt <= 4; attempt++) {
               let deploy;
-              let failure;
               try {
                 deploy = await jsonRequest(`${renderUrl}/deploys`, {
                   method: "POST",
@@ -463,17 +507,17 @@ jobs:
                 });
               } catch (error) {
                 if (!isTransient(error)) throw error;
-                failure = error;
-                console.log(`Render deploy request failed (${attempt}/4): ${error.message}; checking recent deploys`);
+                if (error.status === 429 || wasNotSent(error)) {
+                  if (attempt === 4) throw error;
+                  console.log(`Render refused deploy request (${attempt}/4): ${error.message}`);
+                  await sleep(retryDelay(error, attempt));
+                  continue;
+                }
+                console.log(`Render deploy response ambiguous: ${error.message}; checking recent deploys without another POST`);
+                return reconcileDeploy(triggeredAt, existingIds);
               }
               if (deploy?.id) return deploy;
-              for (let lookup = 0; lookup < 30; lookup++) {
-                await sleep(5_000);
-                deploy = await findRecentDeploy(triggeredAt);
-                if (deploy) return deploy;
-              }
-              if (!failure) throw new Error(`Render did not create a deploy for ${sha}`);
-              if (attempt === 4) throw failure;
+              return reconcileDeploy(triggeredAt, existingIds);
             }
           }
 
@@ -501,7 +545,7 @@ jobs:
             throw new Error(`Render did not select staging branch ${RELEASE_BRANCH}`);
           }
 
-          const deploy = await triggerDeploy(triggeredAt);
+          const deploy = await triggerDeploy();
           console.log(`Render deploy ${deploy.id} for ${sha}`);
 
           let live = false;
