@@ -23,6 +23,7 @@ function releaseHarness(
   const job = releaseJob(environment);
   const body = job.split("node --input-type=module <<'NODE'\n")[1].split("          NODE")[0];
   const deploys = [];
+  const renderDeploys = [];
   const requests = [];
   const summaries = [];
   const sleeps = [];
@@ -73,15 +74,17 @@ function releaseHarness(
           }));
         } else if (parsed.pathname.endsWith("/deploys") && options.method === "POST") {
           deploys.push(JSON.parse(options.body));
-          result = { id: "deploy-1" };
+          const deploy = {
+            id: "deploy-1",
+            commit: { id: deploys.at(-1).commitId },
+            createdAt: new Date(now()).toISOString(),
+          };
+          renderDeploys.push(deploy);
+          return Response.json(deploy, { status: 201 });
         } else if (parsed.pathname.endsWith("/deploys")) {
-          result = deploys.map(({ commitId }) => ({
+          result = renderDeploys.map((deploy) => ({
             cursor: "deploy-cursor",
-            deploy: {
-              id: "deploy-1",
-              commit: { id: commitId },
-              createdAt: new Date(now()).toISOString(),
-            },
+            deploy,
           }));
         } else if (parsed.pathname.endsWith("/deploys/deploy-1")) {
           result = { status: "live", commit: { id: deploys.at(-1).commitId } };
@@ -383,6 +386,111 @@ for (const environment of ["staging", "production"]) {
     await assert.rejects(release.run(), /HTTP 503/);
     assert.equal(posts, 1);
     assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  });
+
+  test(`${environment}: finds an accepted deploy beyond the first page`, async () => {
+    let posts = 0;
+    let lists = 0;
+    const release = releaseHarness(environment, {
+      render: ({ url, options, respond, now }) => {
+        if (options.method === "POST") {
+          posts++;
+          respond();
+          throw new TypeError("POST response lost");
+        }
+        if (url.pathname.endsWith("/deploys")) {
+          lists++;
+          assert.equal(url.searchParams.get("limit"), "100");
+          assert.equal(Date.parse(url.searchParams.get("createdAfter")), startedAt);
+          if (lists === 1) {
+            assert.equal(url.searchParams.get("cursor"), null);
+            return Response.json(
+              Array.from({ length: 100 }, (_, index) => ({
+                cursor: `cursor-${index}`,
+                deploy: {
+                  id: `unrelated-${index}`,
+                  commit: { id: previousSha },
+                  createdAt: new Date(now()).toISOString(),
+                },
+              })),
+            );
+          }
+          assert.equal(url.searchParams.get("cursor"), "cursor-99");
+        }
+      },
+    });
+    const startedAt = release.now();
+    await release.run();
+    assert.equal(posts, 1);
+    assert.equal(lists, 2);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  });
+
+  for (const [reason, entries, message] of [
+    [
+      "missing cursor",
+      () => Array.from({ length: 100 }, () => ({ deploy: { id: "other" } })),
+      /omitted a pagination cursor/,
+    ],
+    [
+      "too many pages",
+      () => Array.from({ length: 100 }, () => ({ cursor: "next", deploy: { id: "other" } })),
+      /exceeded 10 pages/,
+    ],
+    ["an HTTP 401", () => new Response("rejected", { status: 401 }), /HTTP 401/],
+  ]) {
+    test(`${environment}: refuses to resend after a deploy lookup with ${reason}`, async () => {
+      let posts = 0;
+      const release = releaseHarness(environment, {
+        render: ({ url, options, respond }) => {
+          if (options.method === "POST") {
+            posts++;
+            respond();
+            throw new TypeError("POST response lost");
+          }
+          if (url.pathname.endsWith("/deploys")) {
+            const result = entries();
+            return result instanceof Response ? result : Response.json(result);
+          }
+        },
+      });
+      await assert.rejects(release.run(), message);
+      assert.equal(posts, 1);
+      assert.deepEqual(release.deploys, [{ commitId: sha }]);
+    });
+  }
+
+  for (const [reason, current, message] of [
+    ["a different commit", { status: "live", commit: { id: previousSha } }, /instead of/],
+    ["an unverified live commit", { status: "live" }, /did not confirm the deployed SHA/],
+    ["a failed deploy", { status: "build_failed", commit: { id: sha } }, /ended with build_failed/],
+  ]) {
+    test(`${environment}: still rejects ${reason} after recovering a poll`, async () => {
+      let polls = 0;
+      const release = releaseHarness(environment, {
+        render: ({ url }) => {
+          if (url.pathname.endsWith("/deploys/deploy-1")) {
+            if (++polls === 1) throw new TypeError("poll failed");
+            return Response.json(current);
+          }
+        },
+      });
+      await assert.rejects(release.run(), message);
+      assert.equal(polls, 2);
+      assert.ok(release.requests.every(({ url }) => url.hostname !== "api.github.com"));
+    });
+  }
+
+  test(`${environment}: leaves GitHub deployment writes unretried`, async () => {
+    let writes = 0;
+    const release = releaseHarness(environment, {
+      github: () => {
+        writes++;
+        return new Response("unavailable", { status: 503 });
+      },
+    });
+    await assert.rejects(release.run(), /api.github.com.*HTTP 503/);
+    assert.equal(writes, 1);
   });
 
   test(`${environment}: deploys the input SHA after the branch head moves`, async () => {
