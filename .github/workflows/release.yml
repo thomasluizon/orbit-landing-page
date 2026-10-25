@@ -109,6 +109,7 @@ jobs:
           import { appendFileSync } from "node:fs";
 
           const sha = process.env.RELEASE_SHA;
+          const triggeredAt = Date.now();
           const {
             RENDER_API_KEY, RENDER_PRODUCTION_SERVICE_ID, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
             RENDER_STAGING_SERVICE_ID, FORCE_UNSTAGED, GITHUB_STEP_SUMMARY,
@@ -131,12 +132,70 @@ jobs:
 
           const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-          // Render answers 201 with the deploy, or 202 Queued with no body; an empty body parses as null.
+          const isTransient = (error) => error.retryable ?? ["TypeError", "TimeoutError", "AbortError"].includes(error.name);
+
           async function jsonRequest(url, options = {}) {
-            const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
-            const body = await response.text();
-            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}: ${body}`);
-            return body.trim() === "" ? null : JSON.parse(body);
+            const idempotent = url.startsWith("https://api.render.com/") && ["GET", "PATCH"].includes(options.method ?? "GET");
+            const attempts = idempotent ? 4 : 1;
+            for (let attempt = 1; attempt <= attempts; attempt++) {
+              try {
+                const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
+                if (!response.ok) {
+                  throw Object.assign(new Error(`${url}: HTTP ${response.status}`), {
+                    retryable: response.status === 429 || (response.status >= 500 && response.status <= 599),
+                  });
+                }
+                const body = await response.text();
+                return body.trim() === "" ? null : JSON.parse(body);
+              } catch (error) {
+                if (attempt === attempts || !isTransient(error)) throw error;
+                console.log(`Render request failed (${attempt}/${attempts}): ${error.message}`);
+                await sleep(2_000 * attempt);
+              }
+            }
+          }
+
+          async function findRecentDeploy(triggeredAt) {
+            const url = new URL(`${renderUrl}/deploys`);
+            url.searchParams.set("limit", "100");
+            url.searchParams.set("createdAfter", new Date(triggeredAt).toISOString());
+            for (let page = 0; page < 10; page++) {
+              const recent = await jsonRequest(url.href, { headers: renderHeaders });
+              const deploy = recent.find(({ deploy }) =>
+                deploy?.id && deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
+              if (deploy) return deploy.deploy;
+              if (recent.length < 100) return null;
+              const cursor = recent.at(-1)?.cursor;
+              if (!cursor) throw new Error("Render deploy lookup omitted a pagination cursor");
+              url.searchParams.set("cursor", cursor);
+            }
+            throw new Error("Render deploy lookup exceeded 10 pages; refusing to repeat the deploy request");
+          }
+
+          async function triggerDeploy(triggeredAt) {
+            for (let attempt = 1; attempt <= 4; attempt++) {
+              let deploy;
+              let failure;
+              try {
+                deploy = await jsonRequest(`${renderUrl}/deploys`, {
+                  method: "POST",
+                  headers: { ...renderHeaders, "Content-Type": "application/json" },
+                  body: JSON.stringify({ commitId: sha }),
+                });
+              } catch (error) {
+                if (!isTransient(error)) throw error;
+                failure = error;
+                console.log(`Render deploy request failed (${attempt}/4): ${error.message}; checking recent deploys`);
+              }
+              if (deploy?.id) return deploy;
+              for (let lookup = 0; lookup < 30; lookup++) {
+                await sleep(5_000);
+                deploy = await findRecentDeploy(triggeredAt);
+                if (deploy) return deploy;
+              }
+              if (!failure) throw new Error(`Render did not create a deploy for ${sha}`);
+              if (attempt === 4) throw failure;
+            }
           }
 
           appendFileSync(GITHUB_STEP_SUMMARY,
@@ -173,20 +232,7 @@ jobs:
           const serviceOrigin = service.serviceDetails?.url;
           if (!serviceOrigin) throw new Error("Render did not return the landing service URL");
 
-          const triggeredAt = Date.now();
-          let deploy = await jsonRequest(`${renderUrl}/deploys`, {
-            method: "POST",
-            headers: { ...renderHeaders, "Content-Type": "application/json" },
-            body: JSON.stringify({ commitId: sha }),
-          });
-          for (let attempt = 0; !deploy?.id && attempt < 30; attempt++) {
-            await sleep(5_000);
-            const recent = await jsonRequest(`${renderUrl}/deploys?limit=20`, { headers: renderHeaders });
-            deploy = (recent ?? [])
-              .map((entry) => entry.deploy)
-              .find((entry) => entry?.commit?.id === sha && Date.parse(entry.createdAt) >= triggeredAt - 60_000);
-          }
-          if (!deploy?.id) throw new Error(`Render did not create a deploy for ${sha}`);
+          const deploy = await triggerDeploy(triggeredAt);
           console.log(`Render deploy ${deploy.id} for ${sha}`);
 
           let live = false;
@@ -343,6 +389,7 @@ jobs:
           import { appendFileSync } from "node:fs";
 
           const sha = process.env.RELEASE_SHA;
+          const triggeredAt = Date.now();
           const {
             RENDER_API_KEY, RENDER_STAGING_SERVICE_ID, RELEASE_BRANCH, GH_TOKEN, GITHUB_REPOSITORY, GITHUB_RUN_ID,
             GITHUB_STEP_SUMMARY,
@@ -364,12 +411,70 @@ jobs:
           };
           const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
-          // Render answers 201 with the deploy, or 202 Queued with no body; an empty body parses as null.
+          const isTransient = (error) => error.retryable ?? ["TypeError", "TimeoutError", "AbortError"].includes(error.name);
+
           async function jsonRequest(url, options = {}) {
-            const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
-            const body = await response.text();
-            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}: ${body}`);
-            return body.trim() === "" ? null : JSON.parse(body);
+            const idempotent = url.startsWith("https://api.render.com/") && ["GET", "PATCH"].includes(options.method ?? "GET");
+            const attempts = idempotent ? 4 : 1;
+            for (let attempt = 1; attempt <= attempts; attempt++) {
+              try {
+                const response = await fetch(url, { ...options, signal: AbortSignal.timeout(30_000) });
+                if (!response.ok) {
+                  throw Object.assign(new Error(`${url}: HTTP ${response.status}`), {
+                    retryable: response.status === 429 || (response.status >= 500 && response.status <= 599),
+                  });
+                }
+                const body = await response.text();
+                return body.trim() === "" ? null : JSON.parse(body);
+              } catch (error) {
+                if (attempt === attempts || !isTransient(error)) throw error;
+                console.log(`Render request failed (${attempt}/${attempts}): ${error.message}`);
+                await sleep(2_000 * attempt);
+              }
+            }
+          }
+
+          async function findRecentDeploy(triggeredAt) {
+            const url = new URL(`${renderUrl}/deploys`);
+            url.searchParams.set("limit", "100");
+            url.searchParams.set("createdAfter", new Date(triggeredAt).toISOString());
+            for (let page = 0; page < 10; page++) {
+              const recent = await jsonRequest(url.href, { headers: renderHeaders });
+              const deploy = recent.find(({ deploy }) =>
+                deploy?.id && deploy.commit?.id === sha && Date.parse(deploy.createdAt) >= triggeredAt);
+              if (deploy) return deploy.deploy;
+              if (recent.length < 100) return null;
+              const cursor = recent.at(-1)?.cursor;
+              if (!cursor) throw new Error("Render deploy lookup omitted a pagination cursor");
+              url.searchParams.set("cursor", cursor);
+            }
+            throw new Error("Render deploy lookup exceeded 10 pages; refusing to repeat the deploy request");
+          }
+
+          async function triggerDeploy(triggeredAt) {
+            for (let attempt = 1; attempt <= 4; attempt++) {
+              let deploy;
+              let failure;
+              try {
+                deploy = await jsonRequest(`${renderUrl}/deploys`, {
+                  method: "POST",
+                  headers: { ...renderHeaders, "Content-Type": "application/json" },
+                  body: JSON.stringify({ commitId: sha }),
+                });
+              } catch (error) {
+                if (!isTransient(error)) throw error;
+                failure = error;
+                console.log(`Render deploy request failed (${attempt}/4): ${error.message}; checking recent deploys`);
+              }
+              if (deploy?.id) return deploy;
+              for (let lookup = 0; lookup < 30; lookup++) {
+                await sleep(5_000);
+                deploy = await findRecentDeploy(triggeredAt);
+                if (deploy) return deploy;
+              }
+              if (!failure) throw new Error(`Render did not create a deploy for ${sha}`);
+              if (attempt === 4) throw failure;
+            }
           }
 
           const service = await jsonRequest(renderUrl, { headers: renderHeaders });
@@ -396,20 +501,7 @@ jobs:
             throw new Error(`Render did not select staging branch ${RELEASE_BRANCH}`);
           }
 
-          const triggeredAt = Date.now();
-          let deploy = await jsonRequest(`${renderUrl}/deploys`, {
-            method: "POST",
-            headers: { ...renderHeaders, "Content-Type": "application/json" },
-            body: JSON.stringify({ commitId: sha }),
-          });
-          for (let attempt = 0; !deploy?.id && attempt < 30; attempt++) {
-            await sleep(5_000);
-            const recent = await jsonRequest(`${renderUrl}/deploys?limit=20`, { headers: renderHeaders });
-            deploy = (recent ?? [])
-              .map((entry) => entry.deploy)
-              .find((entry) => entry?.commit?.id === sha && Date.parse(entry.createdAt) >= triggeredAt - 60_000);
-          }
-          if (!deploy?.id) throw new Error(`Render did not create a deploy for ${sha}`);
+          const deploy = await triggerDeploy(triggeredAt);
           console.log(`Render deploy ${deploy.id} for ${sha}`);
 
           let live = false;
