@@ -1134,11 +1134,7 @@ test("every current copy key has locale parity and Pro states the approved weekl
   for (const table of [copyTables.translations, copyTables.landingCopy])
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
   for (const [language, pricing, faq] of [
-    [
-      "en",
-      "250 Astra messages a week",
-      "250 Astra messages a week and Google Calendar import.",
-    ],
+    ["en", "250 Astra messages a week", "250 Astra messages a week and Google Calendar import."],
     [
       "pt-BR",
       "250 mensagens da Astra por semana",
