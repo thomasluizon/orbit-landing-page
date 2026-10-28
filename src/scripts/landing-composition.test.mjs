@@ -1130,9 +1130,24 @@ test("all app and install links and QR generation share environment-backed produ
   assert.match(workflow, /buildVariables/);
 });
 
-test("every current copy key has locale parity", () => {
+test("every current copy key has locale parity and Pro states the approved weekly pool", () => {
   for (const table of [copyTables.translations, copyTables.landingCopy])
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
+  for (const [language, pricing, faq] of [
+    [
+      "en",
+      "250 Astra messages a week",
+      "250 Astra messages a week and Google Calendar import.",
+    ],
+    [
+      "pt-BR",
+      "250 mensagens da Astra por semana",
+      "250 mensagens da Astra por semana e a importação do Google Agenda.",
+    ],
+  ]) {
+    assert.equal(copyTables.landingCopy[language]["pricing.pro.astra"], pricing);
+    assert.equal(copyTables.landingCopy[language]["faq.plans.a"], faq);
+  }
 });
 
 async function reachFeaturesWithoutPhone(
