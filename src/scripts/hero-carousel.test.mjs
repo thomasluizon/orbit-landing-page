@@ -516,7 +516,7 @@ test("feature motion waits for intersection and separate tasks, and respects med
   }
 });
 
-function floatHarness({ reduced = false, startup = false, language = "en" } = {}) {
+function floatHarness({ reduced = false, startup = false, language = "en", fine = true } = {}) {
   const frames = new Map();
   const events = new Map();
   const preference = {
@@ -529,9 +529,24 @@ function floatHarness({ reduced = false, startup = false, language = "en" } = {}
     addEventListener: (name, fn) => events.set(`width:${name}`, fn),
     removeEventListener: (name) => events.delete(`width:${name}`),
   };
+  const pointer = {
+    matches: fine,
+    addEventListener: (name, fn) => events.set(`pointer:${name}`, fn),
+    removeEventListener: (name) => events.delete(`pointer:${name}`),
+  };
   const cards = Array.from({ length: 4 }, () => ({
+    listeners: new Map(),
+    addEventListener(name, callback) {
+      this.listeners.set(name, callback);
+    },
+    removeEventListener(name) {
+      this.listeners.delete(name);
+    },
+    getBoundingClientRect: () => ({ left: 100, top: 200, width: 160, height: 120 }),
     style: {
       transform: "",
+      translate: "",
+      rotate: "",
       removeProperty(name) {
         this[name] = "";
       },
@@ -571,7 +586,12 @@ function floatHarness({ reduced = false, startup = false, language = "en" } = {}
       requestAnimationFrame: (fn) => scheduleFrame(fn),
       addEventListener: (name, fn) => events.set(`window:${name}`, fn),
       removeEventListener: (name) => events.delete(`window:${name}`),
-      matchMedia: (query) => (query.includes("reduced-motion") ? preference : desktop),
+      matchMedia: (query) =>
+        query.includes("reduced-motion")
+          ? preference
+          : query.includes("pointer: fine")
+            ? pointer
+            : desktop,
     },
     requestAnimationFrame: (fn) => scheduleFrame(fn),
     cancelAnimationFrame: (id) => frames.delete(id),
@@ -651,6 +671,7 @@ function floatHarness({ reduced = false, startup = false, language = "en" } = {}
     document,
     preference,
     desktop,
+    pointer,
     dispose,
     get disconnected() {
       return disconnected;
@@ -771,3 +792,117 @@ for (const language of ["en", "pt-BR"]) {
     h.dispose();
   });
 }
+
+function pointAt(card, x, y, pointerType = "mouse", type = "pointermove") {
+  card.listeners.get(type)?.({ clientX: x, clientY: y, pointerType });
+}
+
+test("each hero card follows the mouse with bounded translation and 3D tilt while floating", () => {
+  const h = floatHarness();
+  h.intersect(true);
+  h.tick(1000);
+  for (const card of h.cards) {
+    const floating = card.style.transform;
+    pointAt(card, 260, 200, "mouse", "pointerenter");
+    assert.equal(card.style.translate, "3.00px -3.00px");
+    assert.match(card.style.rotate, /^1(?:\.0+)? 1(?:\.0+)? 0 2\.83deg$/);
+    assert.equal(card.style.transform, floating, "pointer feedback preserves float and parallax");
+    pointAt(card, 1000, 1000);
+    assert.equal(card.style.translate, "3.00px 3.00px", "pointer coordinates are clamped");
+    pointAt(card, 100, 320);
+    assert.equal(card.style.translate, "-3.00px 3.00px");
+    assert.match(card.style.rotate, /^-1(?:\.0+)? -1(?:\.0+)? 0 2\.83deg$/);
+    pointAt(card, 260, 260);
+    assert.equal(card.style.rotate, "0 1 0 2.00deg");
+    pointAt(card, 180, 260);
+    assert.equal(card.style.translate, "0.00px 0.00px");
+    assert.match(card.style.rotate, / 0\.00deg$/);
+    pointAt(card, 260, 200);
+    h.tick(1016);
+    assert.notEqual(card.style.transform, floating, "the float loop continues during hover");
+    assert.equal(card.style.translate, "3.00px -3.00px");
+    pointAt(card, 260, 200, "mouse", "pointerleave");
+    assert.equal(card.style.translate, "");
+    assert.equal(card.style.rotate, "");
+  }
+  h.dispose();
+  assert.ok(h.cards.every((card) => card.listeners.size === 0));
+});
+
+test("hero pointer feedback rests for touch, reduced motion, narrow widths and stopped loops", () => {
+  for (const options of [{ reduced: true }, { fine: false }, {}]) {
+    const h = floatHarness(options);
+    if (!options.reduced) h.intersect(true);
+    for (const card of h.cards) {
+      for (const pointerType of ["touch", "pen"]) {
+        pointAt(card, 260, 200, pointerType);
+        assert.equal(card.style.translate, "");
+        assert.equal(card.style.rotate, "");
+      }
+      if (options.reduced || options.fine === false) {
+        pointAt(card, 260, 200);
+        assert.equal(card.style.translate, "");
+        assert.equal(card.style.rotate, "");
+      }
+    }
+    h.dispose();
+  }
+  const h = floatHarness();
+  h.intersect(true);
+  const card = h.cards[0];
+  for (const [pause, resume] of [
+    [() => h.intersect(false), () => h.intersect(true)],
+    [
+      () => {
+        h.document.hidden = true;
+        h.events.get("visibilitychange")();
+      },
+      () => {
+        h.document.hidden = false;
+        h.events.get("visibilitychange")();
+      },
+    ],
+    ...[
+      [h.preference, "motion:change"],
+      [h.desktop, "width:change"],
+      [h.pointer, "pointer:change"],
+    ].map(([media, name]) => [
+      () => {
+        media.matches = name === "motion:change";
+        h.events.get(name)();
+      },
+      () => {
+        media.matches = name !== "motion:change";
+        h.events.get(name)();
+      },
+    ]),
+  ]) {
+    pointAt(card, 260, 200);
+    assert.notEqual(card.style.rotate, "");
+    pause();
+    assert.equal(card.style.translate, "");
+    assert.equal(card.style.rotate, "");
+    pointAt(card, 260, 200);
+    assert.equal(card.style.rotate, "");
+    resume();
+  }
+  pointAt(card, 260, 200);
+  pointAt(card, 260, 200, "mouse", "pointercancel");
+  assert.equal(card.style.rotate, "");
+  h.dispose();
+  assert.equal(h.events.size, 0);
+});
+
+test("hero pointer feedback uses the surface duration and movement easing in both directions", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /@media \(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\)/,
+  );
+  const rule = css.match(/\[data-hero-float\]\s*\{([^}]*transition[^}]*)\}/)?.[1];
+  assert.ok(rule, "the base card rule eases entry, retargeting and return");
+  for (const property of ["translate", "rotate"]) {
+    assert.ok(rule.includes(`${property} var(--duration-hover-surface) var(--ease-out)`));
+  }
+  assert.match(css, /\.hero-side\s*\{\s*perspective:\s*800px;/);
+});

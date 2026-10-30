@@ -25,10 +25,42 @@ function floatOffset(path: FloatPath, seconds: number, phase: number) {
   return { x: Math.cos(t + phase) * amplitude, y: Math.sin(t + phase) * amplitude };
 }
 
+function mountCardPointer(element: HTMLElement, canMove: () => boolean) {
+  const reset = () => {
+    element.style.removeProperty("translate");
+    element.style.removeProperty("rotate");
+  };
+  const follow = (event: PointerEvent) => {
+    if (!canMove() || event.pointerType !== "mouse") return;
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1));
+    const y = Math.max(-1, Math.min(1, ((event.clientY - rect.top) / rect.height) * 2 - 1));
+    element.style.translate = `${(x * 3).toFixed(2)}px ${(y * 3).toFixed(2)}px`;
+    const tilt = Math.hypot(x, y);
+    element.style.rotate = `${tilt ? -y : 1} ${x} 0 ${(tilt * 2).toFixed(2)}deg`;
+  };
+  element.addEventListener("pointerenter", follow);
+  element.addEventListener("pointermove", follow);
+  element.addEventListener("pointerleave", reset);
+  element.addEventListener("pointercancel", reset);
+  return {
+    reset,
+    dispose() {
+      element.removeEventListener("pointerenter", follow);
+      element.removeEventListener("pointermove", follow);
+      element.removeEventListener("pointerleave", reset);
+      element.removeEventListener("pointercancel", reset);
+      reset();
+    },
+  };
+}
+
 export function mountHeroFloat(stage: HTMLElement) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   if (reduced.matches) return () => {};
   const desktop = window.matchMedia("(min-width: 768px)");
+  const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const columns = [...stage.querySelectorAll<HTMLElement>("[data-hero-column]")].map(
     (element, columnIndex) => ({
       element,
@@ -40,6 +72,9 @@ export function mountHeroFloat(stage: HTMLElement) {
         phase: Math.random() * Math.PI * 2,
       })),
     }),
+  );
+  const pointerMotion = columns.flatMap((column) =>
+    column.cards.map((card) => mountCardPointer(card.element, () => canRun() && pointer.matches)),
   );
   let frame = 0;
   let visible = false;
@@ -72,6 +107,7 @@ export function mountHeroFloat(stage: HTMLElement) {
   }
 
   function updateLoop() {
+    if (!canRun() || !pointer.matches) pointerMotion.forEach((motion) => motion.reset());
     if (canRun()) {
       if (!frame) frame = requestAnimationFrame(tick);
     } else {
@@ -94,6 +130,7 @@ export function mountHeroFloat(stage: HTMLElement) {
   document.addEventListener("visibilitychange", updateLoop);
   reduced.addEventListener("change", updateLoop);
   desktop.addEventListener("change", updateLoop);
+  pointer.addEventListener("change", updateLoop);
 
   return () => {
     cancelAnimationFrame(frame);
@@ -101,6 +138,8 @@ export function mountHeroFloat(stage: HTMLElement) {
     document.removeEventListener("visibilitychange", updateLoop);
     reduced.removeEventListener("change", updateLoop);
     desktop.removeEventListener("change", updateLoop);
+    pointer.removeEventListener("change", updateLoop);
+    pointerMotion.forEach((motion) => motion.dispose());
     columns.forEach((column) =>
       column.cards.forEach((card) => card.element.style.removeProperty("transform")),
     );
