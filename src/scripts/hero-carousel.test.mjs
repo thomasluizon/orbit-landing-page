@@ -696,7 +696,8 @@ function floatHarness({ reduced = false, startup = false, language = "en", fine 
 
 test("hero float assigns all three paths and an independent phase to every side card and chip", () => {
   const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.match(source, /mountHeroFloat\(stage\)/);
+  assert.doesNotMatch(source, /mountHeroFloat|disposeFloat/);
+  assert.match(readFileSync("src/scripts/scroll.ts", "utf8"), /mountHeroFloat\(stage\)/);
   assert.match(source, /\[data-hero-float\] > \*/);
   const h = floatHarness();
   assert.equal(h.frames.size, 0, "wait for the hero to enter the viewport");

@@ -426,10 +426,18 @@ function harness(reduced = false) {
   const listeners = new Map();
   const preference = { matches: reduced };
   const result = { imports: 0, mounts: 0, disposals: 0 };
-  let resolveImport;
-  const loaded = new Promise((resolve) => {
-    resolveImport = resolve;
-  });
+  const floatResult = { imports: 0, mounts: 0, disposals: 0 };
+  const imports = [];
+  const stage = {};
+  const modules = new Map(
+    ["./landing-motion", "./hero-float"].map((name) => {
+      let resolve;
+      const loaded = new Promise((done) => {
+        resolve = done;
+      });
+      return [name, { loaded, resolve }];
+    }),
+  );
   const window = {
     matchMedia: () => preference,
     requestAnimationFrame: (callback) => frames.push(callback),
@@ -441,24 +449,40 @@ function harness(reduced = false) {
   vm.runInNewContext(compiled, {
     exports: {},
     window,
-    require() {
-      result.imports++;
-      return loaded;
+    document: {
+      getElementById(id) {
+        assert.equal(id, "hero-stage");
+        return stage;
+      },
+    },
+    require(name) {
+      imports.push(name);
+      (name === "./hero-float" ? floatResult : result).imports++;
+      assert.ok(modules.has(name), `unexpected startup import: ${name}`);
+      return modules.get(name).loaded;
     },
   });
   return {
     result,
+    floatResult,
+    imports,
     preference,
     listeners,
     paint() {
       frames.shift()();
       frames.shift()();
     },
-    async resolve() {
-      resolveImport({
+    async resolve(name = "./landing-motion") {
+      const { loaded, resolve } = modules.get(name);
+      resolve({
         mountLandingMotion() {
           result.mounts++;
           return () => result.disposals++;
+        },
+        mountHeroFloat(target) {
+          assert.equal(target, stage);
+          floatResult.mounts++;
+          return () => floatResult.disposals++;
         },
       });
       await loaded;
@@ -468,25 +492,51 @@ function harness(reduced = false) {
   };
 }
 
-test("motion loads once after paint without interaction, with page lifecycle cleanup", async () => {
+test("hero float loads once after paint without interaction, with page lifecycle cleanup", async () => {
   const h = harness();
-  assert.equal(h.result.imports, 0);
+  assert.equal(h.floatResult.imports, 0);
   h.paint();
-  await Promise.resolve();
-  assert.equal(h.result.imports, 1, "visible hero motion must load before any interaction");
-  const pending = h.listeners.get("scroll")();
-  h.listeners.get("wheel")();
-  await Promise.resolve();
-  assert.equal(h.result.imports, 1);
-  await h.resolve();
-  await pending;
-  assert.equal(h.result.mounts, 1);
+  await h.resolve("./hero-float");
+  assert.deepEqual(h.floatResult, { imports: 1, mounts: 1, disposals: 0 });
   h.listeners.get("pagehide")();
-  assert.equal(h.result.disposals, 1);
+  assert.equal(h.floatResult.disposals, 1);
   await h.listeners.get("pageshow")({ persisted: true });
-  await h.resolve();
-  assert.equal(h.result.mounts, 2);
+  await h.resolve("./hero-float");
+  assert.equal(h.floatResult.mounts, 2);
 });
+
+test("eager startup and unscrolled page restoration never import landing-motion", async () => {
+  const h = harness();
+  h.paint();
+  await h.resolve("./hero-float");
+  assert.deepEqual(h.imports, ["./hero-float"]);
+  h.listeners.get("pagehide")();
+  await h.listeners.get("pageshow")({ persisted: true });
+  await h.resolve("./hero-float");
+  assert.ok(h.imports.every((name) => name === "./hero-float"));
+  assert.equal(h.result.mounts, 0);
+});
+
+for (const interaction of ["scroll", "wheel", "touchstart", "keydown"]) {
+  test(`landing motion loads once on ${interaction} and restores after pagehide`, async () => {
+    const h = harness();
+    h.paint();
+    await h.resolve("./hero-float");
+    assert.equal(h.result.imports, 0);
+    const pending = h.listeners.get(interaction)();
+    h.listeners.get("scroll")();
+    h.listeners.get("wheel")();
+    await h.resolve();
+    await pending;
+    assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
+    assert.equal(h.floatResult.mounts, 1, "interaction must not mount the float again");
+    h.listeners.get("pagehide")();
+    assert.equal(h.result.disposals, 1);
+    await h.listeners.get("pageshow")({ persisted: true });
+    await h.resolve();
+    assert.equal(h.result.mounts, 2);
+  });
+}
 
 test("reduced motion still loads the pinned screen driver after interaction", async () => {
   const h = harness(true);
@@ -497,15 +547,30 @@ test("reduced motion still loads the pinned screen driver after interaction", as
   assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
 });
 
-test("a page left during import cannot mount a scroll driver", async () => {
-  const h = harness();
-  h.paint();
-  const pending = h.listeners.get("scroll")();
-  h.listeners.get("pagehide")();
-  await h.resolve();
-  await pending;
-  assert.equal(h.result.mounts, 0);
-});
+for (const name of ["./hero-float", "./landing-motion"]) {
+  test(`a page left during ${name} import cannot mount motion`, async () => {
+    const h = harness();
+    h.paint();
+    const pending = h.listeners.get("scroll")();
+    h.listeners.get("pagehide")();
+    await h.resolve(name);
+    await h.resolve();
+    await pending;
+    assert.equal(h.result.mounts, 0);
+    assert.equal(h.floatResult.mounts, 0);
+  });
+
+  test(`restoring a page during ${name} import mounts it only once`, async () => {
+    const h = harness();
+    h.paint();
+    h.listeners.get("scroll")();
+    h.listeners.get("pagehide")();
+    h.listeners.get("pageshow")({ persisted: true });
+    await h.resolve(name);
+    const mounted = name === "./hero-float" ? h.floatResult : h.result;
+    assert.equal(mounted.mounts, 1);
+  });
+}
 
 test("the Astra conversation sits in a full phone with status chrome and a home indicator", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
