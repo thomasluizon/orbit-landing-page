@@ -1669,6 +1669,16 @@ button.metric-bar-track:focus-visible {
   inline-size: 100%;
   padding-inline: var(--hero-float-reserve);
 }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hero-side {
+    perspective: 800px;
+  }
+  [data-hero-float] {
+    transition:
+      translate var(--duration-hover-surface) var(--ease-out),
+      rotate var(--duration-hover-surface) var(--ease-out);
+  }
+}
 .hero-left {
   grid-column: 1;
 }

@@ -516,7 +516,7 @@ test("feature motion waits for intersection and separate tasks, and respects med
   }
 });
 
-function floatHarness({ reduced = false } = {}) {
+function floatHarness({ reduced = false, startup = false, language = "en", fine = true } = {}) {
   const frames = new Map();
   const events = new Map();
   const preference = {
@@ -529,9 +529,24 @@ function floatHarness({ reduced = false } = {}) {
     addEventListener: (name, fn) => events.set(`width:${name}`, fn),
     removeEventListener: (name) => events.delete(`width:${name}`),
   };
+  const pointer = {
+    matches: fine,
+    addEventListener: (name, fn) => events.set(`pointer:${name}`, fn),
+    removeEventListener: (name) => events.delete(`pointer:${name}`),
+  };
   const cards = Array.from({ length: 4 }, () => ({
+    listeners: new Map(),
+    addEventListener(name, callback) {
+      this.listeners.set(name, callback);
+    },
+    removeEventListener(name) {
+      this.listeners.delete(name);
+    },
+    getBoundingClientRect: () => ({ left: 100, top: 200, width: 160, height: 120 }),
     style: {
       transform: "",
+      translate: "",
+      rotate: "",
       removeProperty(name) {
         this[name] = "";
       },
@@ -552,42 +567,103 @@ function floatHarness({ reduced = false } = {}) {
     },
   };
   const document = {
+    documentElement: { lang: language },
+    getElementById: (id) => (id === "hero-stage" ? stage : null),
+    querySelectorAll: () => [],
+    querySelector: () => null,
+    fonts: { ready: Promise.resolve() },
     hidden: false,
     addEventListener: (name, fn) => events.set(name, fn),
     removeEventListener: (name) => events.delete(name),
   };
   const exports = {};
-  vm.runInNewContext(
+  const context = vm.createContext({
+    exports,
+    Math: Object.assign(Object.create(Math), { random: () => ++phaseIndex / 10 }),
+    document,
+    window: {
+      innerHeight: 800,
+      requestAnimationFrame: (fn) => scheduleFrame(fn),
+      addEventListener: (name, fn) => events.set(`window:${name}`, fn),
+      removeEventListener: (name) => events.delete(`window:${name}`),
+      matchMedia: (query) =>
+        query.includes("reduced-motion")
+          ? preference
+          : query.includes("pointer: fine")
+            ? pointer
+            : desktop,
+    },
+    requestAnimationFrame: (fn) => scheduleFrame(fn),
+    cancelAnimationFrame: (id) => frames.delete(id),
+    ResizeObserver: class {
+      disconnect() {}
+    },
+    IntersectionObserver: class {
+      constructor(fn) {
+        intersection = fn;
+      }
+      observe(target) {
+        assert.equal(target, stage);
+      }
+      disconnect() {
+        disconnected = true;
+      }
+    },
+  });
+  function scheduleFrame(fn) {
+    frames.set(++frameId, fn);
+    return frameId;
+  }
+  function evaluate(name, require) {
+    const exports = {};
+    const code = ts.transpileModule(readFileSync(`src/scripts/${name}.ts`, "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(exports, require);
+    return exports;
+  }
+  vm.runInContext(
     ts.transpileModule(readFileSync("src/scripts/hero-float.ts", "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText,
-    {
-      exports,
-      Math: Object.assign(Object.create(Math), { random: () => ++phaseIndex / 10 }),
-      document,
-      window: {
-        innerHeight: 800,
-        matchMedia: (query) => (query.includes("reduced-motion") ? preference : desktop),
-      },
-      requestAnimationFrame: (fn) => {
-        frames.set(++frameId, fn);
-        return frameId;
-      },
-      cancelAnimationFrame: (id) => frames.delete(id),
-      IntersectionObserver: class {
-        constructor(fn) {
-          intersection = fn;
-        }
-        observe(target) {
-          assert.equal(target, stage);
-        }
-        disconnect() {
-          disconnected = true;
-        }
-      },
-    },
+    context,
   );
-  const dispose = exports.mountHeroFloat(stage);
+  let dispose;
+  if (startup) {
+    const cleanups = [];
+    const require = (name) => {
+      if (name === "./landing-motion") return evaluate("landing-motion", require);
+      if (name === "./hero-float") return exports;
+      if (name === "gsap")
+        return {
+          gsap: {
+            registerPlugin() {},
+            matchMedia: () => ({
+              add(query, callback) {
+                if (typeof query === "object" || !reduced) {
+                  const cleanup = callback({ conditions: { pinned: true } });
+                  if (cleanup) cleanups.push(cleanup);
+                }
+              },
+              revert: () => cleanups.forEach((cleanup) => cleanup()),
+            }),
+            timeline: () => ({ to() {} }),
+            fromTo() {},
+          },
+        };
+      if (name === "gsap/ScrollTrigger") return { ScrollTrigger: { update() {}, refresh() {} } };
+      if (name === "lenis")
+        return {
+          default: class {
+            on() {}
+            destroy() {}
+          },
+        };
+      return {};
+    };
+    evaluate("scroll", require);
+    dispose = () => events.get("window:pagehide")();
+  } else dispose = exports.mountHeroFloat(stage);
   return {
     cards,
     frames,
@@ -595,12 +671,19 @@ function floatHarness({ reduced = false } = {}) {
     document,
     preference,
     desktop,
+    pointer,
     dispose,
     get disconnected() {
       return disconnected;
     },
     intersect(visible) {
-      intersection([{ isIntersecting: visible }]);
+      intersection?.([{ isIntersecting: visible }]);
+    },
+    advance(time) {
+      for (const [id, callback] of [...frames]) {
+        frames.delete(id);
+        callback(time);
+      }
     },
     tick(time) {
       assert.equal(frames.size, 1, "all cards share one scheduled animation frame");
@@ -613,7 +696,8 @@ function floatHarness({ reduced = false } = {}) {
 
 test("hero float assigns all three paths and an independent phase to every side card and chip", () => {
   const source = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.match(source, /mountHeroFloat\(stage\)/);
+  assert.doesNotMatch(source, /mountHeroFloat|disposeFloat/);
+  assert.match(readFileSync("src/scripts/scroll.ts", "utf8"), /mountHeroFloat\(stage\)/);
   assert.match(source, /\[data-hero-float\] > \*/);
   const h = floatHarness();
   assert.equal(h.frames.size, 0, "wait for the hero to enter the viewport");
@@ -688,4 +772,152 @@ test("hero float guards prefers-reduced-motion and rests when the preference or 
   h.events.get("width:change")();
   assert.equal(h.frames.size, 0);
   h.dispose();
+});
+
+test("hero float starts once an initially reduced motion preference is turned off", () => {
+  const h = floatHarness({ reduced: true });
+  h.intersect(true);
+  assert.equal(h.frames.size, 0);
+  pointAt(h.cards[0], 260, 320);
+  assert.equal(h.cards[0].style.rotate, "");
+  h.preference.matches = false;
+  h.events.get("motion:change")();
+  h.tick(1000);
+  assert.ok(h.cards.every((card) => card.style.transform.includes("translate3d")));
+  h.dispose();
+  assert.equal(h.events.size, 0);
+});
+
+for (const language of ["en", "pt-BR"]) {
+  test(`visible hero cards float within one second without scroll in ${language}`, async () => {
+    const h = floatHarness({ startup: true, language });
+    h.tick(0);
+    h.tick(16);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(h.frames.size, 0, "wait for the initial intersection delivery");
+    h.intersect(true);
+    h.advance(32);
+    const first = h.cards.map((card) => card.style.transform);
+    assert.ok(
+      first.every((transform) => transform.includes("translate3d")),
+      "all four visible cards must receive a float transform without scrolling",
+    );
+    h.tick(500);
+    assert.ok(h.cards.every((card, index) => card.style.transform !== first[index]));
+    h.dispose();
+  });
+}
+
+function pointAt(card, x, y, pointerType = "mouse", type = "pointermove") {
+  card.listeners.get(type)?.({ clientX: x, clientY: y, pointerType });
+}
+
+test("each hero card follows the mouse with bounded translation and 3D tilt while floating", () => {
+  const h = floatHarness();
+  h.intersect(true);
+  h.tick(1000);
+  for (const card of h.cards) {
+    const floating = card.style.transform;
+    pointAt(card, 260, 200, "mouse", "pointerenter");
+    assert.equal(card.style.translate, "3.00px -3.00px");
+    assert.match(card.style.rotate, /^1(?:\.0+)? 1(?:\.0+)? 0 2\.83deg$/);
+    assert.equal(card.style.transform, floating, "pointer feedback preserves float and parallax");
+    pointAt(card, 1000, 1000);
+    assert.equal(card.style.translate, "3.00px 3.00px", "pointer coordinates are clamped");
+    pointAt(card, 100, 320);
+    assert.equal(card.style.translate, "-3.00px 3.00px");
+    assert.match(card.style.rotate, /^-1(?:\.0+)? -1(?:\.0+)? 0 2\.83deg$/);
+    pointAt(card, 260, 260);
+    assert.equal(card.style.rotate, "0 1 0 2.00deg");
+    pointAt(card, 180, 260);
+    assert.equal(card.style.translate, "0.00px 0.00px");
+    assert.match(card.style.rotate, / 0\.00deg$/);
+    pointAt(card, 260, 200);
+    h.tick(1016);
+    assert.notEqual(card.style.transform, floating, "the float loop continues during hover");
+    assert.equal(card.style.translate, "3.00px -3.00px");
+    pointAt(card, 260, 200, "mouse", "pointerleave");
+    assert.equal(card.style.translate, "");
+    assert.equal(card.style.rotate, "");
+  }
+  h.dispose();
+  assert.ok(h.cards.every((card) => card.listeners.size === 0));
+});
+
+test("hero pointer feedback rests for touch, reduced motion, narrow widths and stopped loops", () => {
+  for (const options of [{ reduced: true }, { fine: false }, {}]) {
+    const h = floatHarness(options);
+    if (!options.reduced) h.intersect(true);
+    for (const card of h.cards) {
+      for (const pointerType of ["touch", "pen"]) {
+        pointAt(card, 260, 200, pointerType);
+        assert.equal(card.style.translate, "");
+        assert.equal(card.style.rotate, "");
+      }
+      if (options.reduced || options.fine === false) {
+        pointAt(card, 260, 200);
+        assert.equal(card.style.translate, "");
+        assert.equal(card.style.rotate, "");
+      }
+    }
+    h.dispose();
+  }
+  const h = floatHarness();
+  h.intersect(true);
+  const card = h.cards[0];
+  for (const [pause, resume] of [
+    [() => h.intersect(false), () => h.intersect(true)],
+    [
+      () => {
+        h.document.hidden = true;
+        h.events.get("visibilitychange")();
+      },
+      () => {
+        h.document.hidden = false;
+        h.events.get("visibilitychange")();
+      },
+    ],
+    ...[
+      [h.preference, "motion:change"],
+      [h.desktop, "width:change"],
+      [h.pointer, "pointer:change"],
+    ].map(([media, name]) => [
+      () => {
+        media.matches = name === "motion:change";
+        h.events.get(name)();
+      },
+      () => {
+        media.matches = name !== "motion:change";
+        h.events.get(name)();
+      },
+    ]),
+  ]) {
+    pointAt(card, 260, 200);
+    assert.notEqual(card.style.rotate, "");
+    pause();
+    assert.equal(card.style.translate, "");
+    assert.equal(card.style.rotate, "");
+    pointAt(card, 260, 200);
+    assert.equal(card.style.rotate, "");
+    resume();
+  }
+  pointAt(card, 260, 200);
+  pointAt(card, 260, 200, "mouse", "pointercancel");
+  assert.equal(card.style.rotate, "");
+  h.dispose();
+  assert.equal(h.events.size, 0);
+});
+
+test("hero pointer feedback uses the surface duration and movement easing in both directions", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /@media \(hover: hover\) and \(pointer: fine\) and \(prefers-reduced-motion: no-preference\)/,
+  );
+  const rule = css.match(/\[data-hero-float\]\s*\{([^}]*transition[^}]*)\}/)?.[1];
+  assert.ok(rule, "the base card rule eases entry, retargeting and return");
+  for (const property of ["translate", "rotate"]) {
+    assert.ok(rule.includes(`${property} var(--duration-hover-surface) var(--ease-out)`));
+  }
+  assert.match(css, /\.hero-side\s*\{\s*perspective:\s*800px;/);
 });

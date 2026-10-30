@@ -2,7 +2,6 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { updateHeroCarousel } from "./hero-carousel";
-import { mountHeroFloat } from "./hero-float";
 import { afterLoad } from "./task-queue";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -106,7 +105,6 @@ export function mountLandingMotion() {
   );
   media.add("(prefers-reduced-motion: no-preference)", (context) => {
     const stage = document.getElementById("hero-stage");
-    const disposeFloat = stage ? mountHeroFloat(stage) : undefined;
     if (stage) {
       gsap.fromTo(
         stage.querySelectorAll("[data-hero-float] > *"),
@@ -168,7 +166,6 @@ export function mountLandingMotion() {
     return () => {
       active = false;
       observer?.disconnect();
-      disposeFloat?.();
     };
   });
   const refresh = () => {
