@@ -774,6 +774,20 @@ test("hero float guards prefers-reduced-motion and rests when the preference or 
   h.dispose();
 });
 
+test("hero float starts once an initially reduced motion preference is turned off", () => {
+  const h = floatHarness({ reduced: true });
+  h.intersect(true);
+  assert.equal(h.frames.size, 0);
+  pointAt(h.cards[0], 260, 320);
+  assert.equal(h.cards[0].style.rotate, "");
+  h.preference.matches = false;
+  h.events.get("motion:change")();
+  h.tick(1000);
+  assert.ok(h.cards.every((card) => card.style.transform.includes("translate3d")));
+  h.dispose();
+  assert.equal(h.events.size, 0);
+});
+
 for (const language of ["en", "pt-BR"]) {
   test(`visible hero cards float within one second without scroll in ${language}`, async () => {
     const h = floatHarness({ startup: true, language });

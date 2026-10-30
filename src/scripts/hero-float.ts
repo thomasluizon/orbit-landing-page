@@ -58,7 +58,6 @@ function mountCardPointer(element: HTMLElement, canMove: () => boolean) {
 
 export function mountHeroFloat(stage: HTMLElement) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  if (reduced.matches) return () => {};
   const desktop = window.matchMedia("(min-width: 768px)");
   const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   const columns = [...stage.querySelectorAll<HTMLElement>("[data-hero-column]")].map(
