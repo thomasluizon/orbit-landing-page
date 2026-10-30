@@ -18,6 +18,7 @@ async function startMotion() {
 
 window.requestAnimationFrame(() => {
   window.requestAnimationFrame(() => {
+    if (active) void startMotion();
     window.addEventListener("scroll", startMotion, { passive: true });
     window.addEventListener("wheel", startMotion, { passive: true });
     window.addEventListener("touchstart", startMotion, { passive: true });

@@ -516,7 +516,7 @@ test("feature motion waits for intersection and separate tasks, and respects med
   }
 });
 
-function floatHarness({ reduced = false } = {}) {
+function floatHarness({ reduced = false, startup = false, language = "en" } = {}) {
   const frames = new Map();
   const events = new Map();
   const preference = {
@@ -552,42 +552,98 @@ function floatHarness({ reduced = false } = {}) {
     },
   };
   const document = {
+    documentElement: { lang: language },
+    getElementById: (id) => (id === "hero-stage" ? stage : null),
+    querySelectorAll: () => [],
+    querySelector: () => null,
+    fonts: { ready: Promise.resolve() },
     hidden: false,
     addEventListener: (name, fn) => events.set(name, fn),
     removeEventListener: (name) => events.delete(name),
   };
   const exports = {};
-  vm.runInNewContext(
+  const context = vm.createContext({
+    exports,
+    Math: Object.assign(Object.create(Math), { random: () => ++phaseIndex / 10 }),
+    document,
+    window: {
+      innerHeight: 800,
+      requestAnimationFrame: (fn) => scheduleFrame(fn),
+      addEventListener: (name, fn) => events.set(`window:${name}`, fn),
+      removeEventListener: (name) => events.delete(`window:${name}`),
+      matchMedia: (query) => (query.includes("reduced-motion") ? preference : desktop),
+    },
+    requestAnimationFrame: (fn) => scheduleFrame(fn),
+    cancelAnimationFrame: (id) => frames.delete(id),
+    ResizeObserver: class {
+      disconnect() {}
+    },
+    IntersectionObserver: class {
+      constructor(fn) {
+        intersection = fn;
+      }
+      observe(target) {
+        assert.equal(target, stage);
+      }
+      disconnect() {
+        disconnected = true;
+      }
+    },
+  });
+  function scheduleFrame(fn) {
+    frames.set(++frameId, fn);
+    return frameId;
+  }
+  function evaluate(name, require) {
+    const exports = {};
+    const code = ts.transpileModule(readFileSync(`src/scripts/${name}.ts`, "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText;
+    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(exports, require);
+    return exports;
+  }
+  vm.runInContext(
     ts.transpileModule(readFileSync("src/scripts/hero-float.ts", "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText,
-    {
-      exports,
-      Math: Object.assign(Object.create(Math), { random: () => ++phaseIndex / 10 }),
-      document,
-      window: {
-        innerHeight: 800,
-        matchMedia: (query) => (query.includes("reduced-motion") ? preference : desktop),
-      },
-      requestAnimationFrame: (fn) => {
-        frames.set(++frameId, fn);
-        return frameId;
-      },
-      cancelAnimationFrame: (id) => frames.delete(id),
-      IntersectionObserver: class {
-        constructor(fn) {
-          intersection = fn;
-        }
-        observe(target) {
-          assert.equal(target, stage);
-        }
-        disconnect() {
-          disconnected = true;
-        }
-      },
-    },
+    context,
   );
-  const dispose = exports.mountHeroFloat(stage);
+  let dispose;
+  if (startup) {
+    const cleanups = [];
+    const require = (name) => {
+      if (name === "./landing-motion") return evaluate("landing-motion", require);
+      if (name === "./hero-float") return exports;
+      if (name === "gsap")
+        return {
+          gsap: {
+            registerPlugin() {},
+            matchMedia: () => ({
+              add(query, callback) {
+                if (typeof query === "object" || !reduced) {
+                  const cleanup = callback({ conditions: { pinned: true } });
+                  if (cleanup) cleanups.push(cleanup);
+                }
+              },
+              revert: () => cleanups.forEach((cleanup) => cleanup()),
+            }),
+            timeline: () => ({ to() {} }),
+            fromTo() {},
+          },
+        };
+      if (name === "gsap/ScrollTrigger") return { ScrollTrigger: { update() {}, refresh() {} } };
+      if (name === "lenis")
+        return {
+          default: class {
+            on() {}
+            destroy() {}
+          },
+        };
+      return {};
+    };
+    evaluate("scroll", require);
+    dispose = () => events.get("window:pagehide")();
+  } else dispose = exports.mountHeroFloat(stage);
   return {
     cards,
     frames,
@@ -600,7 +656,13 @@ function floatHarness({ reduced = false } = {}) {
       return disconnected;
     },
     intersect(visible) {
-      intersection([{ isIntersecting: visible }]);
+      intersection?.([{ isIntersecting: visible }]);
+    },
+    advance(time) {
+      for (const [id, callback] of [...frames]) {
+        frames.delete(id);
+        callback(time);
+      }
     },
     tick(time) {
       assert.equal(frames.size, 1, "all cards share one scheduled animation frame");
@@ -689,3 +751,23 @@ test("hero float guards prefers-reduced-motion and rests when the preference or 
   assert.equal(h.frames.size, 0);
   h.dispose();
 });
+
+for (const language of ["en", "pt-BR"]) {
+  test(`visible hero cards float within one second without scroll in ${language}`, async () => {
+    const h = floatHarness({ startup: true, language });
+    h.tick(0);
+    h.tick(16);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(h.frames.size, 0, "wait for the initial intersection delivery");
+    h.intersect(true);
+    h.advance(32);
+    const first = h.cards.map((card) => card.style.transform);
+    assert.ok(
+      first.every((transform) => transform.includes("translate3d")),
+      "all four visible cards must receive a float transform without scrolling",
+    );
+    h.tick(500);
+    assert.ok(h.cards.every((card, index) => card.style.transform !== first[index]));
+    h.dispose();
+  });
+}

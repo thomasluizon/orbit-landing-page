@@ -468,11 +468,12 @@ function harness(reduced = false) {
   };
 }
 
-test("motion loads once after paint and interaction, with page lifecycle cleanup", async () => {
+test("motion loads once after paint without interaction, with page lifecycle cleanup", async () => {
   const h = harness();
   assert.equal(h.result.imports, 0);
   h.paint();
-  assert.equal(h.result.imports, 0);
+  await Promise.resolve();
+  assert.equal(h.result.imports, 1, "visible hero motion must load before any interaction");
   const pending = h.listeners.get("scroll")();
   h.listeners.get("wheel")();
   await Promise.resolve();
