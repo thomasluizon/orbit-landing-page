@@ -250,6 +250,15 @@ test("composition fitting follows font, size, locale and interaction changes in 
     const observed = [];
     let observeSize;
     let disconnected = false;
+    const detailListeners = new Map();
+    const detail = {
+      addEventListener: (name, callback) => detailListeners.set(name, callback),
+      removeEventListener: (name) => detailListeners.delete(name),
+    };
+    let fontsReady;
+    const fontPromise = new Promise((resolve) => {
+      fontsReady = resolve;
+    });
     let refreshes = 0;
     let nextFrame = 0;
     const frames = new Map();
@@ -322,8 +331,12 @@ test("composition fitting follows font, size, locale and interaction changes in 
           getElementById: () => null,
           querySelector: () => null,
           querySelectorAll: (selector) =>
-            [".example-app", ".example-card"].includes(selector) ? [composition.app] : [],
-          fonts: { ready: Promise.resolve() },
+            selector === "details"
+              ? [detail]
+              : [".example-app", ".example-card"].includes(selector)
+                ? [composition.app]
+                : [],
+          fonts: { ready: fontPromise },
         },
         window,
         ResizeObserver: class {
@@ -344,6 +357,7 @@ test("composition fitting follows font, size, locale and interaction changes in 
     assert.ok(composition.app.getBoundingClientRect().height <= 454);
     window.innerWidth = 768;
     window.innerHeight = 720;
+    fontsReady();
     await Promise.resolve();
     paint();
     assert.equal(frames.size, 0, "Lenis does not schedule a separate frame loop");
@@ -358,6 +372,7 @@ test("composition fitting follows font, size, locale and interaction changes in 
       listeners.get("resize"),
       listeners.get("orbit:language-changed"),
       listeners.get("orbit:layout-changed"),
+      detailListeners.get("toggle"),
     ]) {
       window.innerWidth = 320;
       window.innerHeight = 568;
@@ -370,12 +385,13 @@ test("composition fitting follows font, size, locale and interaction changes in 
       paint();
       assert.ok(composition.app.getBoundingClientRect().height <= 576);
     }
-    assert.equal(refreshes, 9);
+    assert.equal(refreshes, 11);
     const before = refreshes;
     for (let i = 0; i < 10; i++) listeners.get("resize")();
     for (let i = 0; i < 3; i++) observeSize();
     listeners.get("orbit:language-changed")();
     listeners.get("orbit:layout-changed")();
+    detailListeners.get("toggle")();
     assert.equal(refreshes, before, "refresh waits until the next frame");
     assert.equal(frames.size, 1);
     paint();
@@ -383,6 +399,7 @@ test("composition fitting follows font, size, locale and interaction changes in 
     listeners.get("resize")();
     dispose();
     assert.equal(disconnected, true);
+    assert.equal(detailListeners.size, 0);
     assert.equal(listeners.size, 0);
     assert.equal(frames.size, 0);
     assert.equal(tickers.size, 0);
@@ -1294,5 +1311,34 @@ test("composition fitting reads app height once and finishes all reads before fo
     }
     fitComposition(c.app, 320, 568);
     assert.equal(reads, 1);
+  }
+});
+
+test("measured calendar, metrics and breakdown fixtures preserve their folded sets", () => {
+  const { fitComposition } = compositionFitHarness();
+  const fixtures = [
+    { name: "calendar", height: 720, calendar: true },
+    { name: "metrics", height: 488, calendar: false },
+    { name: "breakdown", height: 512, calendar: false },
+  ];
+  for (const fixture of fixtures) {
+    for (const [height, weeks, secondary] of [
+      [568, [0, 1, 2, 4, 5], true],
+      [720, [0, 1, 4, 5], false],
+      [900, [], false],
+    ]) {
+      const c = measuredComposition(fixture);
+      fitComposition(c.app, 320, height);
+      assert.deepEqual(
+        [
+          ...new Set(
+            c.cells.filter((cell) => cell.folded).map((cell) => Number(cell.dataset.calendarWeek)),
+          ),
+        ],
+        fixture.calendar ? weeks : [],
+        `${fixture.name} at ${height}`,
+      );
+      assert.equal(c.secondary.folded, secondary, `${fixture.name} at ${height}`);
+    }
   }
 });

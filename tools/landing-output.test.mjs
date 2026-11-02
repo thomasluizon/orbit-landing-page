@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import sharp from "sharp";
@@ -646,7 +646,9 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
   }
 });
 
-const builtPages = ["dist/index.html", "dist/404.html", "dist/waitlist-confirmed/index.html"];
+const builtPages = readdirSync("dist", { recursive: true })
+  .filter((path) => path.endsWith(".html"))
+  .map((path) => `dist/${path}`);
 
 test("built pages contain no executable inline scripts", () => {
   for (const file of builtPages) {
