@@ -39,7 +39,7 @@ const en = translations.en;
     <footer><CookiePreferences /></footer>
   </main>
 </Layout>
-<script is:inline>
+<script>
   if (new URLSearchParams(window.location.search).get("status") === "invalid") {
     const ok = document.getElementById("confirmed-ok");
     const invalid = document.getElementById("confirmed-invalid");

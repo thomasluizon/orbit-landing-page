@@ -8,6 +8,9 @@ import qrcode from "qrcode-generator";
 import { scriptsFrom } from "../src/scripts/html.test-helper.mjs";
 
 const html = readFileSync("dist/index.html", "utf8");
+function scriptSource({ attributes, body }) {
+  return attributes.src ? readFileSync(`dist${attributes.src}`, "utf8") : body;
+}
 function proseFrom(source) {
   let previous;
   do {
@@ -221,8 +224,8 @@ test("confirmation uses native hidden state for both response paths", async () =
     ),
   );
   const script = scriptsFrom(page)
-    .map(({ body }) => body)
-    .find((code) => code.includes('get("status")'));
+    .map(scriptSource)
+    .find((code) => code.includes("URLSearchParams"));
   assert.ok(script, "confirmation chooses the response state");
   const { parse } = await import("@astrojs/compiler");
   const { ast } = await parse(page);
@@ -583,8 +586,10 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
           location: { assign: (uri) => assignments.push(uri) },
         },
       });
-      for (const { attributes, body } of scriptsFrom(page)) {
-        if (attributes.type === "module" && !attributes.src)
+      for (const script of scriptsFrom(page)) {
+        if (script.attributes.type !== "module") continue;
+        const body = scriptSource(script);
+        if (body.includes("orbit:analytics-ready") || body.includes("a[data-app-entry]"))
           vm.runInContext(`(function() {${body}\n})()`, context);
       }
       assert.equal(
@@ -638,5 +643,100 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
           : [],
       );
     }
+  }
+});
+
+const builtPages = ["dist/index.html", "dist/404.html", "dist/waitlist-confirmed/index.html"];
+
+test("built pages contain no executable inline scripts", () => {
+  for (const file of builtPages) {
+    for (const { attributes, body } of scriptsFrom(readFileSync(file, "utf8"))) {
+      if (attributes.type === "application/ld+json") continue;
+      assert.ok(attributes.src, `${file}: executable script must have a src`);
+      assert.equal(body.trim(), "");
+    }
+  }
+});
+
+test("JSON-LD keeps script-closing copy inside one data element", async () => {
+  const { ast } = await parse(readFileSync("src/layouts/Layout.astro", "utf8"));
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const block = descendants(ast).find(
+    (node) =>
+      node.name === "script" &&
+      node.attributes.some(({ name, value }) => name === "type" && value === "application/ld+json"),
+  );
+  const expression = block.attributes.find(({ name }) => name === "set:html").value;
+  const malicious = "A </script><script>alert(1)</script> description";
+  for (const noindex of [false, true]) {
+    const data = { "@context": "https://schema.org", "@graph": [{ description: malicious }] };
+    const serialized = vm.runInNewContext(`(${expression})`, { noindex, structuredData: data });
+    const template = scriptsFrom(html).find(
+      ({ attributes }) => attributes.type === "application/ld+json",
+    ).body;
+    const rendered = html.replace(template, serialized);
+    const scripts = scriptsFrom(rendered);
+    assert.equal(scripts.length, scriptsFrom(html).length);
+    const json = scripts.filter(({ attributes }) => attributes.type === "application/ld+json");
+    assert.equal(json.length, 1);
+    assert.deepEqual(JSON.parse(json[0].body), data);
+    assert.equal((serialized.match(/<\/script/gi) ?? []).length, 0);
+  }
+});
+
+test("the waitlist uses POST and caps the native email field", () => {
+  assert.match(html, /<form\b[^>]*id="waitlist-form"[^>]*method="post"/);
+  assert.match(html, /<input\b[^>]*id="waitlist-email"[^>]*maxlength="254"/);
+});
+
+test("404 and home brand links point to their accepted destinations", async () => {
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const { ast: missing } = await parse(readFileSync("dist/404.html", "utf8"));
+  const anchors = descendants(missing).filter((node) => node.name === "a");
+  assert.equal(
+    attrs(anchors.find((node) => attrs(node).class?.split(/\s+/).includes("brand"))).href,
+    "/",
+  );
+  const home = anchors.find((node) =>
+    descendants(node).some((child) => attrs(child)["data-i18n"] === "notFound.cta"),
+  );
+  assert.ok(home, "the home PillButton exists");
+  assert.equal(attrs(home).href, "/");
+  const { ast } = await parse(html);
+  const header = descendants(ast).find((node) => node.name === "header");
+  const footer = descendants(ast).find((node) => attrs(node)["data-section"] === "final");
+  for (const [region, href] of [
+    [header, "/"],
+    [footer, "#hero"],
+  ]) {
+    const brand = descendants(region).find(
+      (node) => node.name === "a" && attrs(node).class?.split(/\s+/).includes("brand"),
+    );
+    assert.ok(brand);
+    assert.equal(attrs(brand).href, href);
+  }
+});
+
+test("built consent markup reflects the PostHog key and retains the privacy link", async () => {
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  for (const file of builtPages) {
+    const { ast } = await parse(readFileSync(file, "utf8"));
+    const banner = descendants(ast).find((node) => attrs(node).id === "consent-banner");
+    assert.equal(
+      attrs(banner)["data-analytics-enabled"],
+      String(Boolean(process.env.PUBLIC_POSTHOG_KEY)),
+    );
+    assert.ok(Object.hasOwn(attrs(banner), "hidden"));
+    const privacy = descendants(banner).find(
+      (node) => attrs(node)["data-i18n"] === "consent.privacy",
+    );
+    assert.equal(
+      attrs(privacy).href,
+      `${process.env.PUBLIC_APP_URL || "https://app.useorbit.org"}/privacy`,
+    );
   }
 });
