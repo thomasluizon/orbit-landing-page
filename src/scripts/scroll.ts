@@ -17,7 +17,7 @@ async function startMotion() {
     const { mountLandingMotion } = await import("./landing-motion");
     if (active && current === generation) {
       dispose = mountLandingMotion();
-      if (!dispose) loading = false;
+      removeMotionListeners();
     }
   } catch {
     if (current === generation) loading = false;
@@ -35,6 +35,12 @@ async function startHeroFloat() {
     if (active && current === generation) disposeFloat = mountHeroFloat(stage);
   } catch {
     if (current === generation) floatLoading = false;
+  }
+}
+
+function removeMotionListeners() {
+  for (const event of ["scroll", "wheel", "touchstart", "keydown"]) {
+    window.removeEventListener(event, startMotion);
   }
 }
 

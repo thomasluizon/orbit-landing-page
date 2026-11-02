@@ -23,13 +23,14 @@ const en = translations.en;
       </p>
     </div>
     <div>
-      <form id="waitlist-form" novalidate>
+      <form id="waitlist-form" method="post" novalidate>
         <label for="waitlist-email" class="t-secondary" data-i18n="ios.label"
           >{en["ios.label"]}</label
         >
         <input
           id="waitlist-email"
           type="email"
+          maxlength="254"
           name="email"
           autocomplete="email"
           spellcheck="false"

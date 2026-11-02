@@ -167,7 +167,7 @@ function measuredComposition({ height = 720, secondaryHeight = 80, calendar = tr
         }),
       )
     : [];
-  const secondary = item();
+  const secondary = item({ getBoundingClientRect: () => ({ height: secondaryHeight }) });
   const grid = {
     querySelectorAll: () => cells,
     querySelector: () => cells[24],
@@ -243,15 +243,39 @@ test("measured composition fitting uses the same height budget on mobile and des
 });
 
 test("composition fitting follows font, size, locale and interaction changes in both motion preferences", async () => {
-  for (const reduced of [false, true]) {
+  for (const reduced of [true, false]) {
     const exports = {};
     const composition = measuredComposition();
     const listeners = new Map();
     const observed = [];
     let observeSize;
     let disconnected = false;
+    const detailListeners = new Map();
+    const detail = {
+      addEventListener: (name, callback) => detailListeners.set(name, callback),
+      removeEventListener: (name) => detailListeners.delete(name),
+    };
+    let fontsReady;
+    const fontPromise = new Promise((resolve) => {
+      fontsReady = resolve;
+    });
     let refreshes = 0;
+    let nextFrame = 0;
+    const frames = new Map();
+    const tickers = new Set();
+    const cleanups = [];
+    const rafTimes = [];
+    const paint = () => {
+      const callbacks = [...frames.values()];
+      frames.clear();
+      callbacks.forEach((callback) => callback());
+    };
     const window = {
+      requestAnimationFrame: (callback) => {
+        frames.set(++nextFrame, callback);
+        return nextFrame;
+      },
+      cancelAnimationFrame: (id) => frames.delete(id),
       innerWidth: 320,
       innerHeight: 568,
       addEventListener: (name, callback) => listeners.set(name, callback),
@@ -271,12 +295,18 @@ test("composition fitting follows font, size, locale and interaction changes in 
             return {
               gsap: {
                 registerPlugin() {},
+                ticker: {
+                  add: (callback) => tickers.add(callback),
+                  remove: (callback) => tickers.delete(callback),
+                },
                 matchMedia: () => ({
                   add(query, callback) {
                     if (typeof query === "object") callback({ conditions: { pinned: true } });
-                    else if (query === "all" || !reduced) callback();
+                    else if (query === "all" || !reduced) cleanups.push(callback());
                   },
-                  revert() {},
+                  revert() {
+                    cleanups.forEach((cleanup) => cleanup?.());
+                  },
                 }),
               },
             };
@@ -285,7 +315,14 @@ test("composition fitting follows font, size, locale and interaction changes in 
           if (name === "lenis")
             return {
               default: class {
+                constructor(options) {
+                  if (options.autoRaf) window.requestAnimationFrame(() => this.raf(16));
+                }
+                raf(time) {
+                  rafTimes.push(time);
+                }
                 on() {}
+                destroy() {}
               },
             };
           return {};
@@ -294,8 +331,12 @@ test("composition fitting follows font, size, locale and interaction changes in 
           getElementById: () => null,
           querySelector: () => null,
           querySelectorAll: (selector) =>
-            [".example-app", ".example-card"].includes(selector) ? [composition.app] : [],
-          fonts: { ready: Promise.resolve() },
+            selector === "details"
+              ? [detail]
+              : [".example-app", ".example-card"].includes(selector)
+                ? [composition.app]
+                : [],
+          fonts: { ready: fontPromise },
         },
         window,
         ResizeObserver: class {
@@ -316,7 +357,12 @@ test("composition fitting follows font, size, locale and interaction changes in 
     assert.ok(composition.app.getBoundingClientRect().height <= 454);
     window.innerWidth = 768;
     window.innerHeight = 720;
+    fontsReady();
     await Promise.resolve();
+    paint();
+    assert.equal(frames.size, 0, "Lenis does not schedule a separate frame loop");
+    for (const tick of tickers) tick(1.25);
+    assert.deepEqual(rafTimes, reduced ? [] : [1250]);
     assert.ok(
       composition.cells.some((cell) => cell.folded),
       "font readiness also fits content",
@@ -326,20 +372,37 @@ test("composition fitting follows font, size, locale and interaction changes in 
       listeners.get("resize"),
       listeners.get("orbit:language-changed"),
       listeners.get("orbit:layout-changed"),
+      detailListeners.get("toggle"),
     ]) {
       window.innerWidth = 320;
       window.innerHeight = 568;
       refresh();
+      paint();
       assert.ok(composition.app.getBoundingClientRect().height <= 454);
       window.innerWidth = 768;
       window.innerHeight = 720;
       refresh();
+      paint();
       assert.ok(composition.app.getBoundingClientRect().height <= 576);
     }
-    assert.equal(refreshes, 9);
+    assert.equal(refreshes, 11);
+    const before = refreshes;
+    for (let i = 0; i < 10; i++) listeners.get("resize")();
+    for (let i = 0; i < 3; i++) observeSize();
+    listeners.get("orbit:language-changed")();
+    listeners.get("orbit:layout-changed")();
+    detailListeners.get("toggle")();
+    assert.equal(refreshes, before, "refresh waits until the next frame");
+    assert.equal(frames.size, 1);
+    paint();
+    assert.equal(refreshes, before + 1);
+    listeners.get("resize")();
     dispose();
     assert.equal(disconnected, true);
+    assert.equal(detailListeners.size, 0);
     assert.equal(listeners.size, 0);
+    assert.equal(frames.size, 0);
+    assert.equal(tickers.size, 0);
   }
 });
 
@@ -432,16 +495,21 @@ function harness(reduced = false) {
   const modules = new Map(
     ["./landing-motion", "./hero-float"].map((name) => {
       let resolve;
-      const loaded = new Promise((done) => {
+      let reject;
+      const loaded = new Promise((done, fail) => {
         resolve = done;
+        reject = fail;
       });
-      return [name, { loaded, resolve }];
+      return [name, { loaded, resolve, reject }];
     }),
   );
   const window = {
     matchMedia: () => preference,
     requestAnimationFrame: (callback) => frames.push(callback),
     addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: (name, callback) => {
+      if (listeners.get(name) === callback) listeners.delete(name);
+    },
   };
   const compiled = ts.transpileModule(code, {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -471,6 +539,16 @@ function harness(reduced = false) {
     paint() {
       frames.shift()();
       frames.shift()();
+    },
+    async reject() {
+      modules.get("./landing-motion").reject(new Error("import failed"));
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      const module = modules.get("./landing-motion");
+      module.loaded = new Promise((resolve) => {
+        module.resolve = resolve;
+      });
     },
     async resolve(name = "./landing-motion") {
       const { loaded, resolve } = modules.get(name);
@@ -530,6 +608,8 @@ for (const interaction of ["scroll", "wheel", "touchstart", "keydown"]) {
     await pending;
     assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
     assert.equal(h.floatResult.mounts, 1, "interaction must not mount the float again");
+    for (const name of ["scroll", "wheel", "touchstart", "keydown"])
+      assert.equal(h.listeners.has(name), false);
     h.listeners.get("pagehide")();
     assert.equal(h.result.disposals, 1);
     await h.listeners.get("pageshow")({ persisted: true });
@@ -1189,6 +1269,76 @@ test("habit names preserve word boundaries across every surface", () => {
     assert.doesNotMatch(declarations, /word-break:\s*break-all/, selectors);
     for (const [, value] of declarations.matchAll(/overflow-wrap:\s*([^;]+);/g)) {
       assert.equal(value, "normal", selectors);
+    }
+  }
+});
+
+test("a failed motion import keeps every interaction listener for retry", async () => {
+  const h = harness();
+  h.paint();
+  const pending = h.listeners.get("wheel")();
+  await h.reject();
+  await pending;
+  for (const name of ["scroll", "wheel", "touchstart", "keydown"])
+    assert.equal(h.listeners.has(name), true);
+  const retry = h.listeners.get("scroll")();
+  await h.resolve();
+  await retry;
+  assert.equal(h.result.imports, 2);
+  assert.equal(h.result.mounts, 1);
+  for (const name of ["scroll", "wheel", "touchstart", "keydown"])
+    assert.equal(h.listeners.has(name), false);
+});
+
+test("composition fitting reads app height once and finishes all reads before folding", () => {
+  const { fitComposition } = compositionFitHarness();
+  for (const calendar of [false, true]) {
+    const c = measuredComposition({ height: calendar ? 1000 : 488, calendar });
+    const read = c.app.getBoundingClientRect;
+    let reads = 0;
+    let wrote = false;
+    c.app.getBoundingClientRect = () => {
+      assert.equal(wrote, false, "no app layout read follows a fold write");
+      reads++;
+      return read();
+    };
+    for (const item of [...c.cells, c.secondary]) {
+      const write = item.setAttribute.bind(item);
+      item.setAttribute = (name) => {
+        wrote = true;
+        write(name);
+      };
+    }
+    fitComposition(c.app, 320, 568);
+    assert.equal(reads, 1);
+  }
+});
+
+test("measured calendar, metrics and breakdown fixtures preserve their folded sets", () => {
+  const { fitComposition } = compositionFitHarness();
+  const fixtures = [
+    { name: "calendar", height: 720, calendar: true },
+    { name: "metrics", height: 488, calendar: false },
+    { name: "breakdown", height: 512, calendar: false },
+  ];
+  for (const fixture of fixtures) {
+    for (const [height, weeks, secondary] of [
+      [568, [0, 1, 2, 4, 5], true],
+      [720, [0, 1, 4, 5], false],
+      [900, [], false],
+    ]) {
+      const c = measuredComposition(fixture);
+      fitComposition(c.app, 320, height);
+      assert.deepEqual(
+        [
+          ...new Set(
+            c.cells.filter((cell) => cell.folded).map((cell) => Number(cell.dataset.calendarWeek)),
+          ),
+        ],
+        fixture.calendar ? weeks : [],
+        `${fixture.name} at ${height}`,
+      );
+      assert.equal(c.secondary.folded, secondary, `${fixture.name} at ${height}`);
     }
   }
 });

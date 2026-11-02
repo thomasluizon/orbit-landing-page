@@ -28,6 +28,7 @@ function createHarness(
   language,
   responses,
   {
+    dev = true,
     renderFailures = 0,
     siteKey = "test-site-key",
     loader = "ready",
@@ -114,7 +115,7 @@ function createHarness(
     for (let i = 0; i < 12; i++) await Promise.resolve();
   };
   const context = vm.createContext({
-    environment: { PUBLIC_TURNSTILE_SITE_KEY: siteKey },
+    environment: { PUBLIC_TURNSTILE_SITE_KEY: siteKey, DEV: dev },
     navigator: { language },
     console: { error: (...args) => logs.push(args) },
     Date: class extends Date {
@@ -167,9 +168,10 @@ function createHarness(
       dispatchEvent: (event) => windowListeners.get(event.type)?.(event),
     },
     fetch: async (url, options) => {
-      requests.push({ url, ...options });
+      requests.push({ url, ...options, headers: { ...options.headers } });
       const response = responses.shift();
       assert.ok(response, "a response is available for every request");
+      if (response instanceof Error) throw response;
       return response;
     },
   });
@@ -357,6 +359,8 @@ for (const language of ["en", "pt-BR"]) {
     );
     assert.ok(harness.requests.every((request) => request.url.endsWith("/api/waitlist")));
     assert.ok(harness.requests.every((request) => request.method === "POST"));
+    for (const request of harness.requests)
+      assert.deepEqual(request.headers, { "Content-Type": "application/json" });
   });
 
   test(`${language}: explicit server email validation keeps the email error`, async () => {
@@ -609,4 +613,76 @@ test("a slow real script resolves via the load event and language toggles do not
   assert.equal(h.timers.size, 0);
   await h.advance(20000);
   assert.equal(h.statusUpdates, 0);
+});
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: accepts 254 email characters and refuses 255 before fetching`, async () => {
+    for (const length of [254, 255]) {
+      const h = createHarness(language, [new Response(null, { status: 200 })]);
+      const email = `${"a".repeat(length - 12)}@example.com`;
+      assert.equal(email.length, length);
+      h.elements.get("waitlist-email").value = email;
+      await h.solve("valid-token");
+      await h.submit();
+      assert.equal(h.requests.length, length === 254 ? 1 : 0);
+      assert.equal(
+        h.elements.get("waitlist-status").textContent,
+        h.strings[length === 254 ? "ios.success" : "ios.invalidEmail"],
+      );
+    }
+  });
+
+  test(`${language}: a rejected fetch shows the generic error and renews the challenge`, async () => {
+    const h = createHarness(language, [new TypeError("Failed to fetch")]);
+    await h.solve("valid-token");
+    await h.submit();
+    assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.error"]);
+    assert.deepEqual(h.resets, ["test-widget"]);
+    assert.equal(h.elements.get("waitlist-submit").disabled, true);
+    assert.equal(h.requests.length, 1);
+    h.challenge.callback("fresh-token");
+    assert.equal(h.elements.get("waitlist-submit").disabled, false);
+  });
+
+  test(`${language}: shows the submitting label while the join is in flight`, async () => {
+    let complete;
+    const response = new Promise((resolve) => {
+      complete = resolve;
+    });
+    const h = createHarness(language, [response]);
+    await h.solve("valid-token");
+    const pending = h.submit();
+    assert.equal(h.elements.get("waitlist-submit").disabled, true);
+    assert.equal(h.elements.get("waitlist-submit-label").textContent, h.strings["ios.submitting"]);
+    complete(new Response(null, { status: 200 }));
+    await pending;
+    assert.equal(h.elements.get("waitlist-submit-label").textContent, h.strings["ios.button"]);
+    assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.success"]);
+  });
+
+  test(`${language}: shows success for a repeat join of the same email`, async () => {
+    const h = createHarness(language, [
+      new Response(null, { status: 200 }),
+      new Response(null, { status: 200 }),
+    ]);
+    for (const token of ["first-token", "second-token"]) {
+      h.elements.get("waitlist-email").value = "person@example.com";
+      await h.solve(token);
+      await h.submit();
+      assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.success"]);
+    }
+    assert.equal(h.requests.length, 2);
+    assert.ok(
+      h.requests.every((request) => JSON.parse(request.body).email === "person@example.com"),
+    );
+  });
+}
+
+test("production Turnstile failures never write to the console", async () => {
+  for (const callback of ["error-callback", "expired-callback", "timeout-callback"]) {
+    const h = createHarness("en", [], { dev: false });
+    await h.solve("valid-token");
+    h.challenge[callback]("110100");
+    assert.deepEqual(h.logs, []);
+  }
 });

@@ -730,3 +730,66 @@ for (const language of ["en", "pt-BR"]) {
     }
   });
 }
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: strips each request prefix and reads each schedule keyword`, () => {
+    const prefixes =
+      language === "en"
+        ? ["I want to ", "I'd like to ", "Plan a ", "Plan an ", "Plan "]
+        : ["Quero ", "Gostaria de "];
+    const schedules =
+      language === "en"
+        ? [
+            ["in the morning", "demo.start.repeat"],
+            ["in the afternoon", "demo.afternoon"],
+            ["at night", "demo.start.alternateRepeat"],
+            ["in the evening", "demo.start.alternateRepeat"],
+          ]
+        : [
+            ["de manhã", "demo.start.repeat"],
+            ["à tarde", "demo.afternoon"],
+            ["à noite", "demo.start.alternateRepeat"],
+          ];
+    for (const prefix of prefixes) {
+      for (const [time, schedule] of schedules) {
+        const h = harness(language);
+        const title = `${language === "en" ? "exercise" : "exercitar"} ${time}`;
+        h.get("demo-input").value = `${prefix}${title}.`;
+        h.get("demo-composer").fire("submit");
+        assert.equal(h.get("demo-habit").textContent, title);
+        assert.equal(h.get("demo-repeat").textContent, h.strings[schedule]);
+        h.get("demo-approve").fire("click");
+        assert.equal(h.get("demo-today-habit").textContent, title);
+        assert.equal(h.get("demo-today-repeat").textContent, h.strings[schedule]);
+        assert.equal(h.get("demo-continue").hidden, false);
+        const link = new URL(h.get("demo-continue-link").href);
+        assert.equal(link.pathname, "/habits/new");
+        assert.equal(link.searchParams.get("title"), title);
+      }
+    }
+  });
+
+  test(`${language}: ignores a blank edit name`, () => {
+    for (const blank of ["", "   "]) {
+      const h = harness(language);
+      h.get("demo-input").value =
+        language === "en" ? "I want to read at night." : "Quero ler à noite.";
+      h.get("demo-composer").fire("submit");
+      h.get("demo-edit").fire("click");
+      const title = h.get("demo-habit").textContent;
+      const schedule = h.get("demo-repeat").textContent;
+      const href = h.get("demo-continue-link").href;
+      h.get("demo-edit-name").value = blank;
+      h.get("demo-edit-schedule").value = "afternoon";
+      h.get("demo-edit-form").fire("submit");
+      assert.equal(h.get("demo-edit-form").hidden, false);
+      assert.equal(h.get("demo-habit").textContent, title);
+      assert.equal(h.get("demo-repeat").textContent, schedule);
+      assert.equal(h.get("demo-continue-link").href, href);
+      assert.equal(h.get("demo-continue").hidden, true);
+      h.get("demo-approve").fire("click");
+      assert.equal(new URL(h.get("demo-continue-link").href).searchParams.get("title"), title);
+      assert.equal(h.get("demo-today-repeat").textContent, schedule);
+    }
+  });
+}

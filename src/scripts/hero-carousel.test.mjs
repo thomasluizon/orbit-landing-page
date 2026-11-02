@@ -298,9 +298,15 @@ for (const [width, height, pinned] of [
       const stage = { querySelectorAll: () => [] };
       const exports = {};
       let reverted = false;
+      const tickers = new Set();
+      const cleanups = [];
       class Lenis {
-        constructor() {
+        constructor(options) {
+          assert.equal(options.autoRaf, false);
           lenisInstances.push(this);
+        }
+        raf(time) {
+          this.time = time;
         }
         on() {}
         destroy() {
@@ -309,6 +315,10 @@ for (const [width, height, pinned] of [
       }
       const gsap = {
         registerPlugin() {},
+        ticker: {
+          add: (callback) => tickers.add(callback),
+          remove: (callback) => tickers.delete(callback),
+        },
         matchMedia: () => ({
           add(query, fn) {
             if (typeof query === "object") {
@@ -336,9 +346,10 @@ for (const [width, height, pinned] of [
                 "flow spacing shares the driver's fit boundaries",
               );
               fn({ conditions });
-            } else if (query === "all" || !reduced) fn();
+            } else if (query === "all" || !reduced) cleanups.push(fn());
           },
           revert() {
+            cleanups.forEach((cleanup) => cleanup?.());
             reverted = true;
           },
         }),
@@ -404,7 +415,12 @@ for (const [width, height, pinned] of [
       triggers[0].onRefresh({ progress: 0.25 });
       assert.deepEqual(progresses, [0.625, 0.25]);
       assert.equal(lenisInstances.length, reduced ? 0 : 1);
+      assert.equal(tickers.size, reduced ? 0 : 1);
+      for (const tick of tickers) tick(1.25);
+      if (!reduced) assert.equal(lenisInstances[0].time, 1250);
       dispose();
+      assert.equal(tickers.size, 0);
+      if (!reduced) assert.equal(lenisInstances[0].destroyed, true);
       assert.equal(reverted, true);
     }
   });
@@ -439,6 +455,7 @@ test("feature motion waits for intersection and separate tasks, and respects med
             return {
               gsap: {
                 registerPlugin() {},
+                ticker: { add() {}, remove() {} },
                 matchMedia: () => ({
                   add(query, callback) {
                     if (query === "all" || !reduced) {
