@@ -204,7 +204,7 @@ function stopWidget() {
 
 function handleWidgetError(code: string) {
   if (widgetStopped) return true;
-  console.error("[Turnstile] error-callback", code);
+  if (import.meta.env.DEV) console.error("[Turnstile] error-callback", code);
   handleChallengeFailure();
   const retryable =
     ERROR_RETRYABLE[code] === true ||
@@ -226,13 +226,13 @@ function widgetCallbacks(generation: number) {
     "error-callback": (code: string) => (isCurrent() ? handleWidgetError(code) : true),
     "expired-callback": () => {
       if (!isCurrent()) return;
-      console.error("[Turnstile] expired-callback");
+      if (import.meta.env.DEV) console.error("[Turnstile] expired-callback");
       turnstileToken = "";
       updateSubmitButton(translations[getLang()]);
     },
     "timeout-callback": () => {
       if (!isCurrent()) return;
-      console.error("[Turnstile] timeout-callback");
+      if (import.meta.env.DEV) console.error("[Turnstile] timeout-callback");
       handleChallengeFailure();
     },
   };
@@ -316,7 +316,7 @@ if (form && emailInput && submitButton && status) {
     const strings = translations[language];
     const email = emailInput.value.trim();
 
-    if (!EMAIL_PATTERN.test(email)) {
+    if (email.length > 254 || !EMAIL_PATTERN.test(email)) {
       setStatus(strings["ios.invalidEmail"], "submission-error");
       emailInput.focus();
       return;
