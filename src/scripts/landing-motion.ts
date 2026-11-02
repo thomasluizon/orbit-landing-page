@@ -28,6 +28,8 @@ export function fitComposition(app: HTMLElement, viewportWidth: number, viewport
     .querySelectorAll<HTMLElement>("[data-composition-folded]")
     .forEach((item) => item.removeAttribute("data-composition-folded"));
   const availableHeight = Math.floor(viewportHeight * 0.8);
+  let remainingHeight = app.getBoundingClientRect().height;
+  const folded: HTMLElement[] = [];
   const grid = app.querySelector<HTMLElement>(".orbit-month-grid");
   if (grid) {
     const cells = [...grid.querySelectorAll<HTMLElement>("[data-calendar-week]")];
@@ -38,20 +40,33 @@ export function fitComposition(app: HTMLElement, viewportWidth: number, viewport
       const [start, end] = calendarWeekRange(
         totalWeeks,
         Number(selected?.dataset.calendarWeek ?? 0),
-        app.getBoundingClientRect().height,
+        remainingHeight,
         availableHeight,
         weekHeight,
       );
-      cells.forEach((cell) => {
-        const week = Number(cell.dataset.calendarWeek);
-        if (week < start || week >= end) cell.setAttribute("data-composition-folded", "");
-      });
+      folded.push(
+        ...cells.filter((cell) => {
+          const week = Number(cell.dataset.calendarWeek);
+          return week < start || week >= end;
+        }),
+      );
+      remainingHeight -= (totalWeeks - (end - start)) * weekHeight;
     }
   }
-  for (const item of app.querySelectorAll<HTMLElement>("[data-composition-secondary]")) {
-    if (app.getBoundingClientRect().height <= availableHeight) break;
-    item.setAttribute("data-composition-folded", "");
+  const secondary = [...app.querySelectorAll<HTMLElement>("[data-composition-secondary]")].map(
+    (item) => ({
+      item,
+      height:
+        item.getBoundingClientRect().height +
+        (item.parentElement ? parseFloat(getComputedStyle(item.parentElement).rowGap) || 0 : 0),
+    }),
+  );
+  for (const { item, height } of secondary) {
+    if (remainingHeight <= availableHeight) break;
+    folded.push(item);
+    remainingHeight -= height;
   }
+  folded.forEach((item) => item.setAttribute("data-composition-folded", ""));
 }
 
 export function mountLandingMotion() {
@@ -64,14 +79,19 @@ export function mountLandingMotion() {
   const media = gsap.matchMedia();
   media.add("(prefers-reduced-motion: no-preference)", () => {
     const lenis = new Lenis({
-      autoRaf: true,
+      autoRaf: false,
       smoothWheel: true,
       lerp: 0.15,
       anchors: false,
       prevent: (node) => node.closest("#ios") !== null,
     });
     lenis.on("scroll", ScrollTrigger.update);
-    return () => lenis.destroy();
+    const tick = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(tick);
+    return () => {
+      gsap.ticker.remove(tick);
+      lenis.destroy();
+    };
   });
   media.add(
     {
@@ -168,9 +188,15 @@ export function mountLandingMotion() {
       observer?.disconnect();
     };
   });
+  let active = true;
+  let pendingFrame: number | undefined;
   const refresh = () => {
-    fitCompositions();
-    ScrollTrigger.refresh();
+    if (!active || pendingFrame !== undefined) return;
+    pendingFrame = window.requestAnimationFrame(() => {
+      pendingFrame = undefined;
+      fitCompositions();
+      ScrollTrigger.refresh();
+    });
   };
   document.fonts.ready.then(refresh);
   const deviceSize = new ResizeObserver(refresh);
@@ -184,6 +210,8 @@ export function mountLandingMotion() {
   window.addEventListener("orbit:language-changed", refresh);
   window.addEventListener("orbit:layout-changed", refresh);
   return () => {
+    active = false;
+    if (pendingFrame !== undefined) window.cancelAnimationFrame(pendingFrame);
     deviceSize.disconnect();
     media.revert();
     document
