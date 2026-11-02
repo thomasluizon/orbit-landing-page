@@ -28,7 +28,7 @@ function installPostHogStub(): PostHog {
     firstScript.parentNode?.insertBefore(script, firstScript);
     queue.people = [] as unknown as MethodQueue;
     for (const [target, methods] of [
-      [queue, ["capture", "set_config", "opt_in_capturing", "opt_out_capturing"]],
+      [queue, ["capture", "set_config", "reset", "opt_in_capturing", "opt_out_capturing"]],
       [queue.people, ["set", "set_once"]],
     ] as const) {
       for (const method of methods) {
@@ -45,6 +45,18 @@ let analyticsStarted = false;
 let consentGranted = false;
 let pageSettled = false;
 
+function revokeAnalytics(posthog: PostHog) {
+  posthog.opt_out_capturing();
+  posthog.set_config({ disable_persistence: true });
+  posthog.reset(true);
+  posthog.opt_out_capturing();
+}
+
+function allowAnalytics(posthog: PostHog) {
+  posthog.opt_in_capturing();
+  posthog.set_config({ disable_persistence: false });
+}
+
 function startAnalytics() {
   if (!analyticsKey || analyticsStarted || !consentGranted || !pageSettled) return;
   analyticsStarted = true;
@@ -58,7 +70,7 @@ function startAnalytics() {
     capture_pageleave: true,
     disable_session_recording: true,
     loaded: (posthog) => {
-      if (consentGranted && posthog.has_opted_out_capturing()) posthog.opt_in_capturing();
+      if (consentGranted && posthog.has_opted_out_capturing()) allowAnalytics(posthog);
       window.dispatchEvent(new CustomEvent("orbit:analytics-ready", { detail: posthog }));
     },
   });
@@ -67,12 +79,12 @@ function startAnalytics() {
 if (analyticsKey) {
   window.addEventListener("orbit:analytics-consent-granted", () => {
     consentGranted = true;
-    if (analyticsStarted) window.posthog?.opt_in_capturing();
+    if (analyticsStarted && window.posthog) allowAnalytics(window.posthog);
     startAnalytics();
   });
   window.addEventListener("orbit:analytics-consent-revoked", () => {
     consentGranted = false;
-    window.posthog?.opt_out_capturing();
+    if (window.posthog) revokeAnalytics(window.posthog);
   });
   window.addEventListener(
     "load",

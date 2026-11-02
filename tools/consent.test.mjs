@@ -68,7 +68,8 @@ class FakeCustomEvent {
   }
 }
 
-function createHarness(initialChoice = null, values = new Map()) {
+function createHarness(initialChoice = null, values = new Map(), analyticsKey = "phc_test") {
+  const cookies = new Map();
   const networkRequests = [];
   const capturedEvents = [];
   const capturedCalls = [];
@@ -78,6 +79,7 @@ function createHarness(initialChoice = null, values = new Map()) {
 
   const banner = new FakeElement();
   banner.hidden = true;
+  banner.dataset.analyticsEnabled = String(Boolean(analyticsKey));
   const acceptButton = new FakeElement();
   const declineButton = new FakeElement();
   const preferencesButton = new FakeElement("button");
@@ -166,6 +168,19 @@ function createHarness(initialChoice = null, values = new Map()) {
       initialPageviewCaptured = true;
       analytics.capture("$pageview");
     };
+    const identityKey = `ph_${token.replaceAll("+", "PL").replaceAll("/", "SL").replaceAll("=", "EQ")}_posthog`;
+    let identity = { distinct_id: "visitor-id", $device_id: "device-id" };
+    const syncPersistence = () => {
+      if (config.disable_persistence) {
+        values.delete(identityKey);
+        cookies.delete(`${identityKey}@useorbit.org`);
+        cookies.delete(`${identityKey}@.useorbit.org`);
+      } else {
+        values.set(identityKey, JSON.stringify(identity));
+        cookies.set(`${identityKey}@.useorbit.org`, JSON.stringify(identity));
+      }
+    };
+    syncPersistence();
     const analytics = {
       opt_in_capturing() {
         consentCalls.push("in");
@@ -176,6 +191,15 @@ function createHarness(initialChoice = null, values = new Map()) {
       opt_out_capturing() {
         consentCalls.push("out");
         values.set(consentKey, "0");
+      },
+      reset(resetDeviceId) {
+        consentCalls.push("reset");
+        values.delete(consentKey);
+        identity = {
+          distinct_id: "new-visitor-id",
+          $device_id: resetDeviceId ? "new-device-id" : identity.$device_id,
+        };
+        syncPersistence();
       },
       has_opted_out_capturing() {
         const preference = values.get(consentKey);
@@ -196,6 +220,8 @@ function createHarness(initialChoice = null, values = new Map()) {
       },
       set_config(update) {
         configUpdates.push(update);
+        Object.assign(config, update);
+        syncPersistence();
       },
     };
     window.posthog = analytics;
@@ -210,6 +236,8 @@ function createHarness(initialChoice = null, values = new Map()) {
 
   return {
     acceptButton,
+    analyticsKey,
+    cookies,
     advanceTime,
     pendingTimers: () => timers.size,
     banner,
@@ -234,7 +262,7 @@ async function executeProductionScripts(harness) {
     (match) => match[1],
   );
   assert.deepEqual(imports, ["analytics", "consent"]);
-  harness.context.environment = { PUBLIC_POSTHOG_KEY: "phc_test" };
+  harness.context.environment = { PUBLIC_POSTHOG_KEY: harness.analyticsKey };
   for (const name of imports) {
     const source = await readFile(`src/scripts/${name}.ts`, "utf8");
     const script = ts.transpileModule(source.replaceAll("import.meta.env", "environment"), {
@@ -435,7 +463,7 @@ test("cookie preferences reopens an accepted choice, supports withdrawal and rea
   assert.equal(h.declineButton.focused, true);
   h.declineButton.click();
   assert.equal(h.context.localStorage.getItem("orbit_analytics_consent"), "declined");
-  assert.deepEqual(h.consentCalls, ["out"]);
+  assert.deepEqual(h.consentCalls, ["out", "reset", "out"]);
   assert.equal(h.preferencesButton.focused, true);
   h.capturedEvents.length = 0;
   const cta = new FakeElement();
@@ -445,7 +473,7 @@ test("cookie preferences reopens an accepted choice, supports withdrawal and rea
   assert.deepEqual(h.capturedEvents, []);
   h.preferencesButton.click();
   h.acceptButton.click();
-  assert.deepEqual(h.consentCalls, ["out", "in"]);
+  assert.deepEqual(h.consentCalls, ["out", "reset", "out", "in"]);
   h.document.dispatchEvent({ type: "click", target: cta });
   assert.deepEqual(h.capturedEvents, ["$opt_in", "hero_app_cta_clicked"]);
 });
@@ -753,4 +781,59 @@ test("pagehide discards pending CTA events even if the same document resumes", a
   assert.deepEqual(ctaCaptures(h), []);
   h.document.dispatchEvent({ type: "click", target: cta });
   assert.deepEqual(ctaCaptures(h), [freePricingCapture]);
+});
+
+for (const loading of [false, true]) {
+  test(`withdrawal clears PostHog identity from storage and cookies (loading: ${loading})`, async () => {
+    const h = createHarness();
+    await executeProductionScripts(h);
+    h.window.dispatchEvent({ type: "load" });
+    h.acceptButton.click();
+    if (!loading) {
+      h.completePostHogLoad();
+      assert.ok(h.values.has("ph_phc_test_posthog"));
+      h.cookies.set("ph_phc_test_posthog@useorbit.org", "old-host-identity");
+      assert.equal(h.cookies.size, 2);
+    }
+    h.preferencesButton.click();
+    h.declineButton.click();
+    if (loading) h.completePostHogLoad();
+    assert.equal(h.values.has("ph_phc_test_posthog"), false);
+    assert.equal(h.cookies.size, 0);
+    assert.equal(h.values.get("__ph_opt_in_out_phc_test"), "0");
+    assert.ok(h.consentCalls.includes("reset"));
+    const before = h.networkRequests.length;
+    h.window.posthog.capture("after-withdrawal");
+    assert.equal(h.networkRequests.length, before);
+    h.preferencesButton.click();
+    h.acceptButton.click();
+    assert.deepEqual(JSON.parse(h.values.get("ph_phc_test_posthog")), {
+      distinct_id: "new-visitor-id",
+      $device_id: "new-device-id",
+    });
+  });
+}
+
+test("without a PostHog key consent stays hidden and analytics never starts", async () => {
+  for (const choice of [null, "accepted", "declined"]) {
+    const h = createHarness(choice, new Map(), "");
+    await executeProductionScripts(h);
+    h.window.dispatchEvent({ type: "load" });
+    h.advanceTime(10000);
+    assert.equal(h.banner.hidden, true);
+    assert.equal(h.window.posthog, undefined);
+    assert.equal(h.completePostHogLoad(), null);
+    h.window.dispatchEvent(new FakeCustomEvent("orbit:analytics-consent-granted"));
+    assert.deepEqual(h.networkRequests, []);
+  }
+  const nodes = await pageNodes("src/components/ConsentBanner.astro");
+  assert.ok(
+    nodes.some(
+      (node) =>
+        node.name === "a" &&
+        node.attributes?.some(
+          ({ name, value }) => name === "data-i18n" && value === "consent.privacy",
+        ),
+    ),
+  );
 });
