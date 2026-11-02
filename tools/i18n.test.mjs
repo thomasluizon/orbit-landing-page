@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
@@ -248,4 +248,91 @@ test("every new landing string exists in both languages and Astra remains femini
       if (lang === "pt-BR") assert.doesNotMatch(value, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
     }
   }
+});
+
+const sourcePaths = readdirSync("src", { recursive: true })
+  .filter((path) => /\.(?:astro|ts)$/.test(path))
+  .map((path) => `src/${path}`);
+
+function assertTranslationReads(sources, tables, landingTables) {
+  let reads = 0;
+  for (const [path, source] of sources) {
+    const patterns = [
+      /data-i18n(?:-placeholder|-content|-label)?="([^"]+)"/g,
+      /(?<![\w.])(?:translations\.en|en|translations\[[^\]]+\])\["([^"]+)"\]/g,
+    ];
+    for (const pattern of patterns) {
+      for (const [, key] of source.matchAll(pattern)) {
+        reads++;
+        for (const [language, table] of Object.entries(tables))
+          assert.ok(Object.hasOwn(table, key), `${path}: ${language} is missing ${key}`);
+      }
+    }
+    for (const pattern of [
+      /<Copy\s+name="([^"]+)"/g,
+      /\blandingCopy(?:\.en|\[[^\]]+\])\["([^"]+)"\]/g,
+    ]) {
+      for (const [, key] of source.matchAll(pattern)) {
+        reads++;
+        for (const [language, table] of Object.entries(landingTables))
+          assert.ok(Object.hasOwn(table, key), `${path}: ${language} is missing ${key}`);
+      }
+    }
+  }
+  assert.ok(reads > 0, "source scan must find key reads");
+  for (const key of new Set(Object.values(landingTables).flatMap(Object.keys))) {
+    for (const [language, table] of Object.entries(landingTables))
+      assert.ok(Object.hasOwn(table, key), `${language} is missing ${key}`);
+  }
+}
+
+function assertCopyPairs(sources) {
+  for (const [path, source] of sources) {
+    for (const suffix of ["", "-label"]) {
+      const count = (language) =>
+        [...source.matchAll(new RegExp(`data-copy${suffix}-${language}=`, "g"))].length;
+      assert.equal(count("en"), count("pt"), `${path}: data-copy${suffix} needs its pt-BR pair`);
+    }
+  }
+}
+
+test("every data-i18n key read in src exists in both tables", () => {
+  const { tables, landingTables } = harness();
+  const sources = sourcePaths.map((path) => [path, readFileSync(path, "utf8")]);
+  assertTranslationReads(sources, tables, landingTables);
+});
+
+test("every copy attribute has its pt-BR pair in the same Astro file", () => {
+  assertCopyPairs(
+    sourcePaths
+      .filter((path) => path.endsWith(".astro"))
+      .map((path) => [path, readFileSync(path, "utf8")]),
+  );
+});
+
+test("source scans reject a planted key typo and missing copy pair", () => {
+  const { tables, landingTables } = harness();
+  const path = "src/components/IosWaitlist.astro";
+  const source = readFileSync(path, "utf8");
+  assert.throws(
+    () =>
+      assertTranslationReads(
+        [[path, source.replace('data-i18n="ios.soon"', 'data-i18n="ios.missing"')]],
+        tables,
+        landingTables,
+      ),
+    /is missing ios\.missing/,
+  );
+  const copyPath = "src/components/OrbitProduct.astro";
+  const copy = readFileSync(copyPath, "utf8");
+  assertCopyPairs([[copyPath, copy]]);
+  assert.throws(
+    () => assertCopyPairs([[copyPath, copy.replace("data-copy-pt=", "data-unpaired-pt=")]]),
+    /needs its pt-BR pair/,
+  );
+  assert.throws(
+    () =>
+      assertCopyPairs([[copyPath, copy.replace("data-copy-label-pt=", "data-unpaired-label-pt=")]]),
+    /needs its pt-BR pair/,
+  );
 });

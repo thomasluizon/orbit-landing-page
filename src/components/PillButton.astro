@@ -9,7 +9,6 @@ interface Props {
   disabled?: boolean;
   variant?: PillVariant;
   size?: PillSize;
-  external?: boolean;
   class?: string;
   ariaLabel?: string;
   id?: string;
@@ -24,7 +23,6 @@ const {
   disabled = false,
   variant = "primary",
   size = "sm",
-  external = false,
   class: className = "",
   ariaLabel,
   id,
@@ -51,8 +49,6 @@ const sizeClasses: Record<PillSize, string> = {
     <a
       href={href}
       data-app-entry={appEntry || undefined}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
       aria-label={ariaLabel}
       id={id}
       data-primary-action={variant === "primary" || undefined}
