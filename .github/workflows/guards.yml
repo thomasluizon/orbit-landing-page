@@ -73,3 +73,23 @@ jobs:
         with:
           node-version: 22
       - run: node tools/check-root-allowlist.mjs
+
+  attribution:
+    name: Attribution
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Pull request commits carry no attribution lines
+        # The PR Body workflow checks the body, because an edit of the body does not run Guards.
+        # A promote or carry pull request brings commits that already landed on a long-lived branch.
+        env:
+          PULL_REQUEST_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+        run: >-
+          node tools/check-attribution.mjs --range "$PULL_REQUEST_RANGE"
+          --not origin/main --not origin/redesign/main

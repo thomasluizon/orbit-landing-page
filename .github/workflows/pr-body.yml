@@ -1,0 +1,33 @@
+name: PR Body
+
+on:
+  pull_request:
+    branches: [main, redesign/main]
+    types: [opened, edited, reopened, synchronize]
+
+# Every event must finish its own check on the head commit. A shared concurrency
+# group can cancel a body edit while a push runs, so this workflow sets none.
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  attribution:
+    name: PR Body Attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Pull request body carries no attribution lines
+        # Bot PR bodies quote upstream prose that this repository cannot edit.
+        if: github.event.pull_request.user.type != 'Bot'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""' > "$RUNNER_TEMP/pr-body.md"
+          node tools/check-attribution.mjs --body-file "$RUNNER_TEMP/pr-body.md"
