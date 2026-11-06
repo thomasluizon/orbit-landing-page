@@ -40,6 +40,30 @@ const commitRange = (label, messages) => {
   return ["--root", root, "--range", `${base}..${head}`];
 };
 
+/**
+ * A pull request head that merges `redesign/main`, whose tainted commit already landed there, and
+ * then adds `newMessage`. The repository records `main` and `redesign/main` as `origin` refs, the
+ * same shape that a checkout with all history gives the Guards job.
+ */
+const mergeHistory = (label, newMessage) => {
+  const root = mkdtempSync(join(tmpdir(), `attribution-merge-${label}-`));
+  git(root, ["init", "-q", "--initial-branch=main"]);
+  git(root, ["config", "user.email", "gate@orbit.test"]);
+  git(root, ["config", "user.name", "Orbit Gate"]);
+  writeFileSync(join(root, "file.txt"), "base\n");
+  git(root, ["add", "file.txt"]);
+  const tree = git(root, ["write-tree"]);
+  const base = git(root, ["commit-tree", tree, "-m", "base"]);
+  const landed = git(root, ["commit-tree", tree, "-p", base, "-m", `feat: landed\n\n${TRAILER}`]);
+  const merge = git(root, ["commit-tree", tree, "-p", base, "-p", landed, "-m", "chore: carry"]);
+  const head = git(root, ["commit-tree", tree, "-p", merge, "-m", newMessage]);
+  git(root, ["update-ref", "refs/remotes/origin/main", base]);
+  git(root, ["update-ref", "refs/remotes/origin/redesign/main", landed]);
+  return { root, landed, range: ["--root", root, "--range", `${base}..${head}`] };
+};
+
+const LONG_LIVED = ["--not", "origin/main", "--not", "origin/redesign/main"];
+
 const bodyFile = (label, text) => {
   const path = join(mkdtempSync(join(tmpdir(), `attribution-body-${label}-`)), "body.md");
   writeFileSync(path, text);
@@ -90,6 +114,27 @@ test("commit range: each banned line in any commit fails", () => {
   assert.match(generated.stderr, /a generated-with line/);
 });
 
+test("commit range: a merged commit that a long-lived branch reaches fails without --not", () => {
+  const { landed, range } = mergeHistory("unexcluded", "feat: new work");
+  const result = run(range);
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    new RegExp(`commit ${landed.slice(0, 12)} line 3: a co-author trailer`),
+  );
+});
+
+test("commit range: --not skips a landed tainted commit and still checks new commits", () => {
+  const clean = run([...mergeHistory("excluded-clean", "feat: new work").range, ...LONG_LIVED]);
+  assert.equal(clean.status, 0, clean.stderr);
+  assert.match(clean.stdout, /Attribution guard passed/);
+  const { landed, range } = mergeHistory("excluded-tainted", `feat: new work\n\n${GENERATED}`);
+  const tainted = run([...range, ...LONG_LIVED]);
+  assert.equal(tainted.status, 1);
+  assert.match(tainted.stderr, /line 3: a generated-with line/);
+  assert.doesNotMatch(tainted.stderr, new RegExp(landed.slice(0, 12)));
+});
+
 test("body file: a clean body passes and each banned line fails", () => {
   const clean = run(bodyFile("clean", `## Summary\n\n${RULE}\n`));
   assert.equal(clean.status, 0, clean.stderr);
@@ -113,6 +158,10 @@ test("usage errors exit 2", () => {
     [["--body-file", join(root, "missing.md")], /cannot read/],
     [["--range"], /--range requires a value/],
     [["--unknown", "x"], /unknown argument: --unknown/],
+    [["--body-file", join(root, "file.txt"), "--not", "main"], /--not requires --range/],
+    [[...range, "--not", "-p"], /--not must be one ref, got "-p"/],
+    [[...range, "--not", "a..b"], /--not must be one ref/],
+    [[...range, "--not", "origin/missing"], /git log .* --not origin\/missing failed/],
   ];
   for (const [args, stderr] of cases) {
     const result = run(args);
