@@ -46,7 +46,6 @@ import { appUrl, googlePlayUrl } from "../config/links";
     () => import("../scripts/scroll"),
     () => import("../scripts/waitlist"),
     () => import("../scripts/waitlist-section"),
-    () => import("../scripts/desktop-downloads"),
   ]);
 
   const previewObserver = new IntersectionObserver(
@@ -69,4 +68,16 @@ import { appUrl, googlePlayUrl } from "../config/links";
   document
     .querySelectorAll('.hero-device, [data-section="features"]')
     .forEach((surface) => previewObserver.observe(surface));
+
+  const downloadObserver = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some(({ isIntersecting }) => isIntersecting)) return;
+      downloadObserver.disconnect();
+      void afterLoad([() => import("../scripts/desktop-downloads")]);
+    },
+    { rootMargin: "600px" },
+  );
+  document
+    .querySelectorAll("[data-desktop-download]")
+    .forEach((download) => downloadObserver.observe(download));
 </script>
