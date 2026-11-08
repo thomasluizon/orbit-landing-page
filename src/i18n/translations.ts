@@ -344,7 +344,7 @@ const landingPt: Record<LandingKey, string> = {
   "footer.legal": "Informações legais",
   "footer.description": "Pequenos hábitos, com a Astra ao seu lado.",
   "footer.android": "Instalar no Android",
-  "footer.mac.arm": "Baixar para Mac (chip Apple)",
+  "footer.mac.arm": "Baixar para Mac (chip da Apple)",
   "footer.mac.intel": "Baixar para Mac (Intel)",
   "footer.windows.x64": "Baixar para Windows (x64)",
   "footer.windows.arm": "Baixar para Windows (Arm)",

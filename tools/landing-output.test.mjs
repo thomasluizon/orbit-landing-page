@@ -548,7 +548,7 @@ test("the built footer offers each desktop file at its stable release URL in bot
       "mac-arm",
       `${release}/orbit-aarch64-apple-darwin.dmg`,
       "Download for Mac (Apple silicon)",
-      "Baixar para Mac (chip Apple)",
+      "Baixar para Mac (chip da Apple)",
     ],
     [
       "mac-x86",
