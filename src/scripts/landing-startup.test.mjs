@@ -5,7 +5,15 @@ import vm from "node:vm";
 import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
-const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
+const deferred = [
+  "pricing",
+  "faq",
+  "back-to-top",
+  "scroll",
+  "waitlist",
+  "waitlist-section",
+  "desktop-downloads",
+];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function harness({

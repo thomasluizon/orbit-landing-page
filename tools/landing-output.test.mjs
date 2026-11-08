@@ -512,6 +512,16 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
   }
   const installs = home.filter((node) => node.name === "a" && attrs(node).href === expectedPlay);
   assert.equal(installs.length, 2, "explicit Android link and clickable QR remain Play-only");
+  assert.deepEqual(
+    installs.map((node) => [
+      attrs(node)["data-analytics-event"],
+      attrs(node)["data-analytics-surface"],
+    ]),
+    [
+      ["android_install_clicked", "footer"],
+      ["android_install_clicked", "footer_qr"],
+    ],
+  );
   const qr = installs.find((node) => attrs(node).class === "footer-qr");
   assert.ok(
     descendants(qr).some(
@@ -590,6 +600,11 @@ test("the built footer offers each desktop file at its stable release URL in bot
   );
   for (const node of downloads) {
     assert.equal(node.name, "a");
+    assert.equal(attrs(node)["data-analytics-event"], "desktop_download_clicked");
+    assert.equal(
+      attrs(node)["data-analytics-surface"],
+      `footer_${attrs(node)["data-desktop-download"].replace("-", "_")}`,
+    );
     assert.equal(
       `${attrs(node)["data-desktop-system"]}-${attrs(node)["data-desktop-architecture"]}`,
       attrs(node)["data-desktop-download"],

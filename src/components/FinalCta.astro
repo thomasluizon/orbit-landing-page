@@ -40,7 +40,12 @@ const { appUrl, googlePlayUrl } = Astro.props;
         >
           <h3><Copy name="footer.product" /></h3>
           <a href={appUrl} data-app-entry class="text-link" data-i18n="header.cta">Open Orbit</a>
-          <a href={googlePlayUrl} class="text-link"><Copy name="footer.android" /></a>
+          <a
+            href={googlePlayUrl}
+            class="text-link"
+            data-analytics-event="android_install_clicked"
+            data-analytics-surface="footer"><Copy name="footer.android" /></a
+          >
           {
             desktopDownloads.map((download) => (
               <a
@@ -49,6 +54,8 @@ const { appUrl, googlePlayUrl } = Astro.props;
                 data-desktop-download={download.id}
                 data-desktop-system={download.system}
                 data-desktop-architecture={download.architecture}
+                data-analytics-event="desktop_download_clicked"
+                data-analytics-surface={`footer_${download.system}_${download.architecture}`}
               >
                 <Copy name={download.copy} />
               </a>
@@ -66,7 +73,12 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">Terms</a>
           <CookiePreferences />
         </div>
-        <a class="footer-qr" href={googlePlayUrl}>
+        <a
+          class="footer-qr"
+          href={googlePlayUrl}
+          data-analytics-event="android_install_clicked"
+          data-analytics-surface="footer_qr"
+        >
           <span class="footer-qr-code"
             ><img
               src="/orbit-install-qr.svg"
@@ -90,7 +102,3 @@ const { appUrl, googlePlayUrl } = Astro.props;
     </footer>
   </div>
 </section>
-
-<script>
-  import "../scripts/desktop-downloads";
-</script>

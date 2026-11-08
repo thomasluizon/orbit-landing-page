@@ -115,18 +115,24 @@ test("an iPad that reports a Mac user agent is not treated as a Mac", async () =
   assert.deepEqual(order, around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]));
 });
 
-for (const [platform, architecture, expected] of [
-  ["macOS", "x86", ["mac-x86", "mac-arm", "windows-x86", "windows-arm"]],
-  ["Windows", "arm", ["windows-arm", "windows-x86", "mac-arm", "mac-x86"]],
-  ["Windows", "", ["windows-x86", "windows-arm", "mac-arm", "mac-x86"]],
+test("a touchscreen Windows laptop keeps the Windows lead", async () => {
+  assert.deepEqual(
+    await visit({ userAgent: userAgents.windows, maxTouchPoints: 10 }),
+    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
+  );
+});
+
+for (const [system, architecture, expected] of [
+  ["mac", "x86", ["mac-x86", "mac-arm", "windows-x86", "windows-arm"]],
+  ["windows", "arm", ["windows-arm", "windows-x86", "mac-arm", "mac-x86"]],
+  ["windows", "", ["windows-x86", "windows-arm", "mac-arm", "mac-x86"]],
 ]) {
-  test(`client hints for ${platform} on ${architecture || "an unreported"} architecture lead with the matching file`, async () => {
+  test(`client hints for a ${system} visitor on ${architecture || "an unreported"} architecture lead with the matching file`, async () => {
     const requested = [];
     const order = await visit({
-      userAgent: platform === "macOS" ? userAgents.mac : userAgents.windows,
+      userAgent: userAgents[system],
       maxTouchPoints: 0,
       userAgentData: {
-        platform,
         getHighEntropyValues: async (hints) => {
           requested.push(...hints);
           return { architecture };
@@ -144,7 +150,6 @@ test("a rejected client hints request keeps the system lead", async () => {
       userAgent: userAgents.windows,
       maxTouchPoints: 0,
       userAgentData: {
-        platform: "Windows",
         getHighEntropyValues: () => Promise.reject(new Error()),
       },
     }),
