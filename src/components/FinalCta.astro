@@ -3,6 +3,7 @@ import Copy from "./Copy.astro";
 import CookiePreferences from "./CookiePreferences.astro";
 import PillButton from "./PillButton.astro";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
+import { desktopDownloads } from "../config/links";
 interface Props {
   appUrl: string;
   googlePlayUrl: string;
@@ -40,6 +41,13 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <h3><Copy name="footer.product" /></h3>
           <a href={appUrl} data-app-entry class="text-link" data-i18n="header.cta">Open Orbit</a>
           <a href={googlePlayUrl} class="text-link"><Copy name="footer.android" /></a>
+          {
+            desktopDownloads.map((download) => (
+              <a href={download.url} class="text-link" data-desktop-download={download.id}>
+                <Copy name={download.copy} />
+              </a>
+            ))
+          }
           <a href="#ios" id="ios-trigger" data-ios-trigger class="text-link" data-i18n="hero.ios"
             >iPhone waitlist</a
           >
@@ -76,3 +84,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
     </footer>
   </div>
 </section>
+
+<script>
+  import "../scripts/desktop-downloads";
+</script>

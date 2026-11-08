@@ -537,6 +537,70 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
   assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
 });
 
+test("the built footer offers each desktop file at its stable release URL in both locales", async () => {
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const release =
+    "https://github.com/thomasluizon/orbit-ui-mobile/releases/download/desktop-production";
+  const expected = [
+    [
+      "mac-arm",
+      `${release}/orbit-aarch64-apple-darwin.dmg`,
+      "Download for Mac (Apple silicon)",
+      "Baixar para Mac (chip Apple)",
+    ],
+    [
+      "mac-x86",
+      `${release}/orbit-x86_64-apple-darwin.dmg`,
+      "Download for Mac (Intel)",
+      "Baixar para Mac (Intel)",
+    ],
+    [
+      "windows-x86",
+      `${release}/orbit-x86_64-pc-windows-msvc.exe`,
+      "Download for Windows (x64)",
+      "Baixar para Windows (x64)",
+    ],
+    [
+      "windows-arm",
+      `${release}/orbit-aarch64-pc-windows-msvc.exe`,
+      "Download for Windows (Arm)",
+      "Baixar para Windows (Arm)",
+    ],
+  ];
+  const product = descendants((await parse(html)).ast).find(
+    (node) => node.name === "nav" && attrs(node)["aria-label"] === "Product",
+  );
+  assert.ok(product);
+  const downloads = descendants(product).filter((node) =>
+    Object.hasOwn(attrs(node), "data-desktop-download"),
+  );
+  assert.deepEqual(
+    downloads.map((node) => {
+      const copy = descendants(node).find((child) => attrs(child)["data-copy-en"]);
+      return [
+        attrs(node)["data-desktop-download"],
+        attrs(node).href,
+        attrs(copy)["data-copy-en"],
+        attrs(copy)["data-copy-pt"],
+      ];
+    }),
+    expected,
+  );
+  for (const node of downloads) {
+    assert.equal(node.name, "a");
+    assert.ok(!Object.hasOwn(attrs(node), "data-app-entry"));
+    assert.doesNotMatch(attrs(node).class, /footer-qr/);
+  }
+  assert.ok(
+    descendants(product).some(
+      (node) => attrs(node).href === (process.env.PUBLIC_APP_URL || "https://app.useorbit.org"),
+    ),
+    "the installable web app stays one click away",
+  );
+});
+
 test("both built pages eagerly bind app entry and preserve consent-gated surface capture", () => {
   for (const file of ["dist/index.html", "dist/waitlist-confirmed/index.html"]) {
     const page = readFileSync(file, "utf8");
