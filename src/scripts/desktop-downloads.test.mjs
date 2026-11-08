@@ -51,7 +51,11 @@ function footerList() {
     },
   });
   children.push(node({ label: "Open Orbit" }), node({ label: "Install on Android" }));
-  for (const id of Object.keys(stableUrls)) children.push(node({ desktopDownload: id }));
+  const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
+  for (const { id, system, architecture } of desktopDownloads)
+    children.push(
+      node({ desktopDownload: id, desktopSystem: system, desktopArchitecture: architecture }),
+    );
   children.push(node({ label: "iPhone waitlist" }));
   return {
     querySelectorAll(selector) {
@@ -64,15 +68,10 @@ function footerList() {
 
 async function visit(navigator) {
   const root = footerList();
-  const links = run("src/config/links.ts", { environment: {} });
   vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
     exports: {},
     navigator,
     document: root,
-    require: (path) => {
-      assert.equal(path, "../config/links");
-      return links;
-    },
   });
   await new Promise((resolve) => setImmediate(resolve));
   return root.order();

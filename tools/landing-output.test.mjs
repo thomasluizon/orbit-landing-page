@@ -590,6 +590,10 @@ test("the built footer offers each desktop file at its stable release URL in bot
   );
   for (const node of downloads) {
     assert.equal(node.name, "a");
+    assert.equal(
+      `${attrs(node)["data-desktop-system"]}-${attrs(node)["data-desktop-architecture"]}`,
+      attrs(node)["data-desktop-download"],
+    );
     assert.ok(!Object.hasOwn(attrs(node), "data-app-entry"));
     assert.doesNotMatch(attrs(node).class, /footer-qr/);
   }

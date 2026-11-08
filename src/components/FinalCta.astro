@@ -43,7 +43,13 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <a href={googlePlayUrl} class="text-link"><Copy name="footer.android" /></a>
           {
             desktopDownloads.map((download) => (
-              <a href={download.url} class="text-link" data-desktop-download={download.id}>
+              <a
+                href={download.url}
+                class="text-link"
+                data-desktop-download={download.id}
+                data-desktop-system={download.system}
+                data-desktop-architecture={download.architecture}
+              >
                 <Copy name={download.copy} />
               </a>
             ))
