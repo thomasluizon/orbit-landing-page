@@ -642,7 +642,7 @@ test("the built header and hero downloads land on the full footer list of eight 
     (node) => node.name === "a" && attrs(node).href === "#downloads",
   );
   assert.equal(headerDownload.length, 1);
-  assert.equal(attrs(headerDownload[0])["data-analytics-event"], "desktop_download_clicked");
+  assert.equal(attrs(headerDownload[0])["data-analytics-event"], "download_list_opened");
   assert.equal(attrs(headerDownload[0])["data-analytics-surface"], "header_download");
   const hero = nodes.find((node) => attrs(node).id === "hero");
   const heroLinks = descendants(hero).filter(
@@ -664,6 +664,7 @@ test("the built header and hero downloads land on the full footer list of eight 
     [
       ["any", false],
       ["mac", true],
+      ["mac-unreported", true],
       ["windows", true],
       ["android", true],
       ["iphone", true],
@@ -678,6 +679,7 @@ test("the built header and hero downloads land on the full footer list of eight 
   assert.deepEqual(labels.map(copy), [
     ["Download", "Baixar"],
     ["Download for Mac", "Baixar para Mac"],
+    ["Download for Mac (M chip)", "Baixar para Mac (chip M)"],
     ["Download for Windows", "Baixar para Windows"],
     ["Install on Android", "Instalar no Android"],
     ["hero.ios"],

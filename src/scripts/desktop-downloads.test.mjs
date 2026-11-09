@@ -80,7 +80,7 @@ function landingPage() {
       ),
     );
   children.push(node({ label: "iPhone waitlist", downloadTarget: "iphone" }, "#ios"));
-  const labels = ["any", "mac", "windows", "android", "iphone"].map((system) => ({
+  const labels = ["any", "mac", "mac-unreported", "windows", "android", "iphone"].map((system) => ({
     dataset: { heroDownloadLabel: system },
     hidden: system !== "any",
   }));
@@ -214,9 +214,9 @@ const heroSurfaces = {
   "windows-x86": "hero_windows_x86",
   "windows-arm": "hero_windows_arm",
 };
-const desktopHero = (id) => ({
+const desktopHero = (id, label = id.split("-")[0]) => ({
   href: stableUrls[id],
-  label: [id.split("-")[0]],
+  label: [label],
   event: "desktop_download_clicked",
   surface: heroSurfaces[id],
 });
@@ -225,7 +225,30 @@ const hints = (architecture) => ({
 });
 
 for (const [name, navigator, expected] of [
-  ["a Mac", { userAgent: userAgents.mac, maxTouchPoints: 0 }, desktopHero("mac-arm")],
+  [
+    "a Mac with no architecture hint",
+    { userAgent: userAgents.mac, maxTouchPoints: 0 },
+    desktopHero("mac-arm", "mac-unreported"),
+  ],
+  [
+    "a Mac whose hint is empty",
+    { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("") },
+    desktopHero("mac-arm", "mac-unreported"),
+  ],
+  [
+    "a Mac whose hint is rejected",
+    {
+      userAgent: userAgents.mac,
+      maxTouchPoints: 0,
+      userAgentData: { getHighEntropyValues: () => Promise.reject(new Error()) },
+    },
+    desktopHero("mac-arm", "mac-unreported"),
+  ],
+  [
+    "an Apple silicon Mac that reports arm",
+    { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("arm") },
+    desktopHero("mac-arm"),
+  ],
   [
     "an Intel Mac that reports x86",
     { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("x86") },

@@ -22,8 +22,11 @@ function visitorSystem(userAgent: string, touchPoints = 0): VisitorSystem | unde
 const isDesktop = (system: VisitorSystem): system is DesktopSystem =>
   system === "mac" || system === "windows";
 
+const reportsArchitecture = (architecture?: string) =>
+  architecture === "arm" || architecture === "x86";
+
 function preferredArchitecture(system: DesktopSystem, architecture?: string) {
-  if (architecture === "arm" || architecture === "x86") return architecture;
+  if (reportsArchitecture(architecture)) return architecture;
   return system === "mac" ? "arm" : "x86";
 }
 
@@ -53,8 +56,9 @@ function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture
       analyticsEvent: event,
       analyticsSurface: `hero_${(file || system).replace("-", "_")}`,
     });
+  const shown = system === "mac" && !reportsArchitecture(architecture) ? "mac-unreported" : system;
   for (const label of hero.querySelectorAll<HTMLElement>("[data-hero-download-label]"))
-    label.hidden = label.dataset.heroDownloadLabel !== system;
+    label.hidden = label.dataset.heroDownloadLabel !== shown;
 }
 
 function leadVisitorDownloads(root: ParentNode, visitor: VisitorNavigator) {

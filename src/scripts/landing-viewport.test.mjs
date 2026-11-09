@@ -1400,14 +1400,21 @@ test("the hero actions sit on one line or one stack at every audited width, neve
   const downloadKeys = Object.fromEntries(
     [
       ...hero.matchAll(
-        /<span data-hero-download-label="(\w+)"([^>]*)>\s*(?:<Copy name="([^"]+)")?/g,
+        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<Copy name="([^"]+)")?/g,
       ),
     ].map(([, system, attributes, copy]) => [
       system,
       copy ?? attributes.match(/data-i18n="([^"]+)"/)?.[1],
     ]),
   );
-  assert.deepEqual(Object.keys(downloadKeys), ["any", "mac", "windows", "android", "iphone"]);
+  assert.deepEqual(Object.keys(downloadKeys), [
+    "any",
+    "mac",
+    "mac-unreported",
+    "windows",
+    "android",
+    "iphone",
+  ]);
   const tableFor = (language) => ({
     ...copyTables.translations[language],
     ...copyTables.landingCopy[language],
