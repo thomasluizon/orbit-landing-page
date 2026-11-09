@@ -208,11 +208,17 @@ test("a rejected client hints request keeps the system lead", async () => {
   );
 });
 
+const heroSurfaces = {
+  "mac-arm": "hero_mac_arm",
+  "mac-x86": "hero_mac_x86",
+  "windows-x86": "hero_windows_x86",
+  "windows-arm": "hero_windows_arm",
+};
 const desktopHero = (id) => ({
   href: stableUrls[id],
   label: [id.split("-")[0]],
   event: "desktop_download_clicked",
-  surface: `hero_${id.replace("-", "_")}`,
+  surface: heroSurfaces[id],
 });
 const hints = (architecture) => ({
   getHighEntropyValues: async () => ({ architecture }),
