@@ -1,6 +1,7 @@
 export {};
 
 type DesktopSystem = "mac" | "windows";
+type VisitorSystem = DesktopSystem | "android" | "iphone";
 
 interface UserAgentData {
   getHighEntropyValues(hints: string[]): Promise<{ architecture?: string }>;
@@ -10,11 +11,20 @@ type VisitorNavigator = Pick<Navigator, "userAgent" | "maxTouchPoints"> & {
   userAgentData?: UserAgentData;
 };
 
-function desktopSystem(userAgent: string, touchPoints = 0): DesktopSystem | undefined {
-  if (/\b(?:Android|iPhone|iPad|iPod|Mobile)\b/i.test(userAgent)) return;
+function visitorSystem(userAgent: string, touchPoints = 0): VisitorSystem | undefined {
+  if (/\bAndroid\b/i.test(userAgent)) return "android";
+  if (/\b(?:iPhone|iPad|iPod)\b/i.test(userAgent)) return "iphone";
+  if (/\bMobile\b/i.test(userAgent)) return;
   if (/\bWindows NT\b/.test(userAgent)) return "windows";
-  if (touchPoints > 1) return;
-  if (/\bMacintosh\b/.test(userAgent)) return "mac";
+  if (/\bMacintosh\b/.test(userAgent)) return touchPoints > 1 ? "iphone" : "mac";
+}
+
+const isDesktop = (system: VisitorSystem): system is DesktopSystem =>
+  system === "mac" || system === "windows";
+
+function preferredArchitecture(system: DesktopSystem, architecture?: string) {
+  if (architecture === "arm" || architecture === "x86") return architecture;
+  return system === "mac" ? "arm" : "x86";
 }
 
 function leadDownloadLinks(root: ParentNode, system: DesktopSystem, architecture?: string) {
@@ -22,24 +32,43 @@ function leadDownloadLinks(root: ParentNode, system: DesktopSystem, architecture
   const parent = links[0]?.parentNode;
   if (!parent) return;
   const next = links[links.length - 1].nextSibling;
-  const preferred =
-    architecture === "arm" || architecture === "x86"
-      ? architecture
-      : system === "mac"
-        ? "arm"
-        : "x86";
+  const preferred = preferredArchitecture(system, architecture);
   const rank = ({ dataset }: HTMLElement) =>
     dataset.desktopSystem !== system ? 2 : dataset.desktopArchitecture === preferred ? 0 : 1;
   for (const link of links.sort((a, b) => rank(a) - rank(b))) parent.insertBefore(link, next);
 }
 
+function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture?: string) {
+  const hero = root.querySelector<HTMLAnchorElement>("#hero-download");
+  const file = isDesktop(system) && `${system}-${preferredArchitecture(system, architecture)}`;
+  const source = root.querySelector<HTMLElement>(
+    file ? `[data-desktop-download="${file}"]` : `[data-download-target="${system}"]`,
+  );
+  const href = source?.getAttribute("href");
+  if (!hero || !source || !href) return;
+  hero.href = href;
+  const event = source.dataset.analyticsEvent;
+  if (event)
+    Object.assign(hero.dataset, {
+      analyticsEvent: event,
+      analyticsSurface: `hero_${(file || system).replace("-", "_")}`,
+    });
+  for (const label of hero.querySelectorAll<HTMLElement>("[data-hero-download-label]"))
+    label.hidden = label.dataset.heroDownloadLabel !== system;
+}
+
 function leadVisitorDownloads(root: ParentNode, visitor: VisitorNavigator) {
-  const system = desktopSystem(visitor.userAgent, visitor.maxTouchPoints);
+  const system = visitorSystem(visitor.userAgent, visitor.maxTouchPoints);
   if (!system) return;
+  pointHeroDownload(root, system);
+  if (!isDesktop(system)) return;
   leadDownloadLinks(root, system);
   visitor.userAgentData
     ?.getHighEntropyValues(["architecture"])
-    .then(({ architecture }) => leadDownloadLinks(root, system, architecture))
+    .then(({ architecture }) => {
+      leadDownloadLinks(root, system, architecture);
+      pointHeroDownload(root, system, architecture);
+    })
     .catch(() => undefined);
 }
 

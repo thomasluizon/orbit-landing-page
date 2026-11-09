@@ -32,7 +32,9 @@ function run(path, context) {
   return exports;
 }
 
-function footerList() {
+const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
+
+function landingPage() {
   const children = [];
   const parent = {
     children,
@@ -43,39 +45,88 @@ function footerList() {
       children.splice(index, 0, node);
     },
   };
-  const node = (dataset = {}) => ({
+  const node = (dataset = {}, href) => ({
     dataset,
     parentNode: parent,
+    getAttribute: (name) => (name === "href" ? href : null),
     get nextSibling() {
       return children[children.indexOf(this) + 1] ?? null;
     },
   });
-  children.push(node({ label: "Open Orbit" }), node({ label: "Install on Android" }));
+  children.push(
+    node({ label: "Open Orbit" }, "https://app.useorbit.org"),
+    node(
+      {
+        label: "Install on Android",
+        downloadTarget: "android",
+        analyticsEvent: "android_install_clicked",
+        analyticsSurface: "footer",
+      },
+      googlePlayUrl,
+    ),
+  );
   const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
-  for (const { id, system, architecture } of desktopDownloads)
+  for (const { id, system, architecture, url } of desktopDownloads)
     children.push(
-      node({ desktopDownload: id, desktopSystem: system, desktopArchitecture: architecture }),
+      node(
+        {
+          desktopDownload: id,
+          desktopSystem: system,
+          desktopArchitecture: architecture,
+          analyticsEvent: "desktop_download_clicked",
+          analyticsSurface: `footer_${system}_${architecture}`,
+        },
+        url,
+      ),
     );
-  children.push(node({ label: "iPhone waitlist" }));
+  children.push(node({ label: "iPhone waitlist", downloadTarget: "iphone" }, "#ios"));
+  const labels = ["any", "mac", "windows", "android", "iphone"].map((system) => ({
+    dataset: { heroDownloadLabel: system },
+    hidden: system !== "any",
+  }));
+  const hero = {
+    href: "#downloads",
+    dataset: {},
+    querySelectorAll(selector) {
+      assert.equal(selector, "[data-hero-download-label]");
+      return labels;
+    },
+  };
   return {
+    querySelector(selector) {
+      if (selector === "#hero-download") return hero;
+      const [, name, value] = selector.match(/^\[data-([a-z-]+)="([^"]+)"\]$/) ?? [];
+      const key = name?.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      assert.ok(key === "desktopDownload" || key === "downloadTarget", selector);
+      return children.find((child) => child.dataset[key] === value) ?? null;
+    },
     querySelectorAll(selector) {
       assert.equal(selector, "[data-desktop-download]");
       return children.filter((child) => child.dataset.desktopDownload);
     },
     order: () => children.map((child) => child.dataset.desktopDownload ?? child.dataset.label),
+    hero: () => ({
+      href: hero.href,
+      label: labels.filter(({ hidden }) => !hidden).map(({ dataset }) => dataset.heroDownloadLabel),
+      event: hero.dataset.analyticsEvent,
+      surface: hero.dataset.analyticsSurface,
+    }),
   };
 }
 
-async function visit(navigator) {
-  const root = footerList();
+async function load(navigator) {
+  const root = landingPage();
   vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
     exports: {},
     navigator,
     document: root,
   });
   await new Promise((resolve) => setImmediate(resolve));
-  return root.order();
+  return root;
 }
+
+const visit = async (navigator) => (await load(navigator)).order();
+const hero = async (navigator) => (await load(navigator)).hero();
 
 const around = (downloads) => ["Open Orbit", "Install on Android", ...downloads, "iPhone waitlist"];
 
@@ -156,3 +207,61 @@ test("a rejected client hints request keeps the system lead", async () => {
     around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
   );
 });
+
+const desktopHero = (id) => ({
+  href: stableUrls[id],
+  label: [id.split("-")[0]],
+  event: "desktop_download_clicked",
+  surface: `hero_${id.replace("-", "_")}`,
+});
+const hints = (architecture) => ({
+  getHighEntropyValues: async () => ({ architecture }),
+});
+
+for (const [name, navigator, expected] of [
+  ["a Mac", { userAgent: userAgents.mac, maxTouchPoints: 0 }, desktopHero("mac-arm")],
+  [
+    "an Intel Mac that reports x86",
+    { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("x86") },
+    desktopHero("mac-x86"),
+  ],
+  [
+    "a Windows PC",
+    { userAgent: userAgents.windows, maxTouchPoints: 0 },
+    desktopHero("windows-x86"),
+  ],
+  [
+    "a Windows on Arm PC",
+    { userAgent: userAgents.windows, maxTouchPoints: 0, userAgentData: hints("arm") },
+    desktopHero("windows-arm"),
+  ],
+  [
+    "an Android phone",
+    { userAgent: userAgents.android, maxTouchPoints: 5 },
+    {
+      href: googlePlayUrl,
+      label: ["android"],
+      event: "android_install_clicked",
+      surface: "hero_android",
+    },
+  ],
+  [
+    "an iPhone",
+    { userAgent: userAgents.iphone, maxTouchPoints: 5 },
+    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined },
+  ],
+  [
+    "an iPad that reports a Mac user agent",
+    { userAgent: userAgents.mac, maxTouchPoints: 5 },
+    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined },
+  ],
+  [
+    "an unknown system",
+    { userAgent: userAgents.linux, maxTouchPoints: 0 },
+    { href: "#downloads", label: ["any"], event: undefined, surface: undefined },
+  ],
+]) {
+  test(`the hero download sends ${name} to its own file`, async () => {
+    assert.deepEqual(await hero(navigator), expected);
+  });
+}

@@ -31,7 +31,15 @@ const en = translations.en;
         analyticsSurface="hero"
         ><span translate="no" data-i18n="hero.cta">{en["hero.cta"]}</span></PillButton
       >
+      <PillButton href="#downloads" variant="ghost" size="md" id="hero-download">
+        <span data-hero-download-label="any"><Copy name="download.label" /></span>
+        <span data-hero-download-label="mac" hidden><Copy name="hero.download.mac" /></span>
+        <span data-hero-download-label="windows" hidden><Copy name="hero.download.windows" /></span>
+        <span data-hero-download-label="android" hidden><Copy name="footer.android" /></span>
+        <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">{en["hero.ios"]}</span>
+      </PillButton>
     </div>
+    <a href="#downloads" class="text-link"><Copy name="hero.downloads" /></a>
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
@@ -150,4 +158,5 @@ const en = translations.en;
 <script>
   import "../scripts/phone-screen";
   import "../scripts/hero-carousel";
+  import "../scripts/desktop-downloads";
 </script>

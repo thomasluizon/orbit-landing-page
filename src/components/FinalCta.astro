@@ -33,6 +33,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <p><Copy name="footer.description" /></p>
         </div>
         <nav
+          id="downloads"
           class="footer-column"
           aria-label="Product"
           data-copy-label-en="Product"
@@ -43,6 +44,7 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <a
             href={googlePlayUrl}
             class="text-link"
+            data-download-target="android"
             data-analytics-event="android_install_clicked"
             data-analytics-surface="footer"><Copy name="footer.android" /></a
           >
@@ -61,8 +63,13 @@ const { appUrl, googlePlayUrl } = Astro.props;
               </a>
             ))
           }
-          <a href="#ios" id="ios-trigger" data-ios-trigger class="text-link" data-i18n="hero.ios"
-            >iPhone waitlist</a
+          <a
+            href="#ios"
+            id="ios-trigger"
+            data-ios-trigger
+            data-download-target="iphone"
+            class="text-link"
+            data-i18n="hero.ios">iPhone waitlist</a
           >
         </nav>
         <div class="footer-column">
