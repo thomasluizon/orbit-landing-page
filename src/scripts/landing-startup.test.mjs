@@ -6,6 +6,7 @@ import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
+const footerDownload = 2;
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function harness({
@@ -18,12 +19,15 @@ function harness({
   const listeners = new Map();
   const observers = [];
   let task = 0;
-  const targets = [".hero-device", '[data-section="features"]'].map((selector) => ({
-    matches: (value) => value === selector,
-  }));
+  const targets = [".hero-device", '[data-section="features"]', "[data-desktop-download]"].map(
+    (selector) => ({ selector, matches: (value) => value === selector }),
+  );
   const document = {
     readyState,
-    querySelectorAll: () => targets,
+    querySelectorAll: (selectors) => {
+      const requested = selectors.split(",").map((selector) => selector.trim());
+      return targets.filter(({ selector }) => requested.includes(selector));
+    },
   };
   const window = {
     addEventListener(name, callback, options) {
@@ -59,6 +63,9 @@ function harness({
       }
       unobserve(target) {
         this.observed.delete(target);
+      }
+      disconnect() {
+        this.observed.clear();
       }
     },
   });
@@ -186,5 +193,22 @@ for (const scheduler of [false, true]) {
     assert.ok(h.bindings.some(({ name }) => name === "product-examples"));
     assert.ok(h.bindings.some(({ name }) => name === "product-metrics"));
     assert.ok(!h.bindings.some(({ name }) => name === "demo"));
+  });
+
+  test(`the desktop download order loads only once the footer nears the viewport, after load (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(footerDownload);
+    await flush();
+    assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+    h.load();
+    await h.drain();
+    const downloads = h.bindings.filter(({ name }) => name === "desktop-downloads");
+    assert.equal(downloads.length, 1);
+    assert.ok(downloads[0].task > 0);
+    assert.ok(
+      !h.bindings.some(({ name }) =>
+        ["product-examples", "demo", "product-metrics"].includes(name),
+      ),
+    );
   });
 }
