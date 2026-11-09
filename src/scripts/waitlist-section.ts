@@ -12,12 +12,12 @@ function focusWaitlist() {
   email?.focus({ preventScroll: true });
 }
 
-document.querySelectorAll<HTMLElement>("[data-ios-trigger]").forEach((entry) => {
-  entry.addEventListener("click", (event) => {
-    event.preventDefault();
-    if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");
-    focusWaitlist();
-  });
+document.addEventListener("click", (event) => {
+  const trigger = event.target instanceof Element && event.target.closest("[data-ios-trigger]");
+  if (!trigger) return;
+  event.preventDefault();
+  if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");
+  focusWaitlist();
 });
 window.addEventListener("hashchange", focusWaitlist);
 window.addEventListener("popstate", focusWaitlist);

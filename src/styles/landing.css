@@ -891,7 +891,7 @@
   block-size: 100%;
   border-radius: var(--radius-sm);
 }
-:where(section[id], main[id]) {
+:where(section[id], main[id], nav[id]) {
   scroll-margin-block-start: 96px;
 }
 :where(a, button) > [data-copy-en] {
@@ -987,7 +987,9 @@
     gap: 24px;
   }
   .hero-actions {
-    gap: 24px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
   .section-inner {
     gap: 32px;

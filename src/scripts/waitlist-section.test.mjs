@@ -4,6 +4,15 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
+class FakeElement {
+  constructor(trigger) {
+    this.trigger = trigger;
+  }
+  closest(selector) {
+    return selector === "[data-ios-trigger]" ? this.trigger : null;
+  }
+}
+
 function harness(hash = "", reduced = false) {
   const listeners = new Map(),
     entries = [];
@@ -18,11 +27,20 @@ function harness(hash = "", reduced = false) {
         this.focused = options;
       },
     };
-  const triggers = [{}, {}].map(() => ({
-    addEventListener(name, fn) {
-      this[name] = fn;
-    },
-  }));
+  const triggers = [{}, {}];
+  const documentListeners = new Map();
+  const dispatch = (event) => documentListeners.get("click")?.(event);
+  const click = (target) => {
+    const event = {
+      prevented: false,
+      target: new FakeElement(target),
+      preventDefault() {
+        this.prevented = true;
+      },
+    };
+    dispatch(event);
+    return event;
+  };
   const location = { hash };
   vm.runInNewContext(
     ts.transpileModule(readFileSync("src/scripts/waitlist-section.ts", "utf8"), {
@@ -30,9 +48,10 @@ function harness(hash = "", reduced = false) {
     }).outputText,
     {
       exports: {},
+      Element: FakeElement,
       document: {
         getElementById: (id) => (id === "ios" ? section : email),
-        querySelectorAll: () => triggers,
+        addEventListener: (name, fn) => documentListeners.set(name, fn),
       },
       window: {
         location,
@@ -46,7 +65,7 @@ function harness(hash = "", reduced = false) {
       },
     },
   );
-  return { entries, email, triggers, listeners, location };
+  return { entries, email, triggers, listeners, location, click, dispatch };
 }
 test("the ios fragment scrolls to the dedicated section and focuses its real email field", () => {
   for (const reduced of [false, true]) {
@@ -59,7 +78,7 @@ test("the ios fragment scrolls to the dedicated section and focuses its real ema
 test("footer and FAQ entries repeat the same fragment behavior and history stays usable", () => {
   const h = harness();
   assert.equal(h.entries.length, 0);
-  for (const trigger of h.triggers) trigger.click({ preventDefault() {} });
+  for (const trigger of h.triggers) assert.ok(h.click(trigger).prevented);
   assert.equal(h.location.hash, "#ios");
   assert.equal(h.entries.length, 2);
   h.location.hash = "";
@@ -68,6 +87,33 @@ test("footer and FAQ entries repeat the same fragment behavior and history stays
   h.location.hash = "#ios";
   h.listeners.get("hashchange")();
   assert.equal(h.entries.length, 3);
+});
+test("a trigger added after the script loaded and a repeat tap on the ios fragment still focus the field", () => {
+  const h = harness("#ios");
+  assert.equal(h.entries.length, 1);
+  const late = {};
+  assert.ok(h.click(late).prevented);
+  assert.equal(h.entries.length, 2);
+  assert.equal(h.email.focused.preventScroll, true);
+});
+test("a click outside every waitlist trigger is left alone", () => {
+  const h = harness();
+  assert.equal(h.click(null).prevented, false);
+  assert.equal(h.entries.length, 0);
+  assert.equal(h.location.hash, "");
+});
+test("a click whose target is not an Element is left alone", () => {
+  const h = harness();
+  const event = {
+    prevented: false,
+    target: { closest: () => ({}) },
+    preventDefault() {
+      this.prevented = true;
+    },
+  };
+  h.dispatch(event);
+  assert.equal(event.prevented, false);
+  assert.equal(h.entries.length, 0);
 });
 test("the section precedes FAQ and owns the existing waitlist and Turnstile controls", () => {
   const source = readFileSync("src/components/IosWaitlist.astro", "utf8");

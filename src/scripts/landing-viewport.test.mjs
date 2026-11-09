@@ -1342,3 +1342,107 @@ test("measured calendar, metrics and breakdown fixtures preserve their folded se
     }
   }
 });
+
+const copyTables = {};
+vm.runInNewContext(
+  ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText,
+  { exports: copyTables },
+);
+
+function heroRuleAt(selector, width) {
+  const pixels = (value, unit) => Number(value) * (unit === "rem" ? 16 : 1);
+  const applies = (condition) =>
+    condition
+      .replace(/^@media\s*/, "")
+      .split(/\s+and\s+/)
+      .every((feature) => {
+        const [, name, value, unit] =
+          feature.match(/^\((max-width:|min-width:|width\s*<|width\s*>=)\s*([\d.]+)(px|rem)\)$/) ??
+          [];
+        assert.ok(name, `unhandled hero media condition: ${condition}`);
+        const bound = pixels(value, unit);
+        if (name === "max-width:") return width <= bound;
+        if (name.startsWith("width") && name.endsWith("<")) return width < bound;
+        return width >= bound;
+      });
+  const declarations = {};
+  for (const rule of stylesheetRules(css)) {
+    if (rule.selector !== selector || !rule.conditions.every(applies)) continue;
+    for (const [, property, value] of rule.declarations.matchAll(/([\w-]+):\s*([^;]+);/g))
+      declarations[property] = value.trim();
+  }
+  return declarations;
+}
+
+function labelCeiling(label, fontSize) {
+  const advance = (character) =>
+    /[\s'.,!:;()|iíjlI]/.test(character)
+      ? 0.32
+      : /[rtf1/-]/.test(character)
+        ? 0.42
+        : /[mwMW@%]/.test(character)
+          ? 0.98
+          : /[A-ZÀ-Ý0-9]/.test(character)
+            ? 0.78
+            : 0.64;
+  return [...label].reduce((width, character) => width + advance(character), 0) * fontSize;
+}
+
+test("the hero actions sit on one line or one stack at every audited width, never wrapped", () => {
+  const pill = readFileSync("src/components/PillButton.astro", "utf8");
+  assert.match(pill, /whitespace-nowrap/);
+  const [, padding, fontSize] = pill.match(
+    /md: "pill-md h-\[50px\] px-\[(\d+)px\] text-\[(\d+)px\]/,
+  );
+  const hero = readFileSync("src/components/Hero.astro", "utf8");
+  const downloadKeys = Object.fromEntries(
+    [
+      ...hero.matchAll(
+        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<Copy name="([^"]+)")?/g,
+      ),
+    ].map(([, system, attributes, copy]) => [
+      system,
+      copy ?? attributes.match(/data-i18n="([^"]+)"/)?.[1],
+    ]),
+  );
+  assert.deepEqual(Object.keys(downloadKeys), [
+    "any",
+    "mac",
+    "mac-unreported",
+    "windows",
+    "android",
+    "iphone",
+  ]);
+  const tableFor = (language) => ({
+    ...copyTables.translations[language],
+    ...copyTables.landingCopy[language],
+  });
+  for (const language of ["en", "pt-BR"]) {
+    const copy = tableFor(language);
+    const pillWidth = (key) => {
+      assert.ok(copy[key], `${language} ${key}`);
+      return labelCeiling(copy[key], Number(fontSize)) + 2 * Number(padding);
+    };
+    for (const width of [320, 412, 768, 1280, 1440]) {
+      const actions = heroRuleAt(".hero-actions", width);
+      const controls = heroRuleAt(".hero-controls", width);
+      assert.equal(actions.display, "flex");
+      assert.doesNotMatch(actions["flex-wrap"] ?? "nowrap", /^wrap/);
+      const available = width - 2 * Number.parseFloat(controls["padding-inline"]);
+      const gap = Number.parseFloat(actions.gap);
+      for (const [system, key] of Object.entries(downloadKeys)) {
+        const pair = [pillWidth("hero.cta"), pillWidth(key)];
+        const needed = /column/.test(actions["flex-direction"] ?? "row")
+          ? Math.max(...pair)
+          : pair[0] + gap + pair[1];
+        assert.ok(
+          needed <= available,
+          `${language} at ${width}px: Open Orbit and the ${system} download need ${Math.ceil(needed)}px of ${available}px`,
+        );
+      }
+      assert.ok(labelCeiling(copy["hero.downloads"], 16) <= available);
+    }
+  }
+});

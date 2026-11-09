@@ -320,11 +320,11 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.equal(attributes(heroAction).analyticsSurface, "hero");
   assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
   assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
-  assert.equal(
-    descendants(sections[0]).filter(
-      (node) => node.name === "a" && attributes(node).id !== "demo-continue-link",
-    ).length,
-    0,
+  assert.deepEqual(
+    descendants(sections[0])
+      .filter((node) => node.name === "a" && attributes(node).id !== "demo-continue-link")
+      .map((node) => attributes(node).href),
+    ["#downloads"],
   );
   for (const name of ["Faq", "FinalCta"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));

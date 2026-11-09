@@ -6,7 +6,6 @@ import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
-const footerDownload = 2;
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function harness({
@@ -19,9 +18,10 @@ function harness({
   const listeners = new Map();
   const observers = [];
   let task = 0;
-  const targets = [".hero-device", '[data-section="features"]', "[data-desktop-download]"].map(
-    (selector) => ({ selector, matches: (value) => value === selector }),
-  );
+  const targets = [".hero-device", '[data-section="features"]'].map((selector) => ({
+    selector,
+    matches: (value) => value === selector,
+  }));
   const document = {
     readyState,
     querySelectorAll: (selectors) => {
@@ -194,21 +194,11 @@ for (const scheduler of [false, true]) {
     assert.ok(h.bindings.some(({ name }) => name === "product-metrics"));
     assert.ok(!h.bindings.some(({ name }) => name === "demo"));
   });
-
-  test(`the desktop download order loads only once the footer nears the viewport, after load (scheduler: ${scheduler})`, async () => {
-    const h = harness({ scheduler });
-    h.intersect(footerDownload);
-    await flush();
-    assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
-    h.load();
-    await h.drain();
-    const downloads = h.bindings.filter(({ name }) => name === "desktop-downloads");
-    assert.equal(downloads.length, 1);
-    assert.ok(downloads[0].task > 0);
-    assert.ok(
-      !h.bindings.some(({ name }) =>
-        ["product-examples", "demo", "product-metrics"].includes(name),
-      ),
-    );
-  });
 }
+
+test("the hero binds the download target with its own first-viewport script, not after load", () => {
+  const hero = scriptsFrom(readFileSync("src/components/Hero.astro", "utf8"));
+  assert.equal(hero.length, 1);
+  assert.match(hero[0].body, /import "\.\.\/scripts\/desktop-downloads";/);
+  assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /desktop-downloads/);
+});
