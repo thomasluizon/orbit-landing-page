@@ -13,7 +13,7 @@ function focusWaitlist() {
 }
 
 document.addEventListener("click", (event) => {
-  const trigger = (event.target as Element | null)?.closest?.("[data-ios-trigger]");
+  const trigger = event.target instanceof Element && event.target.closest("[data-ios-trigger]");
   if (!trigger) return;
   event.preventDefault();
   if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");

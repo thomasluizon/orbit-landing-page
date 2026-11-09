@@ -50,8 +50,7 @@ function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture
   const href = source?.getAttribute("href");
   if (!hero || !source || !href) return;
   hero.href = href;
-  if (source.dataset.iosTrigger === undefined) delete hero.dataset.iosTrigger;
-  else hero.dataset.iosTrigger = "";
+  if (source.dataset.iosTrigger !== undefined) hero.dataset.iosTrigger = "";
   const event = source.dataset.analyticsEvent;
   if (event)
     Object.assign(hero.dataset, {

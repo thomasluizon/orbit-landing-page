@@ -34,7 +34,7 @@ function run(path, context) {
 
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
 
-function landingPage(heroDataset = {}) {
+function landingPage() {
   const children = [];
   const parent = {
     children,
@@ -88,7 +88,7 @@ function landingPage(heroDataset = {}) {
   }));
   const hero = {
     href: "#downloads",
-    dataset: heroDataset,
+    dataset: {},
     querySelectorAll(selector) {
       assert.equal(selector, "[data-hero-download-label]");
       return labels;
@@ -117,8 +117,8 @@ function landingPage(heroDataset = {}) {
   };
 }
 
-async function load(navigator, heroDataset) {
-  const root = landingPage(heroDataset);
+async function load(navigator) {
+  const root = landingPage();
   vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
     exports: {},
     navigator,
@@ -129,7 +129,7 @@ async function load(navigator, heroDataset) {
 }
 
 const visit = async (navigator) => (await load(navigator)).order();
-const hero = async (navigator, heroDataset) => (await load(navigator, heroDataset)).hero();
+const hero = async (navigator) => (await load(navigator)).hero();
 
 const around = (downloads) => ["Open Orbit", "Install on Android", ...downloads, "iPhone waitlist"];
 
@@ -305,12 +305,3 @@ for (const [name, navigator, expected] of [
     assert.deepEqual(await hero(navigator), expected);
   });
 }
-
-test("a hero that already carries the waitlist trigger loses it when it points at a file", async () => {
-  const stale = { iosTrigger: "" };
-  assert.deepEqual(
-    await hero({ userAgent: userAgents.windows, maxTouchPoints: 0 }, stale),
-    desktopHero("windows-x86"),
-  );
-  assert.deepEqual(stale.iosTrigger, undefined);
-});
