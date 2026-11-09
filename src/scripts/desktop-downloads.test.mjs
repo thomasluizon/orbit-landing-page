@@ -34,7 +34,7 @@ function run(path, context) {
 
 const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbit.app";
 
-function landingPage() {
+function landingPage(heroDataset = {}) {
   const children = [];
   const parent = {
     children,
@@ -79,14 +79,16 @@ function landingPage() {
         url,
       ),
     );
-  children.push(node({ label: "iPhone waitlist", downloadTarget: "iphone" }, "#ios"));
+  children.push(
+    node({ label: "iPhone waitlist", downloadTarget: "iphone", iosTrigger: "" }, "#ios"),
+  );
   const labels = ["any", "mac", "mac-unreported", "windows", "android", "iphone"].map((system) => ({
     dataset: { heroDownloadLabel: system },
     hidden: system !== "any",
   }));
   const hero = {
     href: "#downloads",
-    dataset: {},
+    dataset: heroDataset,
     querySelectorAll(selector) {
       assert.equal(selector, "[data-hero-download-label]");
       return labels;
@@ -110,12 +112,13 @@ function landingPage() {
       label: labels.filter(({ hidden }) => !hidden).map(({ dataset }) => dataset.heroDownloadLabel),
       event: hero.dataset.analyticsEvent,
       surface: hero.dataset.analyticsSurface,
+      iosTrigger: Object.hasOwn(hero.dataset, "iosTrigger"),
     }),
   };
 }
 
-async function load(navigator) {
-  const root = landingPage();
+async function load(navigator, heroDataset) {
+  const root = landingPage(heroDataset);
   vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
     exports: {},
     navigator,
@@ -126,7 +129,7 @@ async function load(navigator) {
 }
 
 const visit = async (navigator) => (await load(navigator)).order();
-const hero = async (navigator) => (await load(navigator)).hero();
+const hero = async (navigator, heroDataset) => (await load(navigator, heroDataset)).hero();
 
 const around = (downloads) => ["Open Orbit", "Install on Android", ...downloads, "iPhone waitlist"];
 
@@ -219,6 +222,7 @@ const desktopHero = (id, label = id.split("-")[0]) => ({
   label: [label],
   event: "desktop_download_clicked",
   surface: heroSurfaces[id],
+  iosTrigger: false,
 });
 const hints = (architecture) => ({
   getHighEntropyValues: async () => ({ architecture }),
@@ -272,25 +276,41 @@ for (const [name, navigator, expected] of [
       label: ["android"],
       event: "android_install_clicked",
       surface: "hero_android",
+      iosTrigger: false,
     },
   ],
   [
     "an iPhone",
     { userAgent: userAgents.iphone, maxTouchPoints: 5 },
-    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined },
+    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined, iosTrigger: true },
   ],
   [
     "an iPad that reports a Mac user agent",
     { userAgent: userAgents.mac, maxTouchPoints: 5 },
-    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined },
+    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined, iosTrigger: true },
   ],
   [
     "an unknown system",
     { userAgent: userAgents.linux, maxTouchPoints: 0 },
-    { href: "#downloads", label: ["any"], event: undefined, surface: undefined },
+    {
+      href: "#downloads",
+      label: ["any"],
+      event: undefined,
+      surface: undefined,
+      iosTrigger: false,
+    },
   ],
 ]) {
   test(`the hero download sends ${name} to its own file`, async () => {
     assert.deepEqual(await hero(navigator), expected);
   });
 }
+
+test("a hero that already carries the waitlist trigger loses it when it points at a file", async () => {
+  const stale = { iosTrigger: "" };
+  assert.deepEqual(
+    await hero({ userAgent: userAgents.windows, maxTouchPoints: 0 }, stale),
+    desktopHero("windows-x86"),
+  );
+  assert.deepEqual(stale.iosTrigger, undefined);
+});

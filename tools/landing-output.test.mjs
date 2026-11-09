@@ -649,6 +649,9 @@ test("the built header and hero downloads land on the full footer list of eight 
     (node) => node.name === "a" && attrs(node).href === "#downloads",
   );
   assert.equal(heroLinks.length, 2);
+  const allDownloads = heroLinks.find((node) => attrs(node).id !== "hero-download");
+  assert.equal(attrs(allDownloads)["data-analytics-event"], "download_list_opened");
+  assert.equal(attrs(allDownloads)["data-analytics-surface"], "hero_all_downloads");
   const button = heroLinks.find((node) => attrs(node).id === "hero-download");
   assert.ok(button);
   assert.ok(!Object.hasOwn(attrs(button), "data-analytics-event"));

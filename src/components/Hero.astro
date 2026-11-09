@@ -42,7 +42,12 @@ const en = translations.en;
         <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">{en["hero.ios"]}</span>
       </PillButton>
     </div>
-    <a href="#downloads" class="text-link"><Copy name="hero.downloads" /></a>
+    <a
+      href="#downloads"
+      class="text-link"
+      data-analytics-event="download_list_opened"
+      data-analytics-surface="hero_all_downloads"><Copy name="hero.downloads" /></a
+    >
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
