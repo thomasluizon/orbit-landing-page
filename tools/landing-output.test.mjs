@@ -620,6 +620,75 @@ test("the built footer offers each desktop file at its stable release URL in bot
   );
 });
 
+test("the built header and hero downloads land on the full footer list of eight links", async () => {
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const nodes = descendants((await parse(html)).ast);
+  const list = nodes.filter((node) => attrs(node).id === "downloads");
+  assert.equal(list.length, 1);
+  assert.equal(list[0].name, "nav");
+  assert.equal(attrs(list[0])["aria-label"], "Product");
+  const links = descendants(list[0]).filter((node) => node.name === "a");
+  assert.deepEqual(
+    links.map(
+      (node) => attrs(node)["data-desktop-download"] ?? attrs(node)["data-download-target"],
+    ),
+    [undefined, "android", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "iphone"],
+  );
+  assert.equal(links.length + nodes.filter((node) => attrs(node).class === "footer-qr").length, 8);
+  const header = nodes.find((node) => attrs(node).id === "site-header");
+  const headerDownload = descendants(header).filter(
+    (node) => node.name === "a" && attrs(node).href === "#downloads",
+  );
+  assert.equal(headerDownload.length, 1);
+  assert.equal(attrs(headerDownload[0])["data-analytics-event"], "desktop_download_clicked");
+  assert.equal(attrs(headerDownload[0])["data-analytics-surface"], "header_download");
+  const hero = nodes.find((node) => attrs(node).id === "hero");
+  const heroLinks = descendants(hero).filter(
+    (node) => node.name === "a" && attrs(node).href === "#downloads",
+  );
+  assert.equal(heroLinks.length, 2);
+  const button = heroLinks.find((node) => attrs(node).id === "hero-download");
+  assert.ok(button);
+  assert.ok(!Object.hasOwn(attrs(button), "data-analytics-event"));
+  assert.ok(!Object.hasOwn(attrs(button), "data-primary-action"));
+  const labels = descendants(button).filter((node) =>
+    Object.hasOwn(attrs(node), "data-hero-download-label"),
+  );
+  assert.deepEqual(
+    labels.map((node) => [
+      attrs(node)["data-hero-download-label"],
+      Object.hasOwn(attrs(node), "hidden"),
+    ]),
+    [
+      ["any", false],
+      ["mac", true],
+      ["windows", true],
+      ["android", true],
+      ["iphone", true],
+    ],
+  );
+  const copy = (node) => {
+    const pair = descendants(node).find((child) => attrs(child)["data-copy-en"]);
+    return pair
+      ? [attrs(pair)["data-copy-en"], attrs(pair)["data-copy-pt"]]
+      : [attrs(node)["data-i18n"]];
+  };
+  assert.deepEqual(labels.map(copy), [
+    ["Download", "Baixar"],
+    ["Download for Mac", "Baixar para Mac"],
+    ["Download for Windows", "Baixar para Windows"],
+    ["Install on Android", "Instalar no Android"],
+    ["hero.ios"],
+  ]);
+  assert.deepEqual(copy(heroLinks.find((node) => node !== button)), [
+    "All downloads",
+    "Todos os downloads",
+  ]);
+  assert.deepEqual(copy(descendants(headerDownload[0])[0]), ["Download", "Baixar"]);
+});
+
 test("both built pages eagerly bind app entry and preserve consent-gated surface capture", () => {
   for (const file of ["dist/index.html", "dist/waitlist-confirmed/index.html"]) {
     const page = readFileSync(file, "utf8");
