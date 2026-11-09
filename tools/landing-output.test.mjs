@@ -557,8 +557,8 @@ test("the built footer offers each desktop file at its stable release URL in bot
     [
       "mac-arm",
       `${release}/orbit-aarch64-apple-darwin.dmg`,
-      "Download for Mac (M chip)",
-      "Baixar para Mac (chip M)",
+      "Download for Mac (Apple silicon)",
+      "Baixar para Mac (chip da Apple)",
     ],
     [
       "mac-x86",
@@ -682,7 +682,7 @@ test("the built header and hero downloads land on the full footer list of eight 
   assert.deepEqual(labels.map(copy), [
     ["Download", "Baixar"],
     ["Download for Mac", "Baixar para Mac"],
-    ["Download for Mac (M chip)", "Baixar para Mac (chip M)"],
+    ["Download (Apple silicon)", "Baixar (chip da Apple)"],
     ["Download for Windows", "Baixar para Windows"],
     ["Install on Android", "Instalar no Android"],
     ["hero.ios"],
