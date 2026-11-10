@@ -7,20 +7,18 @@ interface Props {
   kind: "week" | "reminder" | "insight";
 }
 const { kind } = Astro.props;
-import { exampleDays } from "../config/product-examples";
-import type { LandingKey } from "../i18n/translations";
-function dayLabel(index: number, language: "en" | "pt-BR") {
-  return (
-    landingCopy[language][`blocks.metrics.date${index}` as LandingKey] +
-    ", " +
-    landingCopy[language]["blocks.metrics.done"]
-      .replace("{done}", String(exampleDays[index].done))
-      .replace("{total}", String(exampleDays[index].total))
-  );
-}
+import { buildNow } from "../config/product-examples";
+import { dayKey } from "../scripts/demo-dates";
+import { weekHtml } from "../scripts/week";
+const week = kind === "week" ? weekHtml(buildNow, dayKey(buildNow), "en") : undefined;
 ---
 
-<div class:list={["product-card", `product-${kind}`]} data-mock="true" data-product-kind={kind}>
+<div
+  class:list={["product-card", `product-${kind}`]}
+  data-mock="true"
+  data-product-kind={kind}
+  data-week-card={kind === "week" || undefined}
+>
   {
     kind === "week" && (
       <>
@@ -33,38 +31,19 @@ function dayLabel(index: number, language: "en" | "pt-BR") {
         </div>
         <div
           class="week-days"
-          data-week-chart
+          data-week-days
           role="group"
           aria-label={landingCopy.en["blocks.metrics.choose"]}
           data-copy-label-en={landingCopy.en["blocks.metrics.choose"]}
           data-copy-label-pt={landingCopy["pt-BR"]["blocks.metrics.choose"]}
-        >
-          {exampleDays.map((_, index) => (
-            <button
-              type="button"
-              class="week-day"
-              data-week-day={index}
-              aria-pressed={index === 6}
-              aria-label={dayLabel(index, "en")}
-              data-copy-label-en={dayLabel(index, "en")}
-              data-copy-label-pt={dayLabel(index, "pt-BR")}
-            >
-              <span aria-hidden="true">{index + 12}</span>
-            </button>
-          ))}
-        </div>
-        <div class="product-caption week-readout" aria-live="polite">
-          {exampleDays.map((_, index) => (
-            <span
-              data-week-readout={index}
-              hidden={index !== 6}
-              data-copy-en={dayLabel(index, "en")}
-              data-copy-pt={dayLabel(index, "pt-BR")}
-            >
-              {dayLabel(index, "en")}
-            </span>
-          ))}
-        </div>
+          set:html={week?.days}
+        />
+        <div
+          class="product-caption week-readout"
+          aria-live="polite"
+          data-week-readouts
+          set:html={week?.readouts}
+        />
       </>
     )
   }
