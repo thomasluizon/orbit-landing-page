@@ -1,6 +1,7 @@
 import { calendarView } from "./calendar-view";
-import { pageLanguage, setCopy, setLabel } from "./day-cell";
-import { addDays, addMonths, dayKey, parseDayKey, startOfWeek } from "./demo-dates";
+import { addDays, pageLanguage, setCopy } from "./clock-format";
+import { readDemoCopy, setLabel } from "./day-cell";
+import { addMonths, dayKey, parseDayKey, startOfWeek } from "./demo-dates";
 
 /** The app's month swipe distance and its horizontal dominance ratio. */
 export const swipe = { threshold: 60, ratio: 1.2 };
@@ -47,11 +48,12 @@ export function mountCalendar(root: HTMLElement, today: Date) {
   const element = parts(root);
   if (!element) return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const copy = readDemoCopy(root);
   let month = addMonths(today, 0);
   let selected = dayKey(today);
   const render = ({ focus = false, slide = 0 } = {}) => {
     const language = pageLanguage();
-    const view = calendarView(month, selected, today, language);
+    const view = calendarView(month, selected, today, language, copy);
     element.grid.innerHTML = view.grid;
     setLabel(element.grid, view.labels.group, language);
     element.title.innerHTML = view.title;

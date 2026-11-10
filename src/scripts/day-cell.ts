@@ -1,5 +1,6 @@
-import { translations, type Language } from "../i18n/translations";
-import { demoLanguages, type Bilingual } from "./demo-dates";
+import type { DemoCopy } from "../i18n/demo-copy";
+import type { Language } from "../i18n/translations";
+import { demoLanguages, type Bilingual } from "./clock-format";
 
 /** The app's day outcome, resolved from the logged and scheduled habit counts. */
 export type DayOutcome = "full" | "partial" | "none" | "not-scheduled";
@@ -32,8 +33,14 @@ type DayWord =
   | "selected"
   | "readOnly";
 
-function word(language: Language, name: DayWord) {
-  return translations[language][`calendar.dayCell.${name}`];
+/** Reads the demo words the build wrote into `data-demo-copy`. */
+export function readDemoCopy(element: HTMLElement): DemoCopy {
+  return JSON.parse(element.dataset.demoCopy ?? "{}");
+}
+
+/** Picks one demo word in both languages. */
+export function bilingualCopy(copy: DemoCopy, key: keyof DemoCopy["en"]): Bilingual {
+  return { en: copy.en[key], "pt-BR": copy["pt-BR"][key] };
 }
 
 /** Escapes text for an HTML attribute or text node. */
@@ -56,27 +63,29 @@ export function copyElement(tag: string, value: Bilingual, language: Language, a
 }
 
 /** Resolves the app's outcome for a day: nothing scheduled, nothing logged, part done or all logged. */
-export function dayOutcome({ done, scheduled }: Pick<DayCellModel, "done" | "scheduled">) {
+export function dayOutcome({
+  done,
+  scheduled,
+}: Pick<DayCellModel, "done" | "scheduled">): DayOutcome {
   if (!scheduled) return "not-scheduled";
   if (!done || done <= 0) return "none";
   return done >= scheduled ? "full" : "partial";
 }
 
 /** Builds the app's accessible name for a day cell in one language. */
-export function dayCellName(cell: DayCellModel, language: Language) {
+export function dayCellName(cell: DayCellModel, language: Language, copy: DemoCopy) {
+  const word = (name: DayWord) => copy[language][`calendar.dayCell.${name}`];
   const label = cell.selected
-    ? `${cell.label[language]}, ${word(language, "selected")}`
+    ? `${cell.label[language]}, ${word("selected")}`
     : cell.label[language];
-  if (cell.future) return `${label}, ${word(language, "future")}`;
+  if (cell.future) return `${label}, ${word("future")}`;
   const outcome = dayOutcome(cell);
-  const parts = [
-    `${label}, ${word(language, outcome === "not-scheduled" ? "notScheduled" : outcome)}`,
-  ];
+  const parts = [`${label}, ${word(outcome === "not-scheduled" ? "notScheduled" : outcome)}`];
   if (cell.scheduled && cell.done !== undefined) {
-    parts[0] += ` ${cell.done} ${word(language, "of")} ${cell.scheduled}`;
+    parts[0] += ` ${cell.done} ${word("of")} ${cell.scheduled}`;
   }
-  if (cell.today) parts.push(word(language, "today"));
-  if (cell.readOnly) parts.push(word(language, "readOnly"));
+  if (cell.today) parts.push(word("today"));
+  if (cell.readOnly) parts.push(word("readOnly"));
   return parts.join(", ");
 }
 
@@ -93,10 +102,10 @@ function disc(cell: DayCellModel, outcome: DayOutcome) {
 }
 
 /** Renders one interactive day cell: weekday, date number, the app's day mark, today and selection. */
-export function dayCellHtml(cell: DayCellModel, language: Language) {
+export function dayCellHtml(cell: DayCellModel, language: Language, copy: DemoCopy) {
   const outcome = dayOutcome(cell);
   const names = Object.fromEntries(
-    demoLanguages.map((name) => [name, dayCellName(cell, name)]),
+    demoLanguages.map((name) => [name, dayCellName(cell, name, copy)]),
   ) as Bilingual;
   const data = Object.entries(cell.data ?? {})
     .map(([name, value]) => ` data-${name}="${escapeHtml(String(value))}"`)
@@ -112,18 +121,6 @@ export function dayCellHtml(cell: DayCellModel, language: Language) {
     ? copyElement("span", cell.weekday, language, 'class="day-cell-weekday"')
     : "";
   return `<button type="button" class="day-cell" data-day-key="${cell.key}" data-outcome="${cell.future ? "future" : outcome}"${cell.today ? ' aria-current="date"' : ""} aria-pressed="${cell.selected}" tabindex="${cell.tabIndex}" aria-label="${escapeHtml(names[language])}" ${copyAttributes(names, "data-copy-label")}${data}><span class="day-cell-body" aria-hidden="true">${weekday}<span class="${circle}">${disc(cell, outcome)}</span></span></button>`;
-}
-
-/** Returns the language the page shows now. */
-export function pageLanguage(): Language {
-  return document.documentElement.lang === "pt-BR" ? "pt-BR" : "en";
-}
-
-/** Writes a bilingual text and its language toggle attributes. */
-export function setCopy(element: HTMLElement, value: Bilingual, language: Language) {
-  element.dataset.copyEn = value.en;
-  element.dataset.copyPt = value["pt-BR"];
-  element.textContent = value[language];
 }
 
 /** Writes a bilingual `aria-label` and its language toggle attributes. */

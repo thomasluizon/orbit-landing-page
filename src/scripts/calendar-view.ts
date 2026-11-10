@@ -1,18 +1,15 @@
 import { demoDay, demoEvents } from "../config/product-examples";
-import { translations, type Language } from "../i18n/translations";
-import { copyElement, dayCellHtml, escapeHtml } from "./day-cell";
+import type { DemoCopy } from "../i18n/demo-copy";
+import type { Language } from "../i18n/translations";
+import { addDays, bilingualDate, demoLanguages, formatDate, type Bilingual } from "./clock-format";
+import { bilingualCopy, copyElement, dayCellHtml, escapeHtml } from "./day-cell";
 import {
-  addDays,
-  bilingualDate,
   capitalize,
   dayKey,
   dayOffset,
-  demoLanguages,
-  formatDate,
   parseDayKey,
   startOfWeek,
   weekdayLabels,
-  type Bilingual,
 } from "./demo-dates";
 
 const weekdayDate: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" };
@@ -34,23 +31,29 @@ export function isLoggable(offset: number) {
 }
 
 /** Renders the month grid: the weekday header, then every week of the month in full rows. */
-export function monthGridHtml(month: Date, selectedKey: string, today: Date, language: Language) {
+export function monthGridHtml(
+  month: Date,
+  selectedKey: string,
+  today: Date,
+  language: Language,
+  copy: DemoCopy,
+) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-  const start = startOfWeek(first);
-  const end = addDays(startOfWeek(last), 6);
+  const pt = weekdayLabels("pt-BR");
   const header = weekdayLabels("en")
     .map((label, index) =>
       copyElement(
         "span",
-        { en: label, "pt-BR": weekdayLabels("pt-BR")[index] },
+        { en: label, "pt-BR": pt[index] },
         language,
         'class="calendar-weekday" aria-hidden="true"',
       ),
     )
     .join("");
   const cells: string[] = [];
-  for (let date = start, index = 0; date <= end; date = addDays(date, 1), index++) {
+  const end = addDays(startOfWeek(last), 6);
+  for (let date = startOfWeek(first), index = 0; date <= end; date = addDays(date, 1), index++) {
     const week = Math.floor(index / 7);
     if (date.getMonth() !== month.getMonth()) {
       cells.push(`<span class="day-slot" aria-hidden="true" data-calendar-week="${week}"></span>`);
@@ -76,6 +79,7 @@ export function monthGridHtml(month: Date, selectedKey: string, today: Date, lan
           data: { "calendar-day": date.getDate(), "calendar-week": week },
         },
         language,
+        copy,
       ),
     );
   }
@@ -93,12 +97,12 @@ export function monthHeading(month: Date, today: Date) {
 }
 
 /** Labels for the month title button, which returns to today, and for the grid group. */
-export function monthLabels(month: Date, today: Date) {
+export function monthLabels(month: Date, today: Date, copy: DemoCopy) {
   const { name, year } = monthHeading(month, today);
   return {
     title: bilingual(
       (language) =>
-        `${[name[language], year].filter(Boolean).join(" ")}, ${translations[language]["calendar.goToToday"]}`,
+        `${[name[language], year].filter(Boolean).join(" ")}, ${copy[language]["calendar.goToToday"]}`,
     ),
     group: bilingualDate(month, { month: "long", year: "numeric" }),
   };
@@ -112,11 +116,11 @@ export function monthTitleHtml(month: Date, today: Date, language: Language) {
 }
 
 /** The app's selected day title: "Today, {date}" for today, the long weekday and date otherwise. */
-export function dayTitle(date: Date, today: Date) {
+export function dayTitle(date: Date, today: Date, copy: DemoCopy) {
   if (dayOffset(today, date) === 0) {
     return bilingual((language) =>
       capitalize(
-        translations[language]["calendar.todayWithDate"].replace(
+        copy[language]["calendar.todayWithDate"].replace(
           "{date}",
           formatDate(date, language, { day: "numeric", month: "long" }),
         ),
@@ -127,33 +131,30 @@ export function dayTitle(date: Date, today: Date) {
 }
 
 /** The app's completion summary for the selected day, or "nothing due". */
-export function daySummary(date: Date, today: Date) {
+export function daySummary(date: Date, today: Date, copy: DemoCopy) {
   const marks = demoDay(dayOffset(today, date));
   return bilingual((language) =>
     marks?.total
-      ? translations[language][marks.done === 1 ? "calendar.summary.one" : "calendar.summary.other"]
+      ? copy[language][marks.done === 1 ? "calendar.summary.one" : "calendar.summary.other"]
           .replace("{done}", String(marks.done))
           .replace("{total}", String(marks.total))
-      : translations[language]["calendar.dayCell.notScheduled"],
+      : copy[language]["calendar.dayCell.notScheduled"],
   );
 }
 
 /** Renders the selected day's calendar events, or the app's empty line. */
-export function dayEventsHtml(date: Date, today: Date, language: Language) {
+export function dayEventsHtml(date: Date, today: Date, language: Language, copy: DemoCopy) {
   const events = demoEvents(dayOffset(today, date), date.getDay());
   const heading = copyElement(
     "p",
-    { en: translations.en["calendar.events"], "pt-BR": translations["pt-BR"]["calendar.events"] },
+    bilingualCopy(copy, "calendar.events"),
     language,
     'class="product-caption"',
   );
   if (!events.length) {
     return `${heading}${copyElement(
       "p",
-      {
-        en: translations.en["calendar.noEvents"],
-        "pt-BR": translations["pt-BR"]["calendar.noEvents"],
-      },
+      bilingualCopy(copy, "calendar.noEvents"),
       language,
       'class="calendar-empty"',
     )}`;
@@ -161,25 +162,27 @@ export function dayEventsHtml(date: Date, today: Date, language: Language) {
   return `${heading}${events
     .map(
       ({ name, time }) =>
-        `<p class="calendar-event">${copyElement(
-          "span",
-          { en: translations.en[name], "pt-BR": translations["pt-BR"][name] },
-          language,
-        )} <span class="product-caption">${time}</span></p>`,
+        `<p class="calendar-event">${copyElement("span", bilingualCopy(copy, name), language)} <span class="product-caption">${time}</span></p>`,
     )
     .join("")}`;
 }
 
 /** Everything the calendar card shows for one month and one selected day. */
-export function calendarView(month: Date, selectedKey: string, today: Date, language: Language) {
+export function calendarView(
+  month: Date,
+  selectedKey: string,
+  today: Date,
+  language: Language,
+  copy: DemoCopy,
+) {
   const selected = parseDayKey(selectedKey);
   return {
-    grid: monthGridHtml(month, selectedKey, today, language),
+    grid: monthGridHtml(month, selectedKey, today, language, copy),
     title: monthTitleHtml(month, today, language),
-    labels: monthLabels(month, today),
-    dayTitle: dayTitle(selected, today),
-    summary: daySummary(selected, today),
-    events: dayEventsHtml(selected, today, language),
+    labels: monthLabels(month, today, copy),
+    dayTitle: dayTitle(selected, today, copy),
+    summary: daySummary(selected, today, copy),
+    events: dayEventsHtml(selected, today, language, copy),
     isToday: dayOffset(today, selected) === 0,
   };
 }

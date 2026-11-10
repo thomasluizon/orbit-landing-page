@@ -674,7 +674,7 @@ test("Today fills the screen with one Astra line and five mixed-state habit rows
   assert.equal(nodes.filter((node) => node.name === "AstraGlyph").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronLeft").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronRight").length, 1);
-  assert.ok(nodes.some((node) => attributes(node).name === "today.date"));
+  assert.ok(nodes.some((node) => attributes(node)["data-clock"] === "today"));
   assert.match(rules(".phone-today-habits").join("\n"), /flex:\s*1;/);
   assert.match(
     rules(".phone-today-habits").join("\n"),

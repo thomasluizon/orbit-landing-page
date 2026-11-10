@@ -8,9 +8,11 @@ interface Props {
 }
 const { kind } = Astro.props;
 import { buildNow } from "../config/product-examples";
+import { demoCopy } from "../i18n/demo-copy";
 import { dayKey } from "../scripts/demo-dates";
 import { weekHtml } from "../scripts/week";
-const week = kind === "week" ? weekHtml(buildNow, dayKey(buildNow), "en") : undefined;
+const copy = kind === "week" ? demoCopy() : undefined;
+const week = copy ? weekHtml(buildNow, dayKey(buildNow), "en", copy) : undefined;
 ---
 
 <div
@@ -18,6 +20,7 @@ const week = kind === "week" ? weekHtml(buildNow, dayKey(buildNow), "en") : unde
   data-mock="true"
   data-product-kind={kind}
   data-week-card={kind === "week" || undefined}
+  data-demo-copy={copy && JSON.stringify(copy)}
 >
   {
     kind === "week" && (

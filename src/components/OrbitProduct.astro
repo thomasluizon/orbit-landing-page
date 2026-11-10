@@ -2,28 +2,34 @@
 import { Check, ChevronLeft, ChevronRight, Snowflake, Trophy } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import { buildNow } from "../config/product-examples";
-import { translations } from "../i18n/translations";
+import { demoCopy } from "../i18n/demo-copy";
+import { landingCopy } from "../i18n/translations";
 import { calendarView } from "../scripts/calendar-view";
 import { addMonths, dayKey } from "../scripts/demo-dates";
 interface Props {
   kind: "calendar" | "progress" | "achievements";
 }
 const { kind } = Astro.props;
-const calendar =
-  kind === "calendar"
-    ? calendarView(addMonths(buildNow, 0), dayKey(buildNow), buildNow, "en")
-    : undefined;
+const copy = kind === "calendar" ? demoCopy() : undefined;
+const calendar = copy
+  ? calendarView(addMonths(buildNow, 0), dayKey(buildNow), buildNow, "en", copy)
+  : undefined;
 const monthLabel = (name: "calendar.previousMonth" | "calendar.nextMonth") => ({
-  "aria-label": translations.en[name],
-  "data-copy-label-en": translations.en[name],
-  "data-copy-label-pt": translations["pt-BR"][name],
+  "aria-label": landingCopy.en[name],
+  "data-copy-label-en": landingCopy.en[name],
+  "data-copy-label-pt": landingCopy["pt-BR"][name],
 });
 ---
 
 <div class:list={["orbit-composition", `orbit-${kind}`]} data-mock="true" data-product-kind={kind}>
   {
     calendar && (
-      <div class="product-block orbit-product" data-composition-card data-calendar>
+      <div
+        class="product-block orbit-product"
+        data-composition-card
+        data-calendar
+        data-demo-copy={JSON.stringify(copy)}
+      >
         <div class="calendar-month-nav">
           <button
             type="button"

@@ -2306,3 +2306,13 @@ button.metric-bar-track:focus-visible {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 96px;
 }
+html[data-demo-clock="pending"]
+  :is(
+    [data-week-days],
+    [data-week-readouts],
+    [data-calendar-title],
+    [data-calendar-grid],
+    [data-calendar-panel]
+  ) {
+  visibility: hidden;
+}

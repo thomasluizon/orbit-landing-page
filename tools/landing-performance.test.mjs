@@ -110,13 +110,17 @@ test("offscreen calendar and metric interiors reserve their exact grid geometry"
   const css = source("src/styles/landing.css");
   assert.match(
     css,
-    /\.example-app \.orbit-month-grid:not\(:has\(\[data-composition-folded\]\)\)\s*\{[^}]*content-visibility:\s*auto;[^}]*contain-intrinsic-block-size:\s*auto 280px;/,
+    /\.example-app \.orbit-month-grid:not\(:has\(\[data-composition-folded\]\)\)\s*\{[^}]*content-visibility:\s*auto;[^}]*contain-intrinsic-block-size:\s*auto 288px;/,
   );
   assert.match(
     css,
     /\.example-app \.metric-bars\s*\{[^}]*content-visibility:\s*auto;[^}]*contain-intrinsic-block-size:\s*auto 96px;/,
   );
-  assert.equal(16 + 6 * 44, 280);
+  assert.match(
+    css,
+    /\.orbit-month-grid\s*\{[^}]*grid-template-rows:\s*24px;[^}]*grid-auto-rows:\s*44px;/,
+  );
+  assert.equal(24 + 6 * 44, 288);
   assert.doesNotMatch(
     css,
     /(?:#features|#pricing|\.hero-stage|\.hero-pin-range)\s*\{[^}]*content-visibility/,

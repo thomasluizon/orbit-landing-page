@@ -7,6 +7,10 @@ import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
+const firstViewport = [
+  { name: "demo-clock", task: 0 },
+  { name: "i18n", task: 0 },
+];
 
 function harness({
   scheduler = false,
@@ -136,7 +140,7 @@ for (const [opening, closing] of [
       .replace("<script>", opening)
       .replace("</script>", closing);
     const h = harness({ page });
-    assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+    assert.deepEqual(h.bindings, firstViewport);
     h.intersect(1);
     h.load();
     await h.drain();
@@ -150,16 +154,16 @@ for (const scheduler of [false, true]) {
   for (const readyState of ["loading", "complete"]) {
     test(`page import reserves synchronous binding for the first viewport (scheduler: ${scheduler}, document: ${readyState})`, async () => {
       const h = harness({ scheduler, readyState });
-      assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+      assert.deepEqual(h.bindings, firstViewport);
       await flush();
-      assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+      assert.deepEqual(h.bindings, firstViewport);
       if (readyState === "loading") assert.equal(h.continuations.length, 0);
       h.load();
       await flush();
-      assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+      assert.deepEqual(h.bindings, firstViewport);
       await h.drain();
       assert.deepEqual(
-        h.bindings.slice(1).map(({ name }) => name),
+        h.bindings.slice(firstViewport.length).map(({ name }) => name),
         deferred,
       );
       assert.equal(new Set(h.bindings.map(({ task }) => task)).size, deferred.length + 1);
@@ -170,7 +174,7 @@ for (const scheduler of [false, true]) {
     const h = harness({ scheduler });
     h.intersect(0);
     await flush();
-    assert.deepEqual(h.bindings, [{ name: "i18n", task: 0 }]);
+    assert.deepEqual(h.bindings, firstViewport);
     assert.equal(h.continuations.length, 0);
     h.load();
     await h.drain();
