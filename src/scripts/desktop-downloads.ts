@@ -11,6 +11,8 @@ type VisitorNavigator = Pick<Navigator, "userAgent" | "maxTouchPoints"> & {
   userAgentData?: UserAgentData;
 };
 
+const downloadEntries = "[data-desktop-download], [data-download-target]";
+
 function visitorSystem(userAgent: string, touchPoints = 0): VisitorSystem | undefined {
   if (/\bAndroid\b/i.test(userAgent)) return "android";
   if (/\b(?:iPhone|iPad|iPod)\b/i.test(userAgent)) return "iphone";
@@ -30,14 +32,16 @@ function preferredArchitecture(system: DesktopSystem, architecture?: string) {
   return system === "mac" ? "arm" : "x86";
 }
 
-function leadDownloadLinks(root: ParentNode, system: DesktopSystem, architecture?: string) {
-  const links = [...root.querySelectorAll<HTMLElement>("[data-desktop-download]")];
+function leadDownloadLinks(root: ParentNode, system: VisitorSystem, architecture?: string) {
+  const links = [...root.querySelectorAll<HTMLElement>(downloadEntries)];
   const parent = links[0]?.parentNode;
   if (!parent) return;
   const next = links[links.length - 1].nextSibling;
-  const preferred = preferredArchitecture(system, architecture);
-  const rank = ({ dataset }: HTMLElement) =>
-    dataset.desktopSystem !== system ? 2 : dataset.desktopArchitecture === preferred ? 0 : 1;
+  const preferred = isDesktop(system) ? preferredArchitecture(system, architecture) : undefined;
+  const rank = ({ dataset }: HTMLElement) => {
+    if ((dataset.desktopSystem ?? dataset.downloadTarget) !== system) return 2;
+    return preferred && dataset.desktopArchitecture !== preferred ? 1 : 0;
+  };
   for (const link of links.sort((a, b) => rank(a) - rank(b))) parent.insertBefore(link, next);
 }
 
@@ -66,8 +70,8 @@ function leadVisitorDownloads(root: ParentNode, visitor: VisitorNavigator) {
   const system = visitorSystem(visitor.userAgent, visitor.maxTouchPoints);
   if (!system) return;
   pointHeroDownload(root, system);
-  if (!isDesktop(system)) return;
   leadDownloadLinks(root, system);
+  if (!isDesktop(system)) return;
   visitor.userAgentData
     ?.getHighEntropyValues(["architecture"])
     .then(({ architecture }) => {

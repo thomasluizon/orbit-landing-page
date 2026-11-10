@@ -53,18 +53,6 @@ function landingPage() {
       return children[children.indexOf(this) + 1] ?? null;
     },
   });
-  children.push(
-    node({ label: "Open Orbit" }, "https://app.useorbit.org"),
-    node(
-      {
-        label: "Install on Android",
-        downloadTarget: "android",
-        analyticsEvent: "android_install_clicked",
-        analyticsSurface: "footer",
-      },
-      googlePlayUrl,
-    ),
-  );
   const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
   for (const { id, system, architecture, url } of desktopDownloads)
     children.push(
@@ -80,6 +68,15 @@ function landingPage() {
       ),
     );
   children.push(
+    node(
+      {
+        label: "Install on Android",
+        downloadTarget: "android",
+        analyticsEvent: "android_install_clicked",
+        analyticsSurface: "footer",
+      },
+      googlePlayUrl,
+    ),
     node({ label: "iPhone waitlist", downloadTarget: "iphone", iosTrigger: "" }, "#ios"),
   );
   const labels = ["any", "mac", "mac-unreported", "windows", "android", "iphone"].map((system) => ({
@@ -103,8 +100,10 @@ function landingPage() {
       return children.find((child) => child.dataset[key] === value) ?? null;
     },
     querySelectorAll(selector) {
-      assert.equal(selector, "[data-desktop-download]");
-      return children.filter((child) => child.dataset.desktopDownload);
+      assert.equal(selector, "[data-desktop-download], [data-download-target]");
+      return children.filter(
+        (child) => child.dataset.desktopDownload || child.dataset.downloadTarget,
+      );
     },
     order: () => children.map((child) => child.dataset.desktopDownload ?? child.dataset.label),
     hero: () => ({
@@ -131,7 +130,13 @@ async function load(navigator) {
 const visit = async (navigator) => (await load(navigator)).order();
 const hero = async (navigator) => (await load(navigator)).hero();
 
-const around = (downloads) => ["Open Orbit", "Install on Android", ...downloads, "iPhone waitlist"];
+const desktop = ["mac-arm", "mac-x86", "windows-x86", "windows-arm"];
+const listing = (...first) => [
+  ...first,
+  ...[...desktop, "Install on Android", "iPhone waitlist"].filter(
+    (entry) => !first.includes(entry),
+  ),
+];
 
 test("every desktop download points at its exact stable production release asset", () => {
   const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
@@ -142,37 +147,40 @@ test("every desktop download points at its exact stable production release asset
 });
 
 test("a Mac visitor sees the Apple silicon file first and keeps every other file", async () => {
-  assert.deepEqual(
-    await visit({ userAgent: userAgents.mac, maxTouchPoints: 0 }),
-    around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]),
-  );
+  assert.deepEqual(await visit({ userAgent: userAgents.mac, maxTouchPoints: 0 }), listing());
 });
 
 test("a Windows visitor sees the x64 installer first and keeps both Mac files", async () => {
   assert.deepEqual(
     await visit({ userAgent: userAgents.windows, maxTouchPoints: 0 }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
+    listing("windows-x86", "windows-arm", "mac-arm", "mac-x86"),
   );
 });
 
-for (const name of ["linux", "android", "iphone"]) {
-  test(`an unknown or mobile visitor (${name}) keeps the rendered order`, async () => {
-    assert.deepEqual(
-      await visit({ userAgent: userAgents[name], maxTouchPoints: name === "linux" ? 0 : 5 }),
-      around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]),
-    );
+test("an unknown visitor keeps the rendered order", async () => {
+  assert.deepEqual(await visit({ userAgent: userAgents.linux, maxTouchPoints: 0 }), listing());
+});
+
+test("an Android visitor sees the Google Play entry first and keeps the rest in order", async () => {
+  assert.deepEqual(
+    await visit({ userAgent: userAgents.android, maxTouchPoints: 5 }),
+    listing("Install on Android"),
+  );
+});
+
+for (const [name, navigator] of [
+  ["an iPhone", { userAgent: userAgents.iphone, maxTouchPoints: 5 }],
+  ["an iPad that reports a Mac user agent", { userAgent: userAgents.mac, maxTouchPoints: 5 }],
+]) {
+  test(`${name} sees the iPhone entry first and is not treated as a Mac`, async () => {
+    assert.deepEqual(await visit(navigator), listing("iPhone waitlist"));
   });
 }
-
-test("an iPad that reports a Mac user agent is not treated as a Mac", async () => {
-  const order = await visit({ userAgent: userAgents.mac, maxTouchPoints: 5 });
-  assert.deepEqual(order, around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]));
-});
 
 test("a touchscreen Windows laptop keeps the Windows lead", async () => {
   assert.deepEqual(
     await visit({ userAgent: userAgents.windows, maxTouchPoints: 10 }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
+    listing("windows-x86", "windows-arm", "mac-arm", "mac-x86"),
   );
 });
 
@@ -194,7 +202,7 @@ for (const [system, architecture, expected] of [
       },
     });
     assert.deepEqual(requested, ["architecture"]);
-    assert.deepEqual(order, around(expected));
+    assert.deepEqual(order, listing(...expected));
   });
 }
 
@@ -207,7 +215,7 @@ test("a rejected client hints request keeps the system lead", async () => {
         getHighEntropyValues: () => Promise.reject(new Error()),
       },
     }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
+    listing("windows-x86", "windows-arm", "mac-arm", "mac-x86"),
   );
 });
 

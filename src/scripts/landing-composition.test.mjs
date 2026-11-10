@@ -10,6 +10,7 @@ const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
 const componentNames = [
   "Hero",
+  "DownloadsPanel",
   "AstraDemo",
   "TrustStrip",
   "Features",
@@ -320,13 +321,27 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.equal(attributes(heroAction).analyticsSurface, "hero");
   assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
   assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
+  const hero = descendants(sections[0]);
+  const panel = hero.find((node) => attributes(node).id === "downloads");
+  assert.ok(panel);
+  const insidePanel = new Set(descendants(panel));
   assert.deepEqual(
-    descendants(sections[0])
-      .filter((node) => node.name === "a" && attributes(node).id !== "demo-continue-link")
+    hero
+      .filter(
+        (node) =>
+          node.name === "a" &&
+          attributes(node).id !== "demo-continue-link" &&
+          !insidePanel.has(node),
+      )
       .map((node) => attributes(node).href),
-    ["#downloads"],
+    [],
   );
-  for (const name of ["Faq", "FinalCta"]) {
+  const toggle = hero.find((node) => attributes(node).id === "downloads-toggle");
+  assert.equal(toggle.name, "button");
+  assert.equal(attributes(toggle).type, "button");
+  assert.equal(attributes(toggle)["aria-expanded"], "false");
+  assert.equal(attributes(toggle)["aria-controls"], "downloads");
+  for (const name of ["Faq", "DownloadsPanel"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }
 });
@@ -1025,17 +1040,13 @@ test("billing options share one row with equal single-line segments and Yearly s
   );
 });
 
-test("the footer groups product and legal links with its own QR and no source-code link", () => {
+test("the footer groups product and legal links with no download list and no source-code link", () => {
   const footer = readFileSync("src/components/FinalCta.astro", "utf8");
   assert.doesNotMatch(footer, /footer\.source|github\.com|Source code|Código-fonte/);
-  for (const key of [
-    "footer.description",
-    "footer.product",
-    "footer.legal",
-    "footer.android",
-    "footer.controller",
-  ])
+  for (const key of ["footer.description", "footer.product", "footer.legal", "footer.controller"])
     assert.ok(footer.includes(key));
+  assert.doesNotMatch(footer, /desktopDownloads|footer\.android|googlePlayUrl|orbit-install-qr/);
+  assert.doesNotMatch(footer, /data-(?:desktop-download|download-target|ios-trigger)/);
   const legalColumn = descendants(components.get("FinalCta")).find(
     (node) =>
       node.name === "div" &&
@@ -1047,8 +1058,6 @@ test("the footer groups product and legal links with its own QR and no source-co
     descendants(legalColumn).filter((node) => node.name === "CookiePreferences").length,
     1,
   );
-  assert.match(footer, /href="#ios"/);
-  assert.match(footer, /src="\/orbit-install-qr.svg"/);
 });
 
 test("the closing call to action centers its column and label-hugging button at every width", () => {

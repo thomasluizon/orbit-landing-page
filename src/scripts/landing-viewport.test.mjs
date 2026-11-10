@@ -1400,7 +1400,7 @@ test("the hero actions sit on one line or one stack at every audited width, neve
   const downloadKeys = Object.fromEntries(
     [
       ...hero.matchAll(
-        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<Copy name="([^"]+)")?/g,
+        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<PlatformMark [^>]*\/>)?(?:<Copy name="([^"]+)")?/g,
       ),
     ].map(([, system, attributes, copy]) => [
       system,

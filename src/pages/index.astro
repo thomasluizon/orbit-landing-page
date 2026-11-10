@@ -17,12 +17,12 @@ import { appUrl, googlePlayUrl } from "../config/links";
     <a href="#main-content" class="skip-to-content" data-i18n="skip">{translations.en.skip}</a>
     <Header appUrl={appUrl} />
     <main id="main-content" tabindex="-1">
-      <Hero appUrl={appUrl} />
+      <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
       <FeatureRows />
       <Pricing appUrl={appUrl} />
       <IosWaitlist />
       <Faq />
-      <FinalCta appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
+      <FinalCta appUrl={appUrl} />
     </main>
     <button
       type="button"

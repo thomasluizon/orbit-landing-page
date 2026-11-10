@@ -3,12 +3,10 @@ import Copy from "./Copy.astro";
 import CookiePreferences from "./CookiePreferences.astro";
 import PillButton from "./PillButton.astro";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
-import { desktopDownloads } from "../config/links";
 interface Props {
   appUrl: string;
-  googlePlayUrl: string;
 }
-const { appUrl, googlePlayUrl } = Astro.props;
+const { appUrl } = Astro.props;
 ---
 
 <section class="final-section" data-section="final" aria-labelledby="final-title">
@@ -33,7 +31,6 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <p><Copy name="footer.description" /></p>
         </div>
         <nav
-          id="downloads"
           class="footer-column"
           aria-label="Product"
           data-copy-label-en="Product"
@@ -41,36 +38,6 @@ const { appUrl, googlePlayUrl } = Astro.props;
         >
           <h3><Copy name="footer.product" /></h3>
           <a href={appUrl} data-app-entry class="text-link" data-i18n="header.cta">Open Orbit</a>
-          <a
-            href={googlePlayUrl}
-            class="text-link"
-            data-download-target="android"
-            data-analytics-event="android_install_clicked"
-            data-analytics-surface="footer"><Copy name="footer.android" /></a
-          >
-          {
-            desktopDownloads.map((download) => (
-              <a
-                href={download.url}
-                class="text-link"
-                data-desktop-download={download.id}
-                data-desktop-system={download.system}
-                data-desktop-architecture={download.architecture}
-                data-analytics-event="desktop_download_clicked"
-                data-analytics-surface={`footer_${download.system}_${download.architecture}`}
-              >
-                <Copy name={download.copy} />
-              </a>
-            ))
-          }
-          <a
-            href="#ios"
-            id="ios-trigger"
-            data-ios-trigger
-            data-download-target="iphone"
-            class="text-link"
-            data-i18n="hero.ios">iPhone waitlist</a
-          >
         </nav>
         <div class="footer-column">
           <h3><Copy name="footer.legal" /></h3>
@@ -80,23 +47,6 @@ const { appUrl, googlePlayUrl } = Astro.props;
           <a href={`${appUrl}/terms`} class="text-link" data-i18n="footer.terms">Terms</a>
           <CookiePreferences />
         </div>
-        <a
-          class="footer-qr"
-          href={googlePlayUrl}
-          data-analytics-event="android_install_clicked"
-          data-analytics-surface="footer_qr"
-        >
-          <span class="footer-qr-code"
-            ><img
-              src="/orbit-install-qr.svg"
-              width="240"
-              height="240"
-              loading="lazy"
-              alt=""
-            /></span
-          >
-          <Copy name="footer.android" />
-        </a>
       </div>
       <div class="closing-legal">
         <p><Copy name="footer.controller" /></p>
