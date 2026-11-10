@@ -36,8 +36,7 @@ export function addDays(date: Date, days: number) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 }
 
-/** Formats the phone status bar time without a day period, as a phone shows it. */
-export function statusTime(date: Date, language: Language) {
+function statusTime(date: Date, language: Language) {
   return formatter(language, { hour: "numeric", minute: "2-digit" })
     .formatToParts(date)
     .filter(({ type }) => type !== "dayPeriod")

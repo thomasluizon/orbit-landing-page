@@ -3,8 +3,7 @@ import { addDays, pageLanguage, setCopy } from "./clock-format";
 import { readDemoCopy, setLabel } from "./day-cell";
 import { addMonths, dayKey, parseDayKey, startOfWeek } from "./demo-dates";
 
-/** The app's month swipe distance and its horizontal dominance ratio. */
-export const swipe = { threshold: 60, ratio: 1.2 };
+const swipe = { threshold: 60, ratio: 1.2 };
 
 const keySteps: Record<string, number> = {
   ArrowLeft: -1,
@@ -13,8 +12,7 @@ const keySteps: Record<string, number> = {
   ArrowDown: 7,
 };
 
-/** Returns the day an arrow, Home or End key selects, clamped to the month as the app does. */
-export function steppedDay(selectedKey: string, key: string) {
+function steppedDay(selectedKey: string, key: string) {
   const selected = parseDayKey(selectedKey);
   let target: Date;
   if (key === "Home") target = startOfWeek(selected);

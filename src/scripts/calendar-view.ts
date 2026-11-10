@@ -30,8 +30,7 @@ export function isLoggable(offset: number) {
   return offset >= -7 && offset <= 0;
 }
 
-/** Renders the month grid: the weekday header, then every week of the month in full rows. */
-export function monthGridHtml(
+function monthGridHtml(
   month: Date,
   selectedKey: string,
   today: Date,
@@ -86,8 +85,7 @@ export function monthGridHtml(
   return header + cells.join("");
 }
 
-/** The app's month heading: the long month in the current year, the short month and year otherwise. */
-export function monthHeading(month: Date, today: Date) {
+function monthHeading(month: Date, today: Date) {
   const currentYear = month.getFullYear() === today.getFullYear();
   const name = bilingual((language) => {
     const label = formatDate(month, language, { month: currentYear ? "long" : "short" });
@@ -96,8 +94,7 @@ export function monthHeading(month: Date, today: Date) {
   return { name, year: currentYear ? "" : String(month.getFullYear()) };
 }
 
-/** Labels for the month title button, which returns to today, and for the grid group. */
-export function monthLabels(month: Date, today: Date, copy: DemoCopy) {
+function monthLabels(month: Date, today: Date, copy: DemoCopy) {
   const { name, year } = monthHeading(month, today);
   return {
     title: bilingual(
@@ -108,15 +105,13 @@ export function monthLabels(month: Date, today: Date, copy: DemoCopy) {
   };
 }
 
-/** Renders the month title text: the month, then the year in the secondary colour. */
-export function monthTitleHtml(month: Date, today: Date, language: Language) {
+function monthTitleHtml(month: Date, today: Date, language: Language) {
   const { name, year } = monthHeading(month, today);
   const yearHtml = year ? ` <span class="calendar-year">${escapeHtml(year)}</span>` : "";
   return `${copyElement("span", name, language)}${yearHtml}`;
 }
 
-/** The app's selected day title: "Today, {date}" for today, the long weekday and date otherwise. */
-export function dayTitle(date: Date, today: Date, copy: DemoCopy) {
+function dayTitle(date: Date, today: Date, copy: DemoCopy) {
   if (dayOffset(today, date) === 0) {
     return bilingual((language) =>
       capitalize(
@@ -130,8 +125,7 @@ export function dayTitle(date: Date, today: Date, copy: DemoCopy) {
   return bilingual((language) => capitalize(formatDate(date, language, weekdayDate)));
 }
 
-/** The app's completion summary for the selected day, or "nothing due". */
-export function daySummary(date: Date, today: Date, copy: DemoCopy) {
+function daySummary(date: Date, today: Date, copy: DemoCopy) {
   const marks = demoDay(dayOffset(today, date));
   return bilingual((language) =>
     marks?.total
@@ -142,8 +136,7 @@ export function daySummary(date: Date, today: Date, copy: DemoCopy) {
   );
 }
 
-/** Renders the selected day's calendar events, or the app's empty line. */
-export function dayEventsHtml(date: Date, today: Date, language: Language, copy: DemoCopy) {
+function dayEventsHtml(date: Date, today: Date, language: Language, copy: DemoCopy) {
   const events = demoEvents(dayOffset(today, date), date.getDay());
   const heading = copyElement(
     "p",

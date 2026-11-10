@@ -6,8 +6,7 @@ import { addDays, demoLanguages, formatDate, pageLanguage, type Bilingual } from
 import { copyElement, dayCellHtml, dayOutcome, readDemoCopy } from "./day-cell";
 import { capitalize, dayKey, startOfWeek, weekdayLabels } from "./demo-dates";
 
-/** The week readout in plain words: the day, then how many of its habits are done. */
-export function weekReadout(offset: number, date: Date, copy: DemoCopy): Bilingual {
+function weekReadout(offset: number, date: Date, copy: DemoCopy): Bilingual {
   const marks = demoDay(offset);
   const outcome =
     offset > 0 ? "future" : dayOutcome({ done: marks?.done, scheduled: marks?.total });

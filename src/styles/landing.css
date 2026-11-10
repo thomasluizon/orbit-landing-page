@@ -2284,6 +2284,10 @@ button.metric-bar-track:focus-visible {
 .calendar-day-card {
   display: grid;
   gap: 4px;
+  padding: 16px;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-card);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-ghost);
 }
 .calendar-day-card .calendar-day-events {
   margin-block-start: 12px;

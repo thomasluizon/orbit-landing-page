@@ -52,8 +52,7 @@ export function escapeHtml(value: string) {
     .replaceAll('"', "&quot;");
 }
 
-/** Renders `data-copy-en` and `data-copy-pt` so the language toggle can swap the text. */
-export function copyAttributes(value: Bilingual, prefix = "data-copy") {
+function copyAttributes(value: Bilingual, prefix = "data-copy") {
   return `${prefix}-en="${escapeHtml(value.en)}" ${prefix}-pt="${escapeHtml(value["pt-BR"])}"`;
 }
 
@@ -72,8 +71,7 @@ export function dayOutcome({
   return done >= scheduled ? "full" : "partial";
 }
 
-/** Builds the app's accessible name for a day cell in one language. */
-export function dayCellName(cell: DayCellModel, language: Language, copy: DemoCopy) {
+function dayCellName(cell: DayCellModel, language: Language, copy: DemoCopy) {
   const word = (name: DayWord) => copy[language][`calendar.dayCell.${name}`];
   const label = cell.selected
     ? `${cell.label[language]}, ${word("selected")}`

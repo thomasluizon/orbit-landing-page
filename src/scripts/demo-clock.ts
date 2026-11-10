@@ -1,7 +1,6 @@
 import { clockText, pageLanguage, setCopy, type ClockKind } from "./clock-format";
 
-/** Sets every demo date and the phone clock from one reading of `now`. */
-export function applyDemoClock(root: ParentNode, now: Date) {
+function applyDemoClock(root: ParentNode, now: Date) {
   const language = pageLanguage();
   root.querySelectorAll<HTMLElement>("[data-clock]").forEach((element) => {
     const kind = element.dataset.clock as ClockKind;
