@@ -1354,7 +1354,9 @@ test("the language toggle keeps its 40px drawing with a centred target at least 
 test("the downloads panel leaves the flow, moves only opacity and translate and stops under reduced motion", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const rule = (selector) =>
-    css.match(new RegExp(`${selector.replaceAll(/[[\]]/g, "\\$&")}\\s*\\{([^}]+)\\}`))?.[1] ?? "";
+    css.match(
+      new RegExp(`${selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]+)\\}`),
+    )?.[1] ?? "";
   const closed = rule(".downloads-panel");
   const open = rule(".downloads-panel[data-open]");
   assert.match(closed, /position:\s*absolute/);

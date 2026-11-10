@@ -9,8 +9,9 @@ const source = ts.transpileModule(readFileSync("src/scripts/downloads-panel.ts",
 }).outputText;
 
 class FakeElement {
-  constructor(name, matches = []) {
+  constructor(name, matches = [], dataset = {}) {
     this.name = name;
+    this.dataset = dataset;
     this.matchedSelectors = matches;
     this.attributes = new Map();
     this.listeners = new Map();
@@ -50,17 +51,40 @@ class FakeElement {
   }
 }
 
-function page({ hash = "", reducedMotion = false } = {}) {
+const entryIds = ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"];
+
+function entryList(panel) {
+  const list = new FakeElement("list");
+  list.items = entryIds.map(
+    (id) =>
+      new FakeElement(
+        id,
+        [],
+        id === "android" || id === "iphone" ? { downloadTarget: id } : { desktopDownload: id },
+      ),
+  );
+  list.append = (...nodes) => {
+    list.items = nodes;
+  };
+  panel.querySelector = (selector) => (selector === ".downloads-list" ? list : null);
+  panel.querySelectorAll = (selector) => (selector === ".downloads-entry" ? list.items : []);
+  return list;
+}
+
+function page({ hash = "", reducedMotion = false, lead } = {}) {
   const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
   toggle.setAttribute("aria-expanded", "false");
   const panel = new FakeElement("panel", ["#downloads"]);
   const entry = new FakeElement("entry", ["#downloads a"]);
   panel.children.push(entry);
+  const list = entryList(panel);
+  const hero = new FakeElement("hero", [], lead === undefined ? {} : { downloadLead: lead });
   const opener = new FakeElement("header link", ['a[href="#downloads"]']);
   const elsewhere = new FakeElement("elsewhere");
   const listeners = new Map();
   const document = {
-    getElementById: (id) => ({ "downloads-toggle": toggle, downloads: panel })[id] ?? null,
+    getElementById: (id) =>
+      ({ "downloads-toggle": toggle, downloads: panel, "hero-download": hero })[id] ?? null,
     addEventListener: (type, listener) => listeners.set(type, listener),
   };
   vm.runInNewContext(source, {
@@ -87,6 +111,8 @@ function page({ hash = "", reducedMotion = false } = {}) {
     entry,
     opener,
     elsewhere,
+    hero,
+    order: () => list.items.map(({ name }) => name),
     fire,
     press: (key) => fire("keydown", elsewhere, { key }),
     open: () => toggle.listeners.get("click")(),
@@ -188,4 +214,62 @@ test("focus that leaves the panel for the page closes it", () => {
 test("a visit to the downloads fragment opens the panel", () => {
   assert.equal(page({ hash: "#downloads" }).isOpen(), true);
   assert.equal(page({ hash: "#features" }).isOpen(), false);
+});
+
+for (const [visitor, lead, expected] of [
+  [
+    "a Mac that reports Apple silicon",
+    "mac-arm",
+    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+  [
+    "a Mac that reports Intel",
+    "mac-x86",
+    ["mac-x86", "mac-arm", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+  [
+    "a Windows PC",
+    "windows-x86",
+    ["windows-x86", "windows-arm", "mac-arm", "mac-x86", "android", "iphone"],
+  ],
+  [
+    "a Windows on Arm PC",
+    "windows-arm",
+    ["windows-arm", "windows-x86", "mac-arm", "mac-x86", "android", "iphone"],
+  ],
+  [
+    "an Android phone",
+    "android",
+    ["android", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "iphone"],
+  ],
+  [
+    "an iPhone",
+    "iphone",
+    ["iphone", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "android"],
+  ],
+  [
+    "an unknown visitor",
+    undefined,
+    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+]) {
+  test(`opening the panel for ${visitor} lists the visitor's platform first`, () => {
+    const view = page({ lead });
+    assert.deepEqual(view.order(), entryIds);
+    view.open();
+    assert.deepEqual(view.order(), expected);
+  });
+}
+
+test("the panel orders again on every open and follows a late architecture hint", () => {
+  const view = page({ lead: "mac-arm" });
+  view.open();
+  view.open();
+  view.hero.dataset.downloadLead = "mac-x86";
+  view.open();
+  assert.deepEqual(view.order().slice(0, 2), ["mac-x86", "mac-arm"]);
+});
+
+test("a visit to the downloads fragment lists the visitor's platform first", () => {
+  assert.equal(page({ hash: "#downloads", lead: "windows-x86" }).order()[0], "windows-x86");
 });

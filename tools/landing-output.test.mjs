@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
+import { gzipSync } from "node:zlib";
 import vm from "node:vm";
 import sharp from "sharp";
 import { parse } from "@astrojs/compiler";
@@ -977,4 +978,44 @@ test("built consent markup reflects the PostHog key and retains the privacy link
       `${process.env.PUBLIC_APP_URL || "https://app.useorbit.org"}/privacy`,
     );
   }
+});
+
+const startupGzipBudget = 9228;
+function startupChunks() {
+  const chunks = new Map();
+  const visit = (path) => {
+    if (chunks.has(path)) return;
+    const code = readFileSync(`dist${path}`);
+    chunks.set(path, code);
+    const specifiers = code
+      .toString("utf8")
+      .matchAll(
+        /(?:^|[;}\s])(?:import|export)\b[^"'`;]*?\bfrom\s*"([^"]+)"|(?:^|[;}\s])import\s*"([^"]+)"/g,
+      );
+    for (const [, named, bare] of specifiers) {
+      const specifier = named ?? bare;
+      if (specifier.startsWith("./"))
+        visit(new URL(specifier, `file:///${path}`).pathname.slice(1));
+    }
+  };
+  for (const { attributes } of scriptsFrom(html))
+    if (attributes.type === "module" && attributes.src) visit(attributes.src);
+  return chunks;
+}
+
+test("the downloads panel code stays out of the startup scripts of the home page", () => {
+  const chunks = startupChunks();
+  assert.ok(chunks.size >= 5, "the startup graph lists every module script and static import");
+  for (const [path, code] of chunks)
+    assert.doesNotMatch(code.toString("utf8"), /data-open/, `${path} carries the panel code`);
+  const files = readdirSync("dist/_astro");
+  const panel = files.find((file) => /^downloads-panel\..+\.js$/.test(file));
+  assert.ok(panel, "the panel code ships as its own lazy chunk");
+  assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
+  assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /data-open/);
+});
+
+test("the startup scripts of the home page stay within the gzip budget", () => {
+  const total = [...startupChunks().values()].reduce((sum, code) => sum + gzipSync(code).length, 0);
+  assert.ok(total <= startupGzipBudget, `${total} gzip bytes exceed ${startupGzipBudget}`);
 });

@@ -3,9 +3,22 @@ export {};
 const OPENER = 'a[href="#downloads"]';
 const toggle = document.getElementById("downloads-toggle");
 const panel = document.getElementById("downloads");
+const hero = document.getElementById("hero-download");
+
+function leadEntries() {
+  const lead = hero?.dataset.downloadLead ?? "";
+  const key = ({ dataset }: HTMLElement) => dataset.desktopDownload ?? dataset.downloadTarget ?? "";
+  const rank = (entry: HTMLElement) => {
+    if (key(entry) === lead) return 0;
+    return key(entry).split("-")[0] === lead.split("-")[0] ? 1 : 2;
+  };
+  const entries = [...(panel?.querySelectorAll<HTMLElement>(".downloads-entry") ?? [])];
+  panel?.querySelector(".downloads-list")?.append(...entries.sort((a, b) => rank(a) - rank(b)));
+}
 
 function setOpen(open: boolean) {
   if (!toggle || !panel) return;
+  if (open) leadEntries();
   toggle.setAttribute("aria-expanded", String(open));
   panel.toggleAttribute("data-open", open);
 }
