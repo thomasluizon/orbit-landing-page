@@ -83,13 +83,15 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
   const elsewhere = new FakeElement("elsewhere");
   const listeners = new Map();
   const document = {
+    activeElement: null,
     getElementById: (id) =>
       ({ "downloads-toggle": toggle, downloads: panel, "hero-download": hero })[id] ?? null,
     addEventListener: (type, listener) => listeners.set(type, listener),
   };
+  const exports = {};
   vm.runInNewContext(source, {
     document,
-    exports: {},
+    exports,
     Element: FakeElement,
     Node: FakeElement,
     window: {
@@ -106,6 +108,8 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
     return event;
   };
   return {
+    document,
+    activate: exports.activate,
     toggle,
     panel,
     entry,
@@ -160,21 +164,19 @@ test("the header link opens the panel, scrolls to the button and focuses it", ()
   assert.equal(event.defaultPrevented, true);
   assert.equal(view.isOpen(), true);
   assert.equal(view.expanded(), "true");
-  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [
-    { behavior: "smooth", block: "start" },
-  ]);
+  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
   assert.equal(view.toggle.focused, 1);
   view.press("Escape");
   assert.equal(view.isOpen(), false);
   assert.equal(view.toggle.focused, 2);
 });
 
-test("the header link scrolls without animation under reduced motion", () => {
-  const view = page({ reducedMotion: true });
-  view.fire("click", view.opener);
-  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [
-    { behavior: "instant", block: "start" },
-  ]);
+test("the header link jumps without a smooth scroll, which the motion refresh would stop short", () => {
+  for (const reducedMotion of [false, true]) {
+    const view = page({ reducedMotion });
+    view.fire("click", view.opener);
+    assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
+  }
 });
 
 test("a press outside the panel closes it without moving focus", () => {
@@ -198,6 +200,27 @@ test("choosing an entry closes the panel and keeps its own destination", () => {
   assert.equal(view.toggle.focused, 0);
 });
 
+test("choosing an entry with the keyboard returns focus to the button before the panel hides", () => {
+  const view = page();
+  view.open();
+  view.document.activeElement = view.entry;
+  view.fire("click", view.entry);
+  assert.equal(view.isOpen(), false);
+  assert.equal(view.toggle.focused, 1);
+});
+
+test("the press that loaded the module acts once: the button toggles and the header link opens", () => {
+  const view = page();
+  view.activate(view.toggle);
+  assert.equal(view.isOpen(), true);
+  view.activate(view.toggle);
+  assert.equal(view.isOpen(), false);
+  view.activate(view.opener);
+  assert.equal(view.isOpen(), true);
+  assert.equal(view.toggle.scrolled.length, 1);
+  assert.equal(view.toggle.focused, 1);
+});
+
 test("focus that leaves the panel for the page closes it", () => {
   const view = page();
   view.open();
@@ -211,9 +234,14 @@ test("focus that leaves the panel for the page closes it", () => {
   assert.equal(view.isOpen(), false);
 });
 
-test("a visit to the downloads fragment opens the panel", () => {
-  assert.equal(page({ hash: "#downloads" }).isOpen(), true);
-  assert.equal(page({ hash: "#features" }).isOpen(), false);
+test("a visit to the downloads fragment opens the panel and brings the button below the header", () => {
+  const view = page({ hash: "#downloads" });
+  assert.equal(view.isOpen(), true);
+  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
+  assert.equal(view.toggle.focused, 1);
+  const other = page({ hash: "#features" });
+  assert.equal(other.isOpen(), false);
+  assert.equal(other.toggle.scrolled.length, 0);
 });
 
 for (const [visitor, lead, expected] of [

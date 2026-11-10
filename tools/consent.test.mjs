@@ -11,7 +11,7 @@ class FakeEventTarget {
 
   addEventListener(type, listener, options = {}) {
     const listeners = this.listeners.get(type) ?? [];
-    listeners.push({ listener, once: options.once === true });
+    listeners.push({ listener, once: options.once === true, capture: options.capture === true });
     this.listeners.set(type, listeners);
   }
 
@@ -33,6 +33,11 @@ class FakeEventTarget {
 class FakeElement extends FakeEventTarget {
   classNames = new Set();
   dataset = {};
+  attributes = new Map();
+
+  getAttribute(name) {
+    return this.attributes.get(name) ?? null;
+  }
   hidden = false;
   focused = false;
 
@@ -451,6 +456,28 @@ test("an accepted visitor captures analytics from a button", async () => {
   harness.document.dispatchEvent({ type: "click", target: button });
 
   assert.deepEqual(harness.capturedEvents, ["consent_action_clicked"]);
+});
+
+test("a disclosure control records the press that expands it and not the press that collapses it", async () => {
+  const harness = createHarness("accepted");
+  await executeProductionScripts(harness);
+  harness.window.dispatchEvent({ type: "load" });
+  harness.completePostHogLoad();
+  harness.capturedEvents.length = 0;
+
+  const toggle = new FakeElement("button");
+  toggle.dataset.analyticsEvent = "download_list_opened";
+  toggle.dataset.analyticsSurface = "hero_all_downloads";
+  for (const expanded of ["false", "true", "false"]) {
+    toggle.attributes.set("aria-expanded", expanded);
+    harness.document.dispatchEvent({ type: "click", target: toggle });
+  }
+
+  assert.deepEqual(harness.capturedEvents, ["download_list_opened", "download_list_opened"]);
+  assert.ok(
+    harness.document.listeners.get("click").some(({ capture }) => capture),
+    "the analytics listener runs in the capture phase, before the control flips its state",
+  );
 });
 
 test("cookie preferences reopens an accepted choice, supports withdrawal and reacceptance, and returns focus", async () => {

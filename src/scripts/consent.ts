@@ -141,14 +141,19 @@ if (choice === "accepted") {
   });
 }
 
-document.addEventListener("click", (event) => {
+/**
+ * Records a press on a tracked control. It runs in the capture phase, before the control's own handler,
+ * so a disclosure still shows the state the press found. A press on an expanded disclosure collapses it,
+ * which is not the event the control names, so it records nothing.
+ */
+function recordControlPress(event: MouseEvent) {
   if (readConsentChoice() !== "accepted" || !(event.target instanceof Element)) return;
   const control = event.target.closest<HTMLElement>(
     "a[data-analytics-event], button[data-analytics-event]",
   );
   const eventName = control?.dataset.analyticsEvent;
   const surface = control?.dataset.analyticsSurface;
-  if (!eventName || !surface) return;
+  if (!eventName || !surface || control?.getAttribute("aria-expanded") === "true") return;
   if (analytics) {
     captureEvent(eventName, surface);
   } else {
@@ -156,4 +161,6 @@ document.addEventListener("click", (event) => {
     if (pendingEvents.length > MAX_PENDING_EVENTS) pendingEvents.shift();
     expirePendingEvents();
   }
-});
+}
+
+document.addEventListener("click", recordControlPress, { capture: true });

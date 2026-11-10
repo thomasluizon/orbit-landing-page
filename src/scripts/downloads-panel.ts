@@ -1,5 +1,3 @@
-export {};
-
 const OPENER = 'a[href="#downloads"]';
 const toggle = document.getElementById("downloads-toggle");
 const panel = document.getElementById("downloads");
@@ -31,13 +29,21 @@ function close(returnFocus: boolean) {
   if (returnFocus) toggle?.focus();
 }
 
+/**
+ * Opens the panel and jumps the page until the button sits below the header, as a fragment link jumps.
+ * The jump is instant: the first scroll mounts the landing motion, and its ScrollTrigger refresh
+ * stops a smooth scroll short of its target.
+ */
 function openFromLink() {
   setOpen(true);
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ? "instant"
-    : "smooth";
-  toggle?.scrollIntoView({ behavior, block: "start" });
+  toggle?.scrollIntoView({ block: "start" });
   toggle?.focus({ preventScroll: true });
+}
+
+/** Acts on the press that loaded this module: the launcher calls it instead of repeating the click. */
+export function activate(opener: HTMLElement) {
+  if (opener === toggle) setOpen(!isOpen());
+  else openFromLink();
 }
 
 function targetIn(event: Event, selector: string) {
@@ -52,7 +58,7 @@ if (toggle && panel) {
       openFromLink();
       return;
     }
-    if (targetIn(event, "#downloads a")) close(false);
+    if (targetIn(event, "#downloads a")) close(panel.contains(document.activeElement));
   });
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !isOpen()) return;
@@ -66,5 +72,5 @@ if (toggle && panel) {
     const next = event.relatedTarget;
     if (next instanceof Node && !panel.contains(next) && next !== toggle) close(false);
   });
-  if (window.location.hash === "#downloads") setOpen(true);
+  if (window.location.hash === "#downloads") openFromLink();
 }

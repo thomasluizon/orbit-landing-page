@@ -851,6 +851,7 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
           href: app,
           target: "",
           hasAttribute: () => false,
+          getAttribute: () => null,
           dataset: surface
             ? { analyticsEvent: "hero_app_cta_clicked", analyticsSurface: surface }
             : {},

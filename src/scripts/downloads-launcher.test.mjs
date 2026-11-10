@@ -12,31 +12,35 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function launch(hash = "") {
   const loaded = [];
+  const activated = [];
   const opener = (name) => ({
     name,
     clicks: 0,
     listeners: [],
     addEventListener(type, listener, options) {
       assert.equal(type, "click");
-      this.listeners.push({ listener, once: options?.once === true });
+      const entry = { listener };
+      this.listeners.push(entry);
+      options?.signal?.addEventListener("abort", () => {
+        this.listeners = this.listeners.filter((candidate) => candidate !== entry);
+      });
     },
     click() {
       this.clicks += 1;
-      this.listeners = this.listeners.filter(({ once }) => !once);
     },
     press() {
       const event = { prevented: false, preventDefault: () => (event.prevented = true) };
       for (const { listener } of [...this.listeners]) listener(event);
-      this.listeners = this.listeners.filter(({ once }) => !once);
       return event;
     },
   });
   const controls = [opener("toggle"), opener("header link")];
   vm.runInNewContext(source, {
     exports: {},
+    AbortController,
     require: (path) => {
       loaded.push(path);
-      return {};
+      return { activate: (control) => activated.push(control.name) };
     },
     document: {
       querySelectorAll: (selector) => {
@@ -46,7 +50,7 @@ function launch(hash = "") {
     },
     location: { hash },
   });
-  return { loaded, controls };
+  return { loaded, activated, controls };
 }
 
 test("the page loads no panel code before a visitor uses a download control", async () => {
@@ -60,22 +64,43 @@ test("the page loads no panel code before a visitor uses a download control", as
 });
 
 for (const [index, name] of ["toggle", "header link"].entries()) {
-  test(`the first press on the ${name} loads the panel and then repeats the press`, async () => {
-    const { loaded, controls } = launch();
+  test(`the first press on the ${name} loads the panel and acts on that press without a second click`, async () => {
+    const { loaded, activated, controls } = launch();
     const event = controls[index].press();
     assert.equal(event.prevented, true);
-    assert.equal(controls[index].clicks, 0);
     await flush();
     assert.deepEqual(loaded, ["./downloads-panel"]);
-    assert.equal(controls[index].clicks, 1);
-    assert.equal(controls[index].listeners.length, 0);
+    assert.deepEqual(activated, [name]);
+    assert.deepEqual(
+      controls.map(({ clicks }) => clicks),
+      [0, 0],
+    );
+    assert.deepEqual(
+      controls.map(({ listeners }) => listeners.length),
+      [0, 0],
+    );
   });
 }
 
+test("after the first press, a press on the other control reaches only the loaded panel", async () => {
+  const { loaded, activated, controls } = launch();
+  controls[1].press();
+  await flush();
+  const event = controls[0].press();
+  await flush();
+  assert.equal(event.prevented, false);
+  assert.deepEqual(loaded, ["./downloads-panel"]);
+  assert.deepEqual(activated, ["header link"]);
+});
+
 test("a visit to the downloads fragment loads the panel without a press", async () => {
-  const { loaded } = launch("#downloads");
+  const { loaded, controls } = launch("#downloads");
   await flush();
   assert.deepEqual(loaded, ["./downloads-panel"]);
+  assert.deepEqual(
+    controls.map(({ listeners }) => listeners.length),
+    [0, 0],
+  );
   const other = launch("#features");
   await flush();
   assert.deepEqual(other.loaded, []);
