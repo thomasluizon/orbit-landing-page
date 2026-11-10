@@ -20,6 +20,7 @@ const week = copy ? weekHtml(buildNow, dayKey(buildNow), "en", copy) : undefined
   data-mock="true"
   data-product-kind={kind}
   data-week-card={kind === "week" || undefined}
+  data-clock-pending={kind === "week" || undefined}
   data-demo-copy={copy && JSON.stringify(copy)}
 >
   {

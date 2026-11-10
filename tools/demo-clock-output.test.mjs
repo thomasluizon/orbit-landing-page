@@ -59,16 +59,21 @@ async function mount(now, language) {
       }
     },
   });
-  const clock = load("src/scripts/demo-clock.ts");
-  assert.equal(
-    document.documentElement.getAttribute("data-demo-clock"),
-    "pending",
-    "the build dates stay hidden until the views show the visitor's day",
-  );
-  await clock.demoViews;
-  assert.equal(document.documentElement.hasAttribute("data-demo-clock"), false);
-  translate(document, language);
+  const { demoNow } = load("src/scripts/demo-clock.ts");
+  const weekCard = document.querySelector("[data-week-card]");
   const calendar = document.querySelector("[data-calendar]");
+  for (const view of [weekCard, calendar]) {
+    assert.ok(
+      view.hasAttribute("data-clock-pending"),
+      "the build marks the view so its build dates stay hidden until it shows the visitor's day",
+    );
+  }
+  load("src/scripts/week.ts").mountWeek(weekCard, demoNow);
+  load("src/scripts/demo-views.ts");
+  for (const view of [weekCard, calendar]) {
+    assert.equal(view.hasAttribute("data-clock-pending"), false);
+  }
+  translate(document, language);
   const part = (name) => calendar.querySelector(`[data-calendar-${name}]`);
   const days = () => part("grid").querySelectorAll("[data-day-key]");
   return {

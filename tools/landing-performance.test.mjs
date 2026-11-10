@@ -94,9 +94,9 @@ test("phone resize consumes observed width without remeasuring a styled layout",
 });
 
 test("hero controls cannot evaluate or measure below-the-fold metrics", () => {
-  const examples = source("src/scripts/product-examples.ts");
+  const demo = source("src/scripts/demo.ts");
   assert.doesNotMatch(
-    examples,
+    demo,
     /offset(?:Left|Top|Width|Height)|client(?:Width|Height)|getBoundingClientRect/,
   );
   const page = source("src/pages/index.astro");

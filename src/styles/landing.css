@@ -1105,7 +1105,7 @@
   max-inline-size: 100%;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  background: var(--color-bg-dialog);
+  background: var(--color-bg-elev);
   pointer-events: none;
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
@@ -2310,13 +2310,15 @@ button.metric-bar-track:focus-visible {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 96px;
 }
-html[data-demo-clock="pending"]
-  :is(
-    [data-week-days],
-    [data-week-readouts],
-    [data-calendar-title],
-    [data-calendar-grid],
-    [data-calendar-panel]
-  ) {
-  visibility: hidden;
+@media (scripting: enabled) {
+  [data-clock-pending]
+    :is(
+      [data-week-days],
+      [data-week-readouts],
+      [data-calendar-title],
+      [data-calendar-grid],
+      [data-calendar-panel]
+    ) {
+    visibility: hidden;
+  }
 }

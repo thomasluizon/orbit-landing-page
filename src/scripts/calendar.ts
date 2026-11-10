@@ -124,4 +124,5 @@ export function mountCalendar(root: HTMLElement, today: Date) {
     { passive: true },
   );
   render();
+  delete root.dataset.clockPending;
 }

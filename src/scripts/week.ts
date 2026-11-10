@@ -106,4 +106,5 @@ export function mountWeek(card: HTMLElement, today: Date) {
     render(true);
   });
   render(false);
+  delete card.dataset.clockPending;
 }

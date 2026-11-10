@@ -1147,10 +1147,7 @@ test("every current copy key has locale parity and Pro states the approved weekl
   }
 });
 
-async function reachFeaturesWithoutPhone(
-  loadProductExamples,
-  source = readFileSync("src/pages/index.astro", "utf8"),
-) {
+async function reachFeaturesWithoutPhone(source = readFileSync("src/pages/index.astro", "utf8")) {
   const featureSection = sections.find((node) => attributes(node)["data-section"] === "features");
   assert.ok(featureSection);
   const targets = [
@@ -1199,22 +1196,23 @@ async function reachFeaturesWithoutPhone(
             },
           };
         imports.push(path);
-        if (path === "../scripts/product-examples") loadProductExamples();
         return {};
       },
     },
   );
-  assert.ok(!imports.includes("../scripts/product-examples"), "product previews stay deferred");
+  assert.ok(!imports.includes("../scripts/demo-views"), "the feature views stay deferred");
   for (const observer of observers) {
     observer.callback(
       [...observer.observed].map((target) => ({ target, isIntersecting: target === targets[1] })),
     );
   }
   await new Promise((resolve) => setImmediate(resolve));
-  assert.ok(
-    imports.includes("../scripts/product-examples"),
-    "reaching features must load their controls without the hero ever intersecting",
-  );
+  for (const path of ["../scripts/product-metrics", "../scripts/demo-views"]) {
+    assert.ok(
+      imports.includes(path),
+      `reaching features must load ${path} without the hero ever intersecting`,
+    );
+  }
   assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
 }
 
@@ -1230,74 +1228,17 @@ for (const [opening, closing] of [
     const source = readFileSync("src/pages/index.astro", "utf8")
       .replace("<script>", opening)
       .replace("</script>", closing);
-    let loaded = false;
-    await reachFeaturesWithoutPhone(() => {
-      loaded = true;
-    }, source);
-    assert.equal(loaded, true);
+    await reachFeaturesWithoutPhone(source);
   });
 }
 
-test("habit checks work when features are reached without the phone, and the clock binds the week and calendar at startup", async () => {
-  const item = (extra = {}) => ({
-    hidden: false,
-    dataset: {},
-    attrs: {},
-    listeners: new Map(),
-    addEventListener(name, fn) {
-      this.listeners.set(name, fn);
-    },
-    setAttribute(name, value) {
-      this.attrs[name] = value;
-    },
-    getAttribute(name) {
-      return this.attrs[name];
-    },
-    click() {
-      this.listeners.get("click")();
-    },
-    ...extra,
-  });
-  const ring = {
-    classList: {
-      toggle(_name, value) {
-        this.done = value;
-      },
-    },
-  };
-  const habit = item({ querySelector: () => ring });
-  await reachFeaturesWithoutPhone(() => {
-    const completion = {};
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/habit-completion.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      { exports: completion },
-    );
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      {
-        exports: {},
-        require: (path) => (path === "./habit-completion" ? completion : {}),
-        document: {
-          querySelectorAll: (selector) => (selector === "[data-habit-toggle]" ? [habit] : []),
-        },
-      },
-    );
-  });
-  habit.click();
-  assert.equal(habit.attrs["aria-pressed"], "true");
-  assert.equal(ring.classList.done, true);
-  habit.click();
-  assert.equal(ring.classList.done, false);
+test("the demo clock sets the hero dates before any deferred task", () => {
   const startup = scriptsFrom(readFileSync("src/pages/index.astro", "utf8"))[0].body;
   assert.ok(
-    startup.indexOf('import "../scripts/demo-clock";') < startup.indexOf("afterLoad("),
-    "the week card and the calendar are drawn and bound before any deferred task",
+    startup.indexOf('import { demoNow } from "../scripts/demo-clock";') <
+      startup.indexOf("afterLoad("),
+    "the demo clock sets the hero dates and the phone clock before any deferred task",
   );
-  assert.doesNotMatch(readFileSync("src/scripts/product-examples.ts", "utf8"), /week|calendar/i);
 });
 
 test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {
