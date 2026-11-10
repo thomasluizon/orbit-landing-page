@@ -56,7 +56,7 @@ function page({ hash = "", reducedMotion = false } = {}) {
   const panel = new FakeElement("panel", ["#downloads"]);
   const entry = new FakeElement("entry", ["#downloads a"]);
   panel.children.push(entry);
-  const opener = new FakeElement("header link", ["[data-downloads-open]"]);
+  const opener = new FakeElement("header link", ['a[href="#downloads"]']);
   const elsewhere = new FakeElement("elsewhere");
   const listeners = new Map();
   const document = {

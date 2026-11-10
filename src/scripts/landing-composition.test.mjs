@@ -1350,3 +1350,28 @@ test("the language toggle keeps its 40px drawing with a centred target at least 
   assert.match(target, /border-radius:\s*inherit;/);
   assert.doesNotMatch(target, /background/);
 });
+
+test("the downloads panel leaves the flow, moves only opacity and translate and stops under reduced motion", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const rule = (selector) =>
+    css.match(new RegExp(`${selector.replaceAll(/[[\]]/g, "\\$&")}\\s*\\{([^}]+)\\}`))?.[1] ?? "";
+  const closed = rule(".downloads-panel");
+  const open = rule(".downloads-panel[data-open]");
+  assert.match(closed, /position:\s*absolute/);
+  assert.match(closed, /visibility:\s*hidden/);
+  assert.match(closed, /opacity:\s*0/);
+  assert.doesNotMatch(
+    closed + open,
+    /transition[^;]*\b(?:height|inline-size|block-size|margin|inset)\b/,
+  );
+  assert.match(closed, /opacity var\(--duration-fast\) var\(--ease-in\)/);
+  assert.match(closed, /translate var\(--duration-fast\) var\(--ease-in\)/);
+  assert.match(open, /opacity var\(--duration-normal\) var\(--ease-out\)/);
+  assert.match(open, /translate var\(--duration-normal\) var\(--ease-out\)/);
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-panel\[data-open\],\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
+  );
+  assert.doesNotMatch(css.slice(css.indexOf(".downloads-panel")), /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  assert.match(rule(".hero-controls"), /position:\s*relative/);
+});

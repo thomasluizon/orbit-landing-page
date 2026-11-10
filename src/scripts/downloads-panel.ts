@@ -1,5 +1,6 @@
 export {};
 
+const OPENER = 'a[href="#downloads"]';
 const toggle = document.getElementById("downloads-toggle");
 const panel = document.getElementById("downloads");
 
@@ -33,7 +34,7 @@ function targetIn(event: Event, selector: string) {
 if (toggle && panel) {
   toggle.addEventListener("click", () => setOpen(!isOpen()));
   document.addEventListener("click", (event) => {
-    if (targetIn(event, "[data-downloads-open]")) {
+    if (targetIn(event, OPENER)) {
       event.preventDefault();
       openFromLink();
       return;
@@ -46,7 +47,7 @@ if (toggle && panel) {
     close(true);
   });
   document.addEventListener("pointerdown", (event) => {
-    if (!targetIn(event, "#downloads, #downloads-toggle, [data-downloads-open]")) close(false);
+    if (!targetIn(event, `#downloads, #downloads-toggle, ${OPENER}`)) close(false);
   });
   panel.addEventListener("focusout", (event) => {
     const next = event.relatedTarget;
