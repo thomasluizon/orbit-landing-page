@@ -439,13 +439,66 @@ test("the built feature compositions use full width without backing panels", () 
   for (const rule of rules) assert.doesNotMatch(rule, /background|box-shadow|aspect-ratio/);
 });
 
-test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
+function builtCss() {
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
   ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
   const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
+  return [...stylesheets, ...inline].join("\n");
+}
+
+const withoutScripting = /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/;
+
+test("a #downloads visit lands on one target that holds the toggle and the panel, below the header", async () => {
+  const { descendants, attrs } = markup;
+  const nodes = descendants((await parse(html)).ast);
+  const targets = nodes.filter((node) => attrs(node).id === "downloads");
+  assert.equal(targets.length, 1);
+  const [target] = targets;
+  const held = descendants(target).map((node) => attrs(node).id);
+  assert.ok(held.includes("downloads-toggle"), "the fragment target holds the toggle");
+  assert.ok(held.includes("downloads-panel"), "the fragment target holds the panel");
+  const withScripting = builtCss().replace(withoutScripting, "");
+  const rule = [...withScripting.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) =>
+      selectors
+        .split(",")
+        .map((part) => part.trim())
+        .includes(`.${attrs(target).class}`),
+    )
+    .map(([, , declarations]) => declarations)
+    .join(";");
+  assert.match(
+    rule,
+    /scroll-margin-block-start:\s?96px/,
+    "the browser's own scroll clears the header",
+  );
+  assert.doesNotMatch(rule, /display:\s?contents/, "an element with no box takes no scroll margin");
+});
+
+test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+  const block = builtCss().match(withoutScripting)?.[1];
+  assert.ok(
+    block,
+    "a scripting: none block ships, or the page offers no download without JavaScript",
+  );
+  const rule = (selector) =>
+    [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(([, selectors]) =>
+      selectors
+        .split(",")
+        .map((part) => part.trim())
+        .includes(selector),
+    )?.[2] ?? "";
+  const panel = rule(".downloads-panel");
+  assert.match(panel, /position:\s?static/);
+  assert.match(panel, /visibility:\s?visible/);
+  assert.match(panel, /opacity:\s?1\b/);
+  assert.match(rule(".downloads-toggle"), /display:\s?none/);
+});
+
+test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
   const target = ".closing-legal p .text-link>[data-copy-en]";
-  const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
+  const wraps = [...builtCss().matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
     ([, selectors, body]) =>
       selectors
         .split(",")
@@ -522,7 +575,7 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
       ["android_install_clicked", "footer_qr"],
     ],
   );
-  const qr = installs.find((node) => attrs(node).class === "footer-qr");
+  const qr = installs.find((node) => attrs(node).class === "downloads-qr");
   assert.ok(
     descendants(qr).some(
       (node) =>
@@ -547,10 +600,14 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
   assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
 });
 
-test("the built footer offers each desktop file at its stable release URL in both locales", async () => {
-  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
-  const attrs = (node) =>
-    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+const markup = {
+  descendants: (node) => [node, ...(node.children ?? []).flatMap(markup.descendants)],
+  attrs: (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value])),
+};
+
+test("the built panel offers each desktop file at its stable release URL in both locales", async () => {
+  const { descendants, attrs } = markup;
   const release =
     "https://github.com/thomasluizon/orbit-ui-mobile/releases/download/desktop-production";
   const expected = [
@@ -579,11 +636,10 @@ test("the built footer offers each desktop file at its stable release URL in bot
       "Baixar para Windows (Arm)",
     ],
   ];
-  const product = descendants((await parse(html)).ast).find(
-    (node) => node.name === "nav" && attrs(node)["aria-label"] === "Product",
-  );
-  assert.ok(product);
-  const downloads = descendants(product).filter((node) =>
+  const nodes = descendants((await parse(html)).ast);
+  const panel = nodes.find((node) => attrs(node).id === "downloads-panel");
+  assert.ok(panel);
+  const downloads = descendants(panel).filter((node) =>
     Object.hasOwn(attrs(node), "data-desktop-download"),
   );
   assert.deepEqual(
@@ -610,8 +666,21 @@ test("the built footer offers each desktop file at its stable release URL in bot
       attrs(node)["data-desktop-download"],
     );
     assert.ok(!Object.hasOwn(attrs(node), "data-app-entry"));
-    assert.doesNotMatch(attrs(node).class, /footer-qr/);
   }
+  const footer = nodes.find((node) => node.name === "footer");
+  assert.ok(footer);
+  assert.deepEqual(
+    descendants(footer).filter((node) =>
+      ["data-desktop-download", "data-download-target", "data-ios-trigger"].some((name) =>
+        Object.hasOwn(attrs(node), name),
+      ),
+    ),
+    [],
+    "the footer carries no download",
+  );
+  const product = descendants(footer).find(
+    (node) => node.name === "nav" && attrs(node)["aria-label"] === "Product",
+  );
   assert.ok(
     descendants(product).some(
       (node) => attrs(node).href === (process.env.PUBLIC_APP_URL || "https://app.useorbit.org"),
@@ -620,39 +689,65 @@ test("the built footer offers each desktop file at its stable release URL in bot
   );
 });
 
-test("the built header and hero downloads land on the full footer list of eight links", async () => {
-  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
-  const attrs = (node) =>
-    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+test("the built panel holds every download, the QR code and a toggle that controls it", async () => {
+  const { descendants, attrs } = markup;
   const nodes = descendants((await parse(html)).ast);
-  const list = nodes.filter((node) => attrs(node).id === "downloads");
-  assert.equal(list.length, 1);
-  assert.equal(list[0].name, "nav");
-  assert.equal(attrs(list[0])["aria-label"], "Product");
-  const links = descendants(list[0]).filter((node) => node.name === "a");
+  const panels = nodes.filter((node) => attrs(node).id === "downloads-panel");
+  assert.equal(panels.length, 1);
+  const [panel] = panels;
+  assert.equal(attrs(panel).role, "region");
+  assert.equal(attrs(panel)["data-copy-label-en"], "All downloads");
+  assert.equal(attrs(panel)["data-copy-label-pt"], "Todos os downloads");
+  assert.ok(!Object.hasOwn(attrs(panel), "hidden"));
+  const hero = nodes.find((node) => attrs(node).id === "hero");
+  assert.ok(descendants(hero).includes(panel), "the panel sits in the hero");
+  const links = descendants(panel).filter((node) => node.name === "a");
   assert.deepEqual(
     links.map(
-      (node) => attrs(node)["data-desktop-download"] ?? attrs(node)["data-download-target"],
+      (node) => attrs(node)["data-desktop-download"] ?? attrs(node)["data-download-target"] ?? "qr",
     ),
-    [undefined, "android", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "iphone"],
+    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone", "qr"],
   );
-  assert.equal(links.length + nodes.filter((node) => attrs(node).class === "footer-qr").length, 8);
+  assert.ok(
+    links.every((node) => !Object.hasOwn(attrs(node), "data-app-entry")),
+    "no download is an app entry",
+  );
+  const toggle = nodes.find((node) => attrs(node).id === "downloads-toggle");
+  assert.equal(toggle.name, "button");
+  assert.equal(attrs(toggle).type, "button");
+  assert.equal(attrs(toggle)["aria-expanded"], "false");
+  assert.equal(attrs(toggle)["aria-controls"], "downloads-panel");
+  assert.equal(attrs(toggle)["data-analytics-event"], "download_list_opened");
+  assert.equal(attrs(toggle)["data-analytics-surface"], "hero_all_downloads");
+  assert.ok(descendants(hero).includes(toggle));
+  const beside = nodes
+    .find((node) => node.children?.includes(toggle))
+    .children.filter((node) => node.type === "element");
+  assert.equal(
+    beside[beside.indexOf(toggle) + 1],
+    panel,
+    "the stylesheet shows the panel that directly follows an expanded toggle",
+  );
   const header = nodes.find((node) => attrs(node).id === "site-header");
-  const headerDownload = descendants(header).filter(
+  const opener = descendants(header).filter(
     (node) => node.name === "a" && attrs(node).href === "#downloads",
   );
-  assert.equal(headerDownload.length, 1);
-  assert.equal(attrs(headerDownload[0])["data-analytics-event"], "download_list_opened");
-  assert.equal(attrs(headerDownload[0])["data-analytics-surface"], "header_download");
-  const hero = nodes.find((node) => attrs(node).id === "hero");
-  const heroLinks = descendants(hero).filter(
-    (node) => node.name === "a" && attrs(node).href === "#downloads",
+  assert.equal(opener.length, 1);
+  assert.equal(attrs(opener[0])["data-analytics-event"], "download_list_opened");
+  assert.equal(attrs(opener[0])["data-analytics-surface"], "header_download");
+  assert.deepEqual(
+    nodes
+      .filter((node) => node.name === "a" && attrs(node).href === "#downloads")
+      .map((node) => attrs(node).id ?? "header"),
+    ["header", "hero-download"],
+    "the header link and the unresolved hero button open the panel",
   );
-  assert.equal(heroLinks.length, 2);
-  const allDownloads = heroLinks.find((node) => attrs(node).id !== "hero-download");
-  assert.equal(attrs(allDownloads)["data-analytics-event"], "download_list_opened");
-  assert.equal(attrs(allDownloads)["data-analytics-surface"], "hero_all_downloads");
-  const button = heroLinks.find((node) => attrs(node).id === "hero-download");
+});
+
+test("the built hero download keeps its labels and every Mac and Windows control carries its logo", async () => {
+  const { descendants, attrs } = markup;
+  const nodes = descendants((await parse(html)).ast);
+  const button = nodes.find((node) => attrs(node).id === "hero-download");
   assert.ok(button);
   assert.ok(!Object.hasOwn(attrs(button), "data-analytics-event"));
   assert.ok(!Object.hasOwn(attrs(button), "data-primary-action"));
@@ -687,11 +782,56 @@ test("the built header and hero downloads land on the full footer list of eight 
     ["Install on Android", "Instalar no Android"],
     ["hero.ios"],
   ]);
-  assert.deepEqual(copy(heroLinks.find((node) => node !== button)), [
-    "All downloads",
-    "Todos os downloads",
-  ]);
-  assert.deepEqual(copy(descendants(headerDownload[0])[0]), ["Download", "Baixar"]);
+  const toggle = nodes.find((node) => attrs(node).id === "downloads-toggle");
+  assert.deepEqual(copy(toggle), ["All downloads", "Todos os downloads"]);
+  const header = nodes.find((node) => attrs(node).id === "site-header");
+  const opener = descendants(header).find((node) => attrs(node).href === "#downloads");
+  assert.deepEqual(copy(opener), ["Download", "Baixar"]);
+});
+
+test("every Mac control shows the Apple mark and every Windows control the Windows mark", async () => {
+  const { descendants, attrs } = markup;
+  const nodes = descendants((await parse(html)).ast);
+  const platformOf = (node) => {
+    const system = attrs(node)["data-desktop-system"] ?? attrs(node)["data-hero-download-label"];
+    if (system?.startsWith("mac")) return "apple";
+    if (system === "windows") return "windows";
+  };
+  const controls = nodes.filter(
+    (node) =>
+      ["a", "button", "span"].includes(node.name) &&
+      /\b(?:Mac|Windows|Apple silicon)\b/.test(
+        descendants(node)
+          .map((child) => attrs(child)["data-copy-en"] ?? "")
+          .join(" "),
+      ) &&
+      (node.name !== "span" || Object.hasOwn(attrs(node), "data-hero-download-label")),
+  );
+  const leaves = controls.filter(
+    (node) => !controls.some((other) => other !== node && descendants(node).includes(other)),
+  );
+  assert.equal(leaves.length, 7, "three hero labels and four panel entries");
+  for (const node of leaves) {
+    const platform = platformOf(node);
+    assert.ok(platform, "a Mac or Windows control names its system");
+    const marks = descendants(node).filter((child) => child.name === "svg");
+    assert.equal(marks.length, 1, platform);
+    assert.equal(attrs(marks[0])["data-platform-mark"], platform);
+    assert.equal(attrs(marks[0])["aria-hidden"], "true");
+    assert.equal(attrs(marks[0]).fill, "currentColor");
+    assert.equal(attrs(marks[0]).width, "1em");
+    assert.equal(attrs(marks[0]).height, "1em");
+    assert.ok(
+      descendants(marks[0])
+        .slice(1)
+        .every((child) => !attrs(child).fill),
+    );
+  }
+  assert.equal(
+    nodes.filter((node) => node.name === "svg" && attrs(node)["data-platform-mark"]).length,
+    7,
+    "no other control carries a platform mark",
+  );
 });
 
 test("both built pages eagerly bind app entry and preserve consent-gated surface capture", () => {
@@ -771,6 +911,7 @@ test("both built pages eagerly bind app entry and preserve consent-gated surface
           href: app,
           target: "",
           hasAttribute: () => false,
+          getAttribute: () => null,
           dataset: surface
             ? { analyticsEvent: "hero_app_cta_clicked", analyticsSurface: surface }
             : {},

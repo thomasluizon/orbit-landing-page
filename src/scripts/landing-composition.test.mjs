@@ -10,6 +10,7 @@ const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
 const componentNames = [
   "Hero",
+  "DownloadsPanel",
   "AstraDemo",
   "TrustStrip",
   "Features",
@@ -303,13 +304,27 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.equal(attributes(heroAction).analyticsSurface, "hero");
   assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
   assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
+  const hero = descendants(sections[0]);
+  const panel = hero.find((node) => attributes(node).id === "downloads-panel");
+  assert.ok(panel);
+  const insidePanel = new Set(descendants(panel));
   assert.deepEqual(
-    descendants(sections[0])
-      .filter((node) => node.name === "a" && attributes(node).id !== "demo-continue-link")
+    hero
+      .filter(
+        (node) =>
+          node.name === "a" &&
+          attributes(node).id !== "demo-continue-link" &&
+          !insidePanel.has(node),
+      )
       .map((node) => attributes(node).href),
-    ["#downloads"],
+    [],
   );
-  for (const name of ["Faq", "FinalCta"]) {
+  const toggle = hero.find((node) => attributes(node).id === "downloads-toggle");
+  assert.equal(toggle.name, "button");
+  assert.equal(attributes(toggle).type, "button");
+  assert.equal(attributes(toggle)["aria-expanded"], "false");
+  assert.equal(attributes(toggle)["aria-controls"], "downloads-panel");
+  for (const name of ["Faq", "DownloadsPanel"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }
 });
@@ -1026,17 +1041,13 @@ test("billing options share one row with equal single-line segments and Yearly s
   );
 });
 
-test("the footer groups product and legal links with its own QR and no source-code link", () => {
+test("the footer groups product and legal links with no download list and no source-code link", () => {
   const footer = readFileSync("src/components/FinalCta.astro", "utf8");
   assert.doesNotMatch(footer, /footer\.source|github\.com|Source code|Código-fonte/);
-  for (const key of [
-    "footer.description",
-    "footer.product",
-    "footer.legal",
-    "footer.android",
-    "footer.controller",
-  ])
+  for (const key of ["footer.description", "footer.product", "footer.legal", "footer.controller"])
     assert.ok(footer.includes(key));
+  assert.doesNotMatch(footer, /desktopDownloads|footer\.android|googlePlayUrl|orbit-install-qr/);
+  assert.doesNotMatch(footer, /data-(?:desktop-download|download-target|ios-trigger)/);
   const legalColumn = descendants(components.get("FinalCta")).find(
     (node) =>
       node.name === "div" &&
@@ -1048,8 +1059,6 @@ test("the footer groups product and legal links with its own QR and no source-co
     descendants(legalColumn).filter((node) => node.name === "CookiePreferences").length,
     1,
   );
-  assert.match(footer, /href="#ios"/);
-  assert.match(footer, /src="\/orbit-install-qr.svg"/);
 });
 
 test("the closing call to action centers its column and label-hugging button at every width", () => {
@@ -1244,4 +1253,37 @@ test("the language toggle keeps its 40px drawing with a centred target at least 
   assert.match(target, /inset-inline:\s*min\(0px, calc\(\(100% - 44px\) \/ 2\)\);/);
   assert.match(target, /border-radius:\s*inherit;/);
   assert.doesNotMatch(target, /background/);
+});
+
+test("the downloads panel leaves the flow, moves only opacity and translate and stops under reduced motion", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  const rule = (selector) =>
+    css.match(
+      new RegExp(`${selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]+)\\}`),
+    )?.[1] ?? "";
+  const closed = rule(".downloads-panel");
+  const open = rule('.downloads-toggle[aria-expanded="true"] + .downloads-panel');
+  assert.match(closed, /position:\s*absolute/);
+  assert.match(closed, /visibility:\s*hidden/);
+  assert.match(closed, /opacity:\s*0/);
+  assert.doesNotMatch(
+    closed + open,
+    /transition[^;]*\b(?:height|inline-size|block-size|margin|inset)\b/,
+  );
+  assert.match(closed, /opacity var\(--duration-fast\) var\(--ease-in\)/);
+  assert.match(closed, /translate var\(--duration-fast\) var\(--ease-in\)/);
+  assert.match(open, /opacity var\(--duration-normal\) var\(--ease-out\)/);
+  assert.match(open, /translate var\(--duration-normal\) var\(--ease-out\)/);
+  assert.match(
+    css,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-toggle\[aria-expanded="true"\] \+ \.downloads-panel,\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
+  );
+  assert.match(open, /visibility:\s*visible/);
+  const downloads = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) => /\.downloads-|\.platform-mark/.test(selectors))
+    .map(([rule]) => rule)
+    .join("\n");
+  assert.doesNotMatch(downloads, /data-open/, "the toggle's aria-expanded is the one open state");
+  assert.doesNotMatch(downloads, /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  assert.match(rule(".hero-controls"), /position:\s*relative/);
 });

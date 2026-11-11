@@ -30,18 +30,7 @@ function preferredArchitecture(system: DesktopSystem, architecture?: string) {
   return system === "mac" ? "arm" : "x86";
 }
 
-function leadDownloadLinks(root: ParentNode, system: DesktopSystem, architecture?: string) {
-  const links = [...root.querySelectorAll<HTMLElement>("[data-desktop-download]")];
-  const parent = links[0]?.parentNode;
-  if (!parent) return;
-  const next = links[links.length - 1].nextSibling;
-  const preferred = preferredArchitecture(system, architecture);
-  const rank = ({ dataset }: HTMLElement) =>
-    dataset.desktopSystem !== system ? 2 : dataset.desktopArchitecture === preferred ? 0 : 1;
-  for (const link of links.sort((a, b) => rank(a) - rank(b))) parent.insertBefore(link, next);
-}
-
-function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture?: string) {
+function leadDownload(root: ParentNode, system: VisitorSystem, architecture?: string) {
   const hero = root.querySelector<HTMLAnchorElement>("#hero-download");
   const file = isDesktop(system) && `${system}-${preferredArchitecture(system, architecture)}`;
   const source = root.querySelector<HTMLElement>(
@@ -49,6 +38,9 @@ function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture
   );
   const href = source?.getAttribute("href");
   if (!hero || !source || !href) return;
+  const list = source.parentElement;
+  list?.prepend(...root.querySelectorAll(`[data-desktop-system="${system}"]`));
+  list?.prepend(source);
   hero.href = href;
   if (source.dataset.iosTrigger !== undefined) hero.dataset.iosTrigger = "";
   const event = source.dataset.analyticsEvent;
@@ -65,15 +57,11 @@ function pointHeroDownload(root: ParentNode, system: VisitorSystem, architecture
 function leadVisitorDownloads(root: ParentNode, visitor: VisitorNavigator) {
   const system = visitorSystem(visitor.userAgent, visitor.maxTouchPoints);
   if (!system) return;
-  pointHeroDownload(root, system);
+  leadDownload(root, system);
   if (!isDesktop(system)) return;
-  leadDownloadLinks(root, system);
   visitor.userAgentData
     ?.getHighEntropyValues(["architecture"])
-    .then(({ architecture }) => {
-      leadDownloadLinks(root, system, architecture);
-      pointHeroDownload(root, system, architecture);
-    })
+    .then(({ architecture }) => leadDownload(root, system, architecture))
     .catch(() => undefined);
 }
 

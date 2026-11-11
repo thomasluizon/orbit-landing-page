@@ -111,6 +111,8 @@
   line-height: var(--lh-body);
 }
 .hero-controls {
+  position: relative;
+  z-index: 3;
   display: grid;
   justify-items: center;
   gap: 8px;
@@ -870,28 +872,7 @@
 .final-section .section-inner {
   gap: 32px;
 }
-.footer-qr {
-  display: grid;
-  padding: 8px;
-  justify-items: center;
-  align-content: start;
-  gap: 12px;
-  color: var(--color-fg-3);
-  font-size: var(--fs-sm);
-}
-.footer-qr-code {
-  position: relative;
-  display: grid;
-  place-items: center;
-  inline-size: 240px;
-  block-size: 240px;
-}
-.footer-qr-code img {
-  inline-size: 100%;
-  block-size: 100%;
-  border-radius: var(--radius-sm);
-}
-:where(section[id], main[id], nav[id]) {
+:where(section[id], main[id]) {
   scroll-margin-block-start: 96px;
 }
 :where(a, button) > [data-copy-en] {
@@ -1047,19 +1028,14 @@
     background: var(--color-bg-elev);
   }
 }
-.brand,
-.footer-qr {
+.brand {
   transition: background-color var(--duration-hover-control) var(--ease-standard);
-}
-.footer-qr {
-  border-radius: var(--radius-md);
 }
 .header-links a {
   transition: color var(--duration-hover-control) var(--ease-standard);
 }
 @media (hover: hover) and (pointer: fine) {
-  .brand:hover,
-  .footer-qr:hover {
+  .brand:hover {
     background: var(--color-bg-hover);
   }
 }
@@ -1067,8 +1043,7 @@
 .language-toggle:active,
 .demo-chip:active,
 .demo-composer:active,
-.faq-list summary:active,
-.footer-qr:active {
+.faq-list summary:active {
   background: var(--color-bg-hover);
 }
 .astra-product {
@@ -1650,7 +1625,7 @@ button.metric-bar-track:focus-visible {
 }
 .footer-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
   gap: 32px;
 }
@@ -1677,10 +1652,6 @@ button.metric-bar-track:focus-visible {
 .footer-column .text-link > [data-copy-en] {
   white-space: normal;
   text-align: start;
-}
-.footer-qr-code {
-  inline-size: 160px;
-  block-size: 160px;
 }
 .closing-legal {
   border-block-start: 1px solid var(--color-hairline);
@@ -1724,21 +1695,9 @@ button.metric-bar-track:focus-visible {
 .ios-section #waitlist-privacy {
   color: var(--color-fg-3);
 }
-@media (width < 64rem) {
-  .footer-columns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .footer-qr {
-    justify-self: start;
-  }
-}
-@media (width < 48rem) {
-  .footer-qr {
-    display: grid;
-  }
-}
 @media (width < 30rem) {
   .footer-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px 16px;
   }
   .footer-brand {
@@ -2313,6 +2272,134 @@ button.metric-bar-track:focus-visible {
 .example-app .metric-bars {
   content-visibility: auto;
   contain-intrinsic-block-size: auto 96px;
+}
+
+[data-hero-download-label]:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.platform-mark {
+  flex: none;
+  inline-size: 1em;
+  block-size: 1em;
+}
+.downloads-disclosure {
+  display: grid;
+  scroll-margin-block-start: 96px;
+}
+.downloads-toggle {
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  scroll-margin-block-start: 96px;
+}
+.downloads-chevron {
+  display: inline-flex;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.downloads-toggle[aria-expanded="true"] .downloads-chevron {
+  transform: rotate(180deg);
+}
+.downloads-panel {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 50%;
+  inline-size: min(22.5rem, calc(100vw - 2rem));
+  margin-inline-start: calc(min(22.5rem, calc(100vw - 2rem)) / -2);
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-elev);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  opacity: 0;
+  translate: 0 12px;
+  visibility: hidden;
+  transition:
+    opacity var(--duration-fast) var(--ease-in),
+    translate var(--duration-fast) var(--ease-in),
+    visibility 0s linear var(--duration-fast);
+}
+.downloads-toggle[aria-expanded="true"] + .downloads-panel {
+  opacity: 1;
+  translate: 0 0;
+  visibility: visible;
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    translate var(--duration-normal) var(--ease-out),
+    visibility 0s;
+}
+.downloads-list {
+  display: grid;
+}
+.downloads-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  padding-inline: 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-fg-1);
+  font-size: var(--fs-sm);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.downloads-entry .platform-mark {
+  font-size: var(--fs-base);
+}
+.downloads-qr {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-fg-3);
+  font-size: var(--fs-sm);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.downloads-qr-code {
+  display: grid;
+  place-items: center;
+  inline-size: 160px;
+  block-size: 160px;
+}
+.downloads-qr-code img {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: var(--radius-sm);
+}
+.downloads-entry:active,
+.downloads-qr:active {
+  background: var(--color-bg-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+  .downloads-entry:hover,
+  .downloads-qr:hover {
+    background: var(--color-bg-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .downloads-panel,
+  .downloads-toggle[aria-expanded="true"] + .downloads-panel,
+  .downloads-chevron {
+    transition: none;
+    translate: none;
+  }
+}
+@media (scripting: none) {
+  .downloads-panel {
+    position: static;
+    margin-inline-start: 0;
+    opacity: 1;
+    translate: none;
+    visibility: visible;
+  }
+  .downloads-toggle {
+    display: none;
+  }
 }
 @media (scripting: enabled) {
   [data-clock-pending]

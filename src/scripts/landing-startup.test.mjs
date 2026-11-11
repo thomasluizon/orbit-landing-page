@@ -11,6 +11,7 @@ const flush = () => new Promise((resolve) => setImmediate(resolve));
 const firstViewport = [
   { name: "demo-clock", task: 0 },
   { name: "i18n", task: 0 },
+  { name: "downloads-launcher", task: 0 },
 ];
 
 function harness({

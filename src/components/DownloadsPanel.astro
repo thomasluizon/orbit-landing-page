@@ -1,0 +1,65 @@
+---
+import Copy from "./Copy.astro";
+import PlatformMark from "./PlatformMark.astro";
+import { desktopDownloads } from "../config/links";
+import { landingCopy } from "../i18n/translations";
+interface Props {
+  googlePlayUrl: string;
+}
+const { googlePlayUrl } = Astro.props;
+const desktopMark = { mac: "apple", windows: "windows" } as const;
+---
+
+<div
+  id="downloads-panel"
+  class="downloads-panel"
+  role="region"
+  aria-label={landingCopy.en["hero.downloads"]}
+  data-copy-label-en={landingCopy.en["hero.downloads"]}
+  data-copy-label-pt={landingCopy["pt-BR"]["hero.downloads"]}
+>
+  <div class="downloads-list">
+    {
+      desktopDownloads.map((download) => (
+        <a
+          href={download.url}
+          class="downloads-entry"
+          data-desktop-download={download.id}
+          data-desktop-system={download.system}
+          data-desktop-architecture={download.architecture}
+          data-analytics-event="desktop_download_clicked"
+          data-analytics-surface={`footer_${download.system}_${download.architecture}`}
+        >
+          <PlatformMark platform={desktopMark[download.system]} />
+          <Copy name={download.copy} />
+        </a>
+      ))
+    }
+    <a
+      href={googlePlayUrl}
+      class="downloads-entry"
+      data-download-target="android"
+      data-analytics-event="android_install_clicked"
+      data-analytics-surface="footer"><Copy name="footer.android" /></a
+    >
+    <a
+      href="#ios"
+      id="ios-trigger"
+      data-ios-trigger
+      data-download-target="iphone"
+      class="downloads-entry"
+      data-i18n="hero.ios">iPhone waitlist</a
+    >
+  </div>
+  <a
+    class="downloads-qr"
+    href={googlePlayUrl}
+    data-analytics-event="android_install_clicked"
+    data-analytics-surface="footer_qr"
+  >
+    <span class="downloads-qr-code"
+      ><img src="/orbit-install-qr.svg" width="240" height="240" loading="lazy" alt="" /></span
+    >
+    <Copy name="footer.android" />
+  </a>
+</div>

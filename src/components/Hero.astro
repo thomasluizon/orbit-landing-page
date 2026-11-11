@@ -6,15 +6,18 @@ import PhoneHeader from "./PhoneHeader.astro";
 import HabitRow from "./HabitRow.astro";
 import AstraGlyph from "./AstraGlyph.astro";
 import TrustStrip from "./TrustStrip.astro";
+import DownloadsPanel from "./DownloadsPanel.astro";
+import PlatformMark from "./PlatformMark.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
 import { buildNow } from "../config/product-examples";
 import { clockText } from "../scripts/clock-format";
-import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight } from "@lucide/astro";
+import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight, ChevronDown } from "@lucide/astro";
 interface Props {
   appUrl: string;
+  googlePlayUrl: string;
 }
-const { appUrl } = Astro.props;
+const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
 const statusTime = clockText("time", buildNow);
 const todayDate = clockText("today", buildNow);
@@ -37,21 +40,35 @@ const todayDate = clockText("today", buildNow);
       >
       <PillButton href="#downloads" variant="ghost" size="md" id="hero-download">
         <span data-hero-download-label="any"><Copy name="download.label" /></span>
-        <span data-hero-download-label="mac" hidden><Copy name="hero.download.mac" /></span>
-        <span data-hero-download-label="mac-unreported" hidden
-          ><Copy name="hero.download.macUnreported" /></span
+        <span data-hero-download-label="mac" hidden
+          ><PlatformMark platform="apple" /><Copy name="hero.download.mac" /></span
         >
-        <span data-hero-download-label="windows" hidden><Copy name="hero.download.windows" /></span>
+        <span data-hero-download-label="mac-unreported" hidden
+          ><PlatformMark platform="apple" /><Copy name="hero.download.macUnreported" /></span
+        >
+        <span data-hero-download-label="windows" hidden
+          ><PlatformMark platform="windows" /><Copy name="hero.download.windows" /></span
+        >
         <span data-hero-download-label="android" hidden><Copy name="footer.android" /></span>
         <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">{en["hero.ios"]}</span>
       </PillButton>
     </div>
-    <a
-      href="#downloads"
-      class="text-link"
-      data-analytics-event="download_list_opened"
-      data-analytics-surface="hero_all_downloads"><Copy name="hero.downloads" /></a
-    >
+    <div id="downloads" class="downloads-disclosure">
+      <button
+        type="button"
+        id="downloads-toggle"
+        class="text-link downloads-toggle"
+        aria-expanded="false"
+        aria-controls="downloads-panel"
+        data-analytics-event="download_list_opened"
+        data-analytics-surface="hero_all_downloads"
+      >
+        <Copy name="hero.downloads" /><span class="downloads-chevron" aria-hidden="true"
+          ><ChevronDown size={16} /></span
+        >
+      </button>
+      <DownloadsPanel googlePlayUrl={googlePlayUrl} />
+    </div>
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">

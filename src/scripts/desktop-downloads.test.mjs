@@ -36,35 +36,17 @@ const googlePlayUrl = "https://play.google.com/store/apps/details?id=org.useorbi
 
 function landingPage() {
   const children = [];
-  const parent = {
-    children,
-    insertBefore(node, reference) {
-      const current = children.indexOf(node);
-      if (current !== -1) children.splice(current, 1);
-      const index = reference ? children.indexOf(reference) : children.length;
-      children.splice(index, 0, node);
+  const list = {
+    prepend(...entries) {
+      const rest = children.filter((child) => !entries.includes(child));
+      children.splice(0, children.length, ...entries, ...rest);
     },
   };
   const node = (dataset = {}, href) => ({
     dataset,
-    parentNode: parent,
+    parentElement: list,
     getAttribute: (name) => (name === "href" ? href : null),
-    get nextSibling() {
-      return children[children.indexOf(this) + 1] ?? null;
-    },
   });
-  children.push(
-    node({ label: "Open Orbit" }, "https://app.useorbit.org"),
-    node(
-      {
-        label: "Install on Android",
-        downloadTarget: "android",
-        analyticsEvent: "android_install_clicked",
-        analyticsSurface: "footer",
-      },
-      googlePlayUrl,
-    ),
-  );
   const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
   for (const { id, system, architecture, url } of desktopDownloads)
     children.push(
@@ -80,6 +62,15 @@ function landingPage() {
       ),
     );
   children.push(
+    node(
+      {
+        label: "Install on Android",
+        downloadTarget: "android",
+        analyticsEvent: "android_install_clicked",
+        analyticsSurface: "footer",
+      },
+      googlePlayUrl,
+    ),
     node({ label: "iPhone waitlist", downloadTarget: "iphone", iosTrigger: "" }, "#ios"),
   );
   const labels = ["any", "mac", "mac-unreported", "windows", "android", "iphone"].map((system) => ({
@@ -103,10 +94,11 @@ function landingPage() {
       return children.find((child) => child.dataset[key] === value) ?? null;
     },
     querySelectorAll(selector) {
-      assert.equal(selector, "[data-desktop-download]");
-      return children.filter((child) => child.dataset.desktopDownload);
+      const [, system] = selector.match(/^\[data-desktop-system="([^"]+)"\]$/) ?? [];
+      assert.ok(system, selector);
+      return children.filter((child) => child.dataset.desktopSystem === system);
     },
-    order: () => children.map((child) => child.dataset.desktopDownload ?? child.dataset.label),
+    order: () => children.map(({ dataset }) => dataset.desktopDownload ?? dataset.downloadTarget),
     hero: () => ({
       href: hero.href,
       label: labels.filter(({ hidden }) => !hidden).map(({ dataset }) => dataset.heroDownloadLabel),
@@ -128,86 +120,13 @@ async function load(navigator) {
   return root;
 }
 
-const visit = async (navigator) => (await load(navigator)).order();
 const hero = async (navigator) => (await load(navigator)).hero();
-
-const around = (downloads) => ["Open Orbit", "Install on Android", ...downloads, "iPhone waitlist"];
 
 test("every desktop download points at its exact stable production release asset", () => {
   const { desktopDownloads } = run("src/config/links.ts", { environment: {} });
   assert.deepEqual(
     Object.fromEntries(desktopDownloads.map(({ id, url }) => [id, url])),
     stableUrls,
-  );
-});
-
-test("a Mac visitor sees the Apple silicon file first and keeps every other file", async () => {
-  assert.deepEqual(
-    await visit({ userAgent: userAgents.mac, maxTouchPoints: 0 }),
-    around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]),
-  );
-});
-
-test("a Windows visitor sees the x64 installer first and keeps both Mac files", async () => {
-  assert.deepEqual(
-    await visit({ userAgent: userAgents.windows, maxTouchPoints: 0 }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
-  );
-});
-
-for (const name of ["linux", "android", "iphone"]) {
-  test(`an unknown or mobile visitor (${name}) keeps the rendered order`, async () => {
-    assert.deepEqual(
-      await visit({ userAgent: userAgents[name], maxTouchPoints: name === "linux" ? 0 : 5 }),
-      around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]),
-    );
-  });
-}
-
-test("an iPad that reports a Mac user agent is not treated as a Mac", async () => {
-  const order = await visit({ userAgent: userAgents.mac, maxTouchPoints: 5 });
-  assert.deepEqual(order, around(["mac-arm", "mac-x86", "windows-x86", "windows-arm"]));
-});
-
-test("a touchscreen Windows laptop keeps the Windows lead", async () => {
-  assert.deepEqual(
-    await visit({ userAgent: userAgents.windows, maxTouchPoints: 10 }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
-  );
-});
-
-for (const [system, architecture, expected] of [
-  ["mac", "x86", ["mac-x86", "mac-arm", "windows-x86", "windows-arm"]],
-  ["windows", "arm", ["windows-arm", "windows-x86", "mac-arm", "mac-x86"]],
-  ["windows", "", ["windows-x86", "windows-arm", "mac-arm", "mac-x86"]],
-]) {
-  test(`client hints for a ${system} visitor on ${architecture || "an unreported"} architecture lead with the matching file`, async () => {
-    const requested = [];
-    const order = await visit({
-      userAgent: userAgents[system],
-      maxTouchPoints: 0,
-      userAgentData: {
-        getHighEntropyValues: async (hints) => {
-          requested.push(...hints);
-          return { architecture };
-        },
-      },
-    });
-    assert.deepEqual(requested, ["architecture"]);
-    assert.deepEqual(order, around(expected));
-  });
-}
-
-test("a rejected client hints request keeps the system lead", async () => {
-  assert.deepEqual(
-    await visit({
-      userAgent: userAgents.windows,
-      maxTouchPoints: 0,
-      userAgentData: {
-        getHighEntropyValues: () => Promise.reject(new Error()),
-      },
-    }),
-    around(["windows-x86", "windows-arm", "mac-arm", "mac-x86"]),
   );
 });
 
@@ -282,12 +201,24 @@ for (const [name, navigator, expected] of [
   [
     "an iPhone",
     { userAgent: userAgents.iphone, maxTouchPoints: 5 },
-    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined, iosTrigger: true },
+    {
+      href: "#ios",
+      label: ["iphone"],
+      event: undefined,
+      surface: undefined,
+      iosTrigger: true,
+    },
   ],
   [
     "an iPad that reports a Mac user agent",
     { userAgent: userAgents.mac, maxTouchPoints: 5 },
-    { href: "#ios", label: ["iphone"], event: undefined, surface: undefined, iosTrigger: true },
+    {
+      href: "#ios",
+      label: ["iphone"],
+      event: undefined,
+      surface: undefined,
+      iosTrigger: true,
+    },
   ],
   [
     "an unknown system",
@@ -305,3 +236,59 @@ for (const [name, navigator, expected] of [
     assert.deepEqual(await hero(navigator), expected);
   });
 }
+
+const listed = ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"];
+
+for (const [name, navigator, expected] of [
+  [
+    "a Mac with no architecture hint",
+    { userAgent: userAgents.mac, maxTouchPoints: 0 },
+    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+  [
+    "an Apple silicon Mac that reports arm",
+    { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("arm") },
+    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+  [
+    "an Intel Mac that reports x86",
+    { userAgent: userAgents.mac, maxTouchPoints: 0, userAgentData: hints("x86") },
+    ["mac-x86", "mac-arm", "windows-x86", "windows-arm", "android", "iphone"],
+  ],
+  [
+    "a Windows PC",
+    { userAgent: userAgents.windows, maxTouchPoints: 0 },
+    ["windows-x86", "windows-arm", "mac-arm", "mac-x86", "android", "iphone"],
+  ],
+  [
+    "a Windows on Arm PC",
+    { userAgent: userAgents.windows, maxTouchPoints: 0, userAgentData: hints("arm") },
+    ["windows-arm", "windows-x86", "mac-arm", "mac-x86", "android", "iphone"],
+  ],
+  [
+    "an Android phone",
+    { userAgent: userAgents.android, maxTouchPoints: 5 },
+    ["android", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "iphone"],
+  ],
+  [
+    "an iPhone",
+    { userAgent: userAgents.iphone, maxTouchPoints: 5 },
+    ["iphone", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "android"],
+  ],
+  ["an unknown system", { userAgent: userAgents.linux, maxTouchPoints: 0 }, listed],
+]) {
+  test(`the downloads list leads with the platform of ${name} before the panel opens`, async () => {
+    assert.deepEqual(landingPage().order(), listed);
+    assert.deepEqual((await load(navigator)).order(), expected);
+  });
+}
+
+test("the downloads list leads with the visitor's system at startup, before an architecture hint arrives", () => {
+  const root = landingPage();
+  vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
+    exports: {},
+    navigator: { userAgent: userAgents.windows, maxTouchPoints: 0, userAgentData: hints("arm") },
+    document: root,
+  });
+  assert.deepEqual(root.order().slice(0, 2), ["windows-x86", "windows-arm"]);
+});

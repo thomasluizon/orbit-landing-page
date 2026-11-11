@@ -1419,7 +1419,7 @@ test("the hero actions sit on one line or one stack at every audited width, neve
   const downloadKeys = Object.fromEntries(
     [
       ...hero.matchAll(
-        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<Copy name="([^"]+)")?/g,
+        /<span data-hero-download-label="([\w-]+)"([^>]*)>\s*(?:<PlatformMark [^>]*\/>)?(?:<Copy name="([^"]+)")?/g,
       ),
     ].map(([, system, attributes, copy]) => [
       system,
@@ -1440,9 +1440,10 @@ test("the hero actions sit on one line or one stack at every audited width, neve
   });
   for (const language of ["en", "pt-BR"]) {
     const copy = tableFor(language);
-    const pillWidth = (key) => {
+    const markWidth = (system) => (/^(?:mac|windows)/.test(system) ? 1.5 * Number(fontSize) : 0);
+    const pillWidth = (key, system) => {
       assert.ok(copy[key], `${language} ${key}`);
-      return labelCeiling(copy[key], Number(fontSize)) + 2 * Number(padding);
+      return labelCeiling(copy[key], Number(fontSize)) + markWidth(system) + 2 * Number(padding);
     };
     for (const width of [320, 412, 768, 1280, 1440]) {
       const actions = heroRuleAt(".hero-actions", width);
@@ -1452,7 +1453,7 @@ test("the hero actions sit on one line or one stack at every audited width, neve
       const available = width - 2 * Number.parseFloat(controls["padding-inline"]);
       const gap = Number.parseFloat(actions.gap);
       for (const [system, key] of Object.entries(downloadKeys)) {
-        const pair = [pillWidth("hero.cta"), pillWidth(key)];
+        const pair = [pillWidth("hero.cta", "app"), pillWidth(key, system)];
         const needed = /column/.test(actions["flex-direction"] ?? "row")
           ? Math.max(...pair)
           : pair[0] + gap + pair[1];
@@ -1461,7 +1462,7 @@ test("the hero actions sit on one line or one stack at every audited width, neve
           `${language} at ${width}px: Open Orbit and the ${system} download need ${Math.ceil(needed)}px of ${available}px`,
         );
       }
-      assert.ok(labelCeiling(copy["hero.downloads"], 16) <= available);
+      assert.ok(labelCeiling(copy["hero.downloads"], 16) + 4 + 16 <= available);
     }
   }
 });
