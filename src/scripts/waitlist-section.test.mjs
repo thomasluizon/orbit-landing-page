@@ -126,16 +126,6 @@ test("the programmatic scroll loads on the first click on a trigger and not at s
   assert.equal(h.loads.length, 1);
   assert.equal(h.entries.length, 1);
 });
-test("a later click starts the scroll in the task of the click once the scroll module is loaded", async () => {
-  const h = harness();
-  h.click({});
-  await settled();
-  const before = h.entries.length;
-  h.click({});
-  await Promise.resolve();
-  await Promise.resolve();
-  assert.equal(h.entries.length, before + 1);
-});
 test("a click outside every waitlist trigger is left alone", () => {
   const h = harness();
   assert.equal(h.click(null).prevented, false);

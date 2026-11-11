@@ -281,7 +281,7 @@ for (const input of ["wheel", "touchstart", "keydown"]) {
   });
 }
 
-test("a press leaves no refresh listener behind after the motion is disposed", async () => {
+test("disposing the motion removes its refresh listener", () => {
   const p = page();
   const motion = p.load("./landing-motion");
   const dispose = motion.mountLandingMotion();
