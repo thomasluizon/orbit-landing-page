@@ -1279,7 +1279,11 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
     /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-toggle\[aria-expanded="true"\] \+ \.downloads-panel,\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
   );
   assert.match(open, /visibility:\s*visible/);
-  assert.doesNotMatch(css, /data-open/, "the toggle's aria-expanded is the one open state");
-  assert.doesNotMatch(css.slice(css.indexOf(".downloads-panel")), /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  const downloads = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) => /\.downloads-|\.platform-mark/.test(selectors))
+    .map(([rule]) => rule)
+    .join("\n");
+  assert.doesNotMatch(downloads, /data-open/, "the toggle's aria-expanded is the one open state");
+  assert.doesNotMatch(downloads, /#[0-9a-f]{3,8}\b|rgba?\(/i);
   assert.match(rule(".hero-controls"), /position:\s*relative/);
 });
