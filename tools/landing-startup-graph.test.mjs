@@ -31,8 +31,13 @@ test("only the deferred landing motion imports the programmatic scroll staticall
   assert.deepEqual(importers, [motion]);
 });
 
-test("the waitlist, back to top, header link and downloads scripts load the programmatic scroll on demand", () => {
-  for (const name of ["back-to-top", "waitlist-section", "header-scroll", "downloads-panel"]) {
+test("the waitlist, back to top, header link and page scripts load the programmatic scroll on demand", () => {
+  for (const name of [
+    "back-to-top",
+    "waitlist-section",
+    "header-scroll",
+    "index.astro_astro_type_script_index_0_lang",
+  ]) {
     const file = chunkNamed(name);
     assert.ok(file, `${name} is built`);
     assert.ok(!staticImports(file).includes(scroll), `${name} must not import it statically`);

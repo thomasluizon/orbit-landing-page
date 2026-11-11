@@ -337,12 +337,18 @@ test("a section lands below the header, which sets the offset from its own size 
       `calc(max(${inset}, env(safe-area-inset-top)) + ${height} + 16px)`,
     );
   }
-  const anchored = rules.find((rule) => rule.selector === ":where(section[id], main[id], nav[id])");
+  const anchored = rules.find((rule) => rule.selector === ":where(section[id], main[id])");
   assert.equal(
     declaration(anchored.declarations, "scroll-margin-block-start"),
     "var(--header-offset)",
   );
-  assert.equal(lastValue(".downloads-toggle", "scroll-margin-block-start"), "var(--header-offset)");
+  for (const selector of [".downloads-disclosure", ".downloads-toggle"]) {
+    assert.equal(
+      lastValue(selector, "scroll-margin-block-start"),
+      "var(--header-offset)",
+      selector,
+    );
+  }
 });
 
 const TIER = {
