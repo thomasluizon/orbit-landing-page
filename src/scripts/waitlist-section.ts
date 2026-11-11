@@ -16,21 +16,9 @@ function focusWaitlist() {
   email?.focus({ preventScroll: true });
 }
 
-function findTrigger(event: Event) {
-  return event.target instanceof Element && event.target.closest("[data-ios-trigger]");
-}
-
-for (const name of ["pointerdown", "focusin", "touchstart"]) {
-  document.addEventListener(
-    name,
-    (event) => {
-      if (findTrigger(event)) void loadScroll();
-    },
-    { passive: true },
-  );
-}
 document.addEventListener("click", (event) => {
-  if (!findTrigger(event)) return;
+  const trigger = event.target instanceof Element && event.target.closest("[data-ios-trigger]");
+  if (!trigger) return;
   event.preventDefault();
   if (window.location.hash !== "#ios") window.history.pushState(null, "", "#ios");
   focusWaitlist();

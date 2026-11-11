@@ -26,9 +26,6 @@ if (banner)
     attributeFilter: ["hidden"],
   });
 const loadScroll = () => import("./programmatic-scroll");
-for (const event of ["pointerdown", "focus", "touchstart"]) {
-  topButton?.addEventListener(event, () => void loadScroll(), { once: true, passive: true });
-}
 topButton?.addEventListener("click", () => {
   loadScroll().then(
     ({ scrollToTop }) => scrollToTop(),

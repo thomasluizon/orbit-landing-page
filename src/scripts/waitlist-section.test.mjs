@@ -116,27 +116,26 @@ test("a trigger added after the script loaded and a repeat tap on the ios fragme
   assert.equal(h.entries.length, 2);
   assert.equal(h.email.focused.preventScroll, true);
 });
-test("the programmatic scroll loads on the first press on a trigger and not at script start", async () => {
+test("the programmatic scroll loads on the first click on a trigger and not at script start", async () => {
   const h = harness();
   assert.deepEqual(h.loads, []);
-  h.press("pointerdown", null);
+  h.click(null);
   await settled();
-  assert.deepEqual(h.loads, []);
-  for (const name of ["pointerdown", "focusin", "touchstart"]) {
-    const before = h.loads.length;
-    h.press(name, {});
-    await settled();
-    assert.equal(h.loads.length, before + 1, `${name} on a trigger preloads the scroll`);
-  }
+  assert.deepEqual(h.loads, [], "a click outside every trigger loads nothing");
+  h.click({});
+  await settled();
+  assert.equal(h.loads.length, 1);
+  assert.equal(h.entries.length, 1);
 });
-test("a press starts the scroll in the task of the press once the scroll module is loaded", async () => {
+test("a later click starts the scroll in the task of the click once the scroll module is loaded", async () => {
   const h = harness();
-  h.press("pointerdown", {});
+  h.click({});
   await settled();
+  const before = h.entries.length;
   h.click({});
   await Promise.resolve();
   await Promise.resolve();
-  assert.equal(h.entries.length, 1);
+  assert.equal(h.entries.length, before + 1);
 });
 test("a click outside every waitlist trigger is left alone", () => {
   const h = harness();
