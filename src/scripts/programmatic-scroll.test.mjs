@@ -35,8 +35,8 @@ function page({ reduced = false, hash = "" } = {}) {
   let timerId = 0;
   let animation;
   const scrollTrigger = { refreshListeners: [] };
-  const state = { y: 0, sectionTop: SECTION_TOP, location: { hash } };
-  const emit = (name) =>
+  const state = { y: 0, sectionTop: SECTION_TOP, pageHeight: PAGE_HEIGHT, location: { hash } };
+  const emit = (name, fields = {}) =>
     (listeners.get(name) ?? []).forEach((callback) =>
       callback({
         type: name,
@@ -49,6 +49,7 @@ function page({ reduced = false, hash = "" } = {}) {
         ctrlKey: false,
         cancelable: false,
         composedPath: () => [],
+        ...fields,
       }),
     );
   const rootClasses = new Set();
@@ -60,7 +61,7 @@ function page({ reduced = false, hash = "" } = {}) {
       [Symbol.iterator]: () => rootClasses.values(),
     },
     get scrollHeight() {
-      return PAGE_HEIGHT;
+      return state.pageHeight;
     },
     scrollWidth: 1280,
   };
@@ -154,10 +155,18 @@ function page({ reduced = false, hash = "" } = {}) {
     if (state.y === animation.top) animation = undefined;
     return true;
   };
+  const pageObservers = new Set();
+  let observedPageHeight = state.pageHeight;
+  const deliverPageResize = () => {
+    if (state.pageHeight === observedPageHeight) return;
+    observedPageHeight = state.pageHeight;
+    pageObservers.forEach((observer) => observer.callback([{ target: root }], observer));
+  };
   const advanceFrame = () => {
     if (animateCompositor()) emit("scroll");
     [...tickers].forEach((tick) => tick(clock / 1000));
     frames.splice(0).forEach((callback) => callback());
+    deliverPageResize();
   };
   const advanceTime = (ms) => {
     const end = clock + ms;
@@ -241,8 +250,15 @@ function page({ reduced = false, hash = "" } = {}) {
       node === section ? { scrollMarginTop: `${HEADER_OFFSET}px` } : { overflowY: "visible" },
   });
   context.ResizeObserver = class {
-    observe() {}
-    disconnect() {}
+    constructor(callback) {
+      this.callback = callback;
+    }
+    observe(target) {
+      if (target === root) pageObservers.add(this);
+    }
+    disconnect() {
+      pageObservers.delete(this);
+    }
   };
   context.IntersectionObserver = class {
     observe() {}
@@ -398,6 +414,22 @@ test("with Lenis mounted, a refresh after the waitlist moves steers the scroll t
   assert.equal(sectionGap(p), HEADER_OFFSET);
 });
 
+test("with Lenis mounted, a refresh that grows the page steers the scroll past the end Lenis measured before", async () => {
+  const p = page();
+  p.state.pageHeight = SECTION_TOP + 900;
+  await mountLenisAtRest(p, 0);
+  p.load("./waitlist-section");
+  p.click();
+  await settle(p, 3);
+  assert.ok(p.state.y > 0 && p.state.y < SECTION_TOP, `in flight at ${p.state.y}`);
+  p.state.sectionTop = SECTION_TOP + 640;
+  p.state.pageHeight = SECTION_TOP + 640 + 900;
+  p.emit("orbit:layout-changed");
+  await settle(p);
+  assert.equal(p.state.y, SECTION_TOP + 640);
+  assert.equal(sectionGap(p), HEADER_OFFSET);
+});
+
 test("with Lenis mounted, the back to top button reaches the top through refreshes during the scroll", async () => {
   const p = page();
   await mountLenisAtRest(p, 9000);
@@ -497,6 +529,17 @@ for (const input of ["wheel", "touchstart", "pointerdown", "keydown"]) {
     p.emit(input);
     await settleWithRefreshes(p);
     assert.equal(p.state.y, stopped);
+  });
+
+  test(`a ${input} during a smooth scroll that the visitor started with Lenis leaves it running`, async () => {
+    const p = page();
+    await mountLenisAtRest(p, 0);
+    p.emit("wheel", { deltaY: 3000 });
+    await settle(p, 3);
+    assert.ok(p.state.y > 0 && p.state.y < 3000, `in flight at ${p.state.y}`);
+    p.emit(input);
+    await settle(p);
+    assert.equal(p.state.y, 3000);
   });
 }
 
