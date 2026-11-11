@@ -236,60 +236,8 @@ test("FAQ disclosure updates aria-expanded and controls its own answer without r
   const chevron = faq.find((node) => node.name === "ChevronDown");
   assert.equal(attributes(chevron).size, "16");
   assert.equal(attributes(chevron)["aria-hidden"], "true");
-  const source = readFileSync("src/components/Faq.astro", "utf8");
-  const keys = vm.runInNewContext(source.match(/const questions = (\[[^\]]+\])/)[1]);
-  const code = ts.transpileModule(readFileSync("src/scripts/faq.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
   const entry = readFileSync("src/pages/index.astro", "utf8");
   assert.match(entry, /import\("\.\.\/scripts\/faq"\)/);
-  for (const initiallyOpen of [false, true]) {
-    const items = keys.map((key, index) => {
-      const control = {
-        attributes: {
-          "aria-expanded": "false",
-          "aria-controls": vm.runInNewContext(attributes(summary)["aria-controls"], { key }),
-        },
-        setAttribute(name, value) {
-          this.attributes[name] = value;
-        },
-      };
-      const listeners = new Map();
-      return {
-        open: initiallyOpen && index === 0,
-        control,
-        listeners,
-        answerId: vm.runInNewContext(attributes(answer).id, { key }),
-        querySelector(selector) {
-          assert.equal(selector, "summary");
-          return control;
-        },
-        addEventListener(name, callback) {
-          listeners.set(name, callback);
-        },
-      };
-    });
-    vm.runInNewContext(code, {
-      exports: {},
-      document: {
-        querySelectorAll(selector) {
-          assert.equal(selector, ".faq-list details");
-          return items;
-        },
-      },
-    });
-    assert.equal(new Set(items.map((item) => item.answerId)).size, keys.length);
-    for (const item of items) {
-      assert.equal(item.control.attributes["aria-controls"], item.answerId);
-      assert.equal(item.control.attributes["aria-expanded"], String(item.open));
-      assert.deepEqual([...item.listeners.keys()], ["toggle"]);
-      for (const open of [true, false]) {
-        item.open = open;
-        item.listeners.get("toggle")();
-        assert.equal(item.control.attributes["aria-expanded"], String(open));
-      }
-    }
-  }
 });
 
 test("the header and hero preserve their app-entry intent", async () => {

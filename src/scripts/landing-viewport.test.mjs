@@ -657,15 +657,19 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
 });
 
-test("the FAQ is one compact list with separators only between rows", () => {
+test("the FAQ is one compact list whose open item is one card", () => {
   const list = css.match(/\.faq-list\s*\{([^}]+)\}/)[1];
   assert.match(list, /gap:\s*0/);
   assert.match(
     css,
     /\.faq-list > details \+ details\s*\{[^}]*border-block-start:\s*1px solid var\(--color-hairline\)/,
   );
-  assert.doesNotMatch(css, /\.faq-list details\s*\{[^}]*(?:background|box-shadow|border-radius)/);
+  assert.match(
+    css,
+    /\.faq-list > details\[open\]:not\(\[data-closing\]\)\s*\{[^}]*border-radius:\s*var\(--radius-xl\);[^}]*background:\s*var\(--color-bg-card\);[^}]*box-shadow:\s*inset 0 0 0 1px var\(--color-hairline-ghost\)/,
+  );
   assert.doesNotMatch(css, /\.faq-list[^{}]*\{[^}]*border-block-end/);
+  assert.doesNotMatch(css, /\.faq-list details\[open\] summary\s*\{/);
   const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
   assert.match(summary, /font-size:\s*var\(--fs-md\)/);
   assert.match(summary, /padding:\s*16px/);
@@ -679,7 +683,7 @@ test("the FAQ is one compact list with separators only between rows", () => {
     css,
     /\.faq-list summary svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px;[^}]*margin-block-start:\s*calc\(\(1lh - 16px\) \/ 2\)/,
   );
-  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*4px 16px 16px/);
+  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*0 16px 16px/);
   assert.match(css, /\.faq-list summary:hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/);
   assert.match(css, /\.final-section\s*\{[^}]*padding-block-start:\s*64px/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
@@ -774,13 +778,13 @@ test("Orbit marks retain the canonical full asset frames", () => {
   }
 });
 
-test("FAQ questions and answers share one inset with an 8px text gap and 16px bottom padding", () => {
-  assert.match(
+test("FAQ questions and answers share one inset and the question row never changes size on open", () => {
+  assert.doesNotMatch(
     css,
-    /\.faq-list details\[open\] summary\s*\{[^}]*min-block-size:\s*0;[^}]*padding-block-end:\s*4px/,
+    /\.faq-list details\[open\][^{}]*summary\s*\{[^}]*(?:min-block-size|padding)/,
   );
   const answer = css.match(/\.faq-list details p\s*\{([^}]+)\}/)[1];
-  assert.match(answer, /padding:\s*4px 16px 16px/);
+  assert.match(answer, /padding:\s*0 16px 16px/);
   assert.match(answer, /font-size:\s*var\(--fs-base\)/);
   assert.match(answer, /line-height:\s*var\(--lh-body\)/);
   const global = readFileSync("src/styles/global.css", "utf8");
