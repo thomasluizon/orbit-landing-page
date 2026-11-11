@@ -53,20 +53,22 @@ const todayDate = clockText("today", buildNow);
         <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">{en["hero.ios"]}</span>
       </PillButton>
     </div>
-    <button
-      type="button"
-      id="downloads-toggle"
-      class="text-link downloads-toggle"
-      aria-expanded="false"
-      aria-controls="downloads"
-      data-analytics-event="download_list_opened"
-      data-analytics-surface="hero_all_downloads"
-    >
-      <Copy name="hero.downloads" /><span class="downloads-chevron" aria-hidden="true"
-        ><ChevronDown size={16} /></span
+    <div id="downloads" class="downloads-disclosure">
+      <button
+        type="button"
+        id="downloads-toggle"
+        class="text-link downloads-toggle"
+        aria-expanded="false"
+        aria-controls="downloads-panel"
+        data-analytics-event="download_list_opened"
+        data-analytics-surface="hero_all_downloads"
       >
-    </button>
-    <DownloadsPanel googlePlayUrl={googlePlayUrl} />
+        <Copy name="hero.downloads" /><span class="downloads-chevron" aria-hidden="true"
+          ><ChevronDown size={16} /></span
+        >
+      </button>
+      <DownloadsPanel googlePlayUrl={googlePlayUrl} />
+    </div>
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">

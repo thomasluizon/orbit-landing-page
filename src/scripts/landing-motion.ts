@@ -2,7 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { updateHeroCarousel } from "./hero-carousel";
-import { resumeProgrammaticScroll } from "./programmatic-scroll";
+import { resumeProgrammaticScroll, routeProgrammaticScroll } from "./programmatic-scroll";
 import { afterLoad } from "./task-queue";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -89,7 +89,9 @@ export function mountLandingMotion() {
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
+    const unroute = routeProgrammaticScroll(lenis);
     return () => {
+      unroute();
       gsap.ticker.remove(tick);
       lenis.destroy();
     };

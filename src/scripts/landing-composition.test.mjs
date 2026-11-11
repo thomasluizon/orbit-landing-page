@@ -253,7 +253,7 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
   assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
   const hero = descendants(sections[0]);
-  const panel = hero.find((node) => attributes(node).id === "downloads");
+  const panel = hero.find((node) => attributes(node).id === "downloads-panel");
   assert.ok(panel);
   const insidePanel = new Set(descendants(panel));
   assert.deepEqual(
@@ -271,7 +271,7 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.equal(toggle.name, "button");
   assert.equal(attributes(toggle).type, "button");
   assert.equal(attributes(toggle)["aria-expanded"], "false");
-  assert.equal(attributes(toggle)["aria-controls"], "downloads");
+  assert.equal(attributes(toggle)["aria-controls"], "downloads-panel");
   for (const name of ["Faq", "DownloadsPanel"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }
@@ -1211,7 +1211,7 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
       new RegExp(`${selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]+)\\}`),
     )?.[1] ?? "";
   const closed = rule(".downloads-panel");
-  const open = rule(".downloads-panel[data-open]");
+  const open = rule('.downloads-toggle[aria-expanded="true"] + .downloads-panel');
   assert.match(closed, /position:\s*absolute/);
   assert.match(closed, /visibility:\s*hidden/);
   assert.match(closed, /opacity:\s*0/);
@@ -1225,8 +1225,14 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
   assert.match(open, /translate var\(--duration-normal\) var\(--ease-out\)/);
   assert.match(
     css,
-    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-panel\[data-open\],\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-toggle\[aria-expanded="true"\] \+ \.downloads-panel,\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
   );
-  assert.doesNotMatch(css.slice(css.indexOf(".downloads-panel")), /#[0-9a-f]{3,8}\b|rgba?\(/i);
+  assert.match(open, /visibility:\s*visible/);
+  const downloads = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) => /\.downloads-|\.platform-mark/.test(selectors))
+    .map(([rule]) => rule)
+    .join("\n");
+  assert.doesNotMatch(downloads, /data-open/, "the toggle's aria-expanded is the one open state");
+  assert.doesNotMatch(downloads, /#[0-9a-f]{3,8}\b|rgba?\(/i);
   assert.match(rule(".hero-controls"), /position:\s*relative/);
 });

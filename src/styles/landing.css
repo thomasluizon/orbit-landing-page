@@ -882,7 +882,7 @@
 .final-section .section-inner {
   gap: 32px;
 }
-:where(section[id], main[id], nav[id]) {
+:where(section[id], main[id]) {
   scroll-margin-block-start: var(--header-offset);
 }
 :where(a, button) > [data-copy-en] {
@@ -1040,10 +1040,6 @@
   .habit-row {
     background: var(--color-bg-elev);
   }
-}
-.brand {
-}
-.header-links a {
 }
 @media (hover: hover) and (pointer: fine) {
   .brand:hover {
@@ -2304,6 +2300,10 @@ button.metric-bar-track:focus-visible {
   inline-size: 1em;
   block-size: 1em;
 }
+.downloads-disclosure {
+  display: grid;
+  scroll-margin-block-start: var(--header-offset);
+}
 .downloads-toggle {
   gap: 4px;
   background: none;
@@ -2340,7 +2340,7 @@ button.metric-bar-track:focus-visible {
     translate var(--duration-fast) var(--ease-in),
     visibility 0s linear var(--duration-fast);
 }
-.downloads-panel[data-open] {
+.downloads-toggle[aria-expanded="true"] + .downloads-panel {
   opacity: 1;
   translate: 0 0;
   visibility: visible;
@@ -2397,7 +2397,7 @@ button.metric-bar-track:focus-visible {
 }
 @media (prefers-reduced-motion: reduce) {
   .downloads-panel,
-  .downloads-panel[data-open],
+  .downloads-toggle[aria-expanded="true"] + .downloads-panel,
   .downloads-chevron {
     transition: none;
     translate: none;
@@ -2410,7 +2410,6 @@ button.metric-bar-track:focus-visible {
     opacity: 1;
     translate: none;
     visibility: visible;
-    scroll-margin-block-start: var(--header-offset);
   }
   .downloads-toggle {
     display: none;

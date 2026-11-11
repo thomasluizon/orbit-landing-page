@@ -39,3 +39,17 @@ test("the waitlist, back to top, header link and downloads scripts load the prog
     assert.ok(dynamicImports(file).includes(scroll), `${name} must import it dynamically`);
   }
 });
+
+test("the page script loads the downloads panel chunk only on demand", () => {
+  const panel = chunkNamed("downloads-panel");
+  assert.ok(panel, "the dismissal code ships as its own lazy chunk");
+  assert.deepEqual(
+    chunks.filter((file) => staticImports(file).includes(panel)),
+    [],
+  );
+  assert.deepEqual(
+    chunks.filter((file) => dynamicImports(file).includes(panel)),
+    [chunkNamed("index.astro_astro_type_script_index_0_lang")],
+  );
+  assert.doesNotMatch(readFileSync(`${assets}/${panel}`, "utf8"), /\bexport\b/);
+});

@@ -439,15 +439,45 @@ test("the built feature compositions use full width without backing panels", () 
   for (const rule of rules) assert.doesNotMatch(rule, /background|box-shadow|aspect-ratio/);
 });
 
-test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+function builtCss() {
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
   ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
   const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
-  const css = [...stylesheets, ...inline].join("\n");
-  const block = css.match(
-    /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/,
-  )?.[1];
+  return [...stylesheets, ...inline].join("\n");
+}
+
+const withoutScripting = /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/;
+
+test("a #downloads visit lands on one target that holds the toggle and the panel, below the header", async () => {
+  const { descendants, attrs } = markup;
+  const nodes = descendants((await parse(html)).ast);
+  const targets = nodes.filter((node) => attrs(node).id === "downloads");
+  assert.equal(targets.length, 1);
+  const [target] = targets;
+  const held = descendants(target).map((node) => attrs(node).id);
+  assert.ok(held.includes("downloads-toggle"), "the fragment target holds the toggle");
+  assert.ok(held.includes("downloads-panel"), "the fragment target holds the panel");
+  const withScripting = builtCss().replace(withoutScripting, "");
+  const rule = [...withScripting.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) =>
+      selectors
+        .split(",")
+        .map((part) => part.trim())
+        .includes(`.${attrs(target).class}`),
+    )
+    .map(([, , declarations]) => declarations)
+    .join(";");
+  assert.match(
+    rule,
+    /scroll-margin-block-start:\s?var\(--header-offset\)/,
+    "the browser's own scroll clears the header",
+  );
+  assert.doesNotMatch(rule, /display:\s?contents/, "an element with no box takes no scroll margin");
+});
+
+test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+  const block = builtCss().match(withoutScripting)?.[1];
   assert.ok(
     block,
     "a scripting: none block ships, or the page offers no download without JavaScript",
@@ -463,21 +493,12 @@ test("without scripting the built stylesheet shows the downloads in flow and hid
   assert.match(panel, /position:\s?static/);
   assert.match(panel, /visibility:\s?visible/);
   assert.match(panel, /opacity:\s?1\b/);
-  assert.match(
-    panel,
-    /scroll-margin-block-start:\s?var\(--header-offset\)/,
-    "a #downloads visit clears the header",
-  );
   assert.match(rule(".downloads-toggle"), /display:\s?none/);
 });
 
 test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
-  const stylesheets = [
-    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
-  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
-  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
   const target = ".closing-legal p .text-link>[data-copy-en]";
-  const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
+  const wraps = [...builtCss().matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
     ([, selectors, body]) =>
       selectors
         .split(",")
@@ -616,7 +637,7 @@ test("the built panel offers each desktop file at its stable release URL in both
     ],
   ];
   const nodes = descendants((await parse(html)).ast);
-  const panel = nodes.find((node) => attrs(node).id === "downloads");
+  const panel = nodes.find((node) => attrs(node).id === "downloads-panel");
   assert.ok(panel);
   const downloads = descendants(panel).filter((node) =>
     Object.hasOwn(attrs(node), "data-desktop-download"),
@@ -671,7 +692,7 @@ test("the built panel offers each desktop file at its stable release URL in both
 test("the built panel holds every download, the QR code and a toggle that controls it", async () => {
   const { descendants, attrs } = markup;
   const nodes = descendants((await parse(html)).ast);
-  const panels = nodes.filter((node) => attrs(node).id === "downloads");
+  const panels = nodes.filter((node) => attrs(node).id === "downloads-panel");
   assert.equal(panels.length, 1);
   const [panel] = panels;
   assert.equal(attrs(panel).role, "region");
@@ -695,10 +716,18 @@ test("the built panel holds every download, the QR code and a toggle that contro
   assert.equal(toggle.name, "button");
   assert.equal(attrs(toggle).type, "button");
   assert.equal(attrs(toggle)["aria-expanded"], "false");
-  assert.equal(attrs(toggle)["aria-controls"], "downloads");
+  assert.equal(attrs(toggle)["aria-controls"], "downloads-panel");
   assert.equal(attrs(toggle)["data-analytics-event"], "download_list_opened");
   assert.equal(attrs(toggle)["data-analytics-surface"], "hero_all_downloads");
   assert.ok(descendants(hero).includes(toggle));
+  const beside = nodes
+    .find((node) => node.children?.includes(toggle))
+    .children.filter((node) => node.type === "element");
+  assert.equal(
+    beside[beside.indexOf(toggle) + 1],
+    panel,
+    "the stylesheet shows the panel that directly follows an expanded toggle",
+  );
   const header = nodes.find((node) => attrs(node).id === "site-header");
   const opener = descendants(header).filter(
     (node) => node.name === "a" && attrs(node).href === "#downloads",
@@ -1009,40 +1038,6 @@ test("built consent markup reflects the PostHog key and retains the privacy link
       `${process.env.PUBLIC_APP_URL || "https://app.useorbit.org"}/privacy`,
     );
   }
-});
-
-function startupChunks() {
-  const chunks = new Map();
-  const visit = (path) => {
-    if (chunks.has(path)) return;
-    const code = readFileSync(`dist${path}`);
-    chunks.set(path, code);
-    const specifiers = code
-      .toString("utf8")
-      .matchAll(
-        /(?:^|[;}\s])(?:import|export)\b[^"'`;]*?\bfrom\s*"([^"]+)"|(?:^|[;}\s])import\s*"([^"]+)"/g,
-      );
-    for (const [, named, bare] of specifiers) {
-      const specifier = named ?? bare;
-      if (specifier.startsWith("./"))
-        visit(new URL(specifier, `file:///${path}`).pathname.slice(1));
-    }
-  };
-  for (const { attributes } of scriptsFrom(html))
-    if (attributes.type === "module" && attributes.src) visit(attributes.src);
-  return chunks;
-}
-
-test("the downloads panel code stays out of the startup scripts of the home page", () => {
-  const chunks = startupChunks();
-  assert.ok(chunks.size >= 5, "the startup graph lists every module script and static import");
-  for (const [path, code] of chunks)
-    assert.doesNotMatch(code.toString("utf8"), /downloads-entry/, `${path} carries the panel code`);
-  const files = readdirSync("dist/_astro");
-  const panel = files.find((file) => /^downloads-panel\..+\.js$/.test(file));
-  assert.ok(panel, "the panel code ships as its own lazy chunk");
-  assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
-  assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /downloads-entry/);
 });
 
 test("the built site keeps every primary action on its static fill", () => {

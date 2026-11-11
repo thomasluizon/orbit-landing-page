@@ -314,6 +314,8 @@ test("composition fitting follows font, size, locale and interaction changes in 
                 destroy() {}
               },
             };
+          if (name === "./programmatic-scroll")
+            return { resumeProgrammaticScroll() {}, routeProgrammaticScroll: () => () => {} };
           return {};
         },
         document: {

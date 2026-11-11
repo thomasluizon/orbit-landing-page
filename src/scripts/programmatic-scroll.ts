@@ -1,58 +1,83 @@
-const SCROLL_SETTLE_MS = 150;
+import type Lenis from "lenis";
 
-let resume: (() => void) | undefined;
-let settleTimer: number | undefined;
+type Destination = Element | number;
 
-function watchSettle() {
-  window.clearTimeout(settleTimer);
-  settleTimer = window.setTimeout(() => {
-    resume = undefined;
-  }, SCROLL_SETTLE_MS);
+let destination: Destination | undefined;
+let lenis: Lenis | undefined;
+
+function scrollNatively(target: Destination, behavior: ScrollBehavior) {
+  if (typeof target === "number") window.scrollTo({ top: target, behavior });
+  else target.scrollIntoView({ behavior, block: "start" });
 }
 
-function cancel() {
-  window.clearTimeout(settleTimer);
-  resume = undefined;
-}
-
-function run(start: (behavior: ScrollBehavior) => void) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    cancel();
-    start("instant");
+function steer() {
+  const target = destination;
+  if (target === undefined) return;
+  if (!lenis) {
+    scrollNatively(target, "smooth");
     return;
   }
-  start("smooth");
-  resume = () => start("smooth");
-  watchSettle();
+  lenis.resize();
+  lenis.scrollTo(target, {
+    onComplete: () => {
+      if (destination === target) destination = undefined;
+    },
+  });
 }
 
-window.addEventListener(
-  "scroll",
-  () => {
-    if (resume) watchSettle();
-  },
-  { passive: true },
-);
-for (const event of ["wheel", "touchstart", "keydown"]) {
-  window.addEventListener(event, cancel, { passive: true });
+function stop() {
+  if (destination !== undefined && lenis?.isSmooth) {
+    lenis.stop();
+    lenis.start();
+  }
+  destination = undefined;
 }
 
-/** Scrolls the target to the top of the viewport and survives a ScrollTrigger refresh. */
-export function scrollToElement(target: Element) {
-  run((behavior) => target.scrollIntoView({ behavior, block: "start" }));
+function run(target: Destination) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    stop();
+    scrollNatively(target, "instant");
+    return;
+  }
+  destination = target;
+  steer();
 }
 
-/** Scrolls to the top of the page and survives a ScrollTrigger refresh. */
-export function scrollToTop() {
-  run((behavior) => window.scrollTo({ top: 0, behavior }));
+for (const event of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+  window.addEventListener(event, stop, { passive: true });
 }
 
 /**
- * ScrollTrigger refresh scrolls to the top and restores the position it read, which stops a
- * smooth scroll in flight. Call this after each refresh to start the interrupted scroll again.
+ * Scrolls the target to the top of the viewport, below its scroll margin. The scroll ends when it
+ * arrives, or when the visitor scrolls, presses or types.
+ */
+export function scrollToElement(target: Element) {
+  run(target);
+}
+
+/** Scrolls to the top of the page, with the same end rules as `scrollToElement`. */
+export function scrollToTop() {
+  run(0);
+}
+
+/**
+ * Sends the programmatic scrolls through Lenis while it is mounted, and moves a scroll in flight
+ * to Lenis at once. A native smooth scroll stops at the next write to the scroll position, such as
+ * a ScrollTrigger refresh. Lenis writes the position on each tick, so its scroll continues.
+ * Returns the function that stops the routing.
+ */
+export function routeProgrammaticScroll(instance: Lenis) {
+  lenis = instance;
+  steer();
+  return () => {
+    if (lenis === instance) lenis = undefined;
+  };
+}
+
+/**
+ * Call this after each ScrollTrigger refresh. It measures the target again and steers the scroll
+ * in flight to it, because the refresh can move the target.
  */
 export function resumeProgrammaticScroll() {
-  if (!resume) return;
-  resume();
-  watchSettle();
+  steer();
 }

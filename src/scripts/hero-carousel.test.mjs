@@ -381,7 +381,9 @@ for (const [width, height, pinned] of [
                   ? { default: Lenis }
                   : name === "./hero-float"
                     ? { mountHeroFloat: () => () => {} }
-                    : { updateHeroCarousel: (progress) => progresses.push(progress) },
+                    : name === "./programmatic-scroll"
+                      ? { resumeProgrammaticScroll() {}, routeProgrammaticScroll: () => () => {} }
+                      : { updateHeroCarousel: (progress) => progresses.push(progress) },
           document: {
             getElementById: (id) =>
               id === "hero-stage"
@@ -489,6 +491,8 @@ test("feature motion waits for intersection and separate tasks, and respects med
                 destroy() {}
               },
             };
+          if (name === "./programmatic-scroll")
+            return { resumeProgrammaticScroll() {}, routeProgrammaticScroll: () => () => {} };
           return {};
         },
         document: {
