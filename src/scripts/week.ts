@@ -1,9 +1,15 @@
 import { demoDay } from "../config/product-examples";
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
-import { dayLabel, isLoggable } from "./calendar-view";
 import { addDays, demoLanguages, formatDate, pageLanguage, type Bilingual } from "./clock-format";
-import { copyElement, dayCellHtml, dayOutcome, readDemoCopy } from "./day-cell";
+import {
+  copyElement,
+  dayCellHtml,
+  dayLabel,
+  dayOutcome,
+  isLoggable,
+  readDemoCopy,
+} from "./day-cell";
 import { capitalize, dayKey, startOfWeek, weekdayLabels } from "./demo-dates";
 
 function weekReadout(offset: number, date: Date, copy: DemoCopy): Bilingual {
@@ -87,7 +93,7 @@ export function mountWeek(card: HTMLElement, today: Date) {
     const day = (event.target as Element).closest<HTMLElement>("[data-day-key]");
     if (!day) return;
     selected = day.dataset.dayKey!;
-    render(false);
+    render(grid.contains(document.activeElement));
   });
   grid.addEventListener("keydown", (event) => {
     const all = keys();

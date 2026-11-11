@@ -123,6 +123,10 @@ export function elementFor(node, cache = new WeakMap()) {
     focus() {
       cache.owner.activeElement = element;
     },
+    contains(other) {
+      for (let item = other; item; item = item.parentElement) if (item === element) return true;
+      return false;
+    },
   };
   cache.set(node, element);
   return element;

@@ -41,6 +41,18 @@ function parts(root: HTMLElement) {
     : undefined;
 }
 
+/** Reads a motion token from the root styles, so the slide follows `DESIGN.md` when a token changes. */
+function motionToken(name: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/** Reads a duration token (`220ms` or `0.22s`) in milliseconds. */
+function durationToken(name: string) {
+  const value = motionToken(name);
+  const amount = Number.parseFloat(value);
+  return value.endsWith("ms") ? amount : amount * 1000;
+}
+
 /** Draws the app's month view for `today` and binds month arrows, the title, swipe and arrow keys. */
 export function mountCalendar(root: HTMLElement, today: Date) {
   const element = parts(root);
@@ -67,7 +79,7 @@ export function mountCalendar(root: HTMLElement, today: Date) {
           { opacity: 0, transform: `translateX(${slide * 12}px)` },
           { opacity: 1, transform: "none" },
         ],
-        { duration: 220, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+        { duration: durationToken("--duration-normal"), easing: motionToken("--ease-out") },
       );
     }
     if (focus) element.grid.querySelector<HTMLElement>(`[data-day-key="${selected}"]`)?.focus();
@@ -90,7 +102,7 @@ export function mountCalendar(root: HTMLElement, today: Date) {
     const day = (event.target as Element).closest<HTMLElement>("[data-day-key]");
     if (!day) return;
     selected = day.dataset.dayKey!;
-    render();
+    render({ focus: element.grid.contains(document.activeElement) });
   });
   element.grid.addEventListener("keydown", (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;

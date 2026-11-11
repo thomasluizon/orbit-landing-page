@@ -1,6 +1,23 @@
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
-import { demoLanguages, type Bilingual } from "./clock-format";
+import { bilingualDate, demoLanguages, type Bilingual } from "./clock-format";
+
+/** The long weekday and date the app reads out for a day. */
+export const weekdayDate: Intl.DateTimeFormatOptions = {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+};
+
+/** Builds the app's `aria-label` for a day: the long weekday and date. */
+export function dayLabel(date: Date) {
+  return bilingualDate(date, weekdayDate);
+}
+
+/** Days from `today` within which the app lets a person log, so the cell shows its raised well. */
+export function isLoggable(offset: number) {
+  return offset >= -7 && offset <= 0;
+}
 
 /** The app's day outcome, resolved from the logged and scheduled habit counts. */
 export type DayOutcome = "full" | "partial" | "none" | "not-scheduled";

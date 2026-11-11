@@ -12,13 +12,6 @@ const addDays = (date, days) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 const key = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-const statusTime = (date, language) =>
-  new Intl.DateTimeFormat(language, { hour: "numeric", minute: "2-digit" })
-    .formatToParts(date)
-    .filter(({ type }) => type !== "dayPeriod")
-    .map(({ value }) => value)
-    .join("")
-    .trim();
 const monday = (date) => addDays(date, -((date.getDay() + 6) % 7));
 
 function translate(document, language) {
@@ -91,32 +84,84 @@ async function mount(now, language) {
   };
 }
 
+// Literal expectations, written by hand from the calendar, so a wrong format option or a wrong
+// day period strip in the production code cannot pass by agreeing with a copy of itself.
 const cases = [
-  ["a Monday after a month boundary", new Date(2026, 2, 2, 9, 41)],
-  ["a Sunday", new Date(2026, 10, 15, 18, 5)],
-  ["a leap day week", new Date(2028, 2, 1, 0, 30)],
-  ["a Sunday after a year boundary", new Date(2027, 0, 3, 12, 0)],
+  {
+    name: "a Monday after a month boundary",
+    now: new Date(2026, 2, 2, 9, 41),
+    expected: {
+      en: { time: "9:41", today: "March 2", lastChart: "Mon, Mar 2", firstChart: "Tue, Feb 24" },
+      "pt-BR": {
+        time: "9:41",
+        today: "2 de março",
+        lastChart: "seg., 2 de mar.",
+        firstChart: "ter., 24 de fev.",
+      },
+    },
+  },
+  {
+    name: "a Sunday",
+    now: new Date(2026, 10, 15, 18, 5),
+    expected: {
+      en: {
+        time: "6:05",
+        today: "November 15",
+        lastChart: "Sun, Nov 15",
+        firstChart: "Mon, Nov 9",
+      },
+      "pt-BR": {
+        time: "18:05",
+        today: "15 de novembro",
+        lastChart: "dom., 15 de nov.",
+        firstChart: "seg., 9 de nov.",
+      },
+    },
+  },
+  {
+    name: "a leap day week",
+    now: new Date(2028, 2, 1, 0, 30),
+    expected: {
+      en: { time: "12:30", today: "March 1", lastChart: "Wed, Mar 1", firstChart: "Thu, Feb 24" },
+      "pt-BR": {
+        time: "0:30",
+        today: "1 de março",
+        lastChart: "qua., 1 de mar.",
+        firstChart: "qui., 24 de fev.",
+      },
+    },
+  },
+  {
+    name: "a Sunday after a year boundary",
+    now: new Date(2027, 0, 3, 12, 0),
+    expected: {
+      en: { time: "12:00", today: "January 3", lastChart: "Sun, Jan 3", firstChart: "Mon, Dec 28" },
+      "pt-BR": {
+        time: "12:00",
+        today: "3 de janeiro",
+        lastChart: "dom., 3 de jan.",
+        firstChart: "seg., 28 de dez.",
+      },
+    },
+  },
 ];
 const buildToday = documentFrom(html).querySelector('[data-clock="today"]');
 
 for (const language of ["en", "pt-BR"]) {
-  for (const [name, now] of cases) {
+  for (const { name, now, expected: literals } of cases) {
+    const literal = literals[language];
     test(`${language}, ${name}: every demo date and the phone clock follow the stubbed now`, async () => {
       const h = await mount(now, language);
-      assert.equal(
-        h.document.querySelector('[data-clock="time"]').textContent,
-        statusTime(now, language),
-      );
-      assert.equal(
-        h.document.querySelector('[data-clock="today"]').textContent,
-        format(now, language, { day: "numeric", month: "long" }),
-      );
+      assert.equal(h.document.querySelector('[data-clock="time"]').textContent, literal.time);
+      assert.equal(h.document.querySelector('[data-clock="today"]').textContent, literal.today);
       const chart = h.document.querySelectorAll('[data-clock="chart"]');
       assert.equal(chart.length, 9, "seven readouts and the two axis dates");
       for (const element of chart) {
         const offset = Number(element.dataset.clockOffset);
         assert.ok(offset >= -6 && offset <= 0);
         assert.equal(element.textContent, chartDate(addDays(now, offset), language));
+        if (offset === 0) assert.equal(element.textContent, literal.lastChart);
+        if (offset === -6) assert.equal(element.textContent, literal.firstChart);
       }
       const bars = h.document.querySelectorAll("[data-metric-day]");
       assert.equal(bars.length, 7);
@@ -129,8 +174,7 @@ for (const language of ["en", "pt-BR"]) {
         ),
       );
       for (const previous of [buildToday.dataset.copyEn, buildToday.dataset.copyPt]) {
-        if (previous === format(now, "en", { day: "numeric", month: "long" })) continue;
-        if (previous === format(now, "pt-BR", { day: "numeric", month: "long" })) continue;
+        if (previous === literals.en.today || previous === literals["pt-BR"].today) continue;
         assert.doesNotMatch(h.document.textContent, new RegExp(`\\b${previous}\\b`));
       }
     });
@@ -181,6 +225,16 @@ for (const language of ["en", "pt-BR"]) {
         h.weekReadout().map((text) => text.startsWith(`${weekday}: `)),
         [true],
       );
+      assert.ok(h.document.activeElement === null, "a pointer click on a day adds no focus");
+      const pressed = () => h.week().find((day) => day.getAttribute("aria-pressed") === "true");
+      const keyed = h.week().find((day) => day !== pressed());
+      keyed.focus();
+      keyed.dispatch("click");
+      assert.equal(pressed().dataset.dayKey, keyed.dataset.dayKey);
+      assert.ok(
+        h.document.activeElement === pressed(),
+        "Enter or Space on a day keeps focus on the newly drawn selected day",
+      );
     });
 
     test(`${language}, ${name}: the calendar opens on the current month with today selected`, async () => {
@@ -206,9 +260,7 @@ for (const language of ["en", "pt-BR"]) {
       assert.equal(h.selected().getAttribute("tabindex"), "0");
       assert.equal(
         h.part("day-title").textContent,
-        capitalize(
-          `${language === "en" ? "Today" : "Hoje"}, ${format(now, language, { day: "numeric", month: "long" })}`,
-        ),
+        capitalize(`${language === "en" ? "Today" : "Hoje"}, ${literal.today}`),
       );
       const cells = h
         .part("grid")
@@ -222,6 +274,10 @@ for (const language of ["en", "pt-BR"]) {
         cells.findIndex((cell) => cell.hasAttribute("data-day-key")),
         lead,
       );
+      const pointed = h.days().find((day) => day !== h.selected());
+      pointed.dispatch("click");
+      assert.equal(h.selected().dataset.dayKey, pointed.dataset.dayKey);
+      assert.ok(h.document.activeElement === null, "a pointer click on a day adds no focus");
     });
 
     test(`${language}, ${name}: arrows, swipe, keys and the title move through months and days`, async () => {
@@ -282,6 +338,10 @@ for (const language of ["en", "pt-BR"]) {
       const firstDay = h.days()[0];
       firstDay.dispatch("click");
       assert.equal(h.selected().dataset.dayKey, firstDay.dataset.dayKey);
+      assert.ok(
+        h.document.activeElement === h.selected(),
+        "Enter or Space on a focused day keeps focus on the newly drawn selected day",
+      );
       assert.match(
         h.selected().getAttribute("aria-label"),
         language === "en" ? /selected/ : /selecionado/,

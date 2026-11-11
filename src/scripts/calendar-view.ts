@@ -2,7 +2,15 @@ import { demoDay, demoEvents } from "../config/product-examples";
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
 import { addDays, bilingualDate, demoLanguages, formatDate, type Bilingual } from "./clock-format";
-import { bilingualCopy, copyElement, dayCellHtml, escapeHtml } from "./day-cell";
+import {
+  bilingualCopy,
+  copyElement,
+  dayCellHtml,
+  dayLabel,
+  escapeHtml,
+  isLoggable,
+  weekdayDate,
+} from "./day-cell";
 import {
   capitalize,
   dayKey,
@@ -12,22 +20,10 @@ import {
   weekdayLabels,
 } from "./demo-dates";
 
-const weekdayDate: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" };
-
 function bilingual(build: (language: Language) => string): Bilingual {
   return Object.fromEntries(
     demoLanguages.map((language) => [language, build(language)]),
   ) as Bilingual;
-}
-
-/** Builds the app's `aria-label` for a day: the long weekday and date. */
-export function dayLabel(date: Date) {
-  return bilingualDate(date, weekdayDate);
-}
-
-/** Days from `today` within which the app lets a person log, so the cell shows its raised well. */
-export function isLoggable(offset: number) {
-  return offset >= -7 && offset <= 0;
 }
 
 function monthGridHtml(
