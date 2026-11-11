@@ -1,5 +1,5 @@
 import type { Language } from "../i18n/translations";
-import { addDays, clockText, formatDate, type Bilingual } from "./clock-format";
+import { addDays, bilingual, clockText, formatDate, type Bilingual } from "./clock-format";
 
 /** Uppercases the first character only, as the app does for weekday and month titles. */
 export function capitalize(value: string) {
@@ -46,8 +46,5 @@ export function weekdayLabels(language: Language) {
 /** Fills a `{date}` label template with the chart date of the day `offset` days from `now`. */
 export function clockLabel(templates: Bilingual, now: Date, offset: number): Bilingual {
   const date = clockText("chart", now, offset);
-  return {
-    en: templates.en.replace("{date}", date.en),
-    "pt-BR": templates["pt-BR"].replace("{date}", date["pt-BR"]),
-  };
+  return bilingual((language) => templates[language].replace("{date}", date[language]));
 }

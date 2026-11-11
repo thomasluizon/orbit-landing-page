@@ -1,10 +1,12 @@
 import type { Language } from "../i18n/translations";
 
-/** Both landing languages, in the order every bilingual value uses. */
-export const demoLanguages = ["en", "pt-BR"] as const satisfies readonly Language[];
-
 /** One value per landing language. */
 export type Bilingual = Record<Language, string>;
+
+/** Builds one value per landing language. */
+export function bilingual(build: (language: Language) => string): Bilingual {
+  return { en: build("en"), "pt-BR": build("pt-BR") };
+}
 
 /** The demo values that follow the visitor's clock. */
 export type ClockKind = "chart" | "today" | "time";
@@ -28,7 +30,7 @@ export function formatDate(date: Date, language: Language, options: Intl.DateTim
 
 /** Formats a local date in both landing languages. */
 export function bilingualDate(date: Date, options: Intl.DateTimeFormatOptions): Bilingual {
-  return { en: formatDate(date, "en", options), "pt-BR": formatDate(date, "pt-BR", options) };
+  return bilingual((language) => formatDate(date, language, options));
 }
 
 /** Returns the local midnight date `days` after `date`. */
@@ -47,7 +49,7 @@ function statusTime(date: Date, language: Language) {
 
 /** Formats one demo clock value in both languages for the day `offset` days from `now`. */
 export function clockText(kind: ClockKind, now: Date, offset = 0): Bilingual {
-  if (kind === "time") return { en: statusTime(now, "en"), "pt-BR": statusTime(now, "pt-BR") };
+  if (kind === "time") return bilingual((language) => statusTime(now, language));
   const date = addDays(now, offset);
   return kind === "today"
     ? bilingualDate(date, { day: "numeric", month: "long" })

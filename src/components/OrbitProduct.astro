@@ -68,13 +68,7 @@ const monthLabel = (name: "calendar.previousMonth" | "calendar.nextMonth") => ({
           data-copy-label-pt={calendar.labels.group["pt-BR"]}
           set:html={calendar.grid}
         />
-        <section
-          class="calendar-day-card"
-          data-calendar-panel
-          aria-label={calendar.dayTitle.en}
-          data-copy-label-en={calendar.dayTitle.en}
-          data-copy-label-pt={calendar.dayTitle["pt-BR"]}
-        >
+        <section class="calendar-day-card" data-calendar-panel>
           <h3
             data-calendar-day-title
             aria-live="polite"

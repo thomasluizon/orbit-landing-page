@@ -1,70 +1,48 @@
 import { demoDay } from "../config/product-examples";
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
-import { addDays, demoLanguages, formatDate, pageLanguage, type Bilingual } from "./clock-format";
-import {
-  copyElement,
-  dayCellHtml,
-  dayLabel,
-  dayOutcome,
-  isLoggable,
-  readDemoCopy,
-} from "./day-cell";
-import { capitalize, dayKey, startOfWeek, weekdayLabels } from "./demo-dates";
+import { addDays, bilingual, formatDate, pageLanguage, type Bilingual } from "./clock-format";
+import { copyElement, dayCellHtml, dayOutcome, readDemoCopy } from "./day-cell";
+import { capitalize, dayKey, dayOffset, startOfWeek, weekdayLabels } from "./demo-dates";
 
 function weekReadout(offset: number, date: Date, copy: DemoCopy): Bilingual {
   const marks = demoDay(offset);
   const outcome =
     offset > 0 ? "future" : dayOutcome({ done: marks?.done, scheduled: marks?.total });
   const template = outcome === "not-scheduled" ? "none" : outcome;
-  return Object.fromEntries(
-    demoLanguages.map((language) => {
-      const day =
-        offset === 0
-          ? copy[language]["week.today"]
-          : capitalize(formatDate(date, language, { weekday: "long" }));
-      const text = copy[language][`week.${template}`]
-        .replace("{day}", day)
-        .replace("{done}", String(marks?.done ?? 0))
-        .replace("{total}", String(marks?.total ?? 0));
-      return [language, text];
-    }),
-  ) as Bilingual;
+  return bilingual((language) => {
+    const day =
+      offset === 0
+        ? copy[language]["week.today"]
+        : capitalize(formatDate(date, language, { weekday: "long" }));
+    return copy[language][`week.${template}`]
+      .replace("{day}", day)
+      .replace("{done}", String(marks?.done ?? 0))
+      .replace("{total}", String(marks?.total ?? 0));
+  });
 }
 
 /** Renders the seven days of the current week, Monday first, and one readout per day. */
 export function weekHtml(today: Date, selectedKey: string, language: Language, copy: DemoCopy) {
   const start = startOfWeek(today);
-  const offsetOfStart = -((today.getDay() + 6) % 7);
   const letters = { en: weekdayLabels("en"), "pt-BR": weekdayLabels("pt-BR") };
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
-  const cells = days.map((date, index) => {
-    const offset = offsetOfStart + index;
-    const marks = demoDay(offset);
-    const key = dayKey(date);
-    return dayCellHtml(
+  const cells = days.map((date, index) =>
+    dayCellHtml(
       {
-        key,
-        day: date.getDate(),
-        label: dayLabel(date),
-        weekday: { en: letters.en[index], "pt-BR": letters["pt-BR"][index] },
-        done: marks?.done,
-        scheduled: marks?.total ?? 0,
-        today: offset === 0,
-        selected: key === selectedKey,
-        future: offset > 0,
-        raised: isLoggable(offset),
-        readOnly: !isLoggable(offset),
-        tabIndex: key === selectedKey ? 0 : -1,
+        date,
+        today,
+        selectedKey,
+        weekday: bilingual((name) => letters[name][index]),
       },
       language,
       copy,
-    );
-  });
-  const readouts = days.map((date, index) =>
+    ),
+  );
+  const readouts = days.map((date) =>
     copyElement(
       "span",
-      weekReadout(offsetOfStart + index, date, copy),
+      weekReadout(dayOffset(today, date), date, copy),
       language,
       `data-week-readout="${dayKey(date)}"${dayKey(date) === selectedKey ? "" : " hidden"}`,
     ),

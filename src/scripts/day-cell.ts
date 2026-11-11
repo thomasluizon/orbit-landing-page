@@ -1,6 +1,8 @@
+import { demoDay } from "../config/product-examples";
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
-import { bilingualDate, demoLanguages, type Bilingual } from "./clock-format";
+import { bilingual, bilingualDate, type Bilingual } from "./clock-format";
+import { dayKey, dayOffset } from "./demo-dates";
 
 /** The long weekday and date the app reads out for a day. */
 export const weekdayDate: Intl.DateTimeFormatOptions = {
@@ -9,34 +11,49 @@ export const weekdayDate: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-/** Builds the app's `aria-label` for a day: the long weekday and date. */
-export function dayLabel(date: Date) {
-  return bilingualDate(date, weekdayDate);
-}
-
-/** Days from `today` within which the app lets a person log, so the cell shows its raised well. */
-export function isLoggable(offset: number) {
-  return offset >= -7 && offset <= 0;
-}
-
 /** The app's day outcome, resolved from the logged and scheduled habit counts. */
 export type DayOutcome = "full" | "partial" | "none" | "not-scheduled";
 
-/** One day as the app's `DayCell` draws it. */
-export interface DayCellModel {
+/** What a caller knows about one day: its date, today, the selected key and optional extras. */
+export interface DayCellInput {
+  date: Date;
+  today: Date;
+  selectedKey: string;
+  weekday?: Bilingual;
+  data?: Record<string, string | number>;
+}
+
+interface DayCellModel {
   key: string;
   day: number;
   label: Bilingual;
   weekday?: Bilingual;
   done?: number;
-  scheduled?: number;
+  scheduled: number;
   today: boolean;
   selected: boolean;
   future: boolean;
-  raised: boolean;
-  readOnly: boolean;
-  tabIndex: 0 | -1;
+  loggable: boolean;
   data?: Record<string, string | number>;
+}
+
+function dayCellModel({ date, today, selectedKey, weekday, data }: DayCellInput): DayCellModel {
+  const key = dayKey(date);
+  const offset = dayOffset(today, date);
+  const marks = demoDay(offset);
+  return {
+    key,
+    day: date.getDate(),
+    label: bilingualDate(date, weekdayDate),
+    weekday,
+    done: marks?.done,
+    scheduled: marks?.total ?? 0,
+    today: offset === 0,
+    selected: key === selectedKey,
+    future: offset > 0,
+    loggable: offset >= -7 && offset <= 0,
+    data,
+  };
 }
 
 type DayWord =
@@ -57,7 +74,7 @@ export function readDemoCopy(element: HTMLElement): DemoCopy {
 
 /** Picks one demo word in both languages. */
 export function bilingualCopy(copy: DemoCopy, key: keyof DemoCopy["en"]): Bilingual {
-  return { en: copy.en[key], "pt-BR": copy["pt-BR"][key] };
+  return bilingual((language) => copy[language][key]);
 }
 
 /** Escapes text for an HTML attribute or text node. */
@@ -79,10 +96,7 @@ export function copyElement(tag: string, value: Bilingual, language: Language, a
 }
 
 /** Resolves the app's outcome for a day: nothing scheduled, nothing logged, part done or all logged. */
-export function dayOutcome({
-  done,
-  scheduled,
-}: Pick<DayCellModel, "done" | "scheduled">): DayOutcome {
+export function dayOutcome({ done, scheduled }: { done?: number; scheduled?: number }): DayOutcome {
   if (!scheduled) return "not-scheduled";
   if (!done || done <= 0) return "none";
   return done >= scheduled ? "full" : "partial";
@@ -100,7 +114,7 @@ function dayCellName(cell: DayCellModel, language: Language, copy: DemoCopy) {
     parts[0] += ` ${cell.done} ${word("of")} ${cell.scheduled}`;
   }
   if (cell.today) parts.push(word("today"));
-  if (cell.readOnly) parts.push(word("readOnly"));
+  if (!cell.loggable) parts.push(word("readOnly"));
   return parts.join(", ");
 }
 
@@ -117,17 +131,16 @@ function disc(cell: DayCellModel, outcome: DayOutcome) {
 }
 
 /** Renders one interactive day cell: weekday, date number, the app's day mark, today and selection. */
-export function dayCellHtml(cell: DayCellModel, language: Language, copy: DemoCopy) {
+export function dayCellHtml(input: DayCellInput, language: Language, copy: DemoCopy) {
+  const cell = dayCellModel(input);
   const outcome = dayOutcome(cell);
-  const names = Object.fromEntries(
-    demoLanguages.map((name) => [name, dayCellName(cell, name, copy)]),
-  ) as Bilingual;
+  const names = bilingual((name) => dayCellName(cell, name, copy));
   const data = Object.entries(cell.data ?? {})
     .map(([name, value]) => ` data-${name}="${escapeHtml(String(value))}"`)
     .join("");
   const circle = [
     "day-cell-circle",
-    cell.selected ? "is-selected" : cell.raised ? "is-raised" : "",
+    cell.selected ? "is-selected" : cell.loggable ? "is-raised" : "",
     cell.today || cell.selected ? "is-marked" : "",
   ]
     .filter(Boolean)
@@ -135,7 +148,7 @@ export function dayCellHtml(cell: DayCellModel, language: Language, copy: DemoCo
   const weekday = cell.weekday
     ? copyElement("span", cell.weekday, language, 'class="day-cell-weekday"')
     : "";
-  return `<button type="button" class="day-cell" data-day-key="${cell.key}" data-outcome="${cell.future ? "future" : outcome}"${cell.today ? ' aria-current="date"' : ""} aria-pressed="${cell.selected}" tabindex="${cell.tabIndex}" aria-label="${escapeHtml(names[language])}" ${copyAttributes(names, "data-copy-label")}${data}><span class="day-cell-body" aria-hidden="true">${weekday}<span class="${circle}">${disc(cell, outcome)}</span></span></button>`;
+  return `<button type="button" class="day-cell" data-day-key="${cell.key}" data-outcome="${cell.future ? "future" : outcome}"${cell.today ? ' aria-current="date"' : ""} aria-pressed="${cell.selected}" tabindex="${cell.selected ? 0 : -1}" aria-label="${escapeHtml(names[language])}" ${copyAttributes(names, "data-copy-label")}${data}><span class="day-cell-body" aria-hidden="true">${weekday}<span class="${circle}">${disc(cell, outcome)}</span></span></button>`;
 }
 
 /** Writes a bilingual `aria-label` and its language toggle attributes. */

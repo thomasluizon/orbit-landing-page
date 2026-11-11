@@ -1,30 +1,9 @@
 import { demoDay, demoEvents } from "../config/product-examples";
 import type { DemoCopy } from "../i18n/demo-copy";
 import type { Language } from "../i18n/translations";
-import { addDays, bilingualDate, demoLanguages, formatDate, type Bilingual } from "./clock-format";
-import {
-  bilingualCopy,
-  copyElement,
-  dayCellHtml,
-  dayLabel,
-  escapeHtml,
-  isLoggable,
-  weekdayDate,
-} from "./day-cell";
-import {
-  capitalize,
-  dayKey,
-  dayOffset,
-  parseDayKey,
-  startOfWeek,
-  weekdayLabels,
-} from "./demo-dates";
-
-function bilingual(build: (language: Language) => string): Bilingual {
-  return Object.fromEntries(
-    demoLanguages.map((language) => [language, build(language)]),
-  ) as Bilingual;
-}
+import { addDays, bilingual, bilingualDate, formatDate } from "./clock-format";
+import { bilingualCopy, copyElement, dayCellHtml, escapeHtml, weekdayDate } from "./day-cell";
+import { capitalize, dayOffset, parseDayKey, startOfWeek, weekdayLabels } from "./demo-dates";
 
 function monthGridHtml(
   month: Date,
@@ -54,23 +33,12 @@ function monthGridHtml(
       cells.push(`<span class="day-slot" aria-hidden="true" data-calendar-week="${week}"></span>`);
       continue;
     }
-    const key = dayKey(date);
-    const offset = dayOffset(today, date);
-    const marks = demoDay(offset);
     cells.push(
       dayCellHtml(
         {
-          key,
-          day: date.getDate(),
-          label: dayLabel(date),
-          done: marks?.done,
-          scheduled: marks?.total ?? 0,
-          today: offset === 0,
-          selected: key === selectedKey,
-          future: offset > 0,
-          raised: isLoggable(offset),
-          readOnly: !isLoggable(offset),
-          tabIndex: key === selectedKey ? 0 : -1,
+          date,
+          today,
+          selectedKey,
           data: { "calendar-day": date.getDate(), "calendar-week": week },
         },
         language,

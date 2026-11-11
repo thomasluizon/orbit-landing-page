@@ -31,7 +31,6 @@ function parts(root: HTMLElement) {
     next: get("next"),
     title: get("title"),
     grid: get("grid"),
-    panel: get("panel"),
     dayTitle: get("day-title"),
     summary: get("summary"),
     events: get("events"),
@@ -41,12 +40,10 @@ function parts(root: HTMLElement) {
     : undefined;
 }
 
-/** Reads a motion token from the root styles, so the slide follows `DESIGN.md` when a token changes. */
 function motionToken(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-/** Reads a duration token (`220ms` or `0.22s`) in milliseconds. */
 function durationToken(name: string) {
   const value = motionToken(name);
   const amount = Number.parseFloat(value);
@@ -70,7 +67,6 @@ export function mountCalendar(root: HTMLElement, today: Date) {
     setLabel(element.title, view.labels.title, language);
     element.title.setAttribute("aria-disabled", String(view.isToday));
     setCopy(element.dayTitle, view.dayTitle, language);
-    setLabel(element.panel, view.dayTitle, language);
     setCopy(element.summary, view.summary, language);
     element.events.innerHTML = view.events;
     if (slide && !reduced.matches && element.grid.animate) {
