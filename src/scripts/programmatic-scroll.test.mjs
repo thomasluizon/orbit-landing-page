@@ -5,7 +5,7 @@ import vm from "node:vm";
 import ts from "typescript";
 
 const SECTION_TOP = 5000;
-const FRAME_PIXELS = 400;
+const FRAME_PIXELS = 100;
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 class FakeElement {
@@ -72,6 +72,9 @@ function page({ reduced = false, hash = "" } = {}) {
     },
     innerWidth: 1280,
     innerHeight: 800,
+    get scrollY() {
+      return state.y;
+    },
   };
   const document = {
     readyState: "complete",
@@ -90,23 +93,35 @@ function page({ reduced = false, hash = "" } = {}) {
     querySelectorAll: () => [],
     addEventListener: (name, callback) => documentListeners.set(name, callback),
   };
+  const animateCompositor = () => {
+    if (!animation) return false;
+    const direction = Math.sign(animation.top - state.y);
+    const next = state.y + direction * FRAME_PIXELS;
+    state.y = direction > 0 ? Math.min(next, animation.top) : Math.max(next, animation.top);
+    if (state.y === animation.top) animation = undefined;
+    return true;
+  };
   const advanceFrame = () => {
-    if (animation) {
-      const direction = Math.sign(animation.top - state.y);
-      const next = state.y + direction * FRAME_PIXELS;
-      state.y = direction > 0 ? Math.min(next, animation.top) : Math.max(next, animation.top);
-      if (state.y === animation.top) animation = undefined;
-      emit("scroll");
-    }
+    if (animateCompositor()) emit("scroll");
     frames.splice(0).forEach((callback) => callback());
   };
   const advanceTime = (ms) => {
-    clock += ms;
-    for (const [id, timer] of [...timers]) {
-      if (timer.due > clock) continue;
+    const end = clock + ms;
+    for (;;) {
+      const [id, timer] = [...timers].reduce(
+        (first, entry) => (!first || entry[1].due < first[1].due ? entry : first),
+        undefined,
+      ) ?? [undefined, { due: Infinity }];
+      if (timer.due > end) break;
       timers.delete(id);
+      clock = Math.max(clock, timer.due);
       timer.callback();
     }
+    clock = end;
+  };
+  const blockMainThread = (ms) => {
+    for (let elapsed = 0; elapsed < ms; elapsed += 16) animateCompositor();
+    advanceTime(ms);
   };
   const queueRefresh = () => window.requestAnimationFrame(refreshAll);
   const gsap = {
@@ -126,6 +141,8 @@ function page({ reduced = false, hash = "" } = {}) {
   };
   const refreshAll = () => {
     const recorded = state.y;
+    window.scrollTo(0, 0);
+    window.scrollTo(0, 0);
     window.scrollTo(0, 0);
     window.scrollTo(0, recorded);
     scrollTrigger.refreshListeners.forEach((callback) => callback());
@@ -193,12 +210,13 @@ function page({ reduced = false, hash = "" } = {}) {
     topButton,
     advanceFrame,
     advanceTime,
+    blockMainThread,
     refresh: refreshAll,
     scrollTrigger,
   };
 }
 
-async function settle(p, frames = 60) {
+async function settle(p, frames = 120) {
   for (let i = 0; i < frames; i++) {
     p.advanceFrame();
     await flush();
@@ -239,6 +257,62 @@ test("the back to top button reaches the top when the motion mounts during the s
   assert.equal(p.state.y, 0);
 });
 
+async function pressAndMount(p) {
+  p.load("./scroll");
+  p.load("./waitlist-section");
+  p.advanceFrame();
+  p.advanceFrame();
+  p.click();
+  await settle(p, 3);
+  assert.equal(p.scrollTrigger.refreshListeners.length, 1, "the motion mounted");
+  assert.ok(p.state.y > 0 && p.state.y < SECTION_TOP, `in flight at ${p.state.y}`);
+}
+
+test("a press reaches the waitlist when a layout change refreshes again after a long task", async () => {
+  const p = page();
+  await pressAndMount(p);
+  p.blockMainThread(200);
+  p.emit("orbit:layout-changed");
+  await settle(p);
+  assert.equal(p.state.y, SECTION_TOP);
+});
+
+test("a press reaches the waitlist through any number of refreshes during one smooth scroll", async () => {
+  const p = page();
+  p.load("./scroll");
+  p.load("./waitlist-section");
+  p.advanceFrame();
+  p.advanceFrame();
+  p.click();
+  await flush();
+  for (let round = 0; round < 6; round++) {
+    p.advanceFrame();
+    p.advanceTime(16);
+    if (round % 2) p.blockMainThread(200);
+    p.emit("orbit:layout-changed");
+    p.advanceFrame();
+    await flush();
+  }
+  await settle(p);
+  assert.equal(p.state.y, SECTION_TOP);
+});
+
+test("the back to top button reaches the top when a layout change refreshes again after a long task", async () => {
+  const p = page();
+  p.state.y = 9000;
+  p.load("./scroll");
+  p.advanceFrame();
+  p.advanceFrame();
+  p.load("./back-to-top");
+  p.topButton.press();
+  await settle(p, 3);
+  assert.ok(p.state.y > 0, `in flight at ${p.state.y}`);
+  p.blockMainThread(200);
+  p.emit("orbit:layout-changed");
+  await settle(p);
+  assert.equal(p.state.y, 0);
+});
+
 test("reduced motion scrolls to the waitlist at once", async () => {
   const p = page({ reduced: true });
   p.load("./scroll");
@@ -266,7 +340,7 @@ test("a scroll that settled is not started again by a later refresh", async () =
   assert.equal(p.state.y, 1200);
 });
 
-for (const input of ["wheel", "touchstart", "keydown"]) {
+for (const input of ["wheel", "touchstart", "pointerdown", "keydown"]) {
   test(`a ${input} during the smooth scroll stops a later refresh from restarting it`, async () => {
     const p = page();
     p.load("./scroll");
