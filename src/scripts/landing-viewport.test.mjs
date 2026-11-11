@@ -311,7 +311,13 @@ test("composition fitting follows font, size, locale and interaction changes in 
               },
             };
           if (name === "gsap/ScrollTrigger")
-            return { ScrollTrigger: { refresh: () => refreshes++ } };
+            return {
+              ScrollTrigger: {
+                refresh: () => refreshes++,
+                addEventListener() {},
+                removeEventListener() {},
+              },
+            };
           if (name === "lenis")
             return {
               default: class {
@@ -1053,7 +1059,7 @@ test("pinning and staggered feature motion use verified APIs and expose their st
   assert.doesNotMatch(frame, /background|box-shadow/);
 });
 
-test("back to top appears past the hero and yields to footer links and consent", () => {
+test("back to top appears past the hero and yields to footer links and consent", async () => {
   for (const reduced of [false, true]) {
     let intersection,
       mutation,
@@ -1064,43 +1070,52 @@ test("back to top appears past the hero and yields to footer links and consent",
       footer = {},
       banner = { hidden: true },
       button = { hidden: true, addEventListener: (name, fn) => events.set(name, fn) };
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/back-to-top.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      {
-        exports: {},
-        document: {
-          getElementById: (id) => ({ hero, "back-to-top": button, "consent-banner": banner })[id],
-          querySelector: (selector) =>
-            selector === ".product-footer"
-              ? footer
-              : {
-                  focus() {
-                    focused = true;
-                  },
+    const sandbox = {
+      exports: {},
+      document: {
+        getElementById: (id) => ({ hero, "back-to-top": button, "consent-banner": banner })[id],
+        querySelector: (selector) =>
+          selector === ".product-footer"
+            ? footer
+            : {
+                focus() {
+                  focused = true;
                 },
-        },
-        window: {
-          matchMedia: () => ({ matches: reduced }),
-          scrollTo: (options) => {
-            scrolled = options;
-          },
-        },
-        IntersectionObserver: class {
-          constructor(fn) {
-            intersection = fn;
-          }
-          observe() {}
-        },
-        MutationObserver: class {
-          constructor(fn) {
-            mutation = fn;
-          }
-          observe() {}
-        },
+              },
       },
-    );
+      window: {
+        matchMedia: () => ({ matches: reduced }),
+        scrollTo: (options) => {
+          scrolled = options;
+        },
+        addEventListener() {},
+        setTimeout: () => 0,
+        clearTimeout() {},
+      },
+      IntersectionObserver: class {
+        constructor(fn) {
+          intersection = fn;
+        }
+        observe() {}
+      },
+      MutationObserver: class {
+        constructor(fn) {
+          mutation = fn;
+        }
+        observe() {}
+      },
+    };
+    const transpile = (file) =>
+      ts.transpileModule(readFileSync(file, "utf8"), {
+        compilerOptions: { module: ts.ModuleKind.CommonJS },
+      }).outputText;
+    const scroll = {};
+    vm.runInNewContext(
+      `(function (exports) {${transpile("src/scripts/programmatic-scroll.ts")}})`,
+      sandbox,
+    )(scroll);
+    sandbox.require = () => scroll;
+    vm.runInNewContext(transpile("src/scripts/back-to-top.ts"), sandbox);
     intersection([{ target: hero, isIntersecting: true, boundingClientRect: { bottom: 600 } }]);
     assert.equal(button.hidden, true);
     intersection([{ target: hero, isIntersecting: false, boundingClientRect: { bottom: -1 } }]);
@@ -1116,6 +1131,7 @@ test("back to top appears past the hero and yields to footer links and consent",
     mutation();
     assert.equal(button.hidden, false);
     events.get("click")();
+    await new Promise((resolve) => setImmediate(resolve));
     assert.equal(scrolled.top, 0);
     assert.equal(scrolled.behavior, reduced ? "instant" : "smooth");
     assert.equal(focused, true);

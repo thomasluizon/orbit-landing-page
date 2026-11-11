@@ -369,7 +369,14 @@ for (const [width, height, pinned] of [
             name === "gsap"
               ? { gsap }
               : name === "gsap/ScrollTrigger"
-                ? { ScrollTrigger: { refresh() {}, update() {} } }
+                ? {
+                    ScrollTrigger: {
+                      refresh() {},
+                      update() {},
+                      addEventListener() {},
+                      removeEventListener() {},
+                    },
+                  }
                 : name === "lenis"
                   ? { default: Lenis }
                   : name === "./hero-float"
@@ -471,7 +478,10 @@ test("feature motion waits for intersection and separate tasks, and respects med
                 },
               },
             };
-          if (name === "gsap/ScrollTrigger") return { ScrollTrigger: { refresh() {} } };
+          if (name === "gsap/ScrollTrigger")
+            return {
+              ScrollTrigger: { refresh() {}, addEventListener() {}, removeEventListener() {} },
+            };
           if (name === "lenis")
             return {
               default: class {
@@ -668,7 +678,15 @@ function floatHarness({ reduced = false, startup = false, language = "en", fine 
             fromTo() {},
           },
         };
-      if (name === "gsap/ScrollTrigger") return { ScrollTrigger: { update() {}, refresh() {} } };
+      if (name === "gsap/ScrollTrigger")
+        return {
+          ScrollTrigger: {
+            update() {},
+            refresh() {},
+            addEventListener() {},
+            removeEventListener() {},
+          },
+        };
       if (name === "lenis")
         return {
           default: class {

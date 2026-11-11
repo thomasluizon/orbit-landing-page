@@ -2,6 +2,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { updateHeroCarousel } from "./hero-carousel";
+import { resumeProgrammaticScroll } from "./programmatic-scroll";
 import { afterLoad } from "./task-queue";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -209,6 +210,7 @@ export function mountLandingMotion() {
   window.addEventListener("resize", refresh);
   window.addEventListener("orbit:language-changed", refresh);
   window.addEventListener("orbit:layout-changed", refresh);
+  ScrollTrigger.addEventListener("refresh", resumeProgrammaticScroll);
   return () => {
     active = false;
     if (pendingFrame !== undefined) window.cancelAnimationFrame(pendingFrame);
@@ -220,5 +222,6 @@ export function mountLandingMotion() {
     window.removeEventListener("resize", refresh);
     window.removeEventListener("orbit:language-changed", refresh);
     window.removeEventListener("orbit:layout-changed", refresh);
+    ScrollTrigger.removeEventListener("refresh", resumeProgrammaticScroll);
   };
 }

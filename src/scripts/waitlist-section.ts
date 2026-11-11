@@ -5,10 +5,12 @@ const email = document.getElementById("waitlist-email");
 
 function focusWaitlist() {
   if (window.location.hash !== "#ios") return;
-  section?.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-    block: "start",
-  });
+  if (section) {
+    import("./programmatic-scroll").then(
+      ({ scrollToElement }) => scrollToElement(section),
+      () => section.scrollIntoView(),
+    );
+  }
   email?.focus({ preventScroll: true });
 }
 
