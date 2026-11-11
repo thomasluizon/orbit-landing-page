@@ -16,6 +16,7 @@ const firstViewport = [
 function harness({
   scheduler = false,
   readyState = "loading",
+  failing = [],
   page = readFileSync("src/pages/index.astro", "utf8"),
 } = {}) {
   const bindings = [];
@@ -24,10 +25,22 @@ function harness({
   const listeners = new Map();
   const observers = [];
   let task = 0;
+  const pendingViews = ["[data-calendar]", "[data-week-days]"].map((view) => ({
+    view,
+    attributes: new Set(["data-clock-pending"]),
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    },
+  }));
   const targets = [".hero-device", '[data-section="features"]', "[data-week-card]"].map(
     (selector) => ({
       selector,
+      attributes: new Set(["data-clock-pending"]),
       matches: (value) => value === selector,
+      removeAttribute(name) {
+        this.attributes.delete(name);
+      },
+      querySelectorAll: (value) => (value === "[data-clock-pending]" ? pendingViews : []),
     }),
   );
   const document = {
@@ -90,6 +103,7 @@ function harness({
       return exports;
     }
     bindings.push({ name: path.split("/").at(-1), task });
+    if (failing.includes(path.split("/").at(-1))) throw new Error(`chunk ${path} failed to load`);
     const exports = {
       mountWeek: (target) => mounts.push({ name: "week", target }),
     };
@@ -108,6 +122,7 @@ function harness({
     bindings,
     mounts,
     targets,
+    pendingViews,
     continuations,
     load: () => {
       document.readyState = "complete";
@@ -241,6 +256,17 @@ test("the calendar and the chart labels load only when the features come near", 
   await h.drain();
   for (const name of ["demo-views", "product-metrics"]) assert.ok(names().includes(name), name);
   assert.deepEqual(h.mounts, [], "the week card mounts only when it comes into view");
+});
+
+test("a view whose chunk fails to load shows its build-rendered content instead of staying hidden", async () => {
+  const h = harness({ failing: ["week", "demo-views"] });
+  h.intersect(2);
+  h.intersect(1);
+  await h.drain();
+  assert.deepEqual(h.mounts, []);
+  assert.ok(!h.targets[2].attributes.has("data-clock-pending"), "the week card");
+  for (const { view, attributes } of h.pendingViews)
+    assert.ok(!attributes.has("data-clock-pending"), view);
 });
 
 test("the calendar loads as soon as the features come near, without waiting for load or the chart controls", async () => {
