@@ -355,12 +355,13 @@ test("the trust strip renders the approved checkable facts in both locales", () 
   }
 });
 
-test("How it works lands on the feature grid at the retained 96px offset", async () => {
+test("How it works lands on the feature grid below the header", async () => {
   const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
   assert.ok(descendants(header).some((node) => attributes(node).href === "#features"));
   assert.equal(attributes(sections[2]).id, "features");
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /scroll-margin-block-start:\s*96px/);
+  assert.match(css, /scroll-margin-block-start:\s*var\(--header-offset\)/);
+  assert.doesNotMatch(css, /scroll-margin-block-start:\s*\d+px/);
 });
 
 test("the recommended plan keeps its canonical inset ring and selected tint", () => {

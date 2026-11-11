@@ -228,3 +228,119 @@ test("the FAQ changes state without motion when the visitor reduces motion", () 
   assert.equal(two.open, true);
   assert.deepEqual(calls, []);
 });
+
+function headerScrollHarness({ hash = "", reduced = false } = {}) {
+  class FakeElement {
+    constructor(attributes = {}) {
+      this.attributes = new Map(Object.entries(attributes));
+      this.focusOptions = undefined;
+    }
+    closest(selector) {
+      return selector === '.header-links a[href^="#"]' && this.attributes.has("href") ? this : null;
+    }
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+    hasAttribute(name) {
+      return this.attributes.has(name);
+    }
+    setAttribute(name, value) {
+      this.attributes.set(name, value);
+    }
+    focus(options) {
+      this.focusOptions = options;
+    }
+    scrollIntoView() {}
+  }
+  const sections = { features: new FakeElement(), pricing: new FakeElement() };
+  const location = { hash };
+  const scrolled = [];
+  let click;
+  const sandbox = {
+    exports: {},
+    Element: FakeElement,
+    document: {
+      addEventListener: (_, listener) => (click = listener),
+      getElementById: (id) => sections[id] ?? null,
+    },
+    window: {
+      location,
+      history: { pushState: (_state, _title, value) => (location.hash = value) },
+    },
+    require: () => ({ scrollToElement: (target) => scrolled.push({ target, reduced }) }),
+  };
+  vm.runInNewContext(
+    ts.transpileModule(readFileSync("src/scripts/header-scroll.ts", "utf8"), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    sandbox,
+  );
+  const press = (href, extra = {}) => {
+    const event = {
+      button: 0,
+      defaultPrevented: false,
+      target: new FakeElement({ href }),
+      preventDefault() {
+        this.defaultPrevented = true;
+      },
+      ...extra,
+    };
+    click(event);
+    return event;
+  };
+  return { sections, location, scrolled, press };
+}
+const settled = () => new Promise((resolve) => setImmediate(resolve));
+
+test("a header link scrolls to its section through the programmatic scroll", async () => {
+  const { sections, location, scrolled, press } = headerScrollHarness();
+  const event = press("#pricing");
+  await settled();
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(location.hash, "#pricing");
+  assert.equal(scrolled.length, 1);
+  assert.equal(scrolled[0].target, sections.pricing);
+  assert.equal(sections.pricing.getAttribute("tabindex"), "-1");
+  assert.equal(sections.pricing.focusOptions.preventScroll, true);
+});
+
+test("a header link leaves a press the downloads launcher owns, a modified press and a missing target alone", async () => {
+  const { scrolled, location, press } = headerScrollHarness();
+  assert.equal(press("#features", { defaultPrevented: true }).defaultPrevented, true);
+  for (const extra of [{ button: 1 }, { metaKey: true }, { ctrlKey: true }, { shiftKey: true }]) {
+    assert.equal(press("#features", extra).defaultPrevented, false);
+  }
+  assert.equal(press("#downloads").defaultPrevented, false);
+  await settled();
+  assert.deepEqual(scrolled, []);
+  assert.equal(location.hash, "");
+});
+
+test("a section lands below the header, which sets the offset from its own size and inset", () => {
+  const valueAt = (selector, property, compact) =>
+    rulesFor(selector)
+      .filter((rule) => rule.conditions.some((text) => text.includes("40rem")) === compact)
+      .map((rule) => declaration(rule.declarations, property))
+      .filter(Boolean)
+      .at(-1);
+  for (const [compact, inset, height] of [
+    [false, "24px", "72px"],
+    [true, "16px", "64px"],
+  ]) {
+    assert.equal(valueAt(".header-content", "min-block-size", compact), height);
+    assert.match(
+      valueAt(".site-header", "inset-block-start", compact),
+      new RegExp(`^max\\(${inset},`),
+    );
+    assert.equal(
+      valueAt(".landing-shell", "--header-offset", compact),
+      `calc(max(${inset}, env(safe-area-inset-top)) + ${height} + 16px)`,
+    );
+  }
+  const anchored = rules.find((rule) => rule.selector === ":where(section[id], main[id], nav[id])");
+  assert.equal(
+    declaration(anchored.declarations, "scroll-margin-block-start"),
+    "var(--header-offset)",
+  );
+  assert.equal(lastValue(".downloads-toggle", "scroll-margin-block-start"), "var(--header-offset)");
+});

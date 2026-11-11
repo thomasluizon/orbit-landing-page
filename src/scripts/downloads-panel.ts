@@ -29,16 +29,21 @@ function close(returnFocus: boolean) {
   if (returnFocus) toggle?.focus();
 }
 
-function openFromLink() {
+function openFromLink(smooth: boolean) {
   setOpen(true);
-  toggle?.scrollIntoView({ block: "start" });
+  if (toggle && smooth) {
+    import("./programmatic-scroll").then(
+      ({ scrollToElement }) => scrollToElement(toggle),
+      () => toggle.scrollIntoView({ block: "start" }),
+    );
+  } else toggle?.scrollIntoView({ block: "start" });
   toggle?.focus({ preventScroll: true });
 }
 
 /** Acts on one press on the toggle or a downloads link: the launcher routes every such press here. */
 export function activate(opener: HTMLElement) {
   if (opener === toggle) setOpen(!isOpen());
-  else openFromLink();
+  else openFromLink(true);
 }
 
 function targetIn(event: Event, selector: string) {
@@ -61,5 +66,5 @@ if (toggle && panel) {
     const next = event.relatedTarget;
     if (next instanceof Node && !panel.contains(next) && next !== toggle) close(false);
   });
-  if (window.location.hash === "#downloads") openFromLink();
+  if (window.location.hash === "#downloads") openFromLink(false);
 }

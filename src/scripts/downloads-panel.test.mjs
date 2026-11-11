@@ -51,6 +51,7 @@ class FakeElement {
   }
 }
 
+const settled = () => new Promise((resolve) => setImmediate(resolve));
 const entryIds = ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"];
 
 function entryList(panel) {
@@ -89,9 +90,11 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
     addEventListener: (type, listener) => listeners.set(type, listener),
   };
   const exports = {};
+  const smooth = [];
   vm.runInNewContext(source, {
     document,
     exports,
+    require: () => ({ scrollToElement: (element) => smooth.push(element) }),
     Element: FakeElement,
     Node: FakeElement,
     window: {
@@ -109,6 +112,7 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
   };
   return {
     document,
+    smooth,
     activate: exports.activate,
     toggle,
     panel,
@@ -158,23 +162,26 @@ test("Escape and other keys leave a closed panel and the focus alone", () => {
   assert.equal(view.toggle.focused, 0);
 });
 
-test("the header link opens the panel, scrolls to the button and focuses it", () => {
+test("the header link opens the panel, scrolls to the button and focuses it", async () => {
   const view = page();
   view.activate(view.opener);
+  await settled();
   assert.equal(view.isOpen(), true);
   assert.equal(view.expanded(), "true");
-  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
+  assert.deepEqual(view.smooth, [view.toggle]);
   assert.equal(view.toggle.focused, 1);
   view.press("Escape");
   assert.equal(view.isOpen(), false);
   assert.equal(view.toggle.focused, 2);
 });
 
-test("the header link jumps without a smooth scroll, which the motion refresh would stop short", () => {
+test("the header link scrolls through the programmatic scroll, which survives the motion refresh", async () => {
   for (const reducedMotion of [false, true]) {
     const view = page({ reducedMotion });
     view.activate(view.opener);
-    assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
+    await settled();
+    assert.deepEqual(view.smooth, [view.toggle]);
+    assert.deepEqual(view.toggle.scrolled, []);
   }
 });
 
@@ -218,15 +225,16 @@ test("choosing an entry with the keyboard returns focus to the button before the
   assert.equal(view.toggle.focused, 1);
 });
 
-test("the press that loaded the module acts once: the button toggles and the header link opens", () => {
+test("the press that loaded the module acts once: the button toggles and the header link opens", async () => {
   const view = page();
   view.activate(view.toggle);
   assert.equal(view.isOpen(), true);
   view.activate(view.toggle);
   assert.equal(view.isOpen(), false);
   view.activate(view.opener);
+  await settled();
   assert.equal(view.isOpen(), true);
-  assert.equal(view.toggle.scrolled.length, 1);
+  assert.equal(view.smooth.length, 1);
   assert.equal(view.toggle.focused, 1);
 });
 

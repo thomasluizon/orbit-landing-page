@@ -6,7 +6,15 @@ import vm from "node:vm";
 import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
-const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
+const deferred = [
+  "pricing",
+  "faq",
+  "back-to-top",
+  "scroll",
+  "header-scroll",
+  "waitlist",
+  "waitlist-section",
+];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const firstViewport = [
   { name: "demo-clock", task: 0 },

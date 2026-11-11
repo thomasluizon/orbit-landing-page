@@ -5,6 +5,7 @@
   --landing-content: 1072px;
   --landing-narrow: 896px;
   --landing-gutter: 24px;
+  --header-offset: calc(max(24px, env(safe-area-inset-top)) + 72px + 16px);
   --landing-section-gap: 96px;
   padding-block-start: 64px;
   overflow: clip;
@@ -887,7 +888,7 @@
   gap: 32px;
 }
 :where(section[id], main[id], nav[id]) {
-  scroll-margin-block-start: 96px;
+  scroll-margin-block-start: var(--header-offset);
 }
 :where(a, button) > [data-copy-en] {
   white-space: nowrap;
@@ -958,6 +959,9 @@
   }
 }
 @media (max-width: 40rem) {
+  .landing-shell {
+    --header-offset: calc(max(16px, env(safe-area-inset-top)) + 64px + 16px);
+  }
   .site-header {
     inset-inline: 16px;
     inset-block-start: max(16px, env(safe-area-inset-top));
@@ -2315,7 +2319,7 @@ button.metric-bar-track:focus-visible {
   padding: 0;
   font-family: inherit;
   cursor: pointer;
-  scroll-margin-block-start: 96px;
+  scroll-margin-block-start: var(--header-offset);
 }
 .downloads-chevron {
   display: inline-flex;
@@ -2416,7 +2420,7 @@ button.metric-bar-track:focus-visible {
     opacity: 1;
     translate: none;
     visibility: visible;
-    scroll-margin-block-start: 96px;
+    scroll-margin-block-start: var(--header-offset);
   }
   .downloads-toggle {
     display: none;
