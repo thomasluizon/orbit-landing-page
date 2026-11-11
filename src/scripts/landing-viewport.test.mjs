@@ -678,7 +678,6 @@ test("the FAQ is one compact list whose open item is one card", () => {
   assert.match(summary, /align-content:\s*center/);
   assert.match(summary, /align-items:\s*start/);
   assert.match(summary, /line-height:\s*var\(--lh-row\)/);
-  assert.match(summary, /transition:\s*background-color var\(--duration-hover-control\)/);
   assert.match(
     css,
     /\.faq-list summary svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px;[^}]*margin-block-start:\s*calc\(\(1lh - 16px\) \/ 2\)/,

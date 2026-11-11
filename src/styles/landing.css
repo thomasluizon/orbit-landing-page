@@ -76,7 +76,6 @@
   color: var(--color-fg-2);
   font-size: var(--fs-sm);
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .language-toggle::before {
   content: "";
@@ -475,7 +474,6 @@
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .demo-chip[aria-pressed="true"] {
   background: var(--color-bg-well);
@@ -501,7 +499,6 @@
   box-shadow: inset 0 0 0 1px var(--color-border-control);
   font-size: 16px;
   color: var(--color-fg-3);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .demo-send {
   display: grid;
@@ -727,7 +724,6 @@
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .billing-option[aria-checked="true"] {
   background: var(--color-bg-hover);
@@ -852,7 +848,6 @@
   border-radius: var(--radius-sm);
   font-size: var(--fs-md);
   line-height: var(--lh-row);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .faq-list summary:focus-visible {
   outline-offset: -2px;
@@ -1047,10 +1042,8 @@
   }
 }
 .brand {
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .header-links a {
-  transition: color var(--duration-hover-control) var(--ease-standard);
 }
 @media (hover: hover) and (pointer: fine) {
   .brand:hover {
@@ -1306,7 +1299,6 @@ button.metric-bar-track:focus-visible {
   inline-size: min(34px, 100%);
   aspect-ratio: 1;
   border-radius: var(--radius-full);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .day-cell-circle.is-raised {
   background: var(--color-bg-well);
@@ -2369,7 +2361,6 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-md);
   color: var(--color-fg-1);
   font-size: var(--fs-sm);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .downloads-entry .platform-mark {
   font-size: var(--fs-base);
@@ -2382,7 +2373,6 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-md);
   color: var(--color-fg-3);
   font-size: var(--fs-sm);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .downloads-qr-code {
   display: grid;
@@ -2436,5 +2426,50 @@ button.metric-bar-track:focus-visible {
       [data-calendar-panel]
     ) {
     visibility: hidden;
+  }
+}
+.brand,
+.language-toggle,
+.header-links a,
+.billing-option,
+.demo-chip,
+.demo-composer,
+.demo-send,
+.demo-save,
+.habit-row[data-habit-toggle],
+.calendar-nav-button,
+.calendar-month-title,
+.day-cell-circle,
+.downloads-entry,
+.downloads-qr,
+.faq-list summary,
+.back-to-top,
+#waitlist-email,
+.demo-edit-form input,
+.demo-edit-form select {
+  transition-property: background-color, color, box-shadow, opacity, scale;
+  transition-duration:
+    var(--duration-hover-control), var(--duration-hover-control), var(--duration-hover-control),
+    var(--duration-fast), var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+.carousel-marker,
+.metric-bar {
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+.language-toggle:active,
+.billing-option:active,
+.demo-chip:active,
+.demo-send:active,
+.demo-save:active,
+.back-to-top:active {
+  scale: 0.96;
+}
+.back-to-top:active {
+  background: var(--color-primary-pressed);
+}
+@media (hover: hover) and (pointer: fine) {
+  .back-to-top:hover {
+    background: var(--color-primary-hover);
   }
 }

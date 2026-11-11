@@ -307,5 +307,9 @@ body {
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  :active {
+    scale: none !important;
   }
 }

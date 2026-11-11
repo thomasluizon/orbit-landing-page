@@ -344,3 +344,110 @@ test("a section lands below the header, which sets the offset from its own size 
   );
   assert.equal(lastValue(".downloads-toggle", "scroll-margin-block-start"), "var(--header-offset)");
 });
+
+const TIER = {
+  control: "var(--duration-hover-control)",
+  surface: "var(--duration-hover-surface)",
+  press: "var(--duration-fast)",
+};
+const COLOUR = ["background-color", "color", "box-shadow"];
+const PRESS = ["scale", "opacity"];
+const controls = [
+  [".brand", ["background-color"]],
+  [".header-links a", ["color"]],
+  [".language-toggle", ["background-color", "scale"]],
+  [".billing-option", [...COLOUR, "scale"]],
+  [".demo-chip", [...COLOUR, "scale"]],
+  [".demo-composer", ["background-color"]],
+  [".demo-send", ["background-color", "color", "scale"]],
+  [".demo-save", ["background-color", "scale"]],
+  [".habit-row[data-habit-toggle]", ["background-color"]],
+  [".calendar-nav-button", ["background-color"]],
+  [".calendar-month-title", ["background-color"]],
+  [".day-cell-circle", ["background-color"]],
+  [".downloads-entry", ["background-color"]],
+  [".downloads-qr", ["background-color"]],
+  [".faq-list summary", ["background-color"]],
+  [".back-to-top", ["background-color", "scale"]],
+  ["#waitlist-email", ["background-color", "box-shadow"]],
+  [".demo-edit-form input", ["background-color", "box-shadow"]],
+  [".demo-edit-form select", ["background-color", "box-shadow"]],
+  [".text-link", ["color"], "surface"],
+  [".carousel-marker", ["background-color"], "press"],
+  [".metric-bar", ["background-color"], "press"],
+  [".downloads-chevron", ["transform"], "press"],
+  [".faq-list summary svg", ["transform"], "press"],
+];
+
+function transitionsOf(selector) {
+  const found = new Map();
+  for (const rule of rulesFor(selector)) {
+    const shorthand = declaration(rule.declarations, "transition");
+    if (shorthand) {
+      const [property, duration, easing] = shorthand.split(/\s+(?![^(]*\))/);
+      found.set(property, { duration, easing });
+    }
+    const properties = declaration(rule.declarations, "transition-property")?.split(/\s*,\s*/);
+    const durations = declaration(rule.declarations, "transition-duration")
+      ?.split(/,\s*(?![^(]*\))/)
+      .map((value) => value.trim());
+    const easing = declaration(rule.declarations, "transition-timing-function");
+    properties?.forEach((property, index) =>
+      found.set(property, { duration: durations?.[index] ?? durations?.[0], easing }),
+    );
+  }
+  return found;
+}
+
+test("every landing control has a transition sized by its frequency tier", () => {
+  for (const [selector, properties, tier] of controls) {
+    const transitions = transitionsOf(selector);
+    assert.ok(transitions.size > 0, `${selector} has no transition`);
+    for (const property of properties) {
+      const transition = transitions.get(property);
+      assert.ok(transition, `${selector} does not transition ${property}`);
+      const expected = tier ? TIER[tier] : PRESS.includes(property) ? TIER.press : TIER.control;
+      assert.equal(transition.duration, expected, `${selector} ${property} duration`);
+      assert.match(transition.easing ?? "", /^var\(--ease-(?:standard|out)\)$/, selector);
+    }
+    assert.ok(!transitions.has("all"), `${selector} animates every property`);
+  }
+});
+
+test("every pill button carries the shared control transition with the same tiers", () => {
+  const utility = globalCss.match(/@utility control-transition\s*\{([^}]+)\}/)[1];
+  const properties = declaration(utility, "transition-property").split(/\s*,\s*/);
+  for (const property of [...COLOUR, "opacity", "scale"]) assert.ok(properties.includes(property));
+  assert.match(declaration(utility, "transition-duration"), /^var\(--duration-hover-control\)/);
+  const primitive = readFileSync("src/components/PillButton.astro", "utf8");
+  assert.equal(primitive.match(/control-transition/g).length, 2, "both the link and the button");
+});
+
+test("no stylesheet animates every property or forces a transition outside reduced motion", () => {
+  for (const [name, source] of [
+    ["global.css", globalCss],
+    ["landing.css", landingCss],
+  ]) {
+    assert.ok(!/transition(?:-property)?\s*:\s*all\b/.test(source), `${name} animates all`);
+    assert.ok(!/@keyframes/.test(source), `${name} declares keyframes`);
+  }
+  for (const rule of rules) {
+    const reducedBlock = rule.conditions.some((text) => text.includes("prefers-reduced-motion"));
+    if (!reducedBlock)
+      assert.ok(!/transition[^;]*!important/.test(rule.declarations), rule.selector);
+  }
+});
+
+test("reduced motion removes every control transition and the press movement", () => {
+  const reduced = rules.filter(
+    (rule) =>
+      rule.conditions.includes("@media (prefers-reduced-motion: reduce)") &&
+      globalCss.includes(rule.declarations),
+  );
+  const universal = reduced.find((rule) => rule.selector.includes("*::before"));
+  assert.ok(universal, "global.css resets every transition under reduced motion");
+  assert.equal(declaration(universal.declarations, "transition-duration"), "0.01ms !important");
+  assert.equal(declaration(universal.declarations, "transition-delay"), "0s !important");
+  const press = reduced.find((rule) => rule.selector === ":active");
+  assert.equal(declaration(press.declarations, "scale"), "none !important");
+});
