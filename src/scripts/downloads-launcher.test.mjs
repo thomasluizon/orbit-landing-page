@@ -62,8 +62,13 @@ function launch(hash = "", { failing = false } = {}) {
     },
     location: { hash },
   });
-  const press = (target) => {
-    const event = { target, prevented: false, preventDefault: () => (event.prevented = true) };
+  const press = (target, modifiers = {}) => {
+    const event = {
+      target,
+      ...modifiers,
+      prevented: false,
+      preventDefault: () => (event.prevented = true),
+    };
     for (const listener of listeners) listener(event);
     return event;
   };
@@ -104,6 +109,26 @@ test("a press on a downloads link opens the panel in the same task, scrolls to t
   assert.equal(view.expanded(), "true");
   assert.deepEqual(view.toggle.scrolled, [{ block: "start" }]);
   assert.deepEqual(view.toggle.focused, [{ preventScroll: true }]);
+});
+
+test("a modified press on a downloads link keeps the browser's new tab or new window action", () => {
+  for (const modifier of ["ctrlKey", "metaKey", "shiftKey"]) {
+    const view = launch();
+    const event = view.press(view.link, { [modifier]: true });
+    assert.equal(event.prevented, false, modifier);
+    assert.equal(view.expanded(), "false", modifier);
+    assert.deepEqual(view.toggle.scrolled, [], modifier);
+    assert.deepEqual(view.toggle.focused, [], modifier);
+  }
+});
+
+test("a modified press on the toggle still opens the panel, because a button has no new tab action", () => {
+  for (const modifier of ["ctrlKey", "metaKey", "shiftKey"]) {
+    const view = launch();
+    const event = view.press(view.toggle, { [modifier]: true });
+    assert.equal(event.prevented, true, modifier);
+    assert.equal(view.expanded(), "true", modifier);
+  }
 });
 
 test("a press on a downloads link never closes the open panel", () => {
