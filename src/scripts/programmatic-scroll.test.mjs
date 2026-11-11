@@ -189,6 +189,7 @@ function page({ reduced = false, hash = "" } = {}) {
     window,
     state,
     click,
+    emit,
     topButton,
     advanceFrame,
     advanceTime,
@@ -261,8 +262,24 @@ test("a scroll that settled is not started again by a later refresh", async () =
   p.advanceTime(1000);
   p.window.scrollTo({ top: 1200, behavior: "instant" });
   p.refresh();
+  await settle(p);
   assert.equal(p.state.y, 1200);
 });
+
+for (const input of ["wheel", "touchstart", "keydown"]) {
+  test(`a ${input} during the smooth scroll stops a later refresh from restarting it`, async () => {
+    const p = page();
+    p.load("./scroll");
+    p.load("./waitlist-section");
+    p.advanceFrame();
+    p.advanceFrame();
+    p.click();
+    await flush();
+    p.emit(input);
+    await settle(p);
+    assert.ok(p.state.y < SECTION_TOP, `stopped at ${p.state.y}`);
+  });
+}
 
 test("a press leaves no refresh listener behind after the motion is disposed", async () => {
   const p = page();
