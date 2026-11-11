@@ -20,7 +20,7 @@ if (toggle && panel) {
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape" || !isOpen()) return;
     event.preventDefault();
-    close(true);
+    close(panel.contains(document.activeElement));
   });
   document.addEventListener("pointerdown", (event) => {
     if (!targetIn(event, '#downloads, a[href="#downloads"]')) close(false);

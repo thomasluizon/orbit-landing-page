@@ -104,11 +104,20 @@ test("the panel code gives the launcher nothing to call", () => {
   assert.deepEqual(Object.keys(page().exports), []);
 });
 
-test("Escape closes the open panel and returns focus to the button", () => {
+test("Escape with focus in the panel closes it and returns focus to the button", () => {
   const view = page();
+  view.document.activeElement = view.entry;
   const event = view.press("Escape");
   assert.equal(view.isOpen(), false);
   assert.equal(view.toggle.focused, 1);
+  assert.equal(event.defaultPrevented, true);
+});
+
+test("Escape with focus outside the panel closes it and leaves the focus alone", () => {
+  const view = page();
+  const event = view.press("Escape");
+  assert.equal(view.isOpen(), false);
+  assert.equal(view.toggle.focused, 0);
   assert.equal(event.defaultPrevented, true);
 });
 
