@@ -1,9 +1,9 @@
 export {};
 
-/** True while the panel chunk loads, so a second press cannot undo the open the first one queued. */
 let loading = false;
 const loadPanel = () => {
   loading = true;
+  document.getElementById("downloads-toggle")?.setAttribute("aria-expanded", "true");
   return import("./downloads-panel").finally(() => (loading = false));
 };
 
@@ -20,7 +20,7 @@ document.addEventListener("click", (event) => {
     event.target.closest<HTMLElement>('#downloads-toggle, a[href="#downloads"]');
   if (!opener) return;
   event.preventDefault();
-  if (loading) return;
+  if (loading && opener.id === "downloads-toggle") return;
   loadPanel().then(({ activate }) => activate(opener), showList);
 });
 if (location.hash === "#downloads") loadPanel().catch(showList);

@@ -35,6 +35,7 @@ function launch(hash = "", { failing = false } = {}) {
   const activated = [];
   const listeners = [];
   const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
+  toggle.id = "downloads-toggle";
   const link = new FakeElement("header link", ['a[href="#downloads"]']);
   const icon = new FakeElement("toggle icon");
   icon.closest = (selector) => toggle.closest(selector);
@@ -94,9 +95,14 @@ test("every later press on either opener reaches activate() through the same lis
   assert.ok(view.loaded.every((path) => path === "./downloads-panel"));
 });
 
-test("a second press while the panel code loads does not undo the first", async () => {
+test("a second toggle press while the panel code loads does not undo the first or count as an open", async () => {
   const view = launch();
   assert.equal(view.press(view.toggle).prevented, true);
+  assert.equal(
+    view.page["downloads-toggle"].attributes["aria-expanded"],
+    "true",
+    "the analytics capture skips an expanded toggle, so the ignored press records no download_list_opened",
+  );
   assert.equal(view.press(view.icon).prevented, true);
   await flush();
   assert.deepEqual(view.loaded, ["./downloads-panel"]);
@@ -104,6 +110,14 @@ test("a second press while the panel code loads does not undo the first", async 
   view.press(view.toggle);
   await flush();
   assert.deepEqual(view.activated, ["toggle", "toggle"], "a press after the load acts again");
+});
+
+test("a link press while the panel code loads still opens the panel", async () => {
+  const view = launch();
+  view.press(view.link);
+  assert.equal(view.press(view.link).prevented, true);
+  await flush();
+  assert.deepEqual(view.activated, ["header link", "header link"]);
 });
 
 test("a press while the downloads fragment loads the panel does not close the panel it opens", async () => {
