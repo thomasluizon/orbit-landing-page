@@ -58,3 +58,26 @@ test("the page script loads the downloads panel chunk only on demand", () => {
   );
   assert.doesNotMatch(readFileSync(`${assets}/${panel}`, "utf8"), /\bexport\b/);
 });
+
+test("the page script loads the FAQ disclosure chunk only from its section observer", () => {
+  const faq = chunkNamed("faq");
+  const page = chunkNamed("index.astro_astro_type_script_index_0_lang");
+  assert.ok(faq, "the FAQ disclosure ships as its own lazy chunk");
+  assert.deepEqual(
+    chunks.filter((file) => staticImports(file).includes(faq)),
+    [],
+  );
+  assert.deepEqual(
+    chunks.filter((file) => dynamicImports(file).includes(faq)),
+    [page],
+  );
+  const source = readFileSync(`${assets}/${page}`, "utf8");
+  const requests = [...source.matchAll(/import\(\s*["'`]\.\/faq\.[^"'`]+["'`]\s*\)/g)];
+  const observer = source.indexOf("new IntersectionObserver(");
+  assert.equal(requests.length, 1);
+  assert.ok(observer >= 0, "the page script observes its sections");
+  assert.ok(
+    requests[0].index > observer,
+    "the FAQ disclosure must load when the FAQ comes near, not in the after-load list",
+  );
+});

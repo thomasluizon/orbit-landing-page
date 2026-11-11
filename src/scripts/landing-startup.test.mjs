@@ -8,7 +8,6 @@ import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = [
   "pricing",
-  "faq",
   "back-to-top",
   "scroll",
   "header-scroll",
@@ -41,7 +40,7 @@ function harness({
       this.attributes.delete(name);
     },
   }));
-  const targets = [".hero-device", '[data-section="features"]', "[data-week-card]"].map(
+  const targets = [".hero-device", '[data-section="features"]', "[data-week-card]", "#faq"].map(
     (selector) => ({
       selector,
       attributes: new Set(["data-clock-pending"]),
@@ -265,6 +264,32 @@ test("the calendar and the chart labels load only when the features come near", 
   await h.drain();
   for (const name of ["demo-views", "product-metrics"]) assert.ok(names().includes(name), name);
   assert.deepEqual(h.mounts, [], "the week card mounts only when it comes into view");
+});
+
+test("the FAQ disclosure loads only when the FAQ comes near", async () => {
+  const h = harness();
+  const names = () => h.bindings.map(({ name }) => name);
+  h.load();
+  await h.drain();
+  assert.deepEqual(names().slice(firstViewport.length), deferred);
+  assert.ok(!names().includes("faq"), "a visit that never reaches the FAQ never loads it");
+  for (const other of [0, 1, 2]) h.intersect(other);
+  await h.drain();
+  assert.ok(!names().includes("faq"), "only the FAQ section loads the FAQ disclosure");
+  h.intersect(3);
+  await h.drain();
+  assert.ok(names().includes("faq"), "the FAQ section loads the FAQ disclosure");
+});
+
+test("a direct visit to the FAQ loads its disclosure after load, not during startup", async () => {
+  const h = harness();
+  h.intersect(3);
+  await flush();
+  assert.deepEqual(h.bindings, firstViewport);
+  h.load();
+  await h.drain();
+  const faq = h.bindings.find(({ name }) => name === "faq");
+  assert.ok(faq?.task > 0, "the FAQ disclosure waits for load in a later task");
 });
 
 test("a view whose chunk fails to load shows its build-rendered content instead of staying hidden", async () => {
