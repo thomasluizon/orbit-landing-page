@@ -128,6 +128,11 @@ export function elementFor(node, cache = new WeakMap()) {
       return false;
     },
   };
+  // Node's assert formats a failing value through its getters at depth 1000, so a visible
+  // `parentElement` or `children` walks the page again for every node until memory runs out.
+  for (const key of Object.keys(element)) {
+    if (key !== "tagName") Object.defineProperty(element, key, { enumerable: false });
+  }
   cache.set(node, element);
   return element;
 }
@@ -139,7 +144,7 @@ export function documentFrom(html) {
   cache.owner = { activeElement: null };
   const document = elementFor(tree, cache);
   const root = tree.childNodes.find((child) => child.tagName === "html");
-  document.documentElement = elementFor(root, cache);
+  Object.defineProperty(document, "documentElement", { value: elementFor(root, cache) });
   Object.defineProperty(document.documentElement, "lang", {
     get: () => document.documentElement.getAttribute("lang"),
     set: (value) => document.documentElement.setAttribute("lang", value),
