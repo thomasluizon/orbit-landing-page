@@ -872,7 +872,7 @@
 .final-section .section-inner {
   gap: 32px;
 }
-:where(section[id], main[id], nav[id]) {
+:where(section[id], main[id]) {
   scroll-margin-block-start: 96px;
 }
 :where(a, button) > [data-copy-en] {

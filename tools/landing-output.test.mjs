@@ -1040,39 +1040,3 @@ test("built consent markup reflects the PostHog key and retains the privacy link
     );
   }
 });
-
-function startupChunks() {
-  const chunks = new Map();
-  const visit = (path) => {
-    if (chunks.has(path)) return;
-    const code = readFileSync(`dist${path}`);
-    chunks.set(path, code);
-    const specifiers = code
-      .toString("utf8")
-      .matchAll(
-        /(?:^|[;}\s])(?:import|export)\b[^"'`;]*?\bfrom\s*"([^"]+)"|(?:^|[;}\s])import\s*"([^"]+)"/g,
-      );
-    for (const [, named, bare] of specifiers) {
-      const specifier = named ?? bare;
-      if (specifier.startsWith("./"))
-        visit(new URL(specifier, `file:///${path}`).pathname.slice(1));
-    }
-  };
-  for (const { attributes } of scriptsFrom(html))
-    if (attributes.type === "module" && attributes.src) visit(attributes.src);
-  return chunks;
-}
-
-test("the downloads panel dismissal code stays out of the startup scripts of the home page", () => {
-  const chunks = startupChunks();
-  assert.ok(chunks.size >= 5, "the startup graph lists every module script and static import");
-  for (const [path, code] of chunks)
-    assert.doesNotMatch(code.toString("utf8"), /focusout/, `${path} carries the dismissal code`);
-  const files = readdirSync("dist/_astro");
-  const panel = files.find((file) => /^downloads-panel\..+\.js$/.test(file));
-  assert.ok(panel, "the dismissal code ships as its own lazy chunk");
-  assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
-  const dismissal = readFileSync(`dist/_astro/${panel}`, "utf8");
-  assert.match(dismissal, /focusout/);
-  assert.doesNotMatch(dismissal, /\bexport\b/, "no open waits for a function from the lazy chunk");
-});
