@@ -77,8 +77,7 @@ function harness(hash = "", reduced = false) {
     return scroll;
   };
   vm.runInNewContext(transpile("src/scripts/waitlist-section.ts"), sandbox);
-  const press = (name, target) => documentListeners.get(name)({ target: new FakeElement(target) });
-  return { entries, email, triggers, listeners, location, click, dispatch, loads, press };
+  return { entries, email, triggers, listeners, location, click, dispatch, loads };
 }
 const settled = () => new Promise((resolve) => setImmediate(resolve));
 test("the ios fragment scrolls to the dedicated section and focuses its real email field", async () => {

@@ -3,12 +3,10 @@ export {};
 const section = document.getElementById("ios");
 const email = document.getElementById("waitlist-email");
 
-const loadScroll = () => import("./programmatic-scroll");
-
 function focusWaitlist() {
   if (window.location.hash !== "#ios") return;
   if (section) {
-    loadScroll().then(
+    import("./programmatic-scroll").then(
       ({ scrollToElement }) => scrollToElement(section),
       () => section.scrollIntoView(),
     );

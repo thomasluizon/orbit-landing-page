@@ -25,9 +25,8 @@ if (banner)
     attributes: true,
     attributeFilter: ["hidden"],
   });
-const loadScroll = () => import("./programmatic-scroll");
 topButton?.addEventListener("click", () => {
-  loadScroll().then(
+  import("./programmatic-scroll").then(
     ({ scrollToTop }) => scrollToTop(),
     () => window.scrollTo(0, 0),
   );
