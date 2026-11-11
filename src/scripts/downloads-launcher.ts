@@ -1,20 +1,14 @@
 export {};
 
-const openers = document.querySelectorAll<HTMLElement>('#downloads-toggle, a[href="#downloads"]');
-/** The panel module binds its own listeners when it loads, so loading it removes every launcher listener. */
-const launcher = new AbortController();
-const loadPanel = () => {
-  launcher.abort();
-  return import("./downloads-panel");
-};
+const loadPanel = () => import("./downloads-panel");
 
-for (const opener of openers)
-  opener.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      void loadPanel().then(({ activate }) => activate(opener));
-    },
-    { signal: launcher.signal },
-  );
+/** One delegated listener routes every press on a downloads opener to `activate()`, before and after the panel loads. */
+document.addEventListener("click", (event) => {
+  const opener =
+    event.target instanceof Element &&
+    event.target.closest<HTMLElement>('#downloads-toggle, a[href="#downloads"]');
+  if (!opener) return;
+  event.preventDefault();
+  void loadPanel().then(({ activate }) => activate(opener));
+});
 if (location.hash === "#downloads") void loadPanel();

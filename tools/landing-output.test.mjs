@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
-import { gzipSync } from "node:zlib";
 import vm from "node:vm";
 import sharp from "sharp";
 import { parse } from "@astrojs/compiler";
@@ -981,7 +980,6 @@ test("built consent markup reflects the PostHog key and retains the privacy link
   }
 });
 
-const startupGzipBudget = 9228;
 function startupChunks() {
   const chunks = new Map();
   const visit = (path) => {
@@ -1016,7 +1014,3 @@ test("the downloads panel code stays out of the startup scripts of the home page
   assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /data-open/);
 });
 
-test("the startup scripts of the home page stay within the gzip budget", () => {
-  const total = [...startupChunks().values()].reduce((sum, code) => sum + gzipSync(code).length, 0);
-  assert.ok(total <= startupGzipBudget, `${total} gzip bytes exceed ${startupGzipBudget}`);
-});

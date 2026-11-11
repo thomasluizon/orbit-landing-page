@@ -119,7 +119,7 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
     order: () => list.items.map(({ name }) => name),
     fire,
     press: (key) => fire("keydown", elsewhere, { key }),
-    open: () => toggle.listeners.get("click")(),
+    open: () => exports.activate(toggle),
     expanded: () => toggle.getAttribute("aria-expanded"),
     isOpen: () => panel.hasAttribute("data-open"),
   };
@@ -160,8 +160,7 @@ test("Escape and other keys leave a closed panel and the focus alone", () => {
 
 test("the header link opens the panel, scrolls to the button and focuses it", () => {
   const view = page();
-  const event = view.fire("click", view.opener);
-  assert.equal(event.defaultPrevented, true);
+  view.activate(view.opener);
   assert.equal(view.isOpen(), true);
   assert.equal(view.expanded(), "true");
   assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
@@ -174,8 +173,18 @@ test("the header link opens the panel, scrolls to the button and focuses it", ()
 test("the header link jumps without a smooth scroll, which the motion refresh would stop short", () => {
   for (const reducedMotion of [false, true]) {
     const view = page({ reducedMotion });
-    view.fire("click", view.opener);
+    view.activate(view.opener);
     assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
+  }
+});
+
+test("the panel leaves every opener press to the launcher, so one path handles it", () => {
+  const view = page();
+  assert.equal(view.toggle.listeners.has("click"), false);
+  for (const opener of [view.toggle, view.opener]) {
+    const event = view.fire("click", opener);
+    assert.equal(event.defaultPrevented, false);
+    assert.equal(view.isOpen(), false);
   }
 });
 

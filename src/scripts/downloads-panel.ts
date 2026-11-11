@@ -40,7 +40,7 @@ function openFromLink() {
   toggle?.focus({ preventScroll: true });
 }
 
-/** Acts on the press that loaded this module: the launcher calls it instead of repeating the click. */
+/** Acts on one press on the toggle or a downloads link: the launcher routes every such press here. */
 export function activate(opener: HTMLElement) {
   if (opener === toggle) setOpen(!isOpen());
   else openFromLink();
@@ -51,13 +51,7 @@ function targetIn(event: Event, selector: string) {
 }
 
 if (toggle && panel) {
-  toggle.addEventListener("click", () => setOpen(!isOpen()));
   document.addEventListener("click", (event) => {
-    if (targetIn(event, OPENER)) {
-      event.preventDefault();
-      openFromLink();
-      return;
-    }
     if (targetIn(event, "#downloads a")) close(panel.contains(document.activeElement));
   });
   document.addEventListener("keydown", (event) => {

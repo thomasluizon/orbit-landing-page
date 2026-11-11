@@ -10,97 +10,92 @@ const source = ts.transpileModule(readFileSync("src/scripts/downloads-launcher.t
 }).outputText;
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 
+class FakeElement {
+  constructor(name, selectors = []) {
+    this.name = name;
+    this.selectors = selectors;
+  }
+  closest(selector) {
+    const parts = selector.split(",").map((part) => part.trim());
+    return parts.some((part) => this.selectors.includes(part)) ? this : null;
+  }
+}
+
 function launch(hash = "") {
   const loaded = [];
   const activated = [];
-  const opener = (name) => ({
-    name,
-    clicks: 0,
-    listeners: [],
-    addEventListener(type, listener, options) {
-      assert.equal(type, "click");
-      const entry = { listener };
-      this.listeners.push(entry);
-      options?.signal?.addEventListener("abort", () => {
-        this.listeners = this.listeners.filter((candidate) => candidate !== entry);
-      });
-    },
-    click() {
-      this.clicks += 1;
-    },
-    press() {
-      const event = { prevented: false, preventDefault: () => (event.prevented = true) };
-      for (const { listener } of [...this.listeners]) listener(event);
-      return event;
-    },
-  });
-  const controls = [opener("toggle"), opener("header link")];
+  const listeners = [];
+  const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
+  const link = new FakeElement("header link", ['a[href="#downloads"]']);
+  const icon = new FakeElement("toggle icon");
+  icon.closest = (selector) => toggle.closest(selector);
+  const elsewhere = new FakeElement("elsewhere");
   vm.runInNewContext(source, {
     exports: {},
-    AbortController,
+    Element: FakeElement,
     require: (path) => {
       loaded.push(path);
       return { activate: (control) => activated.push(control.name) };
     },
     document: {
-      querySelectorAll: (selector) => {
-        assert.equal(selector, '#downloads-toggle, a[href="#downloads"]');
-        return controls;
+      addEventListener: (type, listener) => {
+        assert.equal(type, "click");
+        listeners.push(listener);
       },
     },
     location: { hash },
   });
-  return { loaded, activated, controls };
+  const press = (target) => {
+    const event = { target, prevented: false, preventDefault: () => (event.prevented = true) };
+    for (const listener of listeners) listener(event);
+    return event;
+  };
+  return { loaded, activated, listeners, press, toggle, link, icon, elsewhere };
 }
 
 test("the page loads no panel code before a visitor uses a download control", async () => {
-  const { loaded, controls } = launch();
+  const { loaded, listeners } = launch();
   await flush();
   assert.deepEqual(loaded, []);
-  assert.deepEqual(
-    controls.map(({ listeners }) => listeners.length),
-    [1, 1],
-  );
+  assert.equal(listeners.length, 1);
 });
 
-for (const [index, name] of ["toggle", "header link"].entries()) {
-  test(`the first press on the ${name} loads the panel and acts on that press without a second click`, async () => {
-    const { loaded, activated, controls } = launch();
-    const event = controls[index].press();
+for (const control of ["toggle", "link"]) {
+  test(`the first press on the ${control} loads the panel and acts on that press without a second click`, async () => {
+    const view = launch();
+    const event = view.press(view[control]);
     assert.equal(event.prevented, true);
     await flush();
-    assert.deepEqual(loaded, ["./downloads-panel"]);
-    assert.deepEqual(activated, [name]);
-    assert.deepEqual(
-      controls.map(({ clicks }) => clicks),
-      [0, 0],
-    );
-    assert.deepEqual(
-      controls.map(({ listeners }) => listeners.length),
-      [0, 0],
-    );
+    assert.deepEqual(view.loaded, ["./downloads-panel"]);
+    assert.deepEqual(view.activated, [view[control].name]);
   });
 }
 
-test("after the first press, a press on the other control reaches only the loaded panel", async () => {
-  const { loaded, activated, controls } = launch();
-  controls[1].press();
+test("every later press on either opener reaches activate() through the same listener", async () => {
+  const view = launch();
+  view.press(view.link);
   await flush();
-  const event = controls[0].press();
+  for (const target of [view.toggle, view.icon, view.link]) {
+    assert.equal(view.press(target).prevented, true);
+    await flush();
+  }
+  assert.deepEqual(view.activated, ["header link", "toggle", "toggle", "header link"]);
+  assert.ok(view.loaded.every((path) => path === "./downloads-panel"));
+});
+
+test("a press outside the openers keeps its own action and loads nothing", async () => {
+  const view = launch();
+  const event = view.press(view.elsewhere);
   await flush();
   assert.equal(event.prevented, false);
-  assert.deepEqual(loaded, ["./downloads-panel"]);
-  assert.deepEqual(activated, ["header link"]);
+  assert.deepEqual(view.loaded, []);
+  assert.deepEqual(view.activated, []);
 });
 
 test("a visit to the downloads fragment loads the panel without a press", async () => {
-  const { loaded, controls } = launch("#downloads");
+  const { loaded } = launch("#downloads");
   await flush();
   assert.deepEqual(loaded, ["./downloads-panel"]);
-  assert.deepEqual(
-    controls.map(({ listeners }) => listeners.length),
-    [0, 0],
-  );
   const other = launch("#features");
   await flush();
   assert.deepEqual(other.loaded, []);

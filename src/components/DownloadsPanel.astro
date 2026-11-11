@@ -2,6 +2,7 @@
 import Copy from "./Copy.astro";
 import PlatformMark from "./PlatformMark.astro";
 import { desktopDownloads } from "../config/links";
+import { landingCopy } from "../i18n/translations";
 interface Props {
   googlePlayUrl: string;
 }
@@ -13,9 +14,9 @@ const desktopMark = { mac: "apple", windows: "windows" } as const;
   id="downloads"
   class="downloads-panel"
   role="region"
-  aria-label="All downloads"
-  data-copy-label-en="All downloads"
-  data-copy-label-pt="Todos os downloads"
+  aria-label={landingCopy.en["hero.downloads"]}
+  data-copy-label-en={landingCopy.en["hero.downloads"]}
+  data-copy-label-pt={landingCopy["pt-BR"]["hero.downloads"]}
 >
   <div class="downloads-list">
     {
