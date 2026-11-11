@@ -51,8 +51,6 @@ const sizeClasses: Record<PillSize, string> = {
       data-app-entry={appEntry || undefined}
       aria-label={ariaLabel}
       id={id}
-      data-primary-action={variant === "primary" || undefined}
-      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
@@ -70,8 +68,6 @@ const sizeClasses: Record<PillSize, string> = {
       disabled={disabled}
       aria-label={ariaLabel}
       id={id}
-      data-primary-action={variant === "primary" || undefined}
-      data-accent-active={variant === "primary" ? String(analyticsSurface === "hero") : undefined}
       data-analytics-event={analyticsEvent}
       data-analytics-surface={analyticsSurface}
       class:list={[
@@ -87,6 +83,5 @@ const sizeClasses: Record<PillSize, string> = {
 }
 
 <script>
-  import "../scripts/primary-actions";
   import "../scripts/app-entry";
 </script>

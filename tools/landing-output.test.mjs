@@ -717,7 +717,6 @@ test("the built hero download keeps its labels and every Mac and Windows control
   const button = nodes.find((node) => attrs(node).id === "hero-download");
   assert.ok(button);
   assert.ok(!Object.hasOwn(attrs(button), "data-analytics-event"));
-  assert.ok(!Object.hasOwn(attrs(button), "data-primary-action"));
   const labels = descendants(button).filter((node) =>
     Object.hasOwn(attrs(node), "data-hero-download-label"),
   );

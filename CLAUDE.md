@@ -7,6 +7,7 @@ Landing page for Orbit, an AI that tracks habits. Static Astro + Tailwind site d
 The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + `design/canvas/` (granted drawings). This repo MIRRORS the dark tokens into `src/styles/global.css` (`@theme` + `:root`). When `DESIGN.md` changes token values, update the mirror in the same task. Never invent new colors, fonts, or radii here.
 
 - Anchor: spacious near-black. Canvas `#09090B`, warm orange `#C4530F`, Geist Sans/Space Grotesk/Geist Mono, neutral surface steps, flat pill CTAs. No decorative glow or gradient wash.
+- A primary action keeps its primary fill at every scroll position. Each section chooses its primary, secondary and ghost buttons in markup, with at most one primary per component.
 - Dark-only (landing deviation); the single accent follows the current canon.
 - Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-geist/space-grotesk/geist-mono`.
 - No raw slate values, no hardcoded violet rgba (use `rgba(var(--primary-rgb), α)`), no `transition-all`, no `h-screen` (use `min-h-dvh`), no em dashes in copy.

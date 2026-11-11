@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import { stylesheetRules } from "../../tools/lib/stylesheet-rules.mjs";
 
 const css = readFileSync("src/styles/landing.css", "utf8");
 const code = readFileSync("src/scripts/scroll.ts", "utf8");
@@ -21,24 +22,6 @@ function unconditionalRules(source) {
     start = index + 1;
   }
   return rules.join("\n");
-}
-
-function stylesheetRules(source) {
-  const parents = [];
-  const rules = [];
-  for (const [, text, boundary] of source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .matchAll(/([^{}]*)([{}])/g)) {
-    if (boundary === "{") {
-      parents.push(text.trim());
-      continue;
-    }
-    const selector = parents.pop();
-    if (selector && !selector.startsWith("@")) {
-      rules.push({ selector, declarations: text, conditions: [...parents] });
-    }
-  }
-  return rules;
 }
 
 test("all four hero side items remain rendered from 768px wide and 720px tall", () => {
@@ -724,69 +707,6 @@ test("every landing pill uses the shared app geometry and only hero install is m
       assert.doesNotMatch(tag, /class="[^"\n]*(?:min-h-|h-\[|py-|px-)/, file);
     }
   }
-});
-
-test("visible primary actions share one accent and the phone approval has priority", () => {
-  const source = readFileSync("src/scripts/primary-actions.ts", "utf8");
-  const actions = ["install", "demo-approve", "features", "pro", "final"].map((id) => ({
-    id,
-    attrs: {},
-    setAttribute(name, value) {
-      this.attrs[name] = value;
-    },
-  }));
-  const observed = [];
-  let update;
-  vm.runInNewContext(
-    ts.transpileModule(source, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      document: {
-        querySelectorAll(selector) {
-          assert.equal(selector, "[data-primary-action]");
-          return actions;
-        },
-      },
-      IntersectionObserver: class {
-        constructor(callback) {
-          update = callback;
-        }
-        observe(action) {
-          observed.push(action);
-        }
-      },
-    },
-  );
-  assert.deepEqual(observed, actions);
-  for (let mask = 0; mask < 2 ** actions.length; mask++) {
-    update(
-      actions.map((target, index) => ({
-        target,
-        isIntersecting: Boolean(mask & (1 << index)),
-        intersectionRect: { width: 100, height: 40 },
-      })),
-    );
-    const active = actions.filter((action) => action.attrs["data-accent-active"] === "true");
-    assert.equal(active.length, mask ? 1 : 0);
-    if (mask & 2) assert.equal(active[0].id, "demo-approve");
-  }
-  update(
-    actions.map((target) => ({
-      target,
-      isIntersecting: true,
-      intersectionRect: { width: 0, height: 0 },
-    })),
-  );
-  assert.ok(actions.every((action) => action.attrs["data-accent-active"] === "false"));
-  const primitive = readFileSync("src/components/PillButton.astro", "utf8");
-  assert.match(primitive, /data-primary-action=\{variant === "primary"/);
-  assert.match(primitive, /import "\.\.\/scripts\/primary-actions"/);
-  const global = readFileSync("src/styles/global.css", "utf8");
-  assert.match(
-    global,
-    /\[data-primary-action\]\[data-accent-active="false"\]\s*\{[^}]*background-color:\s*var\(--color-bg-well\)/,
-  );
 });
 
 test("every inline Astra glyph keeps its asset viewBox and the native 16px drawing", async () => {
