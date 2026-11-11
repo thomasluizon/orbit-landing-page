@@ -463,7 +463,11 @@ test("without scripting the built stylesheet shows the downloads in flow and hid
   assert.match(panel, /position:\s?static/);
   assert.match(panel, /visibility:\s?visible/);
   assert.match(panel, /opacity:\s?1\b/);
-  assert.match(panel, /scroll-margin-block-start:\s?96px/, "a #downloads visit clears the header");
+  assert.match(
+    panel,
+    /scroll-margin-block-start:\s?var\(--header-offset\)/,
+    "a #downloads visit clears the header",
+  );
   assert.match(rule(".downloads-toggle"), /display:\s?none/);
 });
 
@@ -1039,4 +1043,13 @@ test("the downloads panel code stays out of the startup scripts of the home page
   assert.ok(panel, "the panel code ships as its own lazy chunk");
   assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
   assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /downloads-entry/);
+});
+
+test("the built site keeps every primary action on its static fill", () => {
+  const assets = readdirSync("dist/_astro").filter((name) => /\.(?:js|css)$/.test(name));
+  const built = [html, ...assets.map((name) => readFileSync(`dist/_astro/${name}`, "utf8"))];
+  for (const source of built) {
+    assert.ok(!/data-accent-active|data-primary-action/.test(source));
+  }
+  assert.ok(!assets.some((name) => name.startsWith("primary-actions.")));
 });
