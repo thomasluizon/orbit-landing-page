@@ -10,6 +10,7 @@ The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + 
 - Dark-only (landing deviation); the single accent follows the current canon.
 - Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-geist/space-grotesk/geist-mono`.
 - No raw slate values, no hardcoded violet rgba (use `rgba(var(--primary-rgb), α)`), no `transition-all`, no `h-screen` (use `min-h-dvh`), no em dashes in copy.
+- Nothing on the page changes content without a visitor action, with one exception: the demo clock. The demo dates and the phone clock follow the visitor's own day and time. `src/scripts/demo-clock.ts` reads the local date and time once; without JavaScript the build date stays.
 
 ## Code standards
 
@@ -25,7 +26,8 @@ Same 10 rules as the monorepo's root `CLAUDE.md`: root cause over workarounds; d
 ## Architecture
 
 - `src/i18n/translations.ts` - typed EN/PT-BR tables (`Record<TranslationKey, string>` enforces key parity at compile time)
-- `src/scripts/` - client modules: `i18n.ts` (language cookie, toggle, copy and structured data), `waitlist.ts` (Turnstile and waitlist requests), `analytics.ts` (consent-gated loader), `consent.ts` (analytics choice and events)
+- `src/scripts/` - client modules: `i18n.ts` (language cookie, toggle, copy and structured data), `waitlist.ts` (Turnstile and waitlist requests), `analytics.ts` (consent-gated loader), `consent.ts` (analytics choice and events), `demo-clock.ts` (the one demo clock; at startup it sets only the plain-text `[data-clock]` values: the phone clock, the phone Today date and the 7-day chart dates). The page loads `week.ts` when the Your week card comes into view, and `demo-views.ts` (the calendar and the 7-day labels) when the features come near. Both draw days with the `day-cell.ts` renderer. Keep these views out of the startup import graph; `landing-startup.test.mjs` enforces this
+- `src/i18n/demo-copy.ts` - collects the calendar and week words from the landing tables into `data-demo-copy`, so the deferred views read them from the page and the startup script stays inside its budget
 - `src/styles/global.css` - the token mirror + type roles + base styles (single CSS file)
 
 ## i18n

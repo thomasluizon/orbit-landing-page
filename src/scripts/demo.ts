@@ -1,7 +1,7 @@
 import { translations, type TranslationKey } from "../i18n/translations";
 import { getLang } from "./i18n";
 import { planFromWords } from "./demo-plan";
-import { bindHabitCompletion } from "./habit-completion";
+import { bindHabitCompletion, toggleHabitCompletion } from "./habit-completion";
 
 type Example = "start" | "restart" | "move";
 type AcceptedPlan = {
@@ -222,6 +222,9 @@ syncSend();
 demo
   ?.querySelectorAll<HTMLButtonElement>("[data-demo]")
   .forEach((chip) => chip.addEventListener("click", () => play(chip.dataset.demo as Example)));
+document.querySelectorAll<HTMLButtonElement>("[data-habit-toggle]").forEach((row) => {
+  row.addEventListener("click", () => toggleHabitCompletion(row));
+});
 document.getElementById("demo-approve")?.addEventListener("click", () => finish(true));
 document.getElementById("demo-reject")?.addEventListener("click", () => finish(false));
 document.getElementById("demo-edit")?.addEventListener("click", openEditor);

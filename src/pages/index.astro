@@ -36,6 +36,7 @@ import { appUrl, googlePlayUrl } from "../config/links";
 </Layout>
 
 <script>
+  import { demoNow } from "../scripts/demo-clock";
   import "../scripts/i18n";
   import { afterLoad } from "../scripts/task-queue";
 
@@ -50,22 +51,28 @@ import { appUrl, googlePlayUrl } from "../config/links";
 
   const previewObserver = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        previewObserver.unobserve(entry.target);
-        void afterLoad([
-          () => import("../scripts/product-examples"),
-          async () => {
-            if (entry.target.matches(".hero-device")) await import("../scripts/demo");
-            if (entry.target.matches('[data-section="features"]'))
-              await import("../scripts/product-metrics");
-          },
-        ]);
+      for (const { isIntersecting, target } of entries) {
+        if (!isIntersecting) continue;
+        previewObserver.unobserve(target);
+        if (target.matches("[data-week-card]"))
+          void import("../scripts/week").then(
+            (week) => week.mountWeek(target as HTMLElement, demoNow),
+            () => target.removeAttribute("data-clock-pending"),
+          );
+        if (target.matches(".hero-device")) void afterLoad([() => import("../scripts/demo")]);
+        if (target.matches('[data-section="features"]')) {
+          void import("../scripts/demo-views").catch(() =>
+            target
+              .querySelectorAll("[data-clock-pending]")
+              .forEach((view) => view.removeAttribute("data-clock-pending")),
+          );
+          void afterLoad([() => import("../scripts/product-metrics")]);
+        }
       }
     },
     { rootMargin: "160px" },
   );
   document
-    .querySelectorAll('.hero-device, [data-section="features"]')
+    .querySelectorAll('.hero-device, [data-week-card], [data-section="features"]')
     .forEach((surface) => previewObserver.observe(surface));
 </script>

@@ -95,7 +95,7 @@ test("composition grids never impose a minimum column or row width", () => {
 });
 
 test("composition grid targets fill adjoining cells and keep at least 44px of height", () => {
-  for (const selector of [".example-app .orbit-date", ".example-app .metric-bar-track"]) {
+  for (const selector of [".day-cell", ".example-app .metric-bar-track"]) {
     const rule = stylesheetRules(css).find((rule) => rule.selector === selector);
     assert.ok(rule, selector);
     assert.match(rule.declarations, /(?:^|;)\s*inline-size:\s*100%;/);
@@ -109,7 +109,7 @@ test("composition grid targets fill adjoining cells and keep at least 44px of he
   }
   const standalone = stylesheetRules(css).find(
     (rule) =>
-      rule.selector === ".example-app :where(button, a, input):not(.orbit-date, .metric-bar-track)",
+      rule.selector === ".example-app :where(button, a, input):not(.day-cell, .metric-bar-track)",
   );
   assert.ok(standalone, "standalone minimum widths must exclude grid cells");
   assert.match(standalone.declarations, /min-inline-size:\s*44px;/);
@@ -661,7 +661,7 @@ for (const name of ["./hero-float", "./landing-motion"]) {
 test("the Astra conversation sits in a full phone with status chrome and a home indicator", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
   assert.match(hero, /class="device-status" aria-hidden="true"/);
-  assert.match(hero, /data-mock>9:41/);
+  assert.match(hero, /class="device-status-time"\s+data-mock\s+data-clock="time"/);
   assert.match(hero, /class="device-home"/);
   assert.match(hero, /class="device-screen"/);
   assert.match(css, /\.hero-device\s*\{[^}]*aspect-ratio:\s*9 \/ 19\.5/);
@@ -923,12 +923,13 @@ test("feature cards retain card padding and inset their interactive content from
     css,
     /\.example-app \.habit-row\[data-habit-toggle\]\s*\{[^}]*padding:\s*8px 12px;[^}]*min-block-size:\s*48px/,
   );
+  assert.match(css, /\.example-app \[data-calendar\]\s*\{[^}]*padding:\s*24px/);
+  assert.match(css, /\.day-cell\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*0;/);
+  assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(
     css,
-    /\.example-app \.orbit-date\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*4px 8px/,
+    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*2px solid var\(--color-fg-1\);[^}]*outline-offset:\s*2px/,
   );
-  assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
-  assert.match(css, /\.example-app \.orbit-date:focus-visible\s*\{[^}]*outline-offset:\s*-2px/);
   assert.match(
     css,
     /\.example-app :where\(button, a\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,

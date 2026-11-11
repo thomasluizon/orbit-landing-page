@@ -24,4 +24,30 @@ export const exampleBreakdown = [
   { habit: "bathroom", cadence: "weekly" },
 ] as const;
 
-export const exampleDate = "2026-08-18";
+const earlierDays = [
+  { done: 5, total: 5 },
+  { done: 3, total: 4 },
+  { done: 4, total: 4 },
+  { done: 2, total: 3 },
+  { done: 3, total: 3 },
+  { done: 0, total: 2 },
+  { done: 4, total: 5 },
+];
+
+/** Demo habit counts for the day `offset` days from today. The last seven days are `exampleDays`; future days have none. */
+export function demoDay(offset: number) {
+  if (offset > 0) return undefined;
+  if (offset >= -6) return exampleDays[6 + offset];
+  return earlierDays[-offset % earlierDays.length];
+}
+
+/** Demo calendar events for the day `offset` days from today with local weekday `weekday` (0 is Sunday). */
+export function demoEvents(offset: number, weekday: number) {
+  const events: { name: "orbit.teamMeeting" | "orbit.dentist"; time: string }[] = [];
+  if (weekday > 0 && weekday < 6) events.push({ name: "orbit.teamMeeting", time: "10:00" });
+  if (offset % 9 === 0) events.push({ name: "orbit.dentist", time: "15:30" });
+  return events;
+}
+
+/** The build time. Every demo date falls back to it when JavaScript does not run. */
+export const buildNow = new Date();
