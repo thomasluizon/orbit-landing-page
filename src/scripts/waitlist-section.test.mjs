@@ -42,59 +42,89 @@ function harness(hash = "", reduced = false) {
     return event;
   };
   const location = { hash };
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/waitlist-section.ts", "utf8"), {
+  const transpile = (file) =>
+    ts.transpileModule(readFileSync(file, "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: {},
-      Element: FakeElement,
-      document: {
-        getElementById: (id) => (id === "ios" ? section : email),
-        addEventListener: (name, fn) => documentListeners.set(name, fn),
-      },
-      window: {
-        location,
-        matchMedia: () => ({ matches: reduced }),
-        history: {
-          pushState(_state, _title, value) {
-            location.hash = value;
-          },
-        },
-        addEventListener: (name, fn) => listeners.set(name, fn),
-      },
+    }).outputText;
+  const sandbox = {
+    exports: {},
+    Element: FakeElement,
+    document: {
+      getElementById: (id) => (id === "ios" ? section : email),
+      addEventListener: (name, fn) => documentListeners.set(name, fn),
     },
-  );
-  return { entries, email, triggers, listeners, location, click, dispatch };
+    window: {
+      location,
+      matchMedia: () => ({ matches: reduced }),
+      history: {
+        pushState(_state, _title, value) {
+          location.hash = value;
+        },
+      },
+      addEventListener: (name, fn) => listeners.set(name, fn),
+      setTimeout: () => 0,
+      clearTimeout() {},
+    },
+  };
+  const scroll = {};
+  vm.runInNewContext(
+    `(function (exports) {${transpile("src/scripts/programmatic-scroll.ts")}})`,
+    sandbox,
+  )(scroll);
+  const loads = [];
+  sandbox.require = (path) => {
+    loads.push(path);
+    return scroll;
+  };
+  vm.runInNewContext(transpile("src/scripts/waitlist-section.ts"), sandbox);
+  return { entries, email, triggers, listeners, location, click, dispatch, loads };
 }
-test("the ios fragment scrolls to the dedicated section and focuses its real email field", () => {
+const settled = () => new Promise((resolve) => setImmediate(resolve));
+test("the ios fragment scrolls to the dedicated section and focuses its real email field", async () => {
   for (const reduced of [false, true]) {
     const h = harness("#ios", reduced);
+    await settled();
     assert.equal(h.entries.length, 1);
     assert.equal(h.entries[0].behavior, reduced ? "instant" : "smooth");
     assert.equal(h.email.focused.preventScroll, true);
   }
 });
-test("footer and FAQ entries repeat the same fragment behavior and history stays usable", () => {
+test("footer and FAQ entries repeat the same fragment behavior and history stays usable", async () => {
   const h = harness();
   assert.equal(h.entries.length, 0);
   for (const trigger of h.triggers) assert.ok(h.click(trigger).prevented);
+  await settled();
   assert.equal(h.location.hash, "#ios");
   assert.equal(h.entries.length, 2);
   h.location.hash = "";
   h.listeners.get("popstate")();
+  await settled();
   assert.equal(h.entries.length, 2);
   h.location.hash = "#ios";
   h.listeners.get("hashchange")();
+  await settled();
   assert.equal(h.entries.length, 3);
 });
-test("a trigger added after the script loaded and a repeat tap on the ios fragment still focus the field", () => {
+test("a trigger added after the script loaded and a repeat tap on the ios fragment still focus the field", async () => {
   const h = harness("#ios");
+  await settled();
   assert.equal(h.entries.length, 1);
   const late = {};
   assert.ok(h.click(late).prevented);
+  await settled();
   assert.equal(h.entries.length, 2);
   assert.equal(h.email.focused.preventScroll, true);
+});
+test("the programmatic scroll loads on the first click on a trigger and not at script start", async () => {
+  const h = harness();
+  assert.deepEqual(h.loads, []);
+  h.click(null);
+  await settled();
+  assert.deepEqual(h.loads, [], "a click outside every trigger loads nothing");
+  h.click({});
+  await settled();
+  assert.equal(h.loads.length, 1);
+  assert.equal(h.entries.length, 1);
 });
 test("a click outside every waitlist trigger is left alone", () => {
   const h = harness();

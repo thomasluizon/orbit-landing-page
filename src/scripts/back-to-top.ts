@@ -26,10 +26,10 @@ if (banner)
     attributeFilter: ["hidden"],
   });
 topButton?.addEventListener("click", () => {
-  window.scrollTo({
-    top: 0,
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-  });
+  import("./programmatic-scroll").then(
+    ({ scrollToTop }) => scrollToTop(),
+    () => window.scrollTo(0, 0),
+  );
   document
     .querySelector<HTMLAnchorElement>(".header-content .brand")
     ?.focus({ preventScroll: true });
