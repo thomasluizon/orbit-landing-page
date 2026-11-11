@@ -268,7 +268,7 @@ for (const language of ["en", "pt-BR"]) {
       cells.forEach((cell, index) =>
         assert.equal(Number(cell.dataset.calendarWeek), Math.floor(index / 7)),
       );
-      assert.equal(cells.length % 7, 0, "the month fills whole weeks");
+      assert.equal(cells.length, 42, "every month draws six weeks, so the card keeps one height");
       const lead = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7;
       assert.equal(
         cells.findIndex((cell) => cell.hasAttribute("data-day-key")),

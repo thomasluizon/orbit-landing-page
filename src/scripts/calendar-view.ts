@@ -5,6 +5,9 @@ import { addDays, bilingual, bilingualDate, formatDate } from "./clock-format";
 import { bilingualCopy, copyElement, dayCellHtml, escapeHtml, weekdayDate } from "./day-cell";
 import { capitalize, dayOffset, parseDayKey, startOfWeek, weekdayLabels } from "./demo-dates";
 
+/** Every month draws six weeks, so the card keeps the height the build drew when the visitor's month mounts. */
+const SIX_WEEK_DAYS = 42;
+
 function monthGridHtml(
   month: Date,
   selectedKey: string,
@@ -13,7 +16,6 @@ function monthGridHtml(
   copy: DemoCopy,
 ) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
-  const last = new Date(month.getFullYear(), month.getMonth() + 1, 0);
   const pt = weekdayLabels("pt-BR");
   const header = weekdayLabels("en")
     .map((label, index) =>
@@ -26,7 +28,7 @@ function monthGridHtml(
     )
     .join("");
   const cells: string[] = [];
-  const end = addDays(startOfWeek(last), 6);
+  const end = addDays(startOfWeek(first), SIX_WEEK_DAYS - 1);
   for (let date = startOfWeek(first), index = 0; date <= end; date = addDays(date, 1), index++) {
     const week = Math.floor(index / 7);
     if (date.getMonth() !== month.getMonth()) {

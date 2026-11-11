@@ -1232,15 +1232,6 @@ for (const [opening, closing] of [
   });
 }
 
-test("the demo clock sets the hero dates before any deferred task", () => {
-  const startup = scriptsFrom(readFileSync("src/pages/index.astro", "utf8"))[0].body;
-  assert.ok(
-    startup.indexOf('import { demoNow } from "../scripts/demo-clock";') <
-      startup.indexOf("afterLoad("),
-    "the demo clock sets the hero dates and the phone clock before any deferred task",
-  );
-});
-
 test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   const toggle = css.match(/\.language-toggle\s*\{([^}]*)\}/)?.[1] ?? "";

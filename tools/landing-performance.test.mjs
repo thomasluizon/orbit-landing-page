@@ -106,6 +106,19 @@ test("hero controls cannot evaluate or measure below-the-fold metrics", () => {
   );
 });
 
+test("the selected day panel reserves its caption and two event rows, the most demoEvents returns", () => {
+  const css = source("src/styles/landing.css");
+  assert.match(css, /\.calendar-day-events\s*\{[^}]*gap:\s*8px;/);
+  assert.match(
+    css,
+    /\.calendar-day-card \.calendar-day-events\s*\{[^}]*align-content:\s*start;[^}]*min-block-size:\s*calc\(var\(--fs-xs\) \* var\(--lh-body\) \+ 2 \* var\(--fs-sm\) \* var\(--lh-meta\) \+ 16px\);/,
+  );
+  const demoEvents = source("src/config/product-examples.ts").match(
+    /export function demoEvents[\s\S]*?\n\}/,
+  )[0];
+  assert.equal(demoEvents.match(/events\.push\(/g).length, 2);
+});
+
 test("offscreen calendar and metric interiors reserve their exact grid geometry", () => {
   const css = source("src/styles/landing.css");
   assert.match(
