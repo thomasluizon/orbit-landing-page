@@ -94,6 +94,37 @@ test("every later press on either opener reaches activate() through the same lis
   assert.ok(view.loaded.every((path) => path === "./downloads-panel"));
 });
 
+test("a second press while the panel code loads does not undo the first", async () => {
+  const view = launch();
+  assert.equal(view.press(view.toggle).prevented, true);
+  assert.equal(view.press(view.icon).prevented, true);
+  await flush();
+  assert.deepEqual(view.loaded, ["./downloads-panel"]);
+  assert.deepEqual(view.activated, ["toggle"]);
+  view.press(view.toggle);
+  await flush();
+  assert.deepEqual(view.activated, ["toggle", "toggle"], "a press after the load acts again");
+});
+
+test("a press while the downloads fragment loads the panel does not close the panel it opens", async () => {
+  const view = launch("#downloads");
+  assert.equal(view.press(view.toggle).prevented, true);
+  await flush();
+  assert.deepEqual(view.loaded, ["./downloads-panel"]);
+  assert.deepEqual(view.activated, []);
+});
+
+test("a failed panel load lets the next press try again", async () => {
+  const view = launch("", { failing: true });
+  view.press(view.toggle);
+  view.press(view.toggle);
+  await flush();
+  assert.equal(view.loaded.length, 1);
+  view.press(view.toggle);
+  await flush();
+  assert.equal(view.loaded.length, 2);
+});
+
 test("a press outside the openers keeps its own action and loads nothing", async () => {
   const view = launch();
   const event = view.press(view.elsewhere);
