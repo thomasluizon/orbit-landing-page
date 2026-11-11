@@ -59,11 +59,10 @@ import { appUrl, googlePlayUrl } from "../config/links";
             week.mountWeek(target as HTMLElement, demoNow),
           );
         if (target.matches(".hero-device")) void afterLoad([() => import("../scripts/demo")]);
-        if (target.matches('[data-section="features"]'))
-          void afterLoad([
-            () => import("../scripts/product-metrics"),
-            () => import("../scripts/demo-views"),
-          ]);
+        if (target.matches('[data-section="features"]')) {
+          void import("../scripts/demo-views");
+          void afterLoad([() => import("../scripts/product-metrics")]);
+        }
       }
     },
     { rootMargin: "160px" },

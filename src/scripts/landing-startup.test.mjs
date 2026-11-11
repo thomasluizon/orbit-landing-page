@@ -178,16 +178,19 @@ for (const scheduler of [false, true]) {
     });
   }
 
-  test(`preview intersections wait for load and use separate tasks (scheduler: ${scheduler})`, async () => {
+  test(`the demo and the chart controls wait for load in separate tasks, the calendar does not (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
     h.intersect(0);
     h.intersect(1);
     await flush();
-    assert.deepEqual(h.bindings, firstViewport);
+    assert.deepEqual(
+      h.bindings.map(({ name }) => name),
+      [...firstViewport.map(({ name }) => name), "demo-views"],
+    );
     assert.equal(h.continuations.length, 0);
     h.load();
     await h.drain();
-    const previews = ["demo", "product-metrics", "demo-views"].map((name) =>
+    const previews = ["demo", "product-metrics"].map((name) =>
       h.bindings.find((binding) => binding.name === name),
     );
     assert.ok(previews.every((preview) => preview?.task > 0));
@@ -236,8 +239,20 @@ test("the calendar and the chart labels load only when the features come near", 
   for (const name of demoViewModules) assert.ok(!names().includes(name), name);
   h.intersect(1);
   await h.drain();
-  assert.ok(names().indexOf("demo-views") > names().indexOf("product-metrics"));
+  for (const name of ["demo-views", "product-metrics"]) assert.ok(names().includes(name), name);
   assert.deepEqual(h.mounts, [], "the week card mounts only when it comes into view");
+});
+
+test("the calendar loads as soon as the features come near, without waiting for load or the chart controls", async () => {
+  const h = harness();
+  h.intersect(1);
+  await flush();
+  const names = () => h.bindings.map(({ name }) => name);
+  assert.ok(names().includes("demo-views"));
+  assert.ok(!names().includes("product-metrics"));
+  h.load();
+  await h.drain();
+  assert.ok(names().includes("product-metrics"));
 });
 
 test("the hero binds the download target with its own first-viewport script, not after load", () => {
