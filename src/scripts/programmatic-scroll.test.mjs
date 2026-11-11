@@ -243,6 +243,7 @@ test("reduced motion scrolls to the waitlist at once", async () => {
   p.load("./scroll");
   p.load("./waitlist-section");
   p.click();
+  await flush();
   assert.equal(p.state.y, SECTION_TOP);
   await settle(p);
   assert.equal(p.state.y, SECTION_TOP);

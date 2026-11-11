@@ -1,4 +1,4 @@
-import { scrollToTop } from "./programmatic-scroll";
+export {};
 
 const topButton = document.getElementById("back-to-top");
 const hero = document.getElementById("hero");
@@ -25,8 +25,15 @@ if (banner)
     attributes: true,
     attributeFilter: ["hidden"],
   });
+const loadScroll = () => import("./programmatic-scroll");
+for (const event of ["pointerdown", "focus", "touchstart"]) {
+  topButton?.addEventListener(event, () => void loadScroll(), { once: true, passive: true });
+}
 topButton?.addEventListener("click", () => {
-  scrollToTop();
+  loadScroll().then(
+    ({ scrollToTop }) => scrollToTop(),
+    () => window.scrollTo(0, 0),
+  );
   document
     .querySelector<HTMLAnchorElement>(".header-content .brand")
     ?.focus({ preventScroll: true });

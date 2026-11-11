@@ -1058,7 +1058,7 @@ test("pinning and staggered feature motion use verified APIs and expose their st
   assert.doesNotMatch(frame, /background|box-shadow/);
 });
 
-test("back to top appears past the hero and yields to footer links and consent", () => {
+test("back to top appears past the hero and yields to footer links and consent", async () => {
   for (const reduced of [false, true]) {
     let intersection,
       mutation,
@@ -1130,6 +1130,7 @@ test("back to top appears past the hero and yields to footer links and consent",
     mutation();
     assert.equal(button.hidden, false);
     events.get("click")();
+    await new Promise((resolve) => setImmediate(resolve));
     assert.equal(scrolled.top, 0);
     assert.equal(scrolled.behavior, reduced ? "instant" : "smooth");
     assert.equal(focused, true);

@@ -1,0 +1,41 @@
+import assert from "node:assert/strict";
+import { readFileSync, readdirSync } from "node:fs";
+import test from "node:test";
+
+const assets = "dist/_astro";
+const chunks = readdirSync(assets).filter((name) => name.endsWith(".js"));
+const chunkNamed = (name) => chunks.find((file) => file.startsWith(`${name}.`));
+const staticImports = (file) =>
+  [
+    ...readFileSync(`${assets}/${file}`, "utf8").matchAll(
+      /(?:import|export)\s*(?:[^"'`(;]*?from\s*)?["'`]\.\/([^"'`]+)["'`]/g,
+    ),
+  ].map((match) => match[1]);
+const dynamicImports = (file) =>
+  [
+    ...readFileSync(`${assets}/${file}`, "utf8").matchAll(
+      /import\(\s*["'`]\.\/([^"'`]+)["'`]\s*\)/g,
+    ),
+  ].map((match) => match[1]);
+
+const scroll = chunkNamed("programmatic-scroll");
+const motion = chunkNamed("landing-motion");
+
+test("the programmatic scroll chunk is built", () => {
+  assert.ok(scroll);
+  assert.ok(motion);
+});
+
+test("only the deferred landing motion imports the programmatic scroll statically", () => {
+  const importers = chunks.filter((file) => staticImports(file).includes(scroll));
+  assert.deepEqual(importers, [motion]);
+});
+
+test("the waitlist and back to top scripts load the programmatic scroll on demand", () => {
+  for (const name of ["back-to-top", "waitlist-section"]) {
+    const file = chunkNamed(name);
+    assert.ok(file, `${name} is built`);
+    assert.ok(!staticImports(file).includes(scroll), `${name} must not import it statically`);
+    assert.ok(dynamicImports(file).includes(scroll), `${name} must import it dynamically`);
+  }
+});

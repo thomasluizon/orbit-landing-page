@@ -71,38 +71,72 @@ function harness(hash = "", reduced = false) {
     `(function (exports) {${transpile("src/scripts/programmatic-scroll.ts")}})`,
     sandbox,
   )(scroll);
-  sandbox.require = () => scroll;
+  const loads = [];
+  sandbox.require = (path) => {
+    loads.push(path);
+    return scroll;
+  };
   vm.runInNewContext(transpile("src/scripts/waitlist-section.ts"), sandbox);
-  return { entries, email, triggers, listeners, location, click, dispatch };
+  const press = (name, target) => documentListeners.get(name)({ target: new FakeElement(target) });
+  return { entries, email, triggers, listeners, location, click, dispatch, loads, press };
 }
-test("the ios fragment scrolls to the dedicated section and focuses its real email field", () => {
+const settled = () => new Promise((resolve) => setImmediate(resolve));
+test("the ios fragment scrolls to the dedicated section and focuses its real email field", async () => {
   for (const reduced of [false, true]) {
     const h = harness("#ios", reduced);
+    await settled();
     assert.equal(h.entries.length, 1);
     assert.equal(h.entries[0].behavior, reduced ? "instant" : "smooth");
     assert.equal(h.email.focused.preventScroll, true);
   }
 });
-test("footer and FAQ entries repeat the same fragment behavior and history stays usable", () => {
+test("footer and FAQ entries repeat the same fragment behavior and history stays usable", async () => {
   const h = harness();
   assert.equal(h.entries.length, 0);
   for (const trigger of h.triggers) assert.ok(h.click(trigger).prevented);
+  await settled();
   assert.equal(h.location.hash, "#ios");
   assert.equal(h.entries.length, 2);
   h.location.hash = "";
   h.listeners.get("popstate")();
+  await settled();
   assert.equal(h.entries.length, 2);
   h.location.hash = "#ios";
   h.listeners.get("hashchange")();
+  await settled();
   assert.equal(h.entries.length, 3);
 });
-test("a trigger added after the script loaded and a repeat tap on the ios fragment still focus the field", () => {
+test("a trigger added after the script loaded and a repeat tap on the ios fragment still focus the field", async () => {
   const h = harness("#ios");
+  await settled();
   assert.equal(h.entries.length, 1);
   const late = {};
   assert.ok(h.click(late).prevented);
+  await settled();
   assert.equal(h.entries.length, 2);
   assert.equal(h.email.focused.preventScroll, true);
+});
+test("the programmatic scroll loads on the first press on a trigger and not at script start", async () => {
+  const h = harness();
+  assert.deepEqual(h.loads, []);
+  h.press("pointerdown", null);
+  await settled();
+  assert.deepEqual(h.loads, []);
+  for (const name of ["pointerdown", "focusin", "touchstart"]) {
+    const before = h.loads.length;
+    h.press(name, {});
+    await settled();
+    assert.equal(h.loads.length, before + 1, `${name} on a trigger preloads the scroll`);
+  }
+});
+test("a press starts the scroll in the task of the press once the scroll module is loaded", async () => {
+  const h = harness();
+  h.press("pointerdown", {});
+  await settled();
+  h.click({});
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(h.entries.length, 1);
 });
 test("a click outside every waitlist trigger is left alone", () => {
   const h = harness();
