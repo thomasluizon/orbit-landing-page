@@ -439,15 +439,45 @@ test("the built feature compositions use full width without backing panels", () 
   for (const rule of rules) assert.doesNotMatch(rule, /background|box-shadow|aspect-ratio/);
 });
 
-test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+function builtCss() {
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
   ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
   const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
-  const css = [...stylesheets, ...inline].join("\n");
-  const block = css.match(
-    /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/,
-  )?.[1];
+  return [...stylesheets, ...inline].join("\n");
+}
+
+const withoutScripting = /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/;
+
+test("a #downloads visit lands on one target that holds the toggle and the panel, below the header", async () => {
+  const { descendants, attrs } = markup;
+  const nodes = descendants((await parse(html)).ast);
+  const targets = nodes.filter((node) => attrs(node).id === "downloads");
+  assert.equal(targets.length, 1);
+  const [target] = targets;
+  const held = descendants(target).map((node) => attrs(node).id);
+  assert.ok(held.includes("downloads-toggle"), "the fragment target holds the toggle");
+  assert.ok(held.includes("downloads-panel"), "the fragment target holds the panel");
+  const withScripting = builtCss().replace(withoutScripting, "");
+  const rule = [...withScripting.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selectors]) =>
+      selectors
+        .split(",")
+        .map((part) => part.trim())
+        .includes(`.${attrs(target).class}`),
+    )
+    .map(([, , declarations]) => declarations)
+    .join(";");
+  assert.match(
+    rule,
+    /scroll-margin-block-start:\s?96px/,
+    "the browser's own scroll clears the header",
+  );
+  assert.doesNotMatch(rule, /display:\s?contents/, "an element with no box takes no scroll margin");
+});
+
+test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+  const block = builtCss().match(withoutScripting)?.[1];
   assert.ok(
     block,
     "a scripting: none block ships, or the page offers no download without JavaScript",
@@ -463,17 +493,12 @@ test("without scripting the built stylesheet shows the downloads in flow and hid
   assert.match(panel, /position:\s?static/);
   assert.match(panel, /visibility:\s?visible/);
   assert.match(panel, /opacity:\s?1\b/);
-  assert.match(panel, /scroll-margin-block-start:\s?96px/, "a #downloads visit clears the header");
   assert.match(rule(".downloads-toggle"), /display:\s?none/);
 });
 
 test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
-  const stylesheets = [
-    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
-  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
-  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
   const target = ".closing-legal p .text-link>[data-copy-en]";
-  const wraps = [...[...stylesheets, ...inline].join("\n").matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
+  const wraps = [...builtCss().matchAll(/([^{}]+)\{([^{}]*)\}/g)].some(
     ([, selectors, body]) =>
       selectors
         .split(",")
@@ -612,7 +637,7 @@ test("the built panel offers each desktop file at its stable release URL in both
     ],
   ];
   const nodes = descendants((await parse(html)).ast);
-  const panel = nodes.find((node) => attrs(node).id === "downloads");
+  const panel = nodes.find((node) => attrs(node).id === "downloads-panel");
   assert.ok(panel);
   const downloads = descendants(panel).filter((node) =>
     Object.hasOwn(attrs(node), "data-desktop-download"),
@@ -667,7 +692,7 @@ test("the built panel offers each desktop file at its stable release URL in both
 test("the built panel holds every download, the QR code and a toggle that controls it", async () => {
   const { descendants, attrs } = markup;
   const nodes = descendants((await parse(html)).ast);
-  const panels = nodes.filter((node) => attrs(node).id === "downloads");
+  const panels = nodes.filter((node) => attrs(node).id === "downloads-panel");
   assert.equal(panels.length, 1);
   const [panel] = panels;
   assert.equal(attrs(panel).role, "region");
@@ -691,7 +716,7 @@ test("the built panel holds every download, the QR code and a toggle that contro
   assert.equal(toggle.name, "button");
   assert.equal(attrs(toggle).type, "button");
   assert.equal(attrs(toggle)["aria-expanded"], "false");
-  assert.equal(attrs(toggle)["aria-controls"], "downloads");
+  assert.equal(attrs(toggle)["aria-controls"], "downloads-panel");
   assert.equal(attrs(toggle)["data-analytics-event"], "download_list_opened");
   assert.equal(attrs(toggle)["data-analytics-surface"], "hero_all_downloads");
   assert.ok(descendants(hero).includes(toggle));

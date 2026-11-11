@@ -2284,6 +2284,10 @@ button.metric-bar-track:focus-visible {
   inline-size: 1em;
   block-size: 1em;
 }
+.downloads-disclosure {
+  display: grid;
+  scroll-margin-block-start: 96px;
+}
 .downloads-toggle {
   gap: 4px;
   background: none;
@@ -2392,7 +2396,6 @@ button.metric-bar-track:focus-visible {
     opacity: 1;
     translate: none;
     visibility: visible;
-    scroll-margin-block-start: 96px;
   }
   .downloads-toggle {
     display: none;

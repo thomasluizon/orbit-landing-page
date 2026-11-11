@@ -116,11 +116,11 @@ test("a press on a downloads link never closes the open panel", () => {
   assert.equal(view.toggle.scrolled.length, 2);
 });
 
-test("a visit to the downloads fragment opens the panel at startup, without a press", async () => {
+test("a visit to the downloads fragment opens the panel at startup and leaves the scroll and the focus to the browser", async () => {
   const view = launch("#downloads");
   assert.equal(view.expanded(), "true");
-  assert.deepEqual(view.toggle.scrolled, [{ block: "start" }]);
-  assert.deepEqual(view.toggle.focused, [{ preventScroll: true }]);
+  assert.deepEqual(view.toggle.scrolled, []);
+  assert.deepEqual(view.toggle.focused, []);
   await flush();
   assert.deepEqual(view.loaded, ["./downloads-panel"]);
   const other = launch("#features");

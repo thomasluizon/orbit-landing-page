@@ -7,19 +7,18 @@ function setOpen(open: boolean) {
   if (open) import("./downloads-panel").catch(() => undefined);
 }
 
-function openFromLink() {
-  setOpen(true);
-  toggle?.scrollIntoView({ block: "start" });
-  toggle?.focus({ preventScroll: true });
-}
-
 document.addEventListener("click", (event) => {
   const opener =
     event.target instanceof Element &&
     event.target.closest('#downloads-toggle, a[href="#downloads"]');
   if (!opener) return;
   event.preventDefault();
-  if (opener === toggle) setOpen(toggle.getAttribute("aria-expanded") !== "true");
-  else openFromLink();
+  if (opener === toggle) {
+    setOpen(toggle.getAttribute("aria-expanded") !== "true");
+  } else {
+    setOpen(true);
+    toggle?.scrollIntoView({ block: "start" });
+    toggle?.focus({ preventScroll: true });
+  }
 });
-if (location.hash === "#downloads") openFromLink();
+if (location.hash === "#downloads") setOpen(true);

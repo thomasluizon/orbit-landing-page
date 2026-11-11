@@ -43,7 +43,7 @@ class FakeElement {
 }
 
 function page({ hash = "", open = true } = {}) {
-  const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
+  const toggle = new FakeElement("toggle", ["#downloads"]);
   toggle.setAttribute("aria-expanded", String(open));
   const panel = new FakeElement("panel", ["#downloads"]);
   const entry = new FakeElement("entry", ["#downloads a", "#downloads"]);
@@ -53,7 +53,7 @@ function page({ hash = "", open = true } = {}) {
   const listeners = new Map();
   const document = {
     activeElement: null,
-    getElementById: (id) => ({ "downloads-toggle": toggle, downloads: panel })[id] ?? null,
+    getElementById: (id) => ({ "downloads-toggle": toggle, "downloads-panel": panel })[id] ?? null,
     addEventListener: (type, listener) => listeners.set(type, listener),
   };
   const exports = {};

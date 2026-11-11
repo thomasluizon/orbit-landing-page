@@ -305,7 +305,7 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.ok(Object.hasOwn(attributes(heroAction), "appEntry"));
   assert.ok(!Object.hasOwn(attributes(heroAction), "external"));
   const hero = descendants(sections[0]);
-  const panel = hero.find((node) => attributes(node).id === "downloads");
+  const panel = hero.find((node) => attributes(node).id === "downloads-panel");
   assert.ok(panel);
   const insidePanel = new Set(descendants(panel));
   assert.deepEqual(
@@ -323,7 +323,7 @@ test("the header and hero preserve their app-entry intent", async () => {
   assert.equal(toggle.name, "button");
   assert.equal(attributes(toggle).type, "button");
   assert.equal(attributes(toggle)["aria-expanded"], "false");
-  assert.equal(attributes(toggle)["aria-controls"], "downloads");
+  assert.equal(attributes(toggle)["aria-controls"], "downloads-panel");
   for (const name of ["Faq", "DownloadsPanel"]) {
     assert.ok(descendants(components.get(name)).some((node) => attributes(node).href === "#ios"));
   }

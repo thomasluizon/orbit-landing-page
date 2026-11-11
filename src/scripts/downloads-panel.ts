@@ -1,7 +1,7 @@
 export {};
 
 const toggle = document.getElementById("downloads-toggle");
-const panel = document.getElementById("downloads");
+const panel = document.getElementById("downloads-panel");
 
 function targetIn(event: Event, selector: string) {
   return event.target instanceof Element && event.target.closest(selector) !== null;
@@ -23,7 +23,7 @@ if (toggle && panel) {
     close(true);
   });
   document.addEventListener("pointerdown", (event) => {
-    if (!targetIn(event, '#downloads, #downloads-toggle, a[href="#downloads"]')) close(false);
+    if (!targetIn(event, '#downloads, a[href="#downloads"]')) close(false);
   });
   panel.addEventListener("focusout", (event) => {
     const next = event.relatedTarget;
