@@ -1,15 +1,19 @@
 export {};
 
 let loading = false;
+function expandToggle() {
+  const toggle = document.getElementById("downloads-toggle");
+  toggle?.setAttribute("aria-expanded", "true");
+  return toggle;
+}
 const loadPanel = () => {
   loading = true;
-  document.getElementById("downloads-toggle")?.setAttribute("aria-expanded", "true");
+  expandToggle();
   return import("./downloads-panel").finally(() => (loading = false));
 };
 
 function showList() {
-  const toggle = document.getElementById("downloads-toggle");
-  toggle?.setAttribute("aria-expanded", "true");
+  const toggle = expandToggle();
   document.getElementById("downloads")?.toggleAttribute("data-open", true);
   toggle?.scrollIntoView({ block: "start" });
 }
