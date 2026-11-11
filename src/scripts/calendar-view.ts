@@ -5,7 +5,6 @@ import { addDays, bilingual, bilingualDate, formatDate } from "./clock-format";
 import { bilingualCopy, copyElement, dayCellHtml, escapeHtml, weekdayDate } from "./day-cell";
 import { capitalize, dayOffset, parseDayKey, startOfWeek, weekdayLabels } from "./demo-dates";
 
-/** Every month draws six weeks, so the card keeps the height the build drew when the visitor's month mounts. */
 const SIX_WEEK_DAYS = 42;
 
 function monthGridHtml(
