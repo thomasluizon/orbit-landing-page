@@ -1,14 +1,11 @@
-export {};
+import { scrollToElement } from "./programmatic-scroll";
 
 const section = document.getElementById("ios");
 const email = document.getElementById("waitlist-email");
 
 function focusWaitlist() {
   if (window.location.hash !== "#ios") return;
-  section?.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-    block: "start",
-  });
+  if (section) scrollToElement(section);
   email?.focus({ preventScroll: true });
 }
 

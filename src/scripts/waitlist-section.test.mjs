@@ -42,29 +42,37 @@ function harness(hash = "", reduced = false) {
     return event;
   };
   const location = { hash };
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/waitlist-section.ts", "utf8"), {
+  const transpile = (file) =>
+    ts.transpileModule(readFileSync(file, "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: {},
-      Element: FakeElement,
-      document: {
-        getElementById: (id) => (id === "ios" ? section : email),
-        addEventListener: (name, fn) => documentListeners.set(name, fn),
-      },
-      window: {
-        location,
-        matchMedia: () => ({ matches: reduced }),
-        history: {
-          pushState(_state, _title, value) {
-            location.hash = value;
-          },
-        },
-        addEventListener: (name, fn) => listeners.set(name, fn),
-      },
+    }).outputText;
+  const sandbox = {
+    exports: {},
+    Element: FakeElement,
+    document: {
+      getElementById: (id) => (id === "ios" ? section : email),
+      addEventListener: (name, fn) => documentListeners.set(name, fn),
     },
-  );
+    window: {
+      location,
+      matchMedia: () => ({ matches: reduced }),
+      history: {
+        pushState(_state, _title, value) {
+          location.hash = value;
+        },
+      },
+      addEventListener: (name, fn) => listeners.set(name, fn),
+      setTimeout: () => 0,
+      clearTimeout() {},
+    },
+  };
+  const scroll = {};
+  vm.runInNewContext(
+    `(function (exports) {${transpile("src/scripts/programmatic-scroll.ts")}})`,
+    sandbox,
+  )(scroll);
+  sandbox.require = () => scroll;
+  vm.runInNewContext(transpile("src/scripts/waitlist-section.ts"), sandbox);
   return { entries, email, triggers, listeners, location, click, dispatch };
 }
 test("the ios fragment scrolls to the dedicated section and focuses its real email field", () => {

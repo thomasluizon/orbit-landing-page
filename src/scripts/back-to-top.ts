@@ -1,4 +1,4 @@
-export {};
+import { scrollToTop } from "./programmatic-scroll";
 
 const topButton = document.getElementById("back-to-top");
 const hero = document.getElementById("hero");
@@ -26,10 +26,7 @@ if (banner)
     attributeFilter: ["hidden"],
   });
 topButton?.addEventListener("click", () => {
-  window.scrollTo({
-    top: 0,
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-  });
+  scrollToTop();
   document
     .querySelector<HTMLAnchorElement>(".header-content .brand")
     ?.focus({ preventScroll: true });
