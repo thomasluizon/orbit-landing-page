@@ -21,8 +21,17 @@ class FakeElement {
   }
 }
 
-function launch(hash = "") {
+function launch(hash = "", { failing = false } = {}) {
   const loaded = [];
+  const page = {
+    "downloads-toggle": { attributes: {}, scrolled: [] },
+    downloads: { attributes: {} },
+  };
+  for (const element of Object.values(page)) {
+    element.setAttribute = (name, value) => (element.attributes[name] = value);
+    element.toggleAttribute = (name, force) => (element.attributes[name] = force);
+    element.scrollIntoView = (options) => element.scrolled?.push(options.block);
+  }
   const activated = [];
   const listeners = [];
   const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
@@ -35,9 +44,11 @@ function launch(hash = "") {
     Element: FakeElement,
     require: (path) => {
       loaded.push(path);
+      if (failing) throw new Error("chunk request failed");
       return { activate: (control) => activated.push(control.name) };
     },
     document: {
+      getElementById: (id) => page[id] ?? null,
       addEventListener: (type, listener) => {
         assert.equal(type, "click");
         listeners.push(listener);
@@ -50,7 +61,7 @@ function launch(hash = "") {
     for (const listener of listeners) listener(event);
     return event;
   };
-  return { loaded, activated, listeners, press, toggle, link, icon, elsewhere };
+  return { loaded, activated, listeners, press, toggle, link, icon, elsewhere, page };
 }
 
 test("the page loads no panel code before a visitor uses a download control", async () => {
@@ -99,6 +110,25 @@ test("a visit to the downloads fragment loads the panel without a press", async 
   const other = launch("#features");
   await flush();
   assert.deepEqual(other.loaded, []);
+});
+
+for (const control of ["toggle", "link"]) {
+  test(`a press on the ${control} still opens the list and brings it into view when the panel code fails to load`, async () => {
+    const view = launch("", { failing: true });
+    assert.equal(view.press(view[control]).prevented, true);
+    await flush();
+    assert.deepEqual(view.activated, []);
+    assert.deepEqual(view.page.downloads.attributes, { "data-open": true });
+    assert.deepEqual(view.page["downloads-toggle"].attributes, { "aria-expanded": "true" });
+    assert.deepEqual(view.page["downloads-toggle"].scrolled, ["start"]);
+  });
+}
+
+test("a visit to the downloads fragment still opens the list when the panel code fails to load", async () => {
+  const view = launch("#downloads", { failing: true });
+  await flush();
+  assert.deepEqual(view.page.downloads.attributes, { "data-open": true });
+  assert.deepEqual(view.page["downloads-toggle"].attributes, { "aria-expanded": "true" });
 });
 
 test("no startup script imports the panel code statically", () => {

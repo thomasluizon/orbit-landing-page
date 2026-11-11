@@ -1006,10 +1006,10 @@ test("the downloads panel code stays out of the startup scripts of the home page
   const chunks = startupChunks();
   assert.ok(chunks.size >= 5, "the startup graph lists every module script and static import");
   for (const [path, code] of chunks)
-    assert.doesNotMatch(code.toString("utf8"), /data-open/, `${path} carries the panel code`);
+    assert.doesNotMatch(code.toString("utf8"), /downloads-entry/, `${path} carries the panel code`);
   const files = readdirSync("dist/_astro");
   const panel = files.find((file) => /^downloads-panel\..+\.js$/.test(file));
   assert.ok(panel, "the panel code ships as its own lazy chunk");
   assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
-  assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /data-open/);
+  assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /downloads-entry/);
 });

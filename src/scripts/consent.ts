@@ -141,11 +141,6 @@ if (choice === "accepted") {
   });
 }
 
-/**
- * Records a press on a tracked control. It runs in the capture phase, before the control's own handler,
- * so a disclosure still shows the state the press found. A press on an expanded disclosure collapses it,
- * which is not the event the control names, so it records nothing.
- */
 function recordControlPress(event: MouseEvent) {
   if (readConsentChoice() !== "accepted" || !(event.target instanceof Element)) return;
   const control = event.target.closest<HTMLElement>(

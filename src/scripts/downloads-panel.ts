@@ -29,11 +29,6 @@ function close(returnFocus: boolean) {
   if (returnFocus) toggle?.focus();
 }
 
-/**
- * Opens the panel and jumps the page until the button sits below the header, as a fragment link jumps.
- * The jump is instant: the first scroll mounts the landing motion, and its ScrollTrigger refresh
- * stops a smooth scroll short of its target.
- */
 function openFromLink() {
   setOpen(true);
   toggle?.scrollIntoView({ block: "start" });
