@@ -8,7 +8,6 @@ function bindMetrics(block: HTMLElement) {
   let selected = days.length - 1;
   const position = () => {
     const day = days[selected];
-    const bar = day.querySelector<HTMLElement>(".metric-bar");
     const left = Math.max(
       0,
       Math.min(
@@ -16,9 +15,7 @@ function bindMetrics(block: HTMLElement) {
         chart.clientWidth - readout.offsetWidth,
       ),
     );
-    const top = (bar?.offsetTop ?? day.offsetTop) - readout.offsetHeight - 8;
     readout.style.left = `${left}px`;
-    readout.style.top = `${top}px`;
   };
   const render = (index: number, focus = false) => {
     selected = index;

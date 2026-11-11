@@ -45,6 +45,18 @@ test("all shipping sources are free of retired decoration tokens", async () => {
   }
 });
 
+test("every colour token the landing styles read is one global.css defines", async () => {
+  const landing = await readFile("src/styles/landing.css", "utf8");
+  const defined = new Set([...css.matchAll(/(--color-[\w-]+)\s*:/g)].map((match) => match[1]));
+  const lines = landing.split("\n");
+  const undefinedTokens = lines.flatMap((line, index) =>
+    [...line.matchAll(/var\(\s*(--color-[\w-]+)/g)]
+      .filter((match) => !defined.has(match[1]))
+      .map((match) => `landing.css:${index + 1} ${match[1]}`),
+  );
+  assert.deepEqual(undefinedTokens, []);
+});
+
 test("primary labels keep AA contrast in rest, hover and pressed states", () => {
   function luminance(hex) {
     const channels = hex

@@ -1,106 +1,98 @@
 ---
-import { Check, Snowflake, Trophy } from "@lucide/astro";
+import { Check, ChevronLeft, ChevronRight, Snowflake, Trophy } from "@lucide/astro";
 import Copy from "./Copy.astro";
-import { exampleDate } from "../config/product-examples";
+import { buildNow } from "../config/product-examples";
+import { demoCopy } from "../i18n/demo-copy";
 import { landingCopy } from "../i18n/translations";
+import { calendarView } from "../scripts/calendar-view";
+import { addMonths, dayKey } from "../scripts/demo-dates";
 interface Props {
   kind: "calendar" | "progress" | "achievements";
 }
 const { kind } = Astro.props;
-const cells = Array.from({ length: 42 }, (_, index) => index - 4);
-function datedCopy(day: number, language: "en" | "pt-BR" = "en") {
-  const date = new Intl.DateTimeFormat(language, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${exampleDate.slice(0, 8)}${day}`));
-  return landingCopy[language]["orbit.selectedDay"].replace("{date}", date);
-}
+const copy = kind === "calendar" ? demoCopy() : undefined;
+const calendar = copy
+  ? calendarView(addMonths(buildNow, 0), dayKey(buildNow), buildNow, "en", copy)
+  : undefined;
+const monthLabel = (name: "calendar.previousMonth" | "calendar.nextMonth") => ({
+  "aria-label": landingCopy.en[name],
+  "data-copy-label-en": landingCopy.en[name],
+  "data-copy-label-pt": landingCopy["pt-BR"][name],
+});
 ---
 
 <div class:list={["orbit-composition", `orbit-${kind}`]} data-mock="true" data-product-kind={kind}>
   {
-    kind === "calendar" && (
-      <>
-        <div class="product-block orbit-product" data-composition-card>
-          <div>
-            <>
-              <h3>
-                <Copy name="orbit.calendar" />
-              </h3>
-              <p class="product-caption">
-                <Copy name="orbit.google" />
-              </p>
-            </>
-          </div>
-          <p class="orbit-month-title">
-            <Copy name="orbit.august" />
+    calendar && (
+      <div
+        class="product-block orbit-product"
+        data-composition-card
+        data-calendar
+        data-clock-pending
+        data-demo-copy={JSON.stringify(copy)}
+      >
+        <div class="calendar-month-nav">
+          <button
+            type="button"
+            class="calendar-nav-button"
+            data-calendar-previous
+            {...monthLabel("calendar.previousMonth")}
+          >
+            <ChevronLeft size={20} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="calendar-month-title"
+            data-calendar-title
+            aria-disabled={calendar.isToday ? "true" : "false"}
+            aria-label={calendar.labels.title.en}
+            data-copy-label-en={calendar.labels.title.en}
+            data-copy-label-pt={calendar.labels.title["pt-BR"]}
+            set:html={calendar.title}
+          />
+          <button
+            type="button"
+            class="calendar-nav-button"
+            data-calendar-next
+            {...monthLabel("calendar.nextMonth")}
+          >
+            <ChevronRight size={20} aria-hidden="true" />
+          </button>
+        </div>
+        <div
+          class="orbit-month-grid"
+          role="group"
+          data-calendar-grid
+          aria-label={calendar.labels.group.en}
+          data-copy-label-en={calendar.labels.group.en}
+          data-copy-label-pt={calendar.labels.group["pt-BR"]}
+          set:html={calendar.grid}
+        />
+        <section class="calendar-day-card" data-calendar-panel>
+          <h3
+            data-calendar-day-title
+            aria-live="polite"
+            data-copy-en={calendar.dayTitle.en}
+            data-copy-pt={calendar.dayTitle["pt-BR"]}
+          >
+            {calendar.dayTitle.en}
+          </h3>
+          <p
+            class="calendar-day-summary"
+            data-calendar-summary
+            data-copy-en={calendar.summary.en}
+            data-copy-pt={calendar.summary["pt-BR"]}
+          >
+            {calendar.summary.en}
           </p>
           <div
-            class="orbit-month-grid"
-            role="group"
-            aria-label={landingCopy.en["orbit.calendar"]}
-            data-copy-label-en={landingCopy.en["orbit.calendar"]}
-            data-copy-label-pt={landingCopy["pt-BR"]["orbit.calendar"]}
-          >
-            {landingCopy.en["product.days"].split(" ").map((day, index) => (
-              <span
-                class="product-caption"
-                aria-hidden="true"
-                data-copy-en={day}
-                data-copy-pt={landingCopy["pt-BR"]["product.days"].split(" ")[index]}
-              >
-                {day}
-              </span>
-            ))}
-            {cells.map((day, index) =>
-              day > 0 && day <= 31 ? (
-                <button
-                  type="button"
-                  class="orbit-date"
-                  data-calendar-day={day}
-                  data-calendar-week={Math.floor(index / 7)}
-                  aria-pressed={day === 17}
-                  aria-label={datedCopy(day)}
-                  data-copy-label-en={datedCopy(day)}
-                  data-copy-label-pt={datedCopy(day, "pt-BR")}
-                >
-                  {day}
-                  {day < 18 && (
-                    <span class:list={["orbit-date-dot", { "is-done": day % 4 !== 0 }]} />
-                  )}
-                </button>
-              ) : (
-                <span data-calendar-week={Math.floor(index / 7)} />
-              ),
-            )}
-          </div>
-          <div class="calendar-day-card">
-            <h3
-              data-calendar-readout
-              aria-live="polite"
-              data-copy-en={datedCopy(17)}
-              data-copy-pt={datedCopy(17, "pt-BR")}
-            >
-              {datedCopy(17)}
-            </h3>
-            <div data-calendar-events data-composition-secondary>
-              <>
-                <p class="product-caption">
-                  <Copy name="orbit.events" />
-                </p>
-                <p>
-                  <Copy name="orbit.teamMeeting" /> <span class="product-caption">10:00</span>
-                </p>
-                <p>
-                  <Copy name="orbit.dentist" /> <span class="product-caption">15:30</span>
-                </p>
-              </>
-            </div>
-          </div>
-        </div>
-      </>
+            class="calendar-day-events"
+            data-calendar-events
+            data-composition-secondary
+            set:html={calendar.events}
+          />
+        </section>
+      </div>
     )
   }
   {

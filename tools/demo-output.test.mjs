@@ -182,7 +182,6 @@ function harness(language = "en", threadHeight = 415) {
     });
   }
   translate();
-  require("./product-examples");
   require("./demo");
   require("./app-entry");
   return {
@@ -349,6 +348,17 @@ for (const language of ["en", "pt-BR"]) {
     });
   }
 }
+
+test("every habit toggle sits in the hero phone, whose demo binds it", () => {
+  const isToggle = (node) => Object.hasOwn(attributes(node), "data-habit-toggle");
+  const phone = nodes.find((node) =>
+    (attributes(node).class ?? "").split(/\s+/).includes("hero-device"),
+  );
+  assert.ok(phone);
+  const toggles = nodes.filter(isToggle);
+  assert.ok(toggles.length > 0);
+  assert.equal(descendants(phone).filter(isToggle).length, toggles.length);
+});
 
 test("exchange growth retains the reveal observer without scrolling the phone or page", () => {
   for (const language of ["en", "pt-BR"]) {

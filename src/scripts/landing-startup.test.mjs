@@ -1,31 +1,49 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
 const deferred = ["pricing", "faq", "back-to-top", "scroll", "waitlist", "waitlist-section"];
-const startup = [
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+const firstViewport = [
+  { name: "demo-clock", task: 0 },
   { name: "i18n", task: 0 },
   { name: "downloads-launcher", task: 0 },
 ];
-const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 function harness({
   scheduler = false,
   readyState = "loading",
+  failing = [],
   page = readFileSync("src/pages/index.astro", "utf8"),
 } = {}) {
   const bindings = [];
+  const mounts = [];
   const continuations = [];
   const listeners = new Map();
   const observers = [];
   let task = 0;
-  const targets = [".hero-device", '[data-section="features"]'].map((selector) => ({
-    selector,
-    matches: (value) => value === selector,
+  const pendingViews = ["[data-calendar]", "[data-week-days]"].map((view) => ({
+    view,
+    attributes: new Set(["data-clock-pending"]),
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    },
   }));
+  const targets = [".hero-device", '[data-section="features"]', "[data-week-card]"].map(
+    (selector) => ({
+      selector,
+      attributes: new Set(["data-clock-pending"]),
+      matches: (value) => value === selector,
+      removeAttribute(name) {
+        this.attributes.delete(name);
+      },
+      querySelectorAll: (value) => (value === "[data-clock-pending]" ? pendingViews : []),
+    }),
+  );
   const document = {
     readyState,
     querySelectorAll: (selectors) => {
@@ -86,7 +104,10 @@ function harness({
       return exports;
     }
     bindings.push({ name: path.split("/").at(-1), task });
-    const exports = {};
+    if (failing.includes(path.split("/").at(-1))) throw new Error(`chunk ${path} failed to load`);
+    const exports = {
+      mountWeek: (target) => mounts.push({ name: "week", target }),
+    };
     modules.set(path, exports);
     return exports;
   }
@@ -100,6 +121,9 @@ function harness({
   );
   return {
     bindings,
+    mounts,
+    targets,
+    pendingViews,
     continuations,
     load: () => {
       document.readyState = "complete";
@@ -140,11 +164,11 @@ for (const [opening, closing] of [
       .replace("<script>", opening)
       .replace("</script>", closing);
     const h = harness({ page });
-    assert.deepEqual(h.bindings, startup);
+    assert.deepEqual(h.bindings, firstViewport);
     h.intersect(1);
     h.load();
     await h.drain();
-    for (const name of [...deferred, "product-examples", "product-metrics"])
+    for (const name of [...deferred, "product-metrics", "demo-views"])
       assert.ok(h.bindings.some((binding) => binding.name === name));
     assert.ok(!h.bindings.some(({ name }) => name === "demo"));
   });
@@ -154,39 +178,51 @@ for (const scheduler of [false, true]) {
   for (const readyState of ["loading", "complete"]) {
     test(`page import reserves synchronous binding for the first viewport (scheduler: ${scheduler}, document: ${readyState})`, async () => {
       const h = harness({ scheduler, readyState });
-      assert.deepEqual(h.bindings, startup);
+      assert.deepEqual(h.bindings, firstViewport);
       await flush();
-      assert.deepEqual(h.bindings, startup);
+      assert.deepEqual(h.bindings, firstViewport);
       if (readyState === "loading") assert.equal(h.continuations.length, 0);
       h.load();
       await flush();
-      assert.deepEqual(h.bindings, startup);
+      assert.deepEqual(h.bindings, firstViewport);
       await h.drain();
       assert.deepEqual(
-        h.bindings.slice(startup.length).map(({ name }) => name),
+        h.bindings.slice(firstViewport.length).map(({ name }) => name),
         deferred,
       );
       assert.equal(new Set(h.bindings.map(({ task }) => task)).size, deferred.length + 1);
     });
   }
 
-  test(`preview intersections wait for load and use separate tasks (scheduler: ${scheduler})`, async () => {
+  test(`the demo and the chart controls wait for load in separate tasks, the calendar does not (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
     h.intersect(0);
+    h.intersect(1);
     await flush();
-    assert.deepEqual(h.bindings, startup);
+    assert.deepEqual(
+      h.bindings.map(({ name }) => name),
+      [...firstViewport.map(({ name }) => name), "demo-views"],
+    );
     assert.equal(h.continuations.length, 0);
     h.load();
     await h.drain();
-    const previews = h.bindings.filter(({ name }) => ["product-examples", "demo"].includes(name));
-    assert.deepEqual(
-      previews.map(({ name }) => name),
-      ["product-examples", "demo"],
+    const previews = ["demo", "product-metrics"].map((name) =>
+      h.bindings.find((binding) => binding.name === name),
     );
-    assert.ok(!h.bindings.some(({ name }) => name === "product-metrics"));
-    assert.ok(previews.every(({ task }) => task > 0));
-    assert.notEqual(previews[0].task, previews[1].task);
+    assert.ok(previews.every((preview) => preview?.task > 0));
+    assert.equal(new Set(previews.map(({ task }) => task)).size, previews.length);
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
+  });
+
+  test(`the phone preview loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(0);
+    h.load();
+    await h.drain();
+    const names = h.bindings.map(({ name }) => name);
+    assert.ok(names.includes("demo"));
+    for (const name of ["product-metrics", ...demoViewModules])
+      assert.ok(!names.includes(name), name);
   });
 
   test(`a direct visit below the hero binds feature controls without loading the demo (scheduler: ${scheduler})`, async () => {
@@ -194,15 +230,133 @@ for (const scheduler of [false, true]) {
     h.intersect(1);
     h.load();
     await h.drain();
-    assert.ok(h.bindings.some(({ name }) => name === "product-examples"));
     assert.ok(h.bindings.some(({ name }) => name === "product-metrics"));
+    assert.ok(h.bindings.some(({ name }) => name === "demo-views"));
     assert.ok(!h.bindings.some(({ name }) => name === "demo"));
   });
 }
+
+test("the hero week card loads its renderer when it comes into view, without waiting for load", async () => {
+  const h = harness();
+  h.intersect(2);
+  await flush();
+  assert.deepEqual(
+    h.bindings.map(({ name }) => name),
+    [...firstViewport.map(({ name }) => name), "week"],
+  );
+  assert.deepEqual(h.mounts, [{ name: "week", target: h.targets[2] }]);
+});
+
+test("the calendar and the chart labels load only when the features come near", async () => {
+  const h = harness();
+  h.load();
+  await h.drain();
+  const names = () => h.bindings.map(({ name }) => name);
+  for (const name of demoViewModules) assert.ok(!names().includes(name), name);
+  h.intersect(1);
+  await h.drain();
+  for (const name of ["demo-views", "product-metrics"]) assert.ok(names().includes(name), name);
+  assert.deepEqual(h.mounts, [], "the week card mounts only when it comes into view");
+});
+
+test("a view whose chunk fails to load shows its build-rendered content instead of staying hidden", async () => {
+  const h = harness({ failing: ["week", "demo-views"] });
+  h.intersect(2);
+  h.intersect(1);
+  await h.drain();
+  assert.deepEqual(h.mounts, []);
+  assert.ok(!h.targets[2].attributes.has("data-clock-pending"), "the week card");
+  for (const { view, attributes } of h.pendingViews)
+    assert.ok(!attributes.has("data-clock-pending"), view);
+});
+
+test("the calendar loads as soon as the features come near, without waiting for load or the chart controls", async () => {
+  const h = harness();
+  h.intersect(1);
+  await flush();
+  const names = () => h.bindings.map(({ name }) => name);
+  assert.ok(names().includes("demo-views"));
+  assert.ok(!names().includes("product-metrics"));
+  h.load();
+  await h.drain();
+  assert.ok(names().includes("product-metrics"));
+});
 
 test("the hero binds the download target with its own first-viewport script, not after load", () => {
   const hero = scriptsFrom(readFileSync("src/components/Hero.astro", "utf8"));
   assert.equal(hero.length, 1);
   assert.match(hero[0].body, /import "\.\.\/scripts\/desktop-downloads";/);
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /desktop-downloads/);
+});
+
+const demoViewModules = ["demo-views", "calendar", "calendar-view", "week"];
+
+function moduleFile(from, specifier) {
+  const path = join(dirname(from), specifier);
+  return [`${path}.ts`, path].find((candidate) => existsSync(candidate));
+}
+
+function importsOf(file, code, { dynamic }) {
+  const specifiers = [];
+  const visit = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      !node.importClause?.isTypeOnly
+    )
+      specifiers.push(node.moduleSpecifier.text);
+    if (
+      dynamic &&
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+      ts.isStringLiteral(node.arguments[0])
+    )
+      specifiers.push(node.arguments[0].text);
+    ts.forEachChild(node, visit);
+  };
+  visit(ts.createSourceFile(file, code, ts.ScriptTarget.ES2022));
+  return specifiers
+    .filter((specifier) => specifier.startsWith("."))
+    .map((specifier) => moduleFile(file, specifier))
+    .filter(Boolean);
+}
+
+function startupModules() {
+  const seen = new Set();
+  const visit = (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    importsOf(file, readFileSync(file, "utf8"), { dynamic: true }).forEach(visit);
+  };
+  const page = "src/pages/index.astro";
+  for (const file of [
+    page,
+    "src/layouts/Layout.astro",
+    "src/components/Hero.astro",
+    "src/components/PillButton.astro",
+  ]) {
+    for (const { body } of scriptsFrom(readFileSync(file, "utf8"))) {
+      importsOf(file, body, { dynamic: file !== page }).forEach(visit);
+    }
+  }
+  return [...seen].map((file) => basename(file).replace(/\.ts$/, ""));
+}
+
+test("the startup scripts never import the deferred demo views, even dynamically", () => {
+  const modules = startupModules();
+  assert.ok(modules.includes("demo-clock"), modules.join(", "));
+  for (const name of demoViewModules)
+    assert.ok(!modules.includes(name), `${name} in ${modules.join(", ")}`);
+});
+
+test("the deferred views hide their build dates only when scripts run", () => {
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  assert.match(
+    css,
+    /@media \(scripting: enabled\) \{\s*\[data-clock-pending\]\s*:is\([^)]*\[data-week-days\][^)]*\[data-calendar-grid\][^)]*\)\s*\{\s*visibility: hidden;/,
+  );
+  assert.doesNotMatch(
+    css.replace(/@media \(scripting: enabled\) \{[\s\S]*?\n\}/g, ""),
+    /data-clock-pending/,
+  );
 });

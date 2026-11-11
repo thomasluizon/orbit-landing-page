@@ -49,23 +49,6 @@ function descendants(node) {
 const nodes = expand(page).flatMap(descendants);
 const sections = nodes.filter((node) => attributes(node)["data-section"]);
 
-test("calendar dates and padding cells expose complete weeks for measured composition fitting", async () => {
-  const source = readFileSync("src/components/OrbitProduct.astro", "utf8");
-  const cells = descendants((await parse(source)).ast).filter((node) =>
-    Object.hasOwn(attributes(node), "data-calendar-week"),
-  );
-  assert.deepEqual(cells.map((node) => node.name).sort(), ["button", "span"]);
-  assert.match(source, /cells\.map\(\(day, index\)/);
-  for (let index = 0; index < 42; index++) {
-    for (const cell of cells) {
-      assert.equal(
-        vm.runInNewContext(attributes(cell)["data-calendar-week"], { index }),
-        Math.floor(index / 7),
-      );
-    }
-  }
-});
-
 test("the owning page follows Pierre's section order with Orbit product compositions", () => {
   assert.deepEqual(
     sections
@@ -661,7 +644,8 @@ test("Astra examples expose selectable bars, a static breakdown and a derived go
   assert.equal(attributes(option).role, "radio");
   assert.equal(attributes(option)["aria-checked"], "index === exampleWeek.length - 1");
   assert.equal(attributes(option).tabindex, "index === exampleWeek.length - 1 ? 0 : -1");
-  assert.match(source, /blocks.metrics.date0[\s\S]*blocks.metrics.date6/);
+  assert.match(source, /data-clock="chart"[\s\S]*data-clock-offset=\{offsets\[index\]\}/);
+  assert.match(source, /data-clock-label-en=\{barTemplate\("en", index\)\}/);
   assert.match(source, /blocks.metrics.completion/);
   assert.match(source, /blocks.metrics.active/);
   assert.doesNotMatch(source, /frequency-control|breakdown-approve|breakdown-reset/);
@@ -691,6 +675,21 @@ test("example figures derive from the chart and linked habit fixtures", () => {
   assert.doesNotMatch(css, /\.(?:astra-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
 });
 
+const clockFormat = {};
+vm.runInNewContext(
+  ts.transpileModule(readFileSync("src/scripts/clock-format.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  { exports: clockFormat, Intl },
+);
+const demoDatesModule = {};
+vm.runInNewContext(
+  ts.transpileModule(readFileSync("src/scripts/demo-dates.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  { exports: demoDatesModule, Intl, require: () => clockFormat },
+);
+
 async function metricsHarness() {
   const source = readFileSync("src/components/AstraBlock.astro", "utf8");
   const ast = descendants((await parse(source)).ast);
@@ -704,7 +703,7 @@ async function metricsHarness() {
   const frontmatter = {};
   vm.runInNewContext(
     ts.transpileModule(
-      `${source.split("---")[1]}\nexports.context = { exampleWeek, exampleDays, dateKeys, doneLabel, landingCopy };`,
+      `${source.split("---")[1]}\nexports.context = { exampleWeek, exampleDays, dates, offsets, doneLabel, barLabel, barTemplate, landingCopy };`,
       { compilerOptions: { module: ts.ModuleKind.CommonJS } },
     ).outputText,
     {
@@ -713,6 +712,8 @@ async function metricsHarness() {
       require(path) {
         if (path === "../config/product-examples") return fixture;
         if (path === "../i18n/translations") return copyTables;
+        if (path === "../scripts/clock-format") return clockFormat;
+        if (path === "../scripts/demo-dates") return demoDatesModule;
         return {};
       },
     },
@@ -882,7 +883,7 @@ test("chart bars select days by click and keyboard with one tab stop, a clamped 
       const label = day.dataset[language === "en" ? "copyLabelEn" : "copyLabelPt"];
       assert.ok(label.includes(count));
       assert.ok(label.includes(`${h.fixture.exampleWeek[index]}%`));
-      assert.ok(label.includes(copyTables.landingCopy[language][`blocks.metrics.date${index}`]));
+      assert.ok(label.startsWith(`${h.producer.dates[index][language]}, `));
       h.events.get("orbit:language-changed")();
       assertSelection(index);
     }
@@ -909,11 +910,11 @@ test("chart bars select days by click and keyboard with one tab stop, a clamped 
   h.days[6].click();
   h.resize(240);
   assert.equal(h.readout.style.left, "112px");
-  assert.equal(h.readout.style.top, "24px");
+  assert.equal(h.readout.style.top, undefined, "the readout keeps its own row");
   assertSelection(6);
   h.days[3].click();
   assert.equal(h.readout.style.left, "56px");
-  assert.equal(h.readout.style.top, "148px");
+  assert.equal(h.readout.style.top, undefined);
 });
 
 test("chart targets fill their columns, empty days keep a stub and reduced motion freezes the readout", () => {
@@ -1155,10 +1156,7 @@ test("every current copy key has locale parity and Pro states the approved weekl
   }
 });
 
-async function reachFeaturesWithoutPhone(
-  loadProductExamples,
-  source = readFileSync("src/pages/index.astro", "utf8"),
-) {
+async function reachFeaturesWithoutPhone(source = readFileSync("src/pages/index.astro", "utf8")) {
   const featureSection = sections.find((node) => attributes(node)["data-section"] === "features");
   assert.ok(featureSection);
   const targets = [
@@ -1207,22 +1205,23 @@ async function reachFeaturesWithoutPhone(
             },
           };
         imports.push(path);
-        if (path === "../scripts/product-examples") loadProductExamples();
         return {};
       },
     },
   );
-  assert.ok(!imports.includes("../scripts/product-examples"), "product previews stay deferred");
+  assert.ok(!imports.includes("../scripts/demo-views"), "the feature views stay deferred");
   for (const observer of observers) {
     observer.callback(
       [...observer.observed].map((target) => ({ target, isIntersecting: target === targets[1] })),
     );
   }
   await new Promise((resolve) => setImmediate(resolve));
-  assert.ok(
-    imports.includes("../scripts/product-examples"),
-    "reaching features must load their controls without the hero ever intersecting",
-  );
+  for (const path of ["../scripts/product-metrics", "../scripts/demo-views"]) {
+    assert.ok(
+      imports.includes(path),
+      `reaching features must load ${path} without the hero ever intersecting`,
+    );
+  }
   assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
 }
 
@@ -1238,104 +1237,9 @@ for (const [opening, closing] of [
     const source = readFileSync("src/pages/index.astro", "utf8")
       .replace("<script>", opening)
       .replace("</script>", closing);
-    let loaded = false;
-    await reachFeaturesWithoutPhone(() => {
-      loaded = true;
-    }, source);
-    assert.equal(loaded, true);
+    await reachFeaturesWithoutPhone(source);
   });
 }
-
-test("habit checks, week bars and calendar days work when features are reached without the phone", async () => {
-  const item = (extra = {}) => ({
-    hidden: false,
-    dataset: {},
-    attrs: {},
-    listeners: new Map(),
-    addEventListener(name, fn) {
-      this.listeners.set(name, fn);
-    },
-    setAttribute(name, value) {
-      this.attrs[name] = value;
-    },
-    getAttribute(name) {
-      return this.attrs[name];
-    },
-    click() {
-      this.listeners.get("click")();
-    },
-    ...extra,
-  });
-  const ring = {
-    classList: {
-      toggle(_name, value) {
-        this.done = value;
-      },
-    },
-  };
-  const habit = item({ querySelector: () => ring });
-  const weekDays = [0, 1].map((index) => item({ dataset: { weekDay: String(index) } }));
-  const weekReadouts = [0, 1].map((index) => item({ dataset: { weekReadout: String(index) } }));
-  const week = item({
-    querySelectorAll: () => weekDays,
-    closest: () => ({ querySelectorAll: () => weekReadouts }),
-  });
-  const dates = [17, 18].map((day) =>
-    item({
-      dataset: { calendarDay: String(day), copyLabelEn: `Day ${day}`, copyLabelPt: `Dia ${day}` },
-    }),
-  );
-  const dayReadout = item(),
-    calendarEvents = item();
-  const calendar = item({
-    querySelectorAll: () => dates,
-    querySelector: (selector) =>
-      selector === "[data-calendar-readout]" ? dayReadout : calendarEvents,
-  });
-  await reachFeaturesWithoutPhone(() => {
-    const completion = {};
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/habit-completion.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      { exports: completion },
-    );
-    vm.runInNewContext(
-      ts.transpileModule(readFileSync("src/scripts/product-examples.ts", "utf8"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      {
-        exports: {},
-        require: (path) => (path === "./habit-completion" ? completion : {}),
-        window: { addEventListener() {}, dispatchEvent() {} },
-        CustomEvent: class {},
-        document: {
-          documentElement: { lang: "pt-BR" },
-          querySelectorAll: (selector) =>
-            ({
-              "[data-week-chart]": [week],
-              "[data-habit-toggle]": [habit],
-              ".orbit-calendar": [calendar],
-            })[selector] ?? [],
-        },
-      },
-    );
-  });
-  habit.click();
-  assert.equal(habit.attrs["aria-pressed"], "true");
-  assert.equal(ring.classList.done, true);
-  habit.click();
-  assert.equal(ring.classList.done, false);
-  weekDays[0].click();
-  assert.equal(weekReadouts[0].hidden, false);
-  assert.equal(weekReadouts[1].hidden, true);
-  assert.equal(weekDays[1].attrs["aria-pressed"], "false");
-  dates[1].click();
-  assert.equal(dayReadout.textContent, "Dia 18");
-  assert.equal(calendarEvents.hidden, true);
-  dates[0].click();
-  assert.equal(calendarEvents.hidden, false);
-});
 
 test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");

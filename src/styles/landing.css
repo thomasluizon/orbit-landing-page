@@ -1070,14 +1070,17 @@
   display: grid;
   gap: 8px;
 }
+.metric-readout-row {
+  display: flex;
+}
 .metric-readout {
-  position: absolute;
-  top: 0;
-  left: max(0px, calc(100% - 128px));
-  inline-size: 128px;
+  position: relative;
+  left: 0;
+  inline-size: max-content;
+  max-inline-size: 100%;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  background: var(--color-bg-dialog);
+  background: var(--color-bg-elev);
   pointer-events: none;
   font-size: var(--fs-sm);
   line-height: var(--lh-body);
@@ -1101,10 +1104,8 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
   align-items: end;
   gap: 0;
-  padding-block-start: 96px;
   margin: 0;
-  padding-inline: 0;
-  padding-block-end: 0;
+  padding: 0;
   border: 0;
 }
 .metric-bar-track {
@@ -1235,40 +1236,192 @@ button.metric-bar-track:focus-visible {
   min-inline-size: 0;
   gap: 4px;
 }
-.orbit-month-title {
-  font-family: var(--font-display);
-  font-size: var(--fs-2xl);
-  font-weight: 500;
-  text-align: center;
-}
 .orbit-month-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
-  text-align: center;
+  grid-template-rows: 24px;
+  grid-auto-rows: 44px;
+  gap: 0;
+  touch-action: pan-y;
 }
-.orbit-date {
+.calendar-weekday,
+.day-cell-weekday {
+  align-self: start;
+  justify-self: center;
+  color: var(--color-fg-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 16px;
+}
+.day-cell {
   display: grid;
-  place-content: center;
   justify-items: center;
-  gap: 4px;
-  min-block-size: 48px;
+  align-content: center;
+  gap: 8px;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.day-cell-body {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  inline-size: 100%;
+  pointer-events: none;
+}
+.day-cell-circle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: min(34px, 100%);
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.day-cell-circle.is-raised {
+  background: var(--color-bg-well);
+}
+.day-cell-circle.is-selected {
+  background: var(--selection-bg);
+}
+.day-cell-circle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.day-cell-circle.is-marked::after {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+.day-cell-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+}
+.day-cell[data-outcome="full"] .day-cell-disc {
+  background: var(--color-fg-1);
+}
+.day-cell[data-outcome="none"] .day-cell-disc {
+  box-shadow: inset 0 0 0 2px var(--color-status-empty);
+}
+.day-cell-arc {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  rotate: -90deg;
+  fill: none;
+  stroke-width: 2;
+}
+.day-cell-track {
+  stroke: var(--color-status-empty);
+}
+.day-cell-sweep {
+  stroke: var(--color-primary);
+  stroke-linecap: round;
+}
+.day-cell-numeral {
+  position: relative;
+  color: var(--color-fg-2);
+  font-family: var(--font-mono);
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
-  border-radius: var(--radius-sm);
+  font-weight: 400;
+  line-height: 1;
 }
-.orbit-date[data-current] {
-  box-shadow: inset 0 0 0 1px var(--color-fg-1);
+.day-cell[aria-current="date"] .day-cell-numeral {
+  font-weight: 500;
 }
-.orbit-date-dot {
-  inline-size: 8px;
-  block-size: 8px;
-  border-radius: var(--radius-full);
-  box-shadow: inset 0 0 0 1px var(--color-fg-3);
+.day-cell[data-outcome="full"] .day-cell-numeral {
+  color: var(--color-bg);
 }
-.orbit-date-dot.is-done {
-  background: var(--color-status-done);
-  box-shadow: none;
+.day-cell:focus-visible {
+  outline: none;
+}
+.day-cell:focus-visible .day-cell-circle {
+  outline: 2px solid var(--color-fg-1);
+  outline-offset: 2px;
+}
+.day-cell:active .day-cell-circle:not(.is-selected) {
+  background: var(--color-bg-hover);
+  transition: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .day-cell:hover .day-cell-circle:not(.is-selected) {
+    background: var(--color-bg-hover);
+  }
+}
+.calendar-month-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.calendar-nav-button,
+.calendar-month-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  border-radius: var(--radius-md);
+  color: var(--color-fg-2);
+  cursor: pointer;
+}
+.calendar-nav-button {
+  box-shadow: inset 0 0 0 1px var(--color-border-control);
+}
+.calendar-month-title {
+  padding: 8px;
+  color: var(--color-fg-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: var(--lh-snug);
+}
+.calendar-month-title[aria-disabled="true"] {
+  cursor: default;
+}
+.calendar-year {
+  color: var(--color-fg-2);
+}
+.calendar-nav-button:focus-visible,
+.calendar-month-title:focus-visible {
+  outline: 2px solid var(--color-fg-1);
+  outline-offset: -2px;
+}
+.calendar-day-summary {
+  color: var(--color-fg-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+.calendar-day-events {
+  display: grid;
+  gap: 8px;
+}
+.calendar-empty {
+  color: var(--color-fg-3);
+}
+.calendar-event {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
 }
 .orbit-streak {
   display: flex;
@@ -1354,7 +1507,6 @@ button.metric-bar-track:focus-visible {
 .example-app .product-caption {
   line-height: var(--lh-meta);
 }
-.example-app .orbit-month-title,
 .example-app .orbit-streak-number,
 .example-app .metric-figures dd,
 .example-app .goal-figure {
@@ -1364,12 +1516,6 @@ button.metric-bar-track:focus-visible {
 .example-app .demo-request {
   font-size: var(--fs-sm);
 }
-.example-app .orbit-date {
-  inline-size: 100%;
-  min-inline-size: 0;
-  min-block-size: 44px;
-  padding: 4px 8px;
-}
 .example-app .metric-bar-track {
   inline-size: 100%;
   min-inline-size: 0;
@@ -1378,11 +1524,17 @@ button.metric-bar-track:focus-visible {
 }
 .example-app .orbit-month-grid {
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows: 16px;
-  grid-auto-rows: 44px;
   align-content: start;
   min-block-size: 0;
   gap: 0;
+}
+.example-app [data-calendar] {
+  justify-items: center;
+  gap: 16px;
+  padding: 24px;
+}
+.example-app [data-calendar] > * {
+  inline-size: 100%;
 }
 .example-app .breakdown-proposal {
   gap: 8px;
@@ -2039,40 +2191,19 @@ button.metric-bar-track:focus-visible {
   padding: 8px 12px;
   min-block-size: 48px;
 }
-.example-app .orbit-date:focus-visible {
-  outline-offset: -2px;
-}
 .example-app :where(button, a) {
   min-block-size: 44px;
   transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
-.example-app :where(button, a, input):not(.orbit-date, .metric-bar-track) {
+.example-app :where(button, a, input):not(.day-cell, .metric-bar-track) {
   min-inline-size: 44px;
   min-block-size: 44px;
 }
 .example-app :where(button, a):is(:active, :focus-visible) {
   background: var(--color-bg-hover);
 }
-.orbit-date {
-  cursor: pointer;
-}
-.orbit-date[aria-pressed="true"] {
-  background: var(--color-primary-dim);
-  box-shadow: inset 0 0 0 1px var(--color-primary);
-  color: var(--color-primary-text);
-}
 .calendar-day-card h3 {
-  font-size: var(--fs-base);
-}
-[data-calendar-events] {
-  display: grid;
-  gap: 8px;
-}
-[data-calendar-events] > p:not(.product-caption) {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
+  font-size: var(--fs-lg);
 }
 .accent-word {
   color: var(--color-primary-soft);
@@ -2092,18 +2223,15 @@ button.metric-bar-track:focus-visible {
   cursor: pointer;
 }
 @media (hover: hover) and (pointer: fine) {
-  .habit-row[data-habit-toggle]:hover,
-  .orbit-date:hover {
+  .habit-row[data-habit-toggle]:hover {
     background: var(--color-bg-hover);
   }
   .example-app :where(button, a):hover {
     background: var(--color-bg-hover);
   }
 }
-@media (width < 48rem) {
-  .orbit-month-grid {
-    gap: 0;
-  }
+.example-app .day-cell:is(:hover, :active, :focus-visible) {
+  background: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-composition-card] {
@@ -2114,37 +2242,32 @@ button.metric-bar-track:focus-visible {
 
 .calendar-day-card {
   display: grid;
-  gap: 8px;
+  gap: 4px;
+  padding: 16px;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-card);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-ghost);
+}
+.calendar-day-card .calendar-day-events {
+  align-content: start;
+  margin-block-start: 12px;
+  min-block-size: calc(var(--fs-xs) * var(--lh-body) + 2 * var(--fs-sm) * var(--lh-meta) + 16px);
 }
 .week-days {
   display: grid;
-  block-size: 96px;
-  align-items: center;
   grid-template-columns: repeat(7, minmax(24px, 1fr));
   gap: 0;
+  padding: 4px;
   overflow-x: auto;
 }
-.week-day {
-  min-inline-size: 24px;
-  min-block-size: 48px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-.week-day[aria-pressed="true"] {
-  background: var(--color-primary-dim);
-}
-.week-day:active {
-  background: var(--color-bg-hover);
-}
-@media (hover: hover) and (pointer: fine) {
-  .week-day:hover {
-    background: var(--color-bg-hover);
-  }
+.week-readout {
+  min-block-size: calc(2 * var(--lh-body) * var(--fs-xs));
+  color: var(--color-fg-2);
 }
 
 .example-app .orbit-month-grid:not(:has([data-composition-folded])) {
   content-visibility: auto;
-  contain-intrinsic-block-size: auto 280px;
+  contain-intrinsic-block-size: auto 288px;
 }
 .example-app .metric-bars {
   content-visibility: auto;
@@ -2273,5 +2396,17 @@ button.metric-bar-track:focus-visible {
   }
   .downloads-toggle {
     display: none;
+  }
+}
+@media (scripting: enabled) {
+  [data-clock-pending]
+    :is(
+      [data-week-days],
+      [data-week-readouts],
+      [data-calendar-title],
+      [data-calendar-grid],
+      [data-calendar-panel]
+    ) {
+    visibility: hidden;
   }
 }

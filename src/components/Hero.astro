@@ -10,6 +10,8 @@ import DownloadsPanel from "./DownloadsPanel.astro";
 import PlatformMark from "./PlatformMark.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import { buildNow } from "../config/product-examples";
+import { clockText } from "../scripts/clock-format";
 import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight, ChevronDown } from "@lucide/astro";
 interface Props {
   appUrl: string;
@@ -17,6 +19,8 @@ interface Props {
 }
 const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
+const statusTime = clockText("time", buildNow);
+const todayDate = clockText("today", buildNow);
 ---
 
 <section id="hero" class="hero" data-section="hero">
@@ -71,7 +75,13 @@ const en = translations.en;
           <div class="device-screen">
             <div class="phone-screen">
               <div class="device-status" aria-hidden="true">
-                <span class="device-status-time" data-mock>9:41</span>
+                <span
+                  class="device-status-time"
+                  data-mock
+                  data-clock="time"
+                  data-copy-en={statusTime.en}
+                  data-copy-pt={statusTime["pt-BR"]}>{statusTime.en}</span
+                >
                 <span class="device-speaker"></span>
                 <span class="device-status-icons"
                   ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
@@ -94,7 +104,13 @@ const en = translations.en;
                       >
                       <div class="phone-today-date">
                         <h2><Copy name="product.today" /></h2>
-                        <p class="product-caption"><Copy name="today.date" /></p>
+                        <p class="product-caption">
+                          <span
+                            data-clock="today"
+                            data-copy-en={todayDate.en}
+                            data-copy-pt={todayDate["pt-BR"]}>{todayDate.en}</span
+                          >
+                        </p>
                       </div>
                       <span class="phone-day-chevron" aria-hidden="true"
                         ><ChevronRight size={20} /></span

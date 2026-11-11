@@ -5,14 +5,18 @@ import {
   exampleDays,
   exampleGoal,
   exampleBreakdown,
+  buildNow,
 } from "../config/product-examples";
-import { landingCopy, translations, type LandingKey, type Language } from "../i18n/translations";
+import { landingCopy, translations, type Language } from "../i18n/translations";
+import { clockText } from "../scripts/clock-format";
+import { clockLabel } from "../scripts/demo-dates";
 interface Props {
   kind: "metrics" | "breakdown" | "goal";
   interactive?: boolean;
 }
 const { kind, interactive = false } = Astro.props;
-const dateKeys = exampleWeek.map((_, index) => `blocks.metrics.date${index}` as LandingKey);
+const offsets = exampleWeek.map((_, index) => index - (exampleWeek.length - 1));
+const dates = offsets.map((offset) => clockText("chart", buildNow, offset));
 const completion = Math.round(
   exampleWeek.reduce((sum, value) => sum + value, 0) / exampleWeek.length,
 );
@@ -21,6 +25,16 @@ function doneLabel(language: Language, index: number) {
   return landingCopy[language]["blocks.metrics.done"]
     .replace("{done}", String(done))
     .replace("{total}", String(total));
+}
+function barTemplate(language: Language, index: number) {
+  return `{date}, ${exampleWeek[index]}%, ${doneLabel(language, index)}`;
+}
+function barLabel(index: number) {
+  return clockLabel(
+    { en: barTemplate("en", index), "pt-BR": barTemplate("pt-BR", index) },
+    buildNow,
+    offsets[index],
+  );
 }
 ---
 
@@ -38,23 +52,32 @@ function doneLabel(language: Language, index: number) {
             <Copy name="blocks.metrics.title" />
           </h3>
           <div class="metric-chart" data-metric-chart>
-            <div
-              class="metric-readout"
-              aria-live={interactive ? "polite" : undefined}
-              aria-atomic={interactive ? "true" : undefined}
-            >
-              {exampleWeek.map((value, index) => (
-                <span data-metric-readout={index} hidden={index !== exampleWeek.length - 1}>
-                  <Copy name={dateKeys[index]} />
-                  <strong>{value}%</strong>
-                  <span
-                    data-copy-en={doneLabel("en", index)}
-                    data-copy-pt={doneLabel("pt-BR", index)}
-                  >
-                    {doneLabel("en", index)}
+            <div class="metric-readout-row">
+              <div
+                class="metric-readout"
+                aria-live={interactive ? "polite" : undefined}
+                aria-atomic={interactive ? "true" : undefined}
+              >
+                {exampleWeek.map((value, index) => (
+                  <span data-metric-readout={index} hidden={index !== exampleWeek.length - 1}>
+                    <span
+                      data-clock="chart"
+                      data-clock-offset={offsets[index]}
+                      data-copy-en={dates[index].en}
+                      data-copy-pt={dates[index]["pt-BR"]}
+                    >
+                      {dates[index].en}
+                    </span>
+                    <strong>{value}%</strong>
+                    <span
+                      data-copy-en={doneLabel("en", index)}
+                      data-copy-pt={doneLabel("pt-BR", index)}
+                    >
+                      {doneLabel("en", index)}
+                    </span>
                   </span>
-                </span>
-              ))}
+                ))}
+              </div>
             </div>
             <div
               class="metric-bars"
@@ -75,9 +98,12 @@ function doneLabel(language: Language, index: number) {
                     data-metric-day={index}
                     aria-checked={index === exampleWeek.length - 1}
                     tabindex={index === exampleWeek.length - 1 ? 0 : -1}
-                    aria-label={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
-                    data-copy-label-en={`${landingCopy.en[dateKeys[index]]}, ${value}%, ${doneLabel("en", index)}`}
-                    data-copy-label-pt={`${landingCopy["pt-BR"][dateKeys[index]]}, ${value}%, ${doneLabel("pt-BR", index)}`}
+                    aria-label={barLabel(index).en}
+                    data-copy-label-en={barLabel(index).en}
+                    data-copy-label-pt={barLabel(index)["pt-BR"]}
+                    data-clock-offset={offsets[index]}
+                    data-clock-label-en={barTemplate("en", index)}
+                    data-clock-label-pt={barTemplate("pt-BR", index)}
                   >
                     <span
                       class="metric-bar"
@@ -98,8 +124,16 @@ function doneLabel(language: Language, index: number) {
             </div>
             <div class="metric-dates product-caption">
               <>
-                <Copy name="blocks.metrics.date0" />
-                <Copy name="blocks.metrics.date6" />
+                {[0, exampleWeek.length - 1].map((index) => (
+                  <span
+                    data-clock="chart"
+                    data-clock-offset={offsets[index]}
+                    data-copy-en={dates[index].en}
+                    data-copy-pt={dates[index]["pt-BR"]}
+                  >
+                    {dates[index].en}
+                  </span>
+                ))}
               </>
             </div>
           </div>
