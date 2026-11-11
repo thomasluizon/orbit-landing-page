@@ -1013,4 +1013,3 @@ test("the downloads panel code stays out of the startup scripts of the home page
   assert.ok(!chunks.has(`/_astro/${panel}`), "no startup script imports the panel chunk");
   assert.match(readFileSync(`dist/_astro/${panel}`, "utf8"), /data-open/);
 });
-
