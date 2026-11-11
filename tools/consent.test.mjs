@@ -480,6 +480,48 @@ test("a disclosure control records the press that expands it and not the press t
   );
 });
 
+test("each open of the downloads panel records one download_list_opened and a close records none", async () => {
+  const harness = createHarness("accepted");
+  await executeProductionScripts(harness);
+  harness.window.dispatchEvent({ type: "load" });
+  harness.completePostHogLoad();
+  harness.capturedEvents.length = 0;
+
+  const toggle = new FakeElement("button");
+  toggle.dataset.analyticsEvent = "download_list_opened";
+  toggle.dataset.analyticsSurface = "hero_all_downloads";
+  toggle.attributes.set("aria-expanded", "false");
+  toggle.setAttribute = (name, value) => toggle.attributes.set(name, value);
+  const analyticsControl = toggle.closest.bind(toggle);
+  toggle.closest = (selector) =>
+    selector.includes("#downloads-toggle") ? toggle : analyticsControl(selector);
+  const launcher = ts.transpileModule(await readFile("src/scripts/downloads-launcher.ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  vm.runInNewContext(launcher, {
+    exports: {},
+    Element: FakeElement,
+    require: () => ({}),
+    location: { hash: "" },
+    document: {
+      getElementById: (id) => (id === "downloads-toggle" ? toggle : null),
+      addEventListener: (...binding) => harness.document.addEventListener(...binding),
+    },
+  });
+
+  const states = [];
+  for (let presses = 0; presses < 4; presses += 1) {
+    const event = { type: "click", target: toggle, preventDefault() {} };
+    for (const phase of [true, false])
+      for (const { capture, listener } of harness.document.listeners.get("click"))
+        if (capture === phase) listener(event);
+    states.push(toggle.getAttribute("aria-expanded"));
+  }
+
+  assert.deepEqual(states, ["true", "false", "true", "false"]);
+  assert.deepEqual(harness.capturedEvents, ["download_list_opened", "download_list_opened"]);
+});
+
 test("cookie preferences reopens an accepted choice, supports withdrawal and reacceptance, and returns focus", async () => {
   const h = createHarness("accepted");
   await executeProductionScripts(h);

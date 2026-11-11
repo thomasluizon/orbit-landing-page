@@ -9,28 +9,20 @@ const source = ts.transpileModule(readFileSync("src/scripts/downloads-panel.ts",
 }).outputText;
 
 class FakeElement {
-  constructor(name, matches = [], dataset = {}) {
+  constructor(name, matches = []) {
     this.name = name;
-    this.dataset = dataset;
     this.matchedSelectors = matches;
     this.attributes = new Map();
     this.listeners = new Map();
     this.children = [];
     this.focused = 0;
-    this.scrolled = [];
+    this.scrolled = 0;
   }
   setAttribute(key, value) {
     this.attributes.set(key, value);
   }
   getAttribute(key) {
     return this.attributes.get(key) ?? null;
-  }
-  hasAttribute(key) {
-    return this.attributes.has(key);
-  }
-  toggleAttribute(key, force) {
-    if (force) this.attributes.set(key, "");
-    else this.attributes.delete(key);
   }
   addEventListener(type, listener) {
     this.listeners.set(type, listener);
@@ -42,50 +34,26 @@ class FakeElement {
     const parts = selector.split(",").map((part) => part.trim());
     return parts.some((part) => this.matchedSelectors.includes(part)) ? this : null;
   }
-  focus(options) {
+  focus() {
     this.focused += 1;
-    this.focusOptions = options;
   }
-  scrollIntoView(options) {
-    this.scrolled.push(options);
+  scrollIntoView() {
+    this.scrolled += 1;
   }
 }
 
-const entryIds = ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"];
-
-function entryList(panel) {
-  const list = new FakeElement("list");
-  list.items = entryIds.map(
-    (id) =>
-      new FakeElement(
-        id,
-        [],
-        id === "android" || id === "iphone" ? { downloadTarget: id } : { desktopDownload: id },
-      ),
-  );
-  list.append = (...nodes) => {
-    list.items = nodes;
-  };
-  panel.querySelector = (selector) => (selector === ".downloads-list" ? list : null);
-  panel.querySelectorAll = (selector) => (selector === ".downloads-entry" ? list.items : []);
-  return list;
-}
-
-function page({ hash = "", reducedMotion = false, lead } = {}) {
+function page({ hash = "", open = true } = {}) {
   const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
-  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-expanded", String(open));
   const panel = new FakeElement("panel", ["#downloads"]);
-  const entry = new FakeElement("entry", ["#downloads a"]);
+  const entry = new FakeElement("entry", ["#downloads a", "#downloads"]);
   panel.children.push(entry);
-  const list = entryList(panel);
-  const hero = new FakeElement("hero", [], lead === undefined ? {} : { downloadLead: lead });
   const opener = new FakeElement("header link", ['a[href="#downloads"]']);
   const elsewhere = new FakeElement("elsewhere");
   const listeners = new Map();
   const document = {
     activeElement: null,
-    getElementById: (id) =>
-      ({ "downloads-toggle": toggle, downloads: panel, "hero-download": hero })[id] ?? null,
+    getElementById: (id) => ({ "downloads-toggle": toggle, downloads: panel })[id] ?? null,
     addEventListener: (type, listener) => listeners.set(type, listener),
   };
   const exports = {};
@@ -94,10 +62,8 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
     exports,
     Element: FakeElement,
     Node: FakeElement,
-    window: {
-      location: { hash },
-      matchMedia: () => ({ matches: reducedMotion }),
-    },
+    location: { hash },
+    window: { location: { hash } },
   });
   const fire = (type, target, extra = {}) => {
     const event = { type, target, defaultPrevented: false, ...extra };
@@ -109,91 +75,73 @@ function page({ hash = "", reducedMotion = false, lead } = {}) {
   };
   return {
     document,
-    activate: exports.activate,
+    exports,
     toggle,
     panel,
     entry,
     opener,
     elsewhere,
-    hero,
-    order: () => list.items.map(({ name }) => name),
     fire,
     press: (key) => fire("keydown", elsewhere, { key }),
-    open: () => exports.activate(toggle),
-    expanded: () => toggle.getAttribute("aria-expanded"),
-    isOpen: () => panel.hasAttribute("data-open"),
+    isOpen: () => toggle.getAttribute("aria-expanded") === "true",
   };
 }
 
-test("the toggle opens and closes the panel and reports aria-expanded", () => {
-  const view = page();
-  assert.equal(view.expanded(), "false");
-  assert.equal(view.isOpen(), false);
-  view.open();
-  assert.equal(view.expanded(), "true");
-  assert.equal(view.isOpen(), true);
-  view.open();
-  assert.equal(view.expanded(), "false");
-  assert.equal(view.isOpen(), false);
+test("the panel code leaves the state of the panel alone when it arrives", () => {
+  for (const hash of ["", "#downloads"]) {
+    const opened = page({ hash });
+    assert.equal(opened.isOpen(), true);
+    const closed = page({ hash, open: false });
+    assert.equal(closed.isOpen(), false);
+    for (const view of [opened, closed]) {
+      assert.equal(view.toggle.scrolled, 0);
+      assert.equal(view.toggle.focused, 0);
+    }
+  }
+});
+
+test("the panel code gives the launcher nothing to call", () => {
+  assert.deepEqual(Object.keys(page().exports), []);
 });
 
 test("Escape closes the open panel and returns focus to the button", () => {
   const view = page();
-  view.open();
-  const before = view.toggle.focused;
   const event = view.press("Escape");
   assert.equal(view.isOpen(), false);
-  assert.equal(view.expanded(), "false");
-  assert.equal(view.toggle.focused, before + 1);
+  assert.equal(view.toggle.focused, 1);
   assert.equal(event.defaultPrevented, true);
 });
 
 test("Escape and other keys leave a closed panel and the focus alone", () => {
+  const closed = page({ open: false });
+  const event = closed.press("Escape");
+  assert.equal(event.defaultPrevented, false);
+  assert.equal(closed.toggle.focused, 0);
   const view = page();
-  view.press("Escape");
-  assert.equal(view.toggle.focused, 0);
-  view.open();
   view.press("Enter");
   assert.equal(view.isOpen(), true);
   assert.equal(view.toggle.focused, 0);
 });
 
-test("the header link opens the panel, scrolls to the button and focuses it", () => {
-  const view = page();
-  view.activate(view.opener);
-  assert.equal(view.isOpen(), true);
-  assert.equal(view.expanded(), "true");
-  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
-  assert.equal(view.toggle.focused, 1);
-  view.press("Escape");
-  assert.equal(view.isOpen(), false);
-  assert.equal(view.toggle.focused, 2);
-});
-
-test("the header link jumps without a smooth scroll, which the motion refresh would stop short", () => {
-  for (const reducedMotion of [false, true]) {
-    const view = page({ reducedMotion });
-    view.activate(view.opener);
-    assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
-  }
-});
-
 test("the panel leaves every opener press to the launcher, so one path handles it", () => {
-  const view = page();
-  assert.equal(view.toggle.listeners.has("click"), false);
-  for (const opener of [view.toggle, view.opener]) {
-    const event = view.fire("click", opener);
-    assert.equal(event.defaultPrevented, false);
-    assert.equal(view.isOpen(), false);
+  for (const open of [true, false]) {
+    const view = page({ open });
+    assert.equal(view.toggle.listeners.has("click"), false);
+    for (const opener of [view.toggle, view.opener]) {
+      for (const type of ["pointerdown", "click"]) {
+        const event = view.fire(type, opener);
+        assert.equal(event.defaultPrevented, false);
+        assert.equal(view.isOpen(), open);
+      }
+    }
   }
 });
 
 test("a press outside the panel closes it without moving focus", () => {
   const view = page();
-  view.open();
   view.fire("pointerdown", view.panel);
   assert.equal(view.isOpen(), true);
-  view.fire("pointerdown", view.toggle);
+  view.fire("pointerdown", view.entry);
   assert.equal(view.isOpen(), true);
   view.fire("pointerdown", view.elsewhere);
   assert.equal(view.isOpen(), false);
@@ -202,7 +150,6 @@ test("a press outside the panel closes it without moving focus", () => {
 
 test("choosing an entry closes the panel and keeps its own destination", () => {
   const view = page();
-  view.open();
   const event = view.fire("click", view.entry);
   assert.equal(view.isOpen(), false);
   assert.equal(event.defaultPrevented, false);
@@ -211,28 +158,14 @@ test("choosing an entry closes the panel and keeps its own destination", () => {
 
 test("choosing an entry with the keyboard returns focus to the button before the panel hides", () => {
   const view = page();
-  view.open();
   view.document.activeElement = view.entry;
   view.fire("click", view.entry);
   assert.equal(view.isOpen(), false);
   assert.equal(view.toggle.focused, 1);
 });
 
-test("the press that loaded the module acts once: the button toggles and the header link opens", () => {
-  const view = page();
-  view.activate(view.toggle);
-  assert.equal(view.isOpen(), true);
-  view.activate(view.toggle);
-  assert.equal(view.isOpen(), false);
-  view.activate(view.opener);
-  assert.equal(view.isOpen(), true);
-  assert.equal(view.toggle.scrolled.length, 1);
-  assert.equal(view.toggle.focused, 1);
-});
-
 test("focus that leaves the panel for the page closes it", () => {
   const view = page();
-  view.open();
   view.fire("focusout", view.panel, { relatedTarget: view.entry });
   assert.equal(view.isOpen(), true);
   view.fire("focusout", view.panel, { relatedTarget: view.toggle });
@@ -241,72 +174,13 @@ test("focus that leaves the panel for the page closes it", () => {
   assert.equal(view.isOpen(), true);
   view.fire("focusout", view.panel, { relatedTarget: view.elsewhere });
   assert.equal(view.isOpen(), false);
+  assert.equal(view.toggle.focused, 0);
 });
 
-test("a visit to the downloads fragment opens the panel and brings the button below the header", () => {
-  const view = page({ hash: "#downloads" });
-  assert.equal(view.isOpen(), true);
-  assert.deepEqual(JSON.parse(JSON.stringify(view.toggle.scrolled)), [{ block: "start" }]);
-  assert.equal(view.toggle.focused, 1);
-  const other = page({ hash: "#features" });
-  assert.equal(other.isOpen(), false);
-  assert.equal(other.toggle.scrolled.length, 0);
-});
-
-for (const [visitor, lead, expected] of [
-  [
-    "a Mac that reports Apple silicon",
-    "mac-arm",
-    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
-  ],
-  [
-    "a Mac that reports Intel",
-    "mac-x86",
-    ["mac-x86", "mac-arm", "windows-x86", "windows-arm", "android", "iphone"],
-  ],
-  [
-    "a Windows PC",
-    "windows-x86",
-    ["windows-x86", "windows-arm", "mac-arm", "mac-x86", "android", "iphone"],
-  ],
-  [
-    "a Windows on Arm PC",
-    "windows-arm",
-    ["windows-arm", "windows-x86", "mac-arm", "mac-x86", "android", "iphone"],
-  ],
-  [
-    "an Android phone",
-    "android",
-    ["android", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "iphone"],
-  ],
-  [
-    "an iPhone",
-    "iphone",
-    ["iphone", "mac-arm", "mac-x86", "windows-x86", "windows-arm", "android"],
-  ],
-  [
-    "an unknown visitor",
-    undefined,
-    ["mac-arm", "mac-x86", "windows-x86", "windows-arm", "android", "iphone"],
-  ],
-]) {
-  test(`opening the panel for ${visitor} lists the visitor's platform first`, () => {
-    const view = page({ lead });
-    assert.deepEqual(view.order(), entryIds);
-    view.open();
-    assert.deepEqual(view.order(), expected);
-  });
-}
-
-test("the panel orders again on every open and follows a late architecture hint", () => {
-  const view = page({ lead: "mac-arm" });
-  view.open();
-  view.open();
-  view.hero.dataset.downloadLead = "mac-x86";
-  view.open();
-  assert.deepEqual(view.order().slice(0, 2), ["mac-x86", "mac-arm"]);
-});
-
-test("a visit to the downloads fragment lists the visitor's platform first", () => {
-  assert.equal(page({ hash: "#downloads", lead: "windows-x86" }).order()[0], "windows-x86");
+test("a dismissal leaves a panel that the launcher can open again", () => {
+  const view = page();
+  view.press("Escape");
+  view.toggle.setAttribute("aria-expanded", "true");
+  view.fire("pointerdown", view.elsewhere);
+  assert.equal(view.isOpen(), false);
 });

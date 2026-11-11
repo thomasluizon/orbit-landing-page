@@ -14,28 +14,33 @@ class FakeElement {
   constructor(name, selectors = []) {
     this.name = name;
     this.selectors = selectors;
+    this.attributes = new Map();
+    this.scrolled = [];
+    this.focused = [];
   }
   closest(selector) {
     const parts = selector.split(",").map((part) => part.trim());
     return parts.some((part) => this.selectors.includes(part)) ? this : null;
   }
+  setAttribute(name, value) {
+    this.attributes.set(name, value);
+  }
+  getAttribute(name) {
+    return this.attributes.get(name) ?? null;
+  }
+  scrollIntoView(options) {
+    this.scrolled.push({ ...options });
+  }
+  focus(options) {
+    this.focused.push({ ...options });
+  }
 }
 
 function launch(hash = "", { failing = false } = {}) {
   const loaded = [];
-  const page = {
-    "downloads-toggle": { attributes: {}, scrolled: [] },
-    downloads: { attributes: {} },
-  };
-  for (const element of Object.values(page)) {
-    element.setAttribute = (name, value) => (element.attributes[name] = value);
-    element.toggleAttribute = (name, force) => (element.attributes[name] = force);
-    element.scrollIntoView = (options) => element.scrolled?.push(options.block);
-  }
-  const activated = [];
   const listeners = [];
   const toggle = new FakeElement("toggle", ["#downloads-toggle"]);
-  toggle.id = "downloads-toggle";
+  toggle.setAttribute("aria-expanded", "false");
   const link = new FakeElement("header link", ['a[href="#downloads"]']);
   const icon = new FakeElement("toggle icon");
   icon.closest = (selector) => toggle.closest(selector);
@@ -46,10 +51,10 @@ function launch(hash = "", { failing = false } = {}) {
     require: (path) => {
       loaded.push(path);
       if (failing) throw new Error("chunk request failed");
-      return { activate: (control) => activated.push(control.name) };
+      return {};
     },
     document: {
-      getElementById: (id) => page[id] ?? null,
+      getElementById: (id) => (id === "downloads-toggle" ? toggle : null),
       addEventListener: (type, listener) => {
         assert.equal(type, "click");
         listeners.push(listener);
@@ -62,81 +67,109 @@ function launch(hash = "", { failing = false } = {}) {
     for (const listener of listeners) listener(event);
     return event;
   };
-  return { loaded, activated, listeners, press, toggle, link, icon, elsewhere, page };
+  const expanded = () => toggle.getAttribute("aria-expanded");
+  return { loaded, listeners, press, expanded, toggle, link, icon, elsewhere };
 }
 
-test("the page loads no panel code before a visitor uses a download control", async () => {
-  const { loaded, listeners } = launch();
+test("the page loads no panel code and opens no panel before a visitor uses a download control", async () => {
+  const view = launch();
   await flush();
-  assert.deepEqual(loaded, []);
-  assert.equal(listeners.length, 1);
+  assert.deepEqual(view.loaded, []);
+  assert.equal(view.listeners.length, 1);
+  assert.equal(view.expanded(), "false");
 });
 
-for (const control of ["toggle", "link"]) {
-  test(`the first press on the ${control} loads the panel and acts on that press without a second click`, async () => {
-    const view = launch();
-    const event = view.press(view[control]);
-    assert.equal(event.prevented, true);
-    await flush();
-    assert.deepEqual(view.loaded, ["./downloads-panel"]);
-    assert.deepEqual(view.activated, [view[control].name]);
-  });
-}
-
-test("every later press on either opener reaches activate() through the same listener", async () => {
+test("a press on the toggle opens the panel in the same task, before the panel code arrives", () => {
   const view = launch();
-  view.press(view.link);
-  await flush();
-  for (const target of [view.toggle, view.icon, view.link]) {
-    assert.equal(view.press(target).prevented, true);
-    await flush();
-  }
-  assert.deepEqual(view.activated, ["header link", "toggle", "toggle", "header link"]);
-  assert.ok(view.loaded.every((path) => path === "./downloads-panel"));
+  const event = view.press(view.toggle);
+  assert.equal(event.prevented, true);
+  assert.equal(view.expanded(), "true");
+  assert.deepEqual(view.toggle.scrolled, []);
+  assert.deepEqual(view.toggle.focused, []);
 });
 
-test("a second toggle press while the panel code loads does not undo the first or count as an open", async () => {
+test("the next press on the toggle closes the panel, with the panel code still on its way", () => {
   const view = launch();
-  assert.equal(view.press(view.toggle).prevented, true);
-  assert.equal(
-    view.page["downloads-toggle"].attributes["aria-expanded"],
-    "true",
-    "the analytics capture skips an expanded toggle, so the ignored press records no download_list_opened",
-  );
+  view.press(view.toggle);
   assert.equal(view.press(view.icon).prevented, true);
-  await flush();
-  assert.deepEqual(view.loaded, ["./downloads-panel"]);
-  assert.deepEqual(view.activated, ["toggle"]);
+  assert.equal(view.expanded(), "false");
   view.press(view.toggle);
-  await flush();
-  assert.deepEqual(view.activated, ["toggle", "toggle"], "a press after the load acts again");
+  assert.equal(view.expanded(), "true");
 });
 
-test("a link press while the panel code loads still opens the panel", async () => {
+test("a press on a downloads link opens the panel in the same task, scrolls to the toggle and focuses it", () => {
   const view = launch();
-  view.press(view.link);
-  assert.equal(view.press(view.link).prevented, true);
-  await flush();
-  assert.deepEqual(view.activated, ["header link", "header link"]);
+  const event = view.press(view.link);
+  assert.equal(event.prevented, true);
+  assert.equal(view.expanded(), "true");
+  assert.deepEqual(view.toggle.scrolled, [{ block: "start" }]);
+  assert.deepEqual(view.toggle.focused, [{ preventScroll: true }]);
 });
 
-test("a press while the downloads fragment loads the panel does not close the panel it opens", async () => {
+test("a press on a downloads link never closes the open panel", () => {
+  const view = launch();
+  view.press(view.toggle);
+  view.press(view.link);
+  assert.equal(view.expanded(), "true");
+  view.press(view.link);
+  assert.equal(view.expanded(), "true");
+  assert.equal(view.toggle.scrolled.length, 2);
+});
+
+test("a visit to the downloads fragment opens the panel at startup, without a press", async () => {
   const view = launch("#downloads");
-  assert.equal(view.press(view.toggle).prevented, true);
+  assert.equal(view.expanded(), "true");
+  assert.deepEqual(view.toggle.scrolled, [{ block: "start" }]);
+  assert.deepEqual(view.toggle.focused, [{ preventScroll: true }]);
   await flush();
   assert.deepEqual(view.loaded, ["./downloads-panel"]);
-  assert.deepEqual(view.activated, []);
+  const other = launch("#features");
+  await flush();
+  assert.equal(other.expanded(), "false");
+  assert.deepEqual(other.toggle.scrolled, []);
+  assert.deepEqual(other.loaded, []);
 });
 
-test("a failed panel load lets the next press try again", async () => {
-  const view = launch("", { failing: true });
+test("a press on the toggle after a fragment visit closes the panel that the visit opened", () => {
+  const view = launch("#downloads");
   view.press(view.toggle);
+  assert.equal(view.expanded(), "false");
+});
+
+test("each open asks for the panel code and a close asks for nothing", async () => {
+  const view = launch();
+  view.press(view.toggle);
+  await flush();
+  assert.deepEqual(view.loaded, ["./downloads-panel"]);
   view.press(view.toggle);
   await flush();
   assert.equal(view.loaded.length, 1);
+  view.press(view.link);
+  await flush();
+  assert.deepEqual(view.loaded, ["./downloads-panel", "./downloads-panel"]);
+});
+
+test("a failed panel load leaves a panel that the toggle and a link still open and close", async () => {
+  const view = launch("", { failing: true });
+  view.press(view.toggle);
+  assert.equal(view.expanded(), "true");
+  await flush();
+  assert.equal(view.expanded(), "true");
   view.press(view.toggle);
   await flush();
-  assert.equal(view.loaded.length, 2);
+  assert.equal(view.expanded(), "false");
+  view.press(view.link);
+  await flush();
+  assert.equal(view.expanded(), "true");
+  assert.deepEqual(view.toggle.scrolled, [{ block: "start" }]);
+  assert.equal(view.loaded.length, 2, "the next open asks for the panel code again");
+});
+
+test("a visit to the downloads fragment still opens the panel when the panel code fails to load", async () => {
+  const view = launch("#downloads", { failing: true });
+  await flush();
+  assert.equal(view.expanded(), "true");
+  assert.equal(view.loaded.length, 1);
 });
 
 test("a press outside the openers keeps its own action and loads nothing", async () => {
@@ -144,36 +177,8 @@ test("a press outside the openers keeps its own action and loads nothing", async
   const event = view.press(view.elsewhere);
   await flush();
   assert.equal(event.prevented, false);
+  assert.equal(view.expanded(), "false");
   assert.deepEqual(view.loaded, []);
-  assert.deepEqual(view.activated, []);
-});
-
-test("a visit to the downloads fragment loads the panel without a press", async () => {
-  const { loaded } = launch("#downloads");
-  await flush();
-  assert.deepEqual(loaded, ["./downloads-panel"]);
-  const other = launch("#features");
-  await flush();
-  assert.deepEqual(other.loaded, []);
-});
-
-for (const control of ["toggle", "link"]) {
-  test(`a press on the ${control} still opens the list and brings it into view when the panel code fails to load`, async () => {
-    const view = launch("", { failing: true });
-    assert.equal(view.press(view[control]).prevented, true);
-    await flush();
-    assert.deepEqual(view.activated, []);
-    assert.deepEqual(view.page.downloads.attributes, { "data-open": true });
-    assert.deepEqual(view.page["downloads-toggle"].attributes, { "aria-expanded": "true" });
-    assert.deepEqual(view.page["downloads-toggle"].scrolled, ["start"]);
-  });
-}
-
-test("a visit to the downloads fragment still opens the list when the panel code fails to load", async () => {
-  const view = launch("#downloads", { failing: true });
-  await flush();
-  assert.deepEqual(view.page.downloads.attributes, { "data-open": true });
-  assert.deepEqual(view.page["downloads-toggle"].attributes, { "aria-expanded": "true" });
 });
 
 test("no startup script imports the panel code statically", () => {

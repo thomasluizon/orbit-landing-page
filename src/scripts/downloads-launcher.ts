@@ -1,30 +1,25 @@
 export {};
 
-let loading = false;
-function expandToggle() {
-  const toggle = document.getElementById("downloads-toggle");
-  toggle?.setAttribute("aria-expanded", "true");
-  return toggle;
-}
-const loadPanel = () => {
-  loading = true;
-  expandToggle();
-  return import("./downloads-panel").finally(() => (loading = false));
-};
+const toggle = document.getElementById("downloads-toggle");
 
-function showList() {
-  const toggle = expandToggle();
-  document.getElementById("downloads")?.toggleAttribute("data-open", true);
+function setOpen(open: boolean) {
+  toggle?.setAttribute("aria-expanded", `${open}`);
+  if (open) import("./downloads-panel").catch(() => undefined);
+}
+
+function openFromLink() {
+  setOpen(true);
   toggle?.scrollIntoView({ block: "start" });
+  toggle?.focus({ preventScroll: true });
 }
 
 document.addEventListener("click", (event) => {
   const opener =
     event.target instanceof Element &&
-    event.target.closest<HTMLElement>('#downloads-toggle, a[href="#downloads"]');
+    event.target.closest('#downloads-toggle, a[href="#downloads"]');
   if (!opener) return;
   event.preventDefault();
-  if (loading && opener.id === "downloads-toggle") return;
-  loadPanel().then(({ activate }) => activate(opener), showList);
+  if (opener === toggle) setOpen(toggle.getAttribute("aria-expanded") !== "true");
+  else openFromLink();
 });
-if (location.hash === "#downloads") loadPanel().catch(showList);
+if (location.hash === "#downloads") openFromLink();

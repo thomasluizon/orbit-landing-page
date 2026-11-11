@@ -1262,7 +1262,7 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
       new RegExp(`${selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]+)\\}`),
     )?.[1] ?? "";
   const closed = rule(".downloads-panel");
-  const open = rule(".downloads-panel[data-open]");
+  const open = rule('.downloads-toggle[aria-expanded="true"] + .downloads-panel');
   assert.match(closed, /position:\s*absolute/);
   assert.match(closed, /visibility:\s*hidden/);
   assert.match(closed, /opacity:\s*0/);
@@ -1276,8 +1276,10 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
   assert.match(open, /translate var\(--duration-normal\) var\(--ease-out\)/);
   assert.match(
     css,
-    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-panel\[data-open\],\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.downloads-panel,\s*\.downloads-toggle\[aria-expanded="true"\] \+ \.downloads-panel,\s*\.downloads-chevron\s*\{\s*transition:\s*none;\s*translate:\s*none;/,
   );
+  assert.match(open, /visibility:\s*visible/);
+  assert.doesNotMatch(css, /data-open/, "the toggle's aria-expanded is the one open state");
   assert.doesNotMatch(css.slice(css.indexOf(".downloads-panel")), /#[0-9a-f]{3,8}\b|rgba?\(/i);
   assert.match(rule(".hero-controls"), /position:\s*relative/);
 });

@@ -2320,7 +2320,7 @@ button.metric-bar-track:focus-visible {
     translate var(--duration-fast) var(--ease-in),
     visibility 0s linear var(--duration-fast);
 }
-.downloads-panel[data-open] {
+.downloads-toggle[aria-expanded="true"] + .downloads-panel {
   opacity: 1;
   translate: 0 0;
   visibility: visible;
@@ -2379,7 +2379,7 @@ button.metric-bar-track:focus-visible {
 }
 @media (prefers-reduced-motion: reduce) {
   .downloads-panel,
-  .downloads-panel[data-open],
+  .downloads-toggle[aria-expanded="true"] + .downloads-panel,
   .downloads-chevron {
     transition: none;
     translate: none;
