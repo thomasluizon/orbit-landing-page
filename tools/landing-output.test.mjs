@@ -439,6 +439,34 @@ test("the built feature compositions use full width without backing panels", () 
   for (const rule of rules) assert.doesNotMatch(rule, /background|box-shadow|aspect-ratio/);
 });
 
+test("without scripting the built stylesheet shows the downloads in flow and hides the toggle", () => {
+  const stylesheets = [
+    ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),
+  ].map(([, href]) => readFileSync(`dist${href}`, "utf8"));
+  const inline = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map(([, css]) => css);
+  const css = [...stylesheets, ...inline].join("\n");
+  const block = css.match(
+    /@media\s*\(scripting:\s?none\)\s*\{((?:[^{}]*\{[^{}]*\})*)[^{}]*\}/,
+  )?.[1];
+  assert.ok(
+    block,
+    "a scripting: none block ships, or the page offers no download without JavaScript",
+  );
+  const rule = (selector) =>
+    [...block.matchAll(/([^{}]+)\{([^{}]*)\}/g)].find(([, selectors]) =>
+      selectors
+        .split(",")
+        .map((part) => part.trim())
+        .includes(selector),
+    )?.[2] ?? "";
+  const panel = rule(".downloads-panel");
+  assert.match(panel, /position:\s?static/);
+  assert.match(panel, /visibility:\s?visible/);
+  assert.match(panel, /opacity:\s?1\b/);
+  assert.match(panel, /scroll-margin-block-start:\s?96px/, "a #downloads visit clears the header");
+  assert.match(rule(".downloads-toggle"), /display:\s?none/);
+});
+
 test("the built stylesheet lets the closing data request sentence wrap inside its link", () => {
   const stylesheets = [
     ...html.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+\.css)"/g),

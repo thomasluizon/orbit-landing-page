@@ -2262,3 +2262,16 @@ button.metric-bar-track:focus-visible {
     translate: none;
   }
 }
+@media (scripting: none) {
+  .downloads-panel {
+    position: static;
+    margin-inline-start: 0;
+    opacity: 1;
+    translate: none;
+    visibility: visible;
+    scroll-margin-block-start: 96px;
+  }
+  .downloads-toggle {
+    display: none;
+  }
+}
