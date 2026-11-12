@@ -264,6 +264,39 @@ test("the FAQ changes state without motion when the visitor reduces motion", () 
   assert.deepEqual(calls, []);
 });
 
+test("a closing FAQ item keeps its card radius until its fill and ring fade out with its height", () => {
+  assert.equal(lastValue(".faq-list > details[open]", "border-radius"), "var(--radius-xl)");
+  assert.deepEqual(
+    rules
+      .filter((rule) => rule.selector.includes("data-closing"))
+      .filter((rule) => declaration(rule.declarations, "border-radius"))
+      .map((rule) => rule.selector),
+    [],
+    "the radius holds while the item stays open through its close",
+  );
+  const fade = lastValue(".faq-list > details[data-closing]", "transition-duration") ?? "";
+  const token = fade.match(/^var\((--duration-[a-z]+)\)$/)?.[1];
+  assert.ok(token, "a closing item fades its fill and ring on a duration token");
+  const { items, calls, press } = faqHarness({ reduced: false });
+  const [one] = items;
+  press(one);
+  calls.find((call) => call.target === "one:height").onfinish();
+  one.height = 160;
+  press(one);
+  const closing = calls.filter((call) => call.target === "one:height").at(-1);
+  assert.equal(
+    closing.timing.duration,
+    Number.parseFloat(declaration(globalCss, token)),
+    "the fill and ring fade over the same time as the height",
+  );
+  assert.ok(
+    one.open && one.hasAttribute("data-closing"),
+    "the card keeps its radius while closing",
+  );
+  closing.onfinish();
+  assert.equal(one.open, false, "the radius goes when the close settles");
+});
+
 function headerScrollHarness({ hash = "", reduced = false } = {}) {
   class FakeElement {
     constructor(attributes = {}) {
@@ -533,4 +566,45 @@ test("reduced motion removes every control transition and the press movement", (
   assert.equal(declaration(universal.declarations, "transition-delay"), "0s !important");
   const press = reduced.find((rule) => rule.selector === ":active");
   assert.equal(declaration(press.declarations, "scale"), "none !important");
+});
+
+const selectorParts = (selector) => selector.split(/,(?![^()]*\))/).map((part) => part.trim());
+const pointerState = (selector) => {
+  const hover = /:hover\b/.test(selector);
+  if (hover === /:active\b/.test(selector)) return undefined;
+  return hover ? "hover" : "active";
+};
+const withoutPointerState = (selector) =>
+  selector
+    .replace(/:is\([^()]*\)|:hover\b|:active\b/g, (match) =>
+      /:hover|:active/.test(match) ? ":state" : match,
+    )
+    .replace(/\s+/g, " ");
+
+test("a control's press fill comes after its hover fill, so a held mouse press paints it", () => {
+  const fills = rules.flatMap((rule, order) =>
+    declaration(rule.declarations, "background") ||
+    declaration(rule.declarations, "background-color")
+      ? selectorParts(rule.selector).flatMap((part) => {
+          const state = pointerState(part);
+          return state ? [{ order, state, control: withoutPointerState(part) }] : [];
+        })
+      : [],
+  );
+  const presses = fills.filter(({ state }) => state === "active");
+  const hovers = fills.filter(
+    ({ state, control }) => state === "hover" && presses.some((press) => press.control === control),
+  );
+  assert.ok(hovers.some(({ control }) => control === ".back-to-top:state"));
+  assert.deepEqual(
+    hovers
+      .filter((hover) =>
+        presses.some((press) => press.control === hover.control && press.order < hover.order),
+      )
+      .map(({ control }) => control),
+    [],
+    "a hover fill declared after the press fill of the same control hides the press",
+  );
+  assert.equal(lastValue(".back-to-top:hover", "background"), "var(--color-primary-hover)");
+  assert.equal(lastValue(".back-to-top:active", "background"), "var(--color-primary-pressed)");
 });

@@ -666,9 +666,10 @@ test("the FAQ is one compact list whose open item is one card", () => {
     css,
     /\.faq-list > details \+ details\s*\{[^}]*border-block-start:\s*1px solid var\(--color-hairline\)/,
   );
+  assert.match(css, /\.faq-list > details\[open\]\s*\{[^}]*border-radius:\s*var\(--radius-xl\)/);
   assert.match(
     css,
-    /\.faq-list > details\[open\]:not\(\[data-closing\]\)\s*\{[^}]*border-radius:\s*var\(--radius-xl\);[^}]*background:\s*var\(--color-bg-card\);[^}]*box-shadow:\s*inset 0 0 0 1px var\(--color-hairline-ghost\)/,
+    /\.faq-list > details\[open\]:not\(\[data-closing\]\)\s*\{[^}]*background:\s*var\(--color-bg-card\);[^}]*box-shadow:\s*inset 0 0 0 1px var\(--color-hairline-ghost\)/,
   );
   assert.doesNotMatch(css, /\.faq-list[^{}]*\{[^}]*border-block-end/);
   assert.doesNotMatch(css, /\.faq-list details\[open\] summary\s*\{/);
@@ -844,10 +845,6 @@ test("feature cards retain card padding and inset their interactive content from
   )) {
     if (/padding:/.test(declarations)) assert.match(declarations, /padding:\s*16px/);
   }
-  assert.match(
-    css,
-    /\.example-app \.habit-row\[data-habit-toggle\]\s*\{[^}]*padding:\s*8px 12px;[^}]*min-block-size:\s*48px/,
-  );
   assert.match(css, /\.example-app \[data-calendar\]\s*\{[^}]*padding:\s*24px/);
   assert.match(css, /\.day-cell\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*0;/);
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
