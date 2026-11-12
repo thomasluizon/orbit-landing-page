@@ -71,6 +71,43 @@ test("every other rounded input keeps its own radius, so the global focus ring f
   }
 });
 
+const compiledScript = (path) =>
+  ts.transpileModule(readFileSync(path, "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+
+function withMotionTokens(sandbox) {
+  sandbox.require = (specifier) => {
+    assert.equal(specifier, "./motion-token");
+    const exports = {};
+    vm.runInContext(
+      `(exports) => {${compiledScript("src/scripts/motion-token.ts")}}`,
+      sandbox,
+    )(exports);
+    return exports;
+  };
+  return sandbox;
+}
+
+test("a duration token reads the built seconds and the source milliseconds", () => {
+  const values = {
+    "--duration-normal": ".22s",
+    "--duration-fast": " 160ms",
+    "--duration-slow": "0.28s",
+    "--ease-out": " cubic-bezier(.16, 1, .3, 1)",
+  };
+  const sandbox = withMotionTokens({
+    getComputedStyle: () => ({ getPropertyValue: (name) => values[name] }),
+    document: { documentElement: {} },
+  });
+  vm.createContext(sandbox);
+  const { durationToken, motionToken } = sandbox.require("./motion-token");
+  assert.equal(durationToken("--duration-normal"), 220);
+  assert.equal(durationToken("--duration-fast"), 160);
+  assert.equal(durationToken("--duration-slow"), 280);
+  assert.equal(motionToken("--ease-out"), "cubic-bezier(.16, 1, .3, 1)");
+});
+
 function faqHarness({ reduced }) {
   const calls = [];
   class FakeElement {}
@@ -146,29 +183,27 @@ function faqHarness({ reduced }) {
   }
   const items = [new FakeDetails("one", 64, 160), new FakeDetails("two", 64, 200)];
   let click;
-  const list = { addEventListener: (type, listener) => (click = listener) };
-  const values = {
-    "--duration-normal": "220ms",
-    "--duration-fast": "160ms",
-    "--ease-out": " cubic-bezier(0.16, 1, 0.3, 1)",
-    "--ease-standard": "cubic-bezier(0.2, 0, 0, 1)",
+  const list = { addEventListener: (_, listener) => (click = listener) };
+  const builtValues = {
+    "--duration-normal": ".22s",
+    "--duration-fast": ".16s",
+    "--ease-out": "cubic-bezier(.16, 1, .3, 1)",
+    "--ease-standard": "cubic-bezier(.2, 0, 0, 1)",
   };
   vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/faq.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText,
-    {
+    compiledScript("src/scripts/faq.ts"),
+    withMotionTokens({
       exports: {},
       Element: FakeElement,
       HTMLDetailsElement: FakeDetails,
-      getComputedStyle: () => ({ getPropertyValue: (name) => values[name] }),
+      getComputedStyle: () => ({ getPropertyValue: (name) => builtValues[name] }),
       window: { matchMedia: () => ({ matches: reduced }) },
       document: {
         documentElement: {},
         querySelector: () => list,
         querySelectorAll: () => items,
       },
-    },
+    }),
   );
   const press = (item) => click({ target: item.summary, preventDefault() {} });
   return { items, calls, press };
@@ -185,7 +220,7 @@ test("the FAQ animates open and closed and closes the other item with the same m
   const opening = calls.find((call) => call.target === "one:height");
   assert.deepEqual([...opening.frames.blockSize], ["64px", "160px"]);
   assert.equal(opening.timing.duration, 220);
-  assert.equal(opening.timing.easing, "cubic-bezier(0.16, 1, 0.3, 1)");
+  assert.equal(opening.timing.easing, "cubic-bezier(.16, 1, .3, 1)");
   assert.equal(one.summary.attributes.get("aria-expanded"), "true");
   assert.equal(one.style.overflow, "clip");
   opening.onfinish();
@@ -269,12 +304,7 @@ function headerScrollHarness({ hash = "", reduced = false } = {}) {
     },
     require: () => ({ scrollToElement: (target) => scrolled.push({ target, reduced }) }),
   };
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/header-scroll.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText,
-    sandbox,
-  );
+  vm.runInNewContext(compiledScript("src/scripts/header-scroll.ts"), sandbox);
   const press = (href, extra = {}) => {
     const event = {
       button: 0,
@@ -316,27 +346,47 @@ test("a header link leaves a press the downloads launcher owns, a modified press
   assert.equal(location.hash, "");
 });
 
-test("a section lands below the header, which sets the offset from its own size and inset", () => {
-  const valueAt = (selector, property, compact) =>
-    rulesFor(selector)
-      .filter((rule) => rule.conditions.some((text) => text.includes("40rem")) === compact)
-      .map((rule) => declaration(rule.declarations, property))
-      .filter(Boolean)
-      .at(-1);
-  for (const [compact, inset, height] of [
-    [false, "24px", "72px"],
-    [true, "16px", "64px"],
-  ]) {
-    assert.equal(valueAt(".header-content", "min-block-size", compact), height);
-    assert.match(
-      valueAt(".site-header", "inset-block-start", compact),
-      new RegExp(`^max\\(${inset},`),
-    );
-    assert.equal(
-      valueAt(".landing-shell", "--header-offset", compact),
-      `calc(max(${inset}, env(safe-area-inset-top)) + ${height} + 16px)`,
+test("a section lands below the header, whose inset and height each have one source", () => {
+  const declared = (property) =>
+    rules.flatMap((rule) => {
+      const value = declaration(rule.declarations, property);
+      return value ? [{ selector: rule.selector, conditions: rule.conditions, value }] : [];
+    });
+  assert.deepEqual(declared("--header-offset"), [
+    {
+      selector: ".landing-shell",
+      conditions: [],
+      value: "calc(var(--header-inset) + var(--header-height) + 16px)",
+    },
+  ]);
+  for (const property of ["--header-inset", "--header-height"]) {
+    assert.deepEqual(
+      [...new Set(declared(property).map(({ selector }) => selector))],
+      [".landing-shell"],
+      `${property} lives on the element that derives the offset`,
     );
   }
+  for (const [selector, property, source] of [
+    [".site-header", "inset-block-start", "var(--header-inset)"],
+    [".header-content", "min-block-size", "var(--header-height)"],
+  ]) {
+    for (const rule of rulesFor(selector)) {
+      const value = declaration(rule.declarations, property);
+      if (value) assert.equal(value, source, `${selector} ${rule.conditions}`);
+    }
+  }
+  assert.deepEqual(
+    rules
+      .filter((rule) => rule.declarations.includes("safe-area-inset-top"))
+      .flatMap((rule) =>
+        [...rule.declarations.matchAll(/([-\w]+)\s*:[^;]*safe-area-inset-top/g)].map(
+          (match) => match[1],
+        ),
+      )
+      .filter((property) => property !== "--header-inset"),
+    [],
+    "only the header inset reads the top safe area",
+  );
   const anchored = rules.find((rule) => rule.selector === ":where(section[id], main[id])");
   assert.equal(
     declaration(anchored.declarations, "scroll-margin-block-start"),

@@ -907,7 +907,7 @@ test("the phone derives its width from the pinned height at its real device rati
       declarations,
       /--hero-device-width:\s*max\(\s*var\(--hero-device-min-width\),\s*min\(\s*390px,/,
     );
-    assert.match(declarations, /calc\(\(100svh - var\(--hero-pin-top\) - 64px\) \* 9 \/ 19\.5\)/);
+    assert.match(declarations, /calc\(\(100svh - var\(--header-offset\) - 64px\) \* 9 \/ 19\.5\)/);
     assert.match(declarations, /calc\(100vw - 64px\)/);
   }
   assert.match(widths[0].declarations, /calc\(\(100vw - 48px\) \/ 3\)/);

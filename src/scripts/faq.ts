@@ -1,9 +1,8 @@
-export {};
+import { durationToken, motionToken } from "./motion-token";
 
 const list = document.querySelector<HTMLElement>(".faq-list");
 const items = [...document.querySelectorAll<HTMLDetailsElement>(".faq-list details")];
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-const tokens = getComputedStyle(document.documentElement);
 const running = new Map<HTMLDetailsElement, Animation[]>();
 
 const expanded = (details: HTMLDetailsElement) =>
@@ -35,10 +34,8 @@ function glide(details: HTMLDetailsElement, open: boolean) {
   details.style.overflow = "clip";
   sync(details);
   const timing = {
-    duration: Number.parseFloat(
-      tokens.getPropertyValue(open ? "--duration-normal" : "--duration-fast"),
-    ),
-    easing: tokens.getPropertyValue(open ? "--ease-out" : "--ease-standard").trim(),
+    duration: durationToken(open ? "--duration-normal" : "--duration-fast"),
+    easing: motionToken(open ? "--ease-out" : "--ease-standard"),
     fill: "forwards" as const,
   };
   const height = details.animate({ blockSize: [`${from}px`, `${to}px`] }, timing);

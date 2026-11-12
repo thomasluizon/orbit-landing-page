@@ -173,27 +173,33 @@ const viewports = [
   [1920, 1080],
 ];
 const minimumScale = 24 / 52;
+const stageAncestry = [".landing-shell", ".hero-stage"];
 const stageRules = [];
 const parents = [];
 for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
   if (boundary === "{") parents.push(text.trim());
   else {
     const selector = parents.pop();
-    if (selector === ".hero-stage") stageRules.push({ body: text, conditions: [...parents] });
+    if (stageAncestry.includes(selector))
+      stageRules.push({ selector, body: text, conditions: [...parents] });
   }
 }
 const matchesViewport = (conditions, width, height) =>
   conditions.every((condition) =>
-    [...condition.matchAll(/\((width|height)\s*(<=|>=|<|>)\s*(\d+)px\)/g)].every(
-      ([, axis, operator, boundary]) =>
-        vm.runInNewContext(`${axis === "width" ? width : height} ${operator} ${boundary}`),
-    ),
+    [
+      ...condition.matchAll(/\((min-|max-)?(width|height)\s*(<=|>=|<|>|:)\s*([\d.]+)(px|rem)\)/g),
+    ].every(([, bound, axis, operator, amount, unit]) => {
+      const comparison = operator === ":" ? (bound === "max-" ? "<=" : ">=") : operator;
+      const boundary = Number(amount) * (unit === "rem" ? 16 : 1);
+      return vm.runInNewContext(`${axis === "width" ? width : height} ${comparison} ${boundary}`);
+    }),
   );
 const viewportScale = (width, height) => {
   const properties = Object.assign(
     {},
     ...stageRules
       .filter(({ conditions }) => matchesViewport(conditions, width, height))
+      .sort((a, b) => stageAncestry.indexOf(a.selector) - stageAncestry.indexOf(b.selector))
       .map(({ body }) => declarations(body)),
   );
   const resolve = (value) =>

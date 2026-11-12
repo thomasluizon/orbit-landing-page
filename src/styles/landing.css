@@ -5,14 +5,16 @@
   --landing-content: 1072px;
   --landing-narrow: 896px;
   --landing-gutter: 24px;
-  --header-offset: calc(max(24px, env(safe-area-inset-top)) + 72px + 16px);
+  --header-inset: max(24px, env(safe-area-inset-top));
+  --header-height: 72px;
+  --header-offset: calc(var(--header-inset) + var(--header-height) + 16px);
   --landing-section-gap: 96px;
   padding-block-start: 64px;
   overflow: clip;
 }
 .site-header {
   position: fixed;
-  inset-block-start: max(24px, env(safe-area-inset-top));
+  inset-block-start: var(--header-inset);
   inset-inline: 24px;
   z-index: 1100;
   pointer-events: none;
@@ -22,7 +24,7 @@
   align-items: center;
   gap: 24px;
   max-inline-size: var(--landing-narrow);
-  min-block-size: 72px;
+  min-block-size: var(--header-height);
   padding: 8px 24px;
   margin-inline: auto;
   border-radius: var(--radius-full);
@@ -955,15 +957,14 @@
 }
 @media (max-width: 40rem) {
   .landing-shell {
-    --header-offset: calc(max(16px, env(safe-area-inset-top)) + 64px + 16px);
+    --header-inset: max(16px, env(safe-area-inset-top));
+    --header-height: 64px;
   }
   .site-header {
     inset-inline: 16px;
-    inset-block-start: max(16px, env(safe-area-inset-top));
   }
   .header-content {
     padding: 4px 8px 4px 16px;
-    min-block-size: 64px;
     gap: 8px;
   }
   .header-links {
@@ -1743,7 +1744,6 @@ button.metric-bar-track:focus-visible {
   padding-block-start: 32px;
 }
 .hero-stage {
-  --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
   --hero-device-bezel: 4px;
   --hero-float-reserve: 24px;
   --hero-float-entry: 24px;
@@ -1752,7 +1752,7 @@ button.metric-bar-track:focus-visible {
     var(--hero-device-min-width),
     min(
       390px,
-      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
+      calc((100svh - var(--header-offset) - 64px) * 9 / 19.5),
       calc(100vw - 64px),
       calc((100vw - 48px) / 3)
     )
@@ -2142,10 +2142,9 @@ button.metric-bar-track:focus-visible {
     margin-inline-start: auto;
   }
   .hero-stage {
-    --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
     --hero-device-width: max(
       var(--hero-device-min-width),
-      min(390px, calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5), calc(100vw - 64px))
+      min(390px, calc((100svh - var(--header-offset) - 64px) * 9 / 19.5), calc(100vw - 64px))
     );
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
@@ -2162,11 +2161,6 @@ button.metric-bar-track:focus-visible {
   }
   .hero {
     gap: 24px;
-  }
-}
-@media (width <= 640px) {
-  .hero-stage {
-    --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
   }
 }
 @media (width > 640px) and (height < 584px), (width <= 640px) and (height < 568px) {
