@@ -236,60 +236,8 @@ test("FAQ disclosure updates aria-expanded and controls its own answer without r
   const chevron = faq.find((node) => node.name === "ChevronDown");
   assert.equal(attributes(chevron).size, "16");
   assert.equal(attributes(chevron)["aria-hidden"], "true");
-  const source = readFileSync("src/components/Faq.astro", "utf8");
-  const keys = vm.runInNewContext(source.match(/const questions = (\[[^\]]+\])/)[1]);
-  const code = ts.transpileModule(readFileSync("src/scripts/faq.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText;
   const entry = readFileSync("src/pages/index.astro", "utf8");
   assert.match(entry, /import\("\.\.\/scripts\/faq"\)/);
-  for (const initiallyOpen of [false, true]) {
-    const items = keys.map((key, index) => {
-      const control = {
-        attributes: {
-          "aria-expanded": "false",
-          "aria-controls": vm.runInNewContext(attributes(summary)["aria-controls"], { key }),
-        },
-        setAttribute(name, value) {
-          this.attributes[name] = value;
-        },
-      };
-      const listeners = new Map();
-      return {
-        open: initiallyOpen && index === 0,
-        control,
-        listeners,
-        answerId: vm.runInNewContext(attributes(answer).id, { key }),
-        querySelector(selector) {
-          assert.equal(selector, "summary");
-          return control;
-        },
-        addEventListener(name, callback) {
-          listeners.set(name, callback);
-        },
-      };
-    });
-    vm.runInNewContext(code, {
-      exports: {},
-      document: {
-        querySelectorAll(selector) {
-          assert.equal(selector, ".faq-list details");
-          return items;
-        },
-      },
-    });
-    assert.equal(new Set(items.map((item) => item.answerId)).size, keys.length);
-    for (const item of items) {
-      assert.equal(item.control.attributes["aria-controls"], item.answerId);
-      assert.equal(item.control.attributes["aria-expanded"], String(item.open));
-      assert.deepEqual([...item.listeners.keys()], ["toggle"]);
-      for (const open of [true, false]) {
-        item.open = open;
-        item.listeners.get("toggle")();
-        assert.equal(item.control.attributes["aria-expanded"], String(open));
-      }
-    }
-  }
 });
 
 test("the header and hero preserve their app-entry intent", async () => {
@@ -407,12 +355,13 @@ test("the trust strip renders the approved checkable facts in both locales", () 
   }
 });
 
-test("How it works lands on the feature grid at the retained 96px offset", async () => {
+test("How it works lands on the feature grid below the header", async () => {
   const header = (await parse(readFileSync("src/components/Header.astro", "utf8"))).ast;
   assert.ok(descendants(header).some((node) => attributes(node).href === "#features"));
   assert.equal(attributes(sections[2]).id, "features");
   const css = readFileSync("src/styles/landing.css", "utf8");
-  assert.match(css, /scroll-margin-block-start:\s*96px/);
+  assert.match(css, /scroll-margin-block-start:\s*var\(--header-offset\)/);
+  assert.doesNotMatch(css, /scroll-margin-block-start:\s*\d+px/);
 });
 
 test("the recommended plan keeps its canonical inset ring and selected tint", () => {

@@ -2,6 +2,7 @@ import { calendarView } from "./calendar-view";
 import { addDays, pageLanguage, setCopy } from "./clock-format";
 import { readDemoCopy, setLabel } from "./day-cell";
 import { addMonths, dayKey, parseDayKey, startOfWeek } from "./demo-dates";
+import { durationToken, motionToken } from "./motion-token";
 
 const swipe = { threshold: 60, ratio: 1.2 };
 
@@ -38,16 +39,6 @@ function parts(root: HTMLElement) {
   return Object.values(elements).every(Boolean)
     ? (elements as { [name in keyof typeof elements]: HTMLElement })
     : undefined;
-}
-
-function motionToken(name: string) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-}
-
-function durationToken(name: string) {
-  const value = motionToken(name);
-  const amount = Number.parseFloat(value);
-  return value.endsWith("ms") ? amount : amount * 1000;
 }
 
 /** Draws the app's month view for `today` and binds month arrows, the title, swipe and arrow keys. */

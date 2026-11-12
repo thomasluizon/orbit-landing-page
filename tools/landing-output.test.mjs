@@ -470,7 +470,7 @@ test("a #downloads visit lands on one target that holds the toggle and the panel
     .join(";");
   assert.match(
     rule,
-    /scroll-margin-block-start:\s?96px/,
+    /scroll-margin-block-start:\s?var\(--header-offset\)/,
     "the browser's own scroll clears the header",
   );
   assert.doesNotMatch(rule, /display:\s?contents/, "an element with no box takes no scroll margin");
@@ -750,7 +750,6 @@ test("the built hero download keeps its labels and every Mac and Windows control
   const button = nodes.find((node) => attrs(node).id === "hero-download");
   assert.ok(button);
   assert.ok(!Object.hasOwn(attrs(button), "data-analytics-event"));
-  assert.ok(!Object.hasOwn(attrs(button), "data-primary-action"));
   const labels = descendants(button).filter((node) =>
     Object.hasOwn(attrs(node), "data-hero-download-label"),
   );
@@ -1039,4 +1038,13 @@ test("built consent markup reflects the PostHog key and retains the privacy link
       `${process.env.PUBLIC_APP_URL || "https://app.useorbit.org"}/privacy`,
     );
   }
+});
+
+test("the built site keeps every primary action on its static fill", () => {
+  const assets = readdirSync("dist/_astro").filter((name) => /\.(?:js|css)$/.test(name));
+  const built = [html, ...assets.map((name) => readFileSync(`dist/_astro/${name}`, "utf8"))];
+  for (const source of built) {
+    assert.ok(!/data-accent-active|data-primary-action/.test(source));
+  }
+  assert.ok(!assets.some((name) => name.startsWith("primary-actions.")));
 });

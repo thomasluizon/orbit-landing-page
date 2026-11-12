@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 @theme {
   --font-sans: var(--font-geist);
   --font-display: var(--font-space-grotesk);
@@ -14,7 +22,7 @@
   --color-bg-hover: rgba(250, 250, 250, 0.13);
   --color-bg-sunk: rgba(0, 0, 0, 0.28);
   --color-hairline: rgba(255, 255, 255, 0.08);
-  --color-border-control: rgba(255, 255, 255, 0.08);
+  --color-border-control: #6e6e72;
   --color-hairline-ghost: rgba(255, 255, 255, 0.1);
   --color-hairline-strong: rgba(255, 255, 255, 0.16);
   --color-fg-1: #f4f4f6;
@@ -112,18 +120,6 @@
   inset-inline: min(0px, calc((100% - 44px) / 2));
   border-radius: inherit;
 }
-[data-primary-action][data-accent-active="false"] {
-  background-color: var(--color-bg-well);
-  color: var(--color-fg-1);
-}
-[data-primary-action][data-accent-active="false"]:active {
-  background-color: var(--color-bg-hover);
-}
-@media (hover: hover) and (pointer: fine) {
-  [data-primary-action][data-accent-active="false"]:hover {
-    background-color: var(--color-bg-hover);
-  }
-}
 
 html {
   color-scheme: dark;
@@ -160,6 +156,19 @@ body {
 
 .skip-to-content:focus {
   left: 0;
+}
+.skip-to-content:focus-visible {
+  outline-color: var(--color-fg-on-primary);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .skip-to-content:hover {
+    background: var(--color-primary-hover);
+  }
+}
+.skip-to-content:active {
+  background: var(--color-primary-pressed);
 }
 
 .t-hero {
@@ -276,6 +285,9 @@ body {
 #waitlist-email::placeholder {
   color: var(--color-fg-3);
 }
+#waitlist-email:focus-visible {
+  outline-offset: -2px;
+}
 #waitlist-turnstile {
   inline-size: 100%;
   min-block-size: 65px;
@@ -310,8 +322,8 @@ body {
   .language-toggle:hover {
     background: var(--color-bg-hover);
   }
-  #waitlist-email:hover:not(:focus-visible) {
-    box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  #waitlist-email:hover:not(:focus-within) {
+    box-shadow: inset 0 0 0 1px var(--color-border-control);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -319,5 +331,9 @@ body {
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  :active {
+    scale: none !important;
   }
 }

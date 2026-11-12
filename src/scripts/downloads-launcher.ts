@@ -15,10 +15,13 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
   if (opener === toggle) {
     setOpen(toggle.getAttribute("aria-expanded") !== "true");
-  } else {
+  } else if (toggle) {
     setOpen(true);
-    toggle?.scrollIntoView({ block: "start" });
-    toggle?.focus({ preventScroll: true });
+    import("./programmatic-scroll").then(
+      (programmaticScroll) => programmaticScroll.scrollToElement(toggle),
+      () => toggle.scrollIntoView({ block: "start" }),
+    );
+    toggle.focus({ preventScroll: true });
   }
 });
 if (location.hash === "#downloads") setOpen(true);

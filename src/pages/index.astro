@@ -43,9 +43,9 @@ import { appUrl, googlePlayUrl } from "../config/links";
 
   void afterLoad([
     () => import("../scripts/pricing"),
-    () => import("../scripts/faq"),
     () => import("../scripts/back-to-top"),
     () => import("../scripts/scroll"),
+    () => import("../scripts/header-scroll"),
     () => import("../scripts/waitlist"),
     () => import("../scripts/waitlist-section"),
   ]);
@@ -61,6 +61,7 @@ import { appUrl, googlePlayUrl } from "../config/links";
             () => target.removeAttribute("data-clock-pending"),
           );
         if (target.matches(".hero-device")) void afterLoad([() => import("../scripts/demo")]);
+        if (target.matches("#faq")) void afterLoad([() => import("../scripts/faq")]);
         if (target.matches('[data-section="features"]')) {
           void import("../scripts/demo-views").catch(() =>
             target
@@ -74,6 +75,6 @@ import { appUrl, googlePlayUrl } from "../config/links";
     { rootMargin: "160px" },
   );
   document
-    .querySelectorAll('.hero-device, [data-week-card], [data-section="features"]')
+    .querySelectorAll('.hero-device, [data-week-card], [data-section="features"], #faq')
     .forEach((surface) => previewObserver.observe(surface));
 </script>

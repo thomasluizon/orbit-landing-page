@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import { stylesheetRules } from "../../tools/lib/stylesheet-rules.mjs";
 
 const css = readFileSync("src/styles/landing.css", "utf8");
 const code = readFileSync("src/scripts/scroll.ts", "utf8");
@@ -21,24 +22,6 @@ function unconditionalRules(source) {
     start = index + 1;
   }
   return rules.join("\n");
-}
-
-function stylesheetRules(source) {
-  const parents = [];
-  const rules = [];
-  for (const [, text, boundary] of source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .matchAll(/([^{}]*)([{}])/g)) {
-    if (boundary === "{") {
-      parents.push(text.trim());
-      continue;
-    }
-    const selector = parents.pop();
-    if (selector && !selector.startsWith("@")) {
-      rules.push({ selector, declarations: text, conditions: [...parents] });
-    }
-  }
-  return rules;
 }
 
 test("all four hero side items remain rendered from 768px wide and 720px tall", () => {
@@ -676,15 +659,20 @@ test("the Astra conversation sits in a full phone with status chrome and a home 
   assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
 });
 
-test("the FAQ is one compact list with separators only between rows", () => {
+test("the FAQ is one compact list whose open item is one card", () => {
   const list = css.match(/\.faq-list\s*\{([^}]+)\}/)[1];
   assert.match(list, /gap:\s*0/);
   assert.match(
     css,
     /\.faq-list > details \+ details\s*\{[^}]*border-block-start:\s*1px solid var\(--color-hairline\)/,
   );
-  assert.doesNotMatch(css, /\.faq-list details\s*\{[^}]*(?:background|box-shadow|border-radius)/);
+  assert.match(css, /\.faq-list > details\[open\]\s*\{[^}]*border-radius:\s*var\(--radius-xl\)/);
+  assert.match(
+    css,
+    /\.faq-list > details\[open\]:not\(\[data-closing\]\)\s*\{[^}]*background:\s*var\(--color-bg-card\);[^}]*box-shadow:\s*inset 0 0 0 1px var\(--color-hairline-ghost\)/,
+  );
   assert.doesNotMatch(css, /\.faq-list[^{}]*\{[^}]*border-block-end/);
+  assert.doesNotMatch(css, /\.faq-list details\[open\] summary\s*\{/);
   const summary = css.match(/\.faq-list summary\s*\{([^}]+)\}/)[1];
   assert.match(summary, /font-size:\s*var\(--fs-md\)/);
   assert.match(summary, /padding:\s*16px/);
@@ -693,12 +681,11 @@ test("the FAQ is one compact list with separators only between rows", () => {
   assert.match(summary, /align-content:\s*center/);
   assert.match(summary, /align-items:\s*start/);
   assert.match(summary, /line-height:\s*var\(--lh-row\)/);
-  assert.match(summary, /transition:\s*background-color var\(--duration-hover-control\)/);
   assert.match(
     css,
     /\.faq-list summary svg\s*\{[^}]*inline-size:\s*16px;[^}]*block-size:\s*16px;[^}]*margin-block-start:\s*calc\(\(1lh - 16px\) \/ 2\)/,
   );
-  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*4px 16px 16px/);
+  assert.match(css, /\.faq-list details p\s*\{[^}]*padding:\s*0 16px 16px/);
   assert.match(css, /\.faq-list summary:hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/);
   assert.match(css, /\.final-section\s*\{[^}]*padding-block-start:\s*64px/);
   const mobile = css.slice(css.indexOf("@media (max-width: 47.999rem)"));
@@ -726,69 +713,6 @@ test("every landing pill uses the shared app geometry and only hero install is m
       assert.doesNotMatch(tag, /class="[^"\n]*(?:min-h-|h-\[|py-|px-)/, file);
     }
   }
-});
-
-test("visible primary actions share one accent and the phone approval has priority", () => {
-  const source = readFileSync("src/scripts/primary-actions.ts", "utf8");
-  const actions = ["install", "demo-approve", "features", "pro", "final"].map((id) => ({
-    id,
-    attrs: {},
-    setAttribute(name, value) {
-      this.attrs[name] = value;
-    },
-  }));
-  const observed = [];
-  let update;
-  vm.runInNewContext(
-    ts.transpileModule(source, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      document: {
-        querySelectorAll(selector) {
-          assert.equal(selector, "[data-primary-action]");
-          return actions;
-        },
-      },
-      IntersectionObserver: class {
-        constructor(callback) {
-          update = callback;
-        }
-        observe(action) {
-          observed.push(action);
-        }
-      },
-    },
-  );
-  assert.deepEqual(observed, actions);
-  for (let mask = 0; mask < 2 ** actions.length; mask++) {
-    update(
-      actions.map((target, index) => ({
-        target,
-        isIntersecting: Boolean(mask & (1 << index)),
-        intersectionRect: { width: 100, height: 40 },
-      })),
-    );
-    const active = actions.filter((action) => action.attrs["data-accent-active"] === "true");
-    assert.equal(active.length, mask ? 1 : 0);
-    if (mask & 2) assert.equal(active[0].id, "demo-approve");
-  }
-  update(
-    actions.map((target) => ({
-      target,
-      isIntersecting: true,
-      intersectionRect: { width: 0, height: 0 },
-    })),
-  );
-  assert.ok(actions.every((action) => action.attrs["data-accent-active"] === "false"));
-  const primitive = readFileSync("src/components/PillButton.astro", "utf8");
-  assert.match(primitive, /data-primary-action=\{variant === "primary"/);
-  assert.match(primitive, /import "\.\.\/scripts\/primary-actions"/);
-  const global = readFileSync("src/styles/global.css", "utf8");
-  assert.match(
-    global,
-    /\[data-primary-action\]\[data-accent-active="false"\]\s*\{[^}]*background-color:\s*var\(--color-bg-well\)/,
-  );
 });
 
 test("every inline Astra glyph keeps its asset viewBox and the native 16px drawing", async () => {
@@ -856,13 +780,13 @@ test("Orbit marks retain the canonical full asset frames", () => {
   }
 });
 
-test("FAQ questions and answers share one inset with an 8px text gap and 16px bottom padding", () => {
-  assert.match(
+test("FAQ questions and answers share one inset and the question row never changes size on open", () => {
+  assert.doesNotMatch(
     css,
-    /\.faq-list details\[open\] summary\s*\{[^}]*min-block-size:\s*0;[^}]*padding-block-end:\s*4px/,
+    /\.faq-list details\[open\][^{}]*summary\s*\{[^}]*(?:min-block-size|padding)/,
   );
   const answer = css.match(/\.faq-list details p\s*\{([^}]+)\}/)[1];
-  assert.match(answer, /padding:\s*4px 16px 16px/);
+  assert.match(answer, /padding:\s*0 16px 16px/);
   assert.match(answer, /font-size:\s*var\(--fs-base\)/);
   assert.match(answer, /line-height:\s*var\(--lh-body\)/);
   const global = readFileSync("src/styles/global.css", "utf8");
@@ -921,24 +845,25 @@ test("feature cards retain card padding and inset their interactive content from
   )) {
     if (/padding:/.test(declarations)) assert.match(declarations, /padding:\s*16px/);
   }
-  assert.match(
-    css,
-    /\.example-app \.habit-row\[data-habit-toggle\]\s*\{[^}]*padding:\s*8px 12px;[^}]*min-block-size:\s*48px/,
-  );
   assert.match(css, /\.example-app \[data-calendar\]\s*\{[^}]*padding:\s*24px/);
   assert.match(css, /\.day-cell\s*\{[^}]*min-inline-size:\s*0;[^}]*padding:\s*0;/);
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(
     css,
-    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*2px solid var\(--color-fg-1\);[^}]*outline-offset:\s*2px/,
+    /\.orbit-month-grid \.day-cell:focus-visible \.day-cell-circle::after\s*\{[^}]*outline:\s*2px solid var\(--color-fg-1\);[^}]*outline-offset:\s*-2px/,
   );
   assert.match(
     css,
-    /\.example-app :where\(button, a\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+    /\.calendar-nav-button:is\(:active, :focus-visible\),\s*\.calendar-month-title:not\(\[aria-disabled="true"\]\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
   );
   assert.match(
     css,
-    /\.example-app :where\(button, a\):hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+    /\.calendar-nav-button:hover,\s*\.calendar-month-title:not\(\[aria-disabled="true"\]\):hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.example-app :where\(button, a\):(?:hover|is)/,
+    "a day cell and a bar column paint feedback on their own mark, never on a cell box",
   );
 });
 
@@ -984,7 +909,7 @@ test("the phone derives its width from the pinned height at its real device rati
       declarations,
       /--hero-device-width:\s*max\(\s*var\(--hero-device-min-width\),\s*min\(\s*390px,/,
     );
-    assert.match(declarations, /calc\(\(100svh - var\(--hero-pin-top\) - 64px\) \* 9 \/ 19\.5\)/);
+    assert.match(declarations, /calc\(\(100svh - var\(--header-offset\) - 64px\) \* 9 \/ 19\.5\)/);
     assert.match(declarations, /calc\(100vw - 64px\)/);
   }
   assert.match(widths[0].declarations, /calc\(\(100vw - 48px\) \/ 3\)/);

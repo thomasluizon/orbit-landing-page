@@ -131,6 +131,32 @@ for (const tag of ["a", "button"]) {
       assert.equal(active.scale, "0.96", "press must retain scale(0.96)");
     });
 
+    test(`${label}: press paints a fill after the hover fill, so it shows without the scale`, async () => {
+      const { css } = await control();
+      const hover = css.search(/:hover\s*\{\s*background-color:/);
+      const press = css.search(/:active\s*\{\s*background-color:/);
+      assert.ok(hover >= 0, "hover fill");
+      assert.ok(press > hover, "the press fill comes after the hover fill");
+    });
+
+    test(`${label}: hover sits behind the fine pointer query`, async () => {
+      const { css } = await control();
+      assert.match(
+        css,
+        /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.not-disabled\\:hover\\:[^{]+:hover\s*\{/,
+      );
+      assert.doesNotMatch(css, /@media \(hover: hover\) \{/);
+    });
+
+    test(`${label}: a disabled pill shows no hover and no press`, async () => {
+      const { css } = await control();
+      const states = [...css.matchAll(/([^{}]+)\{[^{}]*\}/g)]
+        .map(([, selector]) => selector.trim())
+        .filter((selector) => /:(?:hover|active)\b/.test(selector));
+      assert.ok(states.length >= 2, "the pill has hover and press rules");
+      for (const selector of states) assert.match(selector, /:not\(:disabled\):(?:hover|active)$/);
+    });
+
     test(`${label}: hover colours use 240ms and press/release movement uses 160ms`, async () => {
       assert.deepEqual(transitionDurations(await control()), {
         "background-color": "240ms",

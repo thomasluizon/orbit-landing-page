@@ -4,6 +4,7 @@ import test from "node:test";
 import { parse } from "@astrojs/compiler";
 import ts from "typescript";
 import vm from "node:vm";
+import { stylesheetRules } from "../../tools/lib/stylesheet-rules.mjs";
 
 const source = (name) => readFileSync(`src/components/${name}.astro`, "utf8");
 const attributes = (node) =>
@@ -173,28 +174,25 @@ const viewports = [
   [1920, 1080],
 ];
 const minimumScale = 24 / 52;
-const stageRules = [];
-const parents = [];
-for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
-  if (boundary === "{") parents.push(text.trim());
-  else {
-    const selector = parents.pop();
-    if (selector === ".hero-stage") stageRules.push({ body: text, conditions: [...parents] });
-  }
-}
+const stageAncestry = [".landing-shell", ".hero-stage"];
+const stageRules = stylesheetRules(css).filter(({ selector }) => stageAncestry.includes(selector));
 const matchesViewport = (conditions, width, height) =>
   conditions.every((condition) =>
-    [...condition.matchAll(/\((width|height)\s*(<=|>=|<|>)\s*(\d+)px\)/g)].every(
-      ([, axis, operator, boundary]) =>
-        vm.runInNewContext(`${axis === "width" ? width : height} ${operator} ${boundary}`),
-    ),
+    [
+      ...condition.matchAll(/\((min-|max-)?(width|height)\s*(<=|>=|<|>|:)\s*([\d.]+)(px|rem)\)/g),
+    ].every(([, bound, axis, operator, amount, unit]) => {
+      const comparison = operator === ":" ? (bound === "max-" ? "<=" : ">=") : operator;
+      const boundary = Number(amount) * (unit === "rem" ? 16 : 1);
+      return vm.runInNewContext(`${axis === "width" ? width : height} ${comparison} ${boundary}`);
+    }),
   );
 const viewportScale = (width, height) => {
   const properties = Object.assign(
     {},
     ...stageRules
       .filter(({ conditions }) => matchesViewport(conditions, width, height))
-      .map(({ body }) => declarations(body)),
+      .sort((a, b) => stageAncestry.indexOf(a.selector) - stageAncestry.indexOf(b.selector))
+      .map((rule) => declarations(rule.declarations)),
   );
   const resolve = (value) =>
     value.replace(/var\((--[\w-]+)\)/g, (_, name) => `(${resolve(properties[name])})`);

@@ -5,13 +5,16 @@
   --landing-content: 1072px;
   --landing-narrow: 896px;
   --landing-gutter: 24px;
+  --header-inset: max(24px, env(safe-area-inset-top));
+  --header-height: 72px;
+  --header-offset: calc(var(--header-inset) + var(--header-height) + 16px);
   --landing-section-gap: 96px;
   padding-block-start: 64px;
   overflow: clip;
 }
 .site-header {
   position: fixed;
-  inset-block-start: max(24px, env(safe-area-inset-top));
+  inset-block-start: var(--header-inset);
   inset-inline: 24px;
   z-index: 1100;
   pointer-events: none;
@@ -21,7 +24,7 @@
   align-items: center;
   gap: 24px;
   max-inline-size: var(--landing-narrow);
-  min-block-size: 72px;
+  min-block-size: var(--header-height);
   padding: 8px 24px;
   margin-inline: auto;
   border-radius: var(--radius-full);
@@ -55,6 +58,22 @@
   color: var(--color-fg-2);
   font-size: var(--fs-sm);
   white-space: nowrap;
+  transition: color var(--duration-hover-surface) var(--ease-standard);
+}
+.header-links a > span {
+  position: relative;
+}
+.header-links a > span::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -2px;
+  block-size: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-hover-surface) var(--ease-standard);
+  pointer-events: none;
 }
 .header-actions {
   display: flex;
@@ -75,7 +94,6 @@
   color: var(--color-fg-2);
   font-size: var(--fs-sm);
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .language-toggle::before {
   content: "";
@@ -115,7 +133,7 @@
   z-index: 3;
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 12px;
   padding-inline: 16px;
 }
 .hero-actions {
@@ -474,7 +492,9 @@
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.demo-chip:focus-visible {
+  outline-offset: -2px;
 }
 .demo-chip[aria-pressed="true"] {
   background: var(--color-bg-well);
@@ -500,7 +520,6 @@
   box-shadow: inset 0 0 0 1px var(--color-border-control);
   font-size: 16px;
   color: var(--color-fg-3);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .demo-send {
   display: grid;
@@ -726,7 +745,6 @@
   color: var(--color-fg-2);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .billing-option[aria-checked="true"] {
   background: var(--color-bg-hover);
@@ -734,16 +752,19 @@
   box-shadow: inset 0 0 0 2px var(--color-primary);
 }
 .billing-option:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-fg-1);
+  outline-offset: -2px;
 }
-.billing-option:active {
-  background: var(--color-bg-hover);
+.billing-option[aria-checked="true"]:focus-visible {
+  box-shadow: none;
 }
 @media (hover: hover) and (pointer: fine) {
   .billing-option:hover {
     background: var(--color-bg-hover);
   }
+}
+.billing-option:active {
+  background: var(--color-bg-hover);
 }
 .plan-card {
   display: flex;
@@ -821,8 +842,43 @@
   inline-size: 100%;
   justify-self: center;
 }
+.faq-list > details {
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration:
+    var(--duration-hover-surface), var(--duration-normal), var(--duration-hover-surface);
+  transition-timing-function: var(--ease-standard);
+}
+.faq-list > details[data-closing] {
+  transition-duration: var(--duration-fast);
+}
 .faq-list > details + details {
   border-block-start: 1px solid var(--color-hairline);
+}
+.faq-list > details[open] {
+  border-radius: var(--radius-xl);
+}
+.faq-list > details[open] > summary {
+  border-start-start-radius: var(--radius-xl);
+  border-start-end-radius: var(--radius-xl);
+}
+.faq-list > details[open]:not([data-closing]) {
+  background: var(--color-bg-card);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-ghost);
+}
+@media (hover: hover) and (pointer: fine) {
+  .faq-list > details[open]:not([data-closing]):has(> summary:hover) {
+    background: var(--color-bg-hover);
+    box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  }
+}
+.faq-list > details[open]:not([data-closing]):has(> summary:active) {
+  background: var(--color-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  transition: none;
+}
+.faq-list > details[open]:not([data-closing]),
+.faq-list > details[open]:not([data-closing]) + details {
+  border-block-start-color: transparent;
 }
 .faq-list summary {
   display: grid;
@@ -837,11 +893,9 @@
   border-radius: var(--radius-sm);
   font-size: var(--fs-md);
   line-height: var(--lh-row);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
-.faq-list details[open] summary {
-  min-block-size: 0;
-  padding-block-end: 4px;
+.faq-list summary:focus-visible {
+  outline-offset: -2px;
 }
 .faq-list summary::-webkit-details-marker {
   display: none;
@@ -851,16 +905,18 @@
   inline-size: 16px;
   block-size: 16px;
   margin-block-start: calc((1lh - 16px) / 2);
+  transition: transform var(--duration-fast) var(--ease-standard);
 }
-.faq-list details[open] summary svg {
+.faq-list details[open]:not([data-closing]) summary svg {
   transform: rotate(180deg);
 }
 .faq-list p .text-link {
   display: flex;
   inline-size: fit-content;
+  margin-block-start: 12px;
 }
 .faq-list details p {
-  padding: 4px 16px 16px;
+  padding: 0 16px 16px;
   color: var(--color-fg-2);
   max-inline-size: 72ch;
   font-size: var(--fs-base);
@@ -873,7 +929,10 @@
   gap: 32px;
 }
 :where(section[id], main[id]) {
-  scroll-margin-block-start: 96px;
+  scroll-margin-block-start: var(--header-offset);
+}
+:where(section[id], main[id])[tabindex="-1"]:focus-visible {
+  outline: none;
 }
 :where(a, button) > [data-copy-en] {
   white-space: nowrap;
@@ -881,7 +940,6 @@
 @media (hover: hover) and (pointer: fine) {
   .language-toggle:hover,
   .demo-chip:hover,
-  .demo-composer:hover,
   .faq-list summary:hover {
     background: var(--color-bg-hover);
   }
@@ -889,6 +947,16 @@
   .header-links a:hover {
     color: var(--color-fg-1);
   }
+  .header-links a:hover > span::after {
+    transform: scaleX(1);
+  }
+}
+.text-link:active,
+.header-links a:active {
+  color: var(--color-fg-1);
+}
+.header-links a:active > span::after {
+  transform: scaleX(1);
 }
 @media (width < 67.5rem) {
   .landing-shell {
@@ -944,13 +1012,15 @@
   }
 }
 @media (max-width: 40rem) {
+  .landing-shell {
+    --header-inset: max(16px, env(safe-area-inset-top));
+    --header-height: 64px;
+  }
   .site-header {
     inset-inline: 16px;
-    inset-block-start: max(16px, env(safe-area-inset-top));
   }
   .header-content {
     padding: 4px 8px 4px 16px;
-    min-block-size: 64px;
     gap: 8px;
   }
   .header-links {
@@ -1028,12 +1098,6 @@
     background: var(--color-bg-elev);
   }
 }
-.brand {
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
-}
-.header-links a {
-  transition: color var(--duration-hover-control) var(--ease-standard);
-}
 @media (hover: hover) and (pointer: fine) {
   .brand:hover {
     background: var(--color-bg-hover);
@@ -1041,10 +1105,20 @@
 }
 .brand:active,
 .language-toggle:active,
-.demo-chip:active,
-.demo-composer:active,
+.demo-chip:active {
+  background: var(--color-bg-hover);
+}
 .faq-list summary:active {
   background: var(--color-bg-hover);
+  transition: none;
+}
+.brand:focus-visible,
+.language-toggle:focus-visible,
+.header-open:focus-visible {
+  outline-offset: -2px;
+}
+.faq-list details[open] summary:is(:hover, :active) {
+  background: transparent;
 }
 .astra-product {
   display: grid;
@@ -1285,7 +1359,6 @@ button.metric-bar-track:focus-visible {
   inline-size: min(34px, 100%);
   aspect-ratio: 1;
   border-radius: var(--radius-full);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .day-cell-circle.is-raised {
   background: var(--color-bg-well);
@@ -1351,18 +1424,24 @@ button.metric-bar-track:focus-visible {
 .day-cell:focus-visible {
   outline: none;
 }
-.day-cell:focus-visible .day-cell-circle {
+.orbit-month-grid .day-cell:focus-visible .day-cell-circle::after {
   outline: 2px solid var(--color-fg-1);
-  outline-offset: 2px;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 4px var(--color-bg);
 }
-.day-cell:active .day-cell-circle:not(.is-selected) {
-  background: var(--color-bg-hover);
-  transition: none;
+.week-days .day-cell:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--color-fg-1);
+  outline-offset: -2px;
 }
 @media (hover: hover) and (pointer: fine) {
   .day-cell:hover .day-cell-circle:not(.is-selected) {
     background: var(--color-bg-hover);
   }
+}
+.day-cell:active .day-cell-circle:not(.is-selected) {
+  background: var(--color-bg-hover);
+  transition: none;
 }
 .calendar-month-nav {
   display: flex;
@@ -1734,7 +1813,6 @@ button.metric-bar-track:focus-visible {
   padding-block-start: 32px;
 }
 .hero-stage {
-  --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
   --hero-device-bezel: 4px;
   --hero-float-reserve: 24px;
   --hero-float-entry: 24px;
@@ -1743,7 +1821,7 @@ button.metric-bar-track:focus-visible {
     var(--hero-device-min-width),
     min(
       390px,
-      calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5),
+      calc((100svh - var(--header-offset) - 64px) * 9 / 19.5),
       calc(100vw - 64px),
       calc((100vw - 48px) / 3)
     )
@@ -1866,6 +1944,14 @@ button.metric-bar-track:focus-visible {
   background: var(--color-bg-hover);
 }
 .carousel-segment[aria-current="true"] .carousel-marker {
+  background: var(--color-primary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .carousel-segment:hover .carousel-marker {
+    background: var(--color-primary);
+  }
+}
+.carousel-segment:active .carousel-marker {
   background: var(--color-primary);
 }
 .phone-carousel {
@@ -2024,6 +2110,13 @@ button.metric-bar-track:focus-visible {
 .demo-composer input::placeholder {
   color: var(--color-fg-3);
 }
+.demo-composer:has(input:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.demo-composer input:focus-visible {
+  outline: none;
+}
 .demo-thread {
   touch-action: pan-y;
 }
@@ -2053,6 +2146,21 @@ button.metric-bar-track:focus-visible {
   color: var(--color-fg-1);
   font-size: 16px;
 }
+.demo-edit-form input,
+.demo-edit-form select {
+  box-shadow: inset 0 0 0 1px var(--color-border-control);
+}
+@media (hover: hover) and (pointer: fine) {
+  .demo-composer:hover:not(:focus-within, :has(button:hover)),
+  .demo-edit-form input:hover:not(:focus-within),
+  .demo-edit-form select:hover:not(:focus-within) {
+    box-shadow: inset 0 0 0 1px var(--color-border-control);
+  }
+}
+.demo-edit-form input:focus-visible,
+.demo-edit-form select:focus-visible {
+  outline-offset: -2px;
+}
 .demo-save {
   background: var(--color-primary);
   color: var(--color-fg-on-primary);
@@ -2060,12 +2168,20 @@ button.metric-bar-track:focus-visible {
 }
 .demo-continue {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   font-size: 14px;
 }
 .demo-continue .text-link {
   white-space: normal;
   color: var(--color-primary-soft);
+}
+@media (hover: hover) and (pointer: fine) {
+  .demo-continue .text-link:hover {
+    color: var(--color-fg-1);
+  }
+}
+.demo-continue .text-link:active {
+  color: var(--color-fg-1);
 }
 
 .hero-side .product-card {
@@ -2126,10 +2242,9 @@ button.metric-bar-track:focus-visible {
     margin-inline-start: auto;
   }
   .hero-stage {
-    --hero-pin-top: calc(max(24px, env(safe-area-inset-top)) + 88px);
     --hero-device-width: max(
       var(--hero-device-min-width),
-      min(390px, calc((100svh - var(--hero-pin-top) - 64px) * 9 / 19.5), calc(100vw - 64px))
+      min(390px, calc((100svh - var(--header-offset) - 64px) * 9 / 19.5), calc(100vw - 64px))
     );
     grid-template-columns: minmax(0, 1fr);
     inline-size: calc(100% - 32px);
@@ -2148,11 +2263,6 @@ button.metric-bar-track:focus-visible {
     gap: 24px;
   }
 }
-@media (width <= 640px) {
-  .hero-stage {
-    --hero-pin-top: calc(max(16px, env(safe-area-inset-top)) + 80px);
-  }
-}
 @media (width > 640px) and (height < 584px), (width <= 640px) and (height < 568px) {
   .hero-pin-range {
     padding-block-end: 0;
@@ -2165,6 +2275,9 @@ button.metric-bar-track:focus-visible {
   block-size: auto;
   text-align: start;
   cursor: pointer;
+}
+.habit-row[data-habit-toggle]:focus-visible {
+  outline-offset: -2px;
 }
 .habit-copy {
   display: grid;
@@ -2180,16 +2293,9 @@ button.metric-bar-track:focus-visible {
 .metric-bar {
   background: var(--color-primary);
 }
-.metric-bar[data-selected="true"] {
-  background: var(--color-primary-soft);
-}
 .product-icon {
   background: var(--color-primary-dim);
   color: var(--color-primary-soft);
-}
-.example-app .habit-row[data-habit-toggle] {
-  padding: 8px 12px;
-  min-block-size: 48px;
 }
 .example-app :where(button, a) {
   min-block-size: 44px;
@@ -2198,9 +2304,6 @@ button.metric-bar-track:focus-visible {
 .example-app :where(button, a, input):not(.day-cell, .metric-bar-track) {
   min-inline-size: 44px;
   min-block-size: 44px;
-}
-.example-app :where(button, a):is(:active, :focus-visible) {
-  background: var(--color-bg-hover);
 }
 .calendar-day-card h3 {
   font-size: var(--fs-lg);
@@ -2225,13 +2328,27 @@ button.metric-bar-track:focus-visible {
 @media (hover: hover) and (pointer: fine) {
   .habit-row[data-habit-toggle]:hover {
     background: var(--color-bg-hover);
+    box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
   }
-  .example-app :where(button, a):hover {
+  .calendar-nav-button:hover,
+  .calendar-month-title:not([aria-disabled="true"]):hover {
     background: var(--color-bg-hover);
   }
+  button.metric-bar-track:hover .metric-bar {
+    background: var(--color-fg-1);
+  }
 }
-.example-app .day-cell:is(:hover, :active, :focus-visible) {
-  background: transparent;
+.habit-row[data-habit-toggle]:active {
+  background: var(--color-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  transition: none;
+}
+.calendar-nav-button:is(:active, :focus-visible),
+.calendar-month-title:not([aria-disabled="true"]):is(:active, :focus-visible) {
+  background: var(--color-bg-hover);
+}
+button.metric-bar-track:active .metric-bar {
+  background: var(--color-fg-1);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-composition-card] {
@@ -2286,7 +2403,7 @@ button.metric-bar-track:focus-visible {
 }
 .downloads-disclosure {
   display: grid;
-  scroll-margin-block-start: 96px;
+  scroll-margin-block-start: var(--header-offset);
 }
 .downloads-toggle {
   gap: 4px;
@@ -2295,7 +2412,7 @@ button.metric-bar-track:focus-visible {
   padding: 0;
   font-family: inherit;
   cursor: pointer;
-  scroll-margin-block-start: 96px;
+  scroll-margin-block-start: var(--header-offset);
 }
 .downloads-chevron {
   display: inline-flex;
@@ -2345,7 +2462,6 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-md);
   color: var(--color-fg-1);
   font-size: var(--fs-sm);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .downloads-entry .platform-mark {
   font-size: var(--fs-base);
@@ -2358,7 +2474,6 @@ button.metric-bar-track:focus-visible {
   border-radius: var(--radius-md);
   color: var(--color-fg-3);
   font-size: var(--fs-sm);
-  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .downloads-qr-code {
   display: grid;
@@ -2371,15 +2486,20 @@ button.metric-bar-track:focus-visible {
   block-size: 100%;
   border-radius: var(--radius-sm);
 }
-.downloads-entry:active,
-.downloads-qr:active {
-  background: var(--color-bg-hover);
-}
 @media (hover: hover) and (pointer: fine) {
   .downloads-entry:hover,
   .downloads-qr:hover {
     background: var(--color-bg-hover);
   }
+}
+.downloads-entry:active,
+.downloads-qr:active {
+  background: var(--color-bg-hover);
+  transition: none;
+}
+.downloads-entry:focus-visible,
+.downloads-qr:focus-visible {
+  outline-offset: -2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .downloads-panel,
@@ -2412,4 +2532,71 @@ button.metric-bar-track:focus-visible {
     ) {
     visibility: hidden;
   }
+}
+.brand,
+.language-toggle,
+.billing-option,
+.demo-chip,
+.demo-composer,
+.demo-save,
+.calendar-nav-button,
+.calendar-month-title,
+.day-cell-circle,
+.back-to-top,
+.skip-to-content,
+#waitlist-email,
+.demo-edit-form input,
+.demo-edit-form select {
+  transition-property: background-color, color, box-shadow, opacity, scale;
+  transition-duration:
+    var(--duration-hover-control), var(--duration-hover-control), var(--duration-hover-control),
+    var(--duration-fast), var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+.demo-send {
+  transition-property: background-color, color, opacity, scale;
+  transition-duration:
+    var(--duration-hover-control), var(--duration-hover-control), var(--duration-fast),
+    var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+.habit-row[data-habit-toggle],
+.faq-list summary,
+.downloads-entry,
+.downloads-qr {
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--duration-hover-surface);
+  transition-timing-function: var(--ease-standard);
+}
+.carousel-marker,
+.metric-bar {
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
+}
+.language-toggle:active,
+.billing-option:active,
+.demo-chip:active,
+.demo-send:enabled:active,
+.demo-save:active,
+.back-to-top:active {
+  scale: 0.96;
+}
+.demo-composer .demo-send:focus-visible {
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.demo-save:focus-visible {
+  outline-color: var(--color-fg-on-primary);
+  outline-offset: -2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .back-to-top:hover,
+  .demo-save:hover,
+  .demo-composer[data-has-text] .demo-send:hover {
+    background: var(--color-primary-hover);
+  }
+}
+.back-to-top:active,
+.demo-save:active,
+.demo-composer[data-has-text] .demo-send:active {
+  background: var(--color-primary-pressed);
 }
