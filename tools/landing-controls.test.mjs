@@ -51,23 +51,44 @@ const lastValue = (selector, property) =>
     .map((rule) => declaration(rule.declarations, property))
     .filter(Boolean)
     .at(-1);
+const selectorParts = (selector) =>
+  selector.split(/,(?![^()]*\))/).map((part) => part.trim().replace(/\s+/g, " "));
+const pointerState = (selector) => {
+  const hover = /:hover\b/.test(selector);
+  if (hover === /:active\b/.test(selector)) return undefined;
+  return hover ? "hover" : "active";
+};
+const withoutPointerState = (selector) =>
+  selector
+    .replace(/:is\([^()]*\)|:hover\b|:active\b/g, (match) =>
+      /:hover|:active/.test(match) ? ":state" : match,
+    )
+    .replace(/\s+/g, " ");
+const FINE_POINTER = "@media (hover: hover) and (pointer: fine)";
+const BORDER_CONTROL_RING = "inset 0 0 0 1px var(--color-border-control)";
+const textFields = ["#waitlist-email", ".demo-edit-form input", ".demo-edit-form select"];
 
-test("the Ask Astra focus ring follows the pill shape and stays inside the phone", () => {
+test("the Ask Astra focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
   assert.equal(lastValue(".demo-composer", "border-radius"), "28px");
   assert.equal(lastValue(".demo-composer", "min-block-size"), "56px");
   const ring = ".demo-composer:has(input:focus-visible)";
   assert.equal(lastValue(ring, "outline"), "2px solid var(--color-primary)");
-  assert.equal(lastValue(ring, "outline-offset"), "2px");
+  assert.equal(lastValue(ring, "outline-offset"), "-2px");
   assert.equal(lastValue(".demo-composer input:focus-visible", "outline"), "none");
   assert.equal(lastValue(".demo-composer input", "border-radius"), undefined);
-  const gutter = Number.parseInt(lastValue(".demo-input-area", "padding") ?? "0", 10);
-  assert.ok(gutter >= 4, "the ring needs the 2px offset and the 2px width inside its container");
 });
 
-test("every other rounded input keeps its own radius, so the global focus ring follows it", () => {
+test("every text field keeps its 3:1 boundary on hover and draws the inset 2px primary focus ring", () => {
   assert.match(globalCss, /:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\)/);
-  for (const selector of ["#waitlist-email", ".demo-edit-form input", ".demo-edit-form select"]) {
+  for (const selector of textFields) {
     assert.match(lastValue(selector, "border-radius") ?? "", /^var\(--radius-(?:sm|md|lg|xl)\)$/);
+    assert.equal(lastValue(selector, "box-shadow"), BORDER_CONTROL_RING, selector);
+    assert.equal(
+      lastValue(`${selector}:hover:not(:focus-visible)`, "box-shadow"),
+      BORDER_CONTROL_RING,
+      `${selector} hover retains the control boundary`,
+    );
+    assert.equal(lastValue(`${selector}:focus-visible`, "outline-offset"), "-2px", selector);
   }
 });
 
@@ -285,6 +306,23 @@ test("a native toggle outside the script's motion updates aria-expanded", () => 
   }
 });
 
+const subjectOf = (part) =>
+  part
+    .replace(/:(?:has|not|is|where)\((?:[^()]|\([^()]*\))*\)/g, "")
+    .split(/\s*[>+~]\s*|\s+/)
+    .at(-1);
+
+test("an open FAQ card lights under its question row and stops when the close starts", () => {
+  const card = ".faq-list > details[open]:not([data-closing])";
+  const hover = rules.find((rule) => rule.selector === `${card}:has(> summary:hover)`);
+  const press = rules.find((rule) => rule.selector === `${card}:has(> summary:active)`);
+  assert.deepEqual(hover?.conditions, [FINE_POINTER]);
+  assert.equal(declaration(hover.declarations, "background"), "var(--color-bg-hover)");
+  assert.deepEqual(press?.conditions, [], "the press fill shows on touch");
+  assert.equal(declaration(press.declarations, "background"), "var(--color-bg-hover)");
+  assert.ok(rules.indexOf(press) > rules.indexOf(hover), "the press comes after the hover");
+});
+
 test("an open FAQ card's question row takes the card's top corners, so its focus ring stays inside the card", () => {
   const card = lastValue(".faq-list > details[open]", "border-radius");
   assert.equal(card, "var(--radius-xl)");
@@ -303,7 +341,10 @@ test("an open FAQ card's question row takes the card's top corners, so its focus
   );
   assert.deepEqual(
     rules
-      .filter((rule) => rule.selector.includes("data-closing") && rule.selector.includes("summary"))
+      .filter((rule) => rule.selector.includes("data-closing"))
+      .filter((rule) =>
+        selectorParts(rule.selector).some((part) => subjectOf(part).startsWith("summary")),
+      )
       .filter((rule) =>
         /(?:^|[;\s])(?:background|border(?:-[a-z-]+)?-radius)\s*:/.test(rule.declarations),
       )
@@ -533,7 +574,9 @@ const controls = [
   [".downloads-entry", ["background-color"]],
   [".downloads-qr", ["background-color"]],
   [".faq-list summary", ["background-color"]],
+  [".faq-list > details", ["background-color"]],
   [".back-to-top", ["background-color", "scale"]],
+  [".skip-to-content", ["background-color"]],
   ["#waitlist-email", ["background-color", "box-shadow"]],
   [".demo-edit-form input", ["background-color", "box-shadow"]],
   [".demo-edit-form select", ["background-color", "box-shadow"]],
@@ -617,23 +660,12 @@ test("reduced motion removes every control transition and the press movement", (
   assert.equal(declaration(press.declarations, "scale"), "none !important");
 });
 
-const selectorParts = (selector) => selector.split(/,(?![^()]*\))/).map((part) => part.trim());
-const pointerState = (selector) => {
-  const hover = /:hover\b/.test(selector);
-  if (hover === /:active\b/.test(selector)) return undefined;
-  return hover ? "hover" : "active";
-};
-const withoutPointerState = (selector) =>
-  selector
-    .replace(/:is\([^()]*\)|:hover\b|:active\b/g, (match) =>
-      /:hover|:active/.test(match) ? ":state" : match,
-    )
-    .replace(/\s+/g, " ");
+const paints = (rule) =>
+  /(?:^|[;\s])(?:background(?:-color)?|color|box-shadow)\s*:/.test(rule.declarations);
 
 test("a control's press fill comes after its hover fill, so a held mouse press paints it", () => {
   const fills = rules.flatMap((rule, order) =>
-    declaration(rule.declarations, "background") ||
-    declaration(rule.declarations, "background-color")
+    paints(rule)
       ? selectorParts(rule.selector).flatMap((part) => {
           const state = pointerState(part);
           return state ? [{ order, state, control: withoutPointerState(part) }] : [];
@@ -656,4 +688,228 @@ test("a control's press fill comes after its hover fill, so a held mouse press p
   );
   assert.equal(lastValue(".back-to-top:hover", "background"), "var(--color-primary-hover)");
   assert.equal(lastValue(".back-to-top:active", "background"), "var(--color-primary-pressed)");
+});
+
+const EXAMPLE_HOVER = ".example-app :where(button, a):hover";
+const EXAMPLE_PRESS = ".example-app :where(button, a):is(:active, :focus-visible)";
+const OPEN_CARD = ".faq-list > details[open]:not([data-closing])";
+const pointerFeedback = new Map([
+  [".brand", [".brand:hover", ".brand:active"]],
+  [".header-links a", [".header-links a:hover", ".header-links a:active"]],
+  [".text-link", [".text-link:hover", ".text-link:active"]],
+  [
+    ".demo-continue .text-link",
+    [".demo-continue .text-link:hover", ".demo-continue .text-link:active"],
+  ],
+  [".language-toggle", [".language-toggle:hover", ".language-toggle:active"]],
+  [".skip-to-content", [".skip-to-content:hover", ".skip-to-content:active"]],
+  [".billing-option", [".billing-option:hover", ".billing-option:active"]],
+  [
+    ".carousel-segment",
+    [".carousel-segment:hover .carousel-marker", ".carousel-segment:active .carousel-marker"],
+  ],
+  [
+    ".habit-row[data-habit-toggle]",
+    [".habit-row[data-habit-toggle]:hover", ".habit-row[data-habit-toggle]:active"],
+  ],
+  [".demo-chip", [".demo-chip:hover", ".demo-chip:active"]],
+  [
+    ".demo-composer",
+    [
+      ".demo-composer:hover:not(:has(button:hover))",
+      ".demo-composer:active:not(:has(button:active))",
+    ],
+  ],
+  [
+    ".demo-send",
+    [
+      ".demo-composer[data-has-text] .demo-send:hover",
+      ".demo-composer[data-has-text] .demo-send:active",
+    ],
+  ],
+  [".demo-save", [".demo-save:hover", ".demo-save:active"]],
+  [".calendar-nav-button", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
+  [".calendar-month-title", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
+  [".metric-bar-track", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
+  [
+    ".day-cell",
+    [
+      ".day-cell:hover .day-cell-circle:not(.is-selected)",
+      ".day-cell:active .day-cell-circle:not(.is-selected)",
+    ],
+  ],
+  [".downloads-entry", [".downloads-entry:hover", ".downloads-entry:active"]],
+  [".downloads-qr", [".downloads-qr:hover", ".downloads-qr:active"]],
+  [".faq-list summary", [".faq-list summary:hover", ".faq-list summary:active"]],
+  [
+    ".faq-list summary in an open card",
+    [`${OPEN_CARD}:has(> summary:hover)`, `${OPEN_CARD}:has(> summary:active)`],
+  ],
+  [".back-to-top", [".back-to-top:hover", ".back-to-top:active"]],
+  ...textFields.map((field) => [field, [`${field}:hover:not(:focus-visible)`, undefined]]),
+]);
+const FIELD_PRESS =
+  "a press focuses the field, and DESIGN.md gives a field holding focus no hover and the inset 2px primary ring at once";
+const withoutPress = new Map(textFields.map((field) => [field, FIELD_PRESS]));
+const withoutPointerFeedback = new Map([
+  [
+    "main#main-content",
+    "the skip link's focus target, not a control: DESIGN.md gives a hover state only to an interactive surface",
+  ],
+]);
+const paintedBy = (part) =>
+  rules
+    .map((rule, order) => ({ rule, order }))
+    .filter(({ rule }) => paints(rule) && selectorParts(rule.selector).includes(part));
+
+test("every interactive landing element has a hover behind the fine pointer and a press after it", () => {
+  for (const [control, [hover, press]] of pointerFeedback) {
+    const hovers = paintedBy(hover);
+    assert.ok(hovers.length > 0, `${control} has no hover state`);
+    for (const { rule } of hovers) assert.deepEqual(rule.conditions, [FINE_POINTER], hover);
+    if (press === undefined) {
+      assert.ok(withoutPress.has(control), `${control} has no press state`);
+      continue;
+    }
+    const presses = paintedBy(press);
+    assert.ok(presses.length > 0, `${control} has no press state`);
+    for (const { rule } of presses) {
+      assert.ok(!rule.conditions.some((condition) => condition.includes("hover")), press);
+    }
+    assert.ok(
+      Math.min(...presses.map(({ order }) => order)) >
+        Math.max(...hovers.map(({ order }) => order)),
+      `${control} press comes after its hover`,
+    );
+  }
+});
+
+const INTERACTIVE_TAGS = new Set(["a", "button", "summary", "input", "select", "textarea"]);
+const COMPONENT_CONTROLS = {
+  PillButton: "PillButton",
+  HabitRow: ".habit-row[data-habit-toggle]",
+  LanguageToggle: ".language-toggle",
+};
+const CONTROL_BY_ID = {
+  "waitlist-email": "#waitlist-email",
+  "demo-edit-name": ".demo-edit-form input",
+  "demo-edit-schedule": ".demo-edit-form select",
+  "demo-input": ".demo-composer",
+  "main-content": "main#main-content",
+};
+const classesOf = (node) => (attributeOf(node, "class")?.value ?? "").split(/\s+/).filter(Boolean);
+
+function controlKey(node, ancestors) {
+  if (COMPONENT_CONTROLS[node.name]) return COMPONENT_CONTROLS[node.name];
+  const id = attributeOf(node, "id")?.value;
+  if (CONTROL_BY_ID[id]) return CONTROL_BY_ID[id];
+  if (node.name === "summary") return ".faq-list summary";
+  const classes = classesOf(node);
+  if (classes.includes("habit-row")) return ".habit-row[data-habit-toggle]";
+  const known = classes.map((name) => `.${name}`).find((key) => pointerFeedback.has(key));
+  if (known) return known;
+  if (
+    node.name === "a" &&
+    ancestors.some((ancestor) => classesOf(ancestor).includes("header-links"))
+  )
+    return ".header-links a";
+  return [node.name, id && `#${id}`, ...classes.map((name) => `.${name}`)].filter(Boolean).join("");
+}
+
+function controlsIn(node, ancestors = []) {
+  const interactive =
+    INTERACTIVE_TAGS.has(node.name) ||
+    Object.hasOwn(COMPONENT_CONTROLS, node.name) ||
+    attributeOf(node, "tabindex") !== undefined ||
+    attributeOf(node, "role")?.value === "button";
+  return [
+    ...(interactive ? [controlKey(node, ancestors)] : []),
+    ...(node.children ?? []).flatMap((child) => controlsIn(child, [...ancestors, node])),
+  ];
+}
+
+test("every interactive element the landing renders has an entry in the pointer feedback table", async () => {
+  const found = new Set();
+  for (const directory of ["src/components", "src/pages", "src/layouts"]) {
+    for (const file of readdirSync(directory).filter((name) => name.endsWith(".astro"))) {
+      if (file === "PillButton.astro") continue;
+      const { ast } = await parse(readFileSync(`${directory}/${file}`, "utf8"));
+      for (const key of controlsIn(ast)) found.add(key);
+    }
+  }
+  for (const file of readdirSync("src/scripts").filter((name) => /^[\w-]+\.ts$/.test(name))) {
+    for (const [, classes] of readFileSync(`src/scripts/${file}`, "utf8").matchAll(
+      /<(?:a|button|summary|input|select)\b[^>]*\bclass="([^"]+)"/g,
+    )) {
+      found.add(
+        classes
+          .split(/\s+/)
+          .map((name) => `.${name}`)
+          .find((key) => pointerFeedback.has(key)) ?? classes,
+      );
+    }
+  }
+  assert.ok(found.has(".day-cell"), "the scripts render the calendar day cells");
+  assert.deepEqual(
+    [...found].filter(
+      (key) =>
+        key !== "PillButton" && !pointerFeedback.has(key) && !withoutPointerFeedback.has(key),
+    ),
+    [],
+    "each interactive element needs a hover and a press entry, or an allowlist reason",
+  );
+  const primitive = readFileSync("src/components/PillButton.astro", "utf8");
+  for (const variant of ["primary", "secondary", "ghost"]) {
+    const classes = primitive.match(new RegExp(`${variant}:\\s*\\n?\\s*"([^"]+)"`))?.[1] ?? "";
+    assert.match(classes, /(?:^|\s)hover:bg-/, `${variant} pill hover`);
+    assert.match(classes, /(?:^|\s)active:bg-/, `${variant} pill press fill`);
+  }
+});
+
+test("the composer and a disabled month title never light while the pointer is on another control", () => {
+  assert.equal(
+    declaration(
+      rules.find((rule) =>
+        selectorParts(rule.selector).includes(
+          '.example-app .calendar-month-title[aria-disabled="true"]:is(:hover, :active)',
+        ),
+      )?.declarations ?? "",
+      "background",
+    ),
+    "transparent",
+  );
+  assert.ok(paintedBy(".demo-composer:hover").length === 0, "the composer hover skips its button");
+  assert.ok(paintedBy(".demo-composer:active").length === 0, "the composer press skips its button");
+});
+
+test("a focus ring keeps 8px from its neighbours: grouped rows inset it and the hero controls reserve it", () => {
+  const global = rules.find(
+    (rule) => rule.selector === ":focus-visible" && !rule.conditions.length,
+  );
+  const width = Number.parseFloat(declaration(global.declarations, "outline"));
+  const extension = width + Number.parseFloat(declaration(global.declarations, "outline-offset"));
+  assert.ok(extension > 0, "the global ring draws outside the control");
+  assert.match(
+    lastValue(".habit-row[data-habit-toggle]:focus-visible", "outline-offset") ?? "",
+    /^-\d+px$/,
+  );
+  assert.ok(
+    Number.parseFloat(lastValue(".hero-controls", "gap")) >= 8 + extension,
+    "the downloads toggle ring needs 8px to the hero action fills",
+  );
+});
+
+test("a chip and a day in the dense week row draw their focus ring inside their own box", () => {
+  assert.match(lastValue(".demo-chip:focus-visible", "outline-offset") ?? "", /^-\d+px$/);
+  assert.equal(
+    lastValue(".week-days", "gap"),
+    "0",
+    "the week row days touch, so no ring may draw outside",
+  );
+  assert.equal(
+    lastValue(".week-days .day-cell:focus-visible", "outline"),
+    "2px solid var(--color-fg-1)",
+  );
+  assert.match(lastValue(".week-days .day-cell:focus-visible", "outline-offset") ?? "", /^-\d+px$/);
+  assert.equal(lastValue(".week-days .day-cell:focus-visible .day-cell-circle", "outline"), "none");
 });

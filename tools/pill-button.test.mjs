@@ -131,6 +131,23 @@ for (const tag of ["a", "button"]) {
       assert.equal(active.scale, "0.96", "press must retain scale(0.96)");
     });
 
+    test(`${label}: press paints a fill after the hover fill, so it shows without the scale`, async () => {
+      const { css } = await control();
+      const hover = css.search(/:hover\s*\{\s*background-color:/);
+      const press = css.search(/:active\s*\{\s*background-color:/);
+      assert.ok(hover >= 0, "hover fill");
+      assert.ok(press > hover, "the press fill comes after the hover fill");
+    });
+
+    test(`${label}: hover sits behind the fine pointer query`, async () => {
+      const { css } = await control();
+      assert.match(
+        css,
+        /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.hover\\:[^{]+:hover\s*\{/,
+      );
+      assert.doesNotMatch(css, /@media \(hover: hover\) \{/);
+    });
+
     test(`${label}: hover colours use 240ms and press/release movement uses 160ms`, async () => {
       assert.deepEqual(transitionDurations(await control()), {
         "background-color": "240ms",
