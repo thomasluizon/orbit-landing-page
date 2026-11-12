@@ -58,6 +58,22 @@
   color: var(--color-fg-2);
   font-size: var(--fs-sm);
   white-space: nowrap;
+  transition: color var(--duration-hover-surface) var(--ease-standard);
+}
+.header-links a > span {
+  position: relative;
+}
+.header-links a > span::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -2px;
+  block-size: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-hover-surface) var(--ease-standard);
+  pointer-events: none;
 }
 .header-actions {
   display: flex;
@@ -737,7 +753,7 @@
 }
 .billing-option:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 @media (hover: hover) and (pointer: fine) {
   .billing-option:hover {
@@ -826,7 +842,7 @@
 .faq-list > details {
   transition-property: background-color, border-color, box-shadow;
   transition-duration:
-    var(--duration-hover-control), var(--duration-normal), var(--duration-normal);
+    var(--duration-hover-surface), var(--duration-normal), var(--duration-hover-surface);
   transition-timing-function: var(--ease-standard);
 }
 .faq-list > details[data-closing] {
@@ -849,10 +865,13 @@
 @media (hover: hover) and (pointer: fine) {
   .faq-list > details[open]:not([data-closing]):has(> summary:hover) {
     background: var(--color-bg-hover);
+    box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
   }
 }
 .faq-list > details[open]:not([data-closing]):has(> summary:active) {
   background: var(--color-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  transition: none;
 }
 .faq-list > details[open]:not([data-closing]),
 .faq-list > details[open]:not([data-closing]) + details {
@@ -891,6 +910,7 @@
 .faq-list p .text-link {
   display: flex;
   inline-size: fit-content;
+  margin-block-start: 12px;
 }
 .faq-list details p {
   padding: 0 16px 16px;
@@ -917,7 +937,6 @@
 @media (hover: hover) and (pointer: fine) {
   .language-toggle:hover,
   .demo-chip:hover,
-  .demo-composer:hover:not(:has(button:hover)),
   .faq-list summary:hover {
     background: var(--color-bg-hover);
   }
@@ -925,10 +944,16 @@
   .header-links a:hover {
     color: var(--color-fg-1);
   }
+  .header-links a:hover > span::after {
+    transform: scaleX(1);
+  }
 }
 .text-link:active,
 .header-links a:active {
   color: var(--color-fg-1);
+}
+.header-links a:active > span::after {
+  transform: scaleX(1);
 }
 @media (width < 67.5rem) {
   .landing-shell {
@@ -1077,10 +1102,17 @@
 }
 .brand:active,
 .language-toggle:active,
-.demo-chip:active,
-.demo-composer:active:not(:has(button:active)),
+.demo-chip:active {
+  background: var(--color-bg-hover);
+}
 .faq-list summary:active {
   background: var(--color-bg-hover);
+  transition: none;
+}
+.brand:focus-visible,
+.language-toggle:focus-visible,
+.header-open:focus-visible {
+  outline-offset: -2px;
 }
 .faq-list details[open] summary:is(:hover, :active) {
   background: transparent;
@@ -1390,8 +1422,8 @@ button.metric-bar-track:focus-visible {
   outline: none;
 }
 .day-cell:focus-visible .day-cell-circle {
-  outline: 2px solid var(--color-fg-1);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 .week-days .day-cell:focus-visible {
   border-radius: var(--radius-sm);
@@ -2118,8 +2150,9 @@ button.metric-bar-track:focus-visible {
   box-shadow: inset 0 0 0 1px var(--color-border-control);
 }
 @media (hover: hover) and (pointer: fine) {
-  .demo-edit-form input:hover:not(:focus-visible),
-  .demo-edit-form select:hover:not(:focus-visible) {
+  .demo-composer:hover:not(:focus-within, :has(button:hover)),
+  .demo-edit-form input:hover:not(:focus-within),
+  .demo-edit-form select:hover:not(:focus-within) {
     box-shadow: inset 0 0 0 1px var(--color-border-control);
   }
 }
@@ -2134,7 +2167,7 @@ button.metric-bar-track:focus-visible {
 }
 .demo-continue {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   font-size: 14px;
 }
 .demo-continue .text-link {
@@ -2259,9 +2292,6 @@ button.metric-bar-track:focus-visible {
 .metric-bar {
   background: var(--color-primary);
 }
-.metric-bar[data-selected="true"] {
-  background: var(--color-primary-soft);
-}
 .product-icon {
   background: var(--color-primary-dim);
   color: var(--color-primary-soft);
@@ -2297,20 +2327,27 @@ button.metric-bar-track:focus-visible {
 @media (hover: hover) and (pointer: fine) {
   .habit-row[data-habit-toggle]:hover {
     background: var(--color-bg-hover);
+    box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
   }
-  .example-app :where(button, a):hover {
+  .calendar-nav-button:hover,
+  .calendar-month-title:not([aria-disabled="true"]):hover {
     background: var(--color-bg-hover);
+  }
+  button.metric-bar-track:hover .metric-bar {
+    background: var(--color-fg-1);
   }
 }
 .habit-row[data-habit-toggle]:active {
   background: var(--color-bg-hover);
+  box-shadow: inset 0 0 0 1px var(--color-hairline-strong);
+  transition: none;
 }
-.example-app :where(button, a):is(:active, :focus-visible) {
+.calendar-nav-button:is(:active, :focus-visible),
+.calendar-month-title:not([aria-disabled="true"]):is(:active, :focus-visible) {
   background: var(--color-bg-hover);
 }
-.example-app .day-cell:is(:hover, :active, :focus-visible),
-.example-app .calendar-month-title[aria-disabled="true"]:is(:hover, :active) {
-  background: transparent;
+button.metric-bar-track:active .metric-bar {
+  background: var(--color-fg-1);
 }
 @media (prefers-reduced-motion: reduce) {
   [data-composition-card] {
@@ -2457,6 +2494,11 @@ button.metric-bar-track:focus-visible {
 .downloads-entry:active,
 .downloads-qr:active {
   background: var(--color-bg-hover);
+  transition: none;
+}
+.downloads-entry:focus-visible,
+.downloads-qr:focus-visible {
+  outline-offset: -2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .downloads-panel,
@@ -2492,19 +2534,13 @@ button.metric-bar-track:focus-visible {
 }
 .brand,
 .language-toggle,
-.header-links a,
 .billing-option,
 .demo-chip,
 .demo-composer,
-.demo-send,
 .demo-save,
-.habit-row[data-habit-toggle],
 .calendar-nav-button,
 .calendar-month-title,
 .day-cell-circle,
-.downloads-entry,
-.downloads-qr,
-.faq-list summary,
 .back-to-top,
 .skip-to-content,
 #waitlist-email,
@@ -2516,17 +2552,40 @@ button.metric-bar-track:focus-visible {
     var(--duration-fast), var(--duration-fast);
   transition-timing-function: var(--ease-standard);
 }
+.demo-send {
+  transition-property: background-color, color, opacity, scale;
+  transition-duration:
+    var(--duration-hover-control), var(--duration-hover-control), var(--duration-fast),
+    var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+.habit-row[data-habit-toggle],
+.faq-list summary,
+.downloads-entry,
+.downloads-qr {
+  transition-property: background-color, box-shadow;
+  transition-duration: var(--duration-hover-surface);
+  transition-timing-function: var(--ease-standard);
+}
 .carousel-marker,
 .metric-bar {
-  transition: background-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-hover-control) var(--ease-standard);
 }
 .language-toggle:active,
 .billing-option:active,
 .demo-chip:active,
-.demo-send:active,
+.demo-send:enabled:active,
 .demo-save:active,
 .back-to-top:active {
   scale: 0.96;
+}
+.demo-composer .demo-send:focus-visible {
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 4px var(--color-bg);
+}
+.demo-save:focus-visible {
+  outline-color: var(--color-fg-on-primary);
+  outline-offset: -2px;
 }
 @media (hover: hover) and (pointer: fine) {
   .back-to-top:hover,

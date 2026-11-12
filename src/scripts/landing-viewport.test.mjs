@@ -850,15 +850,20 @@ test("feature cards retain card padding and inset their interactive content from
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(
     css,
-    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*2px solid var\(--color-fg-1\);[^}]*outline-offset:\s*2px/,
+    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*-2px/,
   );
   assert.match(
     css,
-    /\.example-app :where\(button, a\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+    /\.calendar-nav-button:is\(:active, :focus-visible\),\s*\.calendar-month-title:not\(\[aria-disabled="true"\]\):is\(:active, :focus-visible\)\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
   );
   assert.match(
     css,
-    /\.example-app :where\(button, a\):hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+    /\.calendar-nav-button:hover,\s*\.calendar-month-title:not\(\[aria-disabled="true"\]\):hover\s*\{[^}]*background:\s*var\(--color-bg-hover\)/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.example-app :where\(button, a\):(?:hover|is)/,
+    "a day cell and a bar column paint feedback on their own mark, never on a cell box",
   );
 });
 

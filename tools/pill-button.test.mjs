@@ -143,9 +143,18 @@ for (const tag of ["a", "button"]) {
       const { css } = await control();
       assert.match(
         css,
-        /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.hover\\:[^{]+:hover\s*\{/,
+        /@media \(hover: hover\) and \(pointer: fine\) \{\s*\.not-disabled\\:hover\\:[^{]+:hover\s*\{/,
       );
       assert.doesNotMatch(css, /@media \(hover: hover\) \{/);
+    });
+
+    test(`${label}: a disabled pill shows no hover and no press`, async () => {
+      const { css } = await control();
+      const states = [...css.matchAll(/([^{}]+)\{[^{}]*\}/g)]
+        .map(([, selector]) => selector.trim())
+        .filter((selector) => /:(?:hover|active)\b/.test(selector));
+      assert.ok(states.length >= 2, "the pill has hover and press rules");
+      for (const selector of states) assert.match(selector, /:not\(:disabled\):(?:hover|active)$/);
     });
 
     test(`${label}: hover colours use 240ms and press/release movement uses 160ms`, async () => {

@@ -44,15 +44,27 @@ const landingCss = readFileSync("src/styles/landing.css", "utf8");
 const rules = [...stylesheetRules(globalCss), ...stylesheetRules(landingCss)];
 const declaration = (block, property) =>
   block.match(new RegExp(`(?:^|[;\\s])${property}\\s*:\\s*([^;]+);`))?.[1].trim();
+function selectorParts(selector) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  for (const [index, character] of [...selector].entries()) {
+    if (character === "(") depth += 1;
+    if (character === ")") depth -= 1;
+    if (character === "," && depth === 0) {
+      parts.push(selector.slice(start, index));
+      start = index + 1;
+    }
+  }
+  return [...parts, selector.slice(start)].map((part) => part.trim().replace(/\s+/g, " "));
+}
 const rulesFor = (selector) =>
-  rules.filter((rule) => rule.selector.split(",").some((part) => part.trim() === selector));
+  rules.filter((rule) => selectorParts(rule.selector).includes(selector));
 const lastValue = (selector, property) =>
   rulesFor(selector)
     .map((rule) => declaration(rule.declarations, property))
     .filter(Boolean)
     .at(-1);
-const selectorParts = (selector) =>
-  selector.split(/,(?![^()]*\))/).map((part) => part.trim().replace(/\s+/g, " "));
 const pointerState = (selector) => {
   const hover = /:hover\b/.test(selector);
   if (hover === /:active\b/.test(selector)) return undefined;
@@ -66,7 +78,9 @@ const withoutPointerState = (selector) =>
     .replace(/\s+/g, " ");
 const FINE_POINTER = "@media (hover: hover) and (pointer: fine)";
 const BORDER_CONTROL_RING = "inset 0 0 0 1px var(--color-border-control)";
+const HAIRLINE_STRONG_RING = "inset 0 0 0 1px var(--color-hairline-strong)";
 const textFields = ["#waitlist-email", ".demo-edit-form input", ".demo-edit-form select"];
+const fieldHover = (field) => `${field}:hover:not(:focus-within)`;
 
 test("the Ask Astra focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
   assert.equal(lastValue(".demo-composer", "border-radius"), "28px");
@@ -84,7 +98,7 @@ test("every text field keeps its 3:1 boundary on hover and draws the inset 2px p
     assert.match(lastValue(selector, "border-radius") ?? "", /^var\(--radius-(?:sm|md|lg|xl)\)$/);
     assert.equal(lastValue(selector, "box-shadow"), BORDER_CONTROL_RING, selector);
     assert.equal(
-      lastValue(`${selector}:hover:not(:focus-visible)`, "box-shadow"),
+      lastValue(fieldHover(selector), "box-shadow"),
       BORDER_CONTROL_RING,
       `${selector} hover retains the control boundary`,
     );
@@ -556,44 +570,150 @@ const TIER = {
   surface: "var(--duration-hover-surface)",
   press: "var(--duration-fast)",
 };
-const COLOUR = ["background-color", "color", "box-shadow"];
-const PRESS = ["scale", "opacity"];
-const controls = [
-  [".brand", ["background-color"]],
-  [".header-links a", ["color"]],
-  [".language-toggle", ["background-color", "scale"]],
-  [".billing-option", [...COLOUR, "scale"]],
-  [".demo-chip", [...COLOUR, "scale"]],
-  [".demo-composer", ["background-color"]],
-  [".demo-send", ["background-color", "color", "scale"]],
-  [".demo-save", ["background-color", "scale"]],
-  [".habit-row[data-habit-toggle]", ["background-color"]],
-  [".calendar-nav-button", ["background-color"]],
-  [".calendar-month-title", ["background-color"]],
-  [".day-cell-circle", ["background-color"]],
-  [".downloads-entry", ["background-color"]],
-  [".downloads-qr", ["background-color"]],
-  [".faq-list summary", ["background-color"]],
-  [".faq-list > details", ["background-color"]],
-  [".back-to-top", ["background-color", "scale"]],
-  [".skip-to-content", ["background-color"]],
-  ["#waitlist-email", ["background-color", "box-shadow"]],
-  [".demo-edit-form input", ["background-color", "box-shadow"]],
-  [".demo-edit-form select", ["background-color", "box-shadow"]],
-  [".text-link", ["color"], "surface"],
-  [".carousel-marker", ["background-color"], "press"],
-  [".metric-bar", ["background-color"], "press"],
-  [".downloads-chevron", ["transform"], "press"],
-  [".faq-list summary svg", ["transform"], "press"],
-];
+const BG_HOVER = "var(--color-bg-hover)";
+const PRIMARY_HOVER = "var(--color-primary-hover)";
+const PRIMARY_PRESSED = "var(--color-primary-pressed)";
+const FG_1 = "var(--color-fg-1)";
+const OPEN_CARD = ".faq-list > details[open]:not([data-closing])";
+const ROLES = {
+  field: { tier: "control", animates: ["box-shadow"] },
+  control: { tier: "control", animates: ["background-color"] },
+  surface: { tier: "surface", animates: ["background-color"] },
+  link: { tier: "surface", animates: ["color"] },
+  mark: { tier: "control", animates: ["background-color"] },
+};
+const role = (name, base, options = {}) => ({
+  role: name,
+  base,
+  hover: `${base}:hover`,
+  press: name === "field" ? undefined : `${base}:active`,
+  focus: "inset",
+  ...options,
+});
+const controlRoles = new Map([
+  [".brand", role("control", ".brand")],
+  [".language-toggle", role("control", ".language-toggle", { scale: true })],
+  [".billing-option", role("control", ".billing-option", { scale: true })],
+  [".demo-chip", role("control", ".demo-chip", { scale: true })],
+  [
+    ".demo-send",
+    role("control", ".demo-send", {
+      hover: ".demo-composer[data-has-text] .demo-send:hover",
+      press: ".demo-composer[data-has-text] .demo-send:active",
+      focus: ".demo-composer .demo-send:focus-visible",
+      scale: true,
+    }),
+  ],
+  [".demo-save", role("control", ".demo-save", { scale: true })],
+  [".back-to-top", role("control", ".back-to-top", { scale: true, focus: "outward" })],
+  [".skip-to-content", role("control", ".skip-to-content")],
+  [
+    ".calendar-nav-button",
+    role("control", ".calendar-nav-button", {
+      press: ".calendar-nav-button:is(:active, :focus-visible)",
+    }),
+  ],
+  [
+    ".calendar-month-title",
+    role("control", ".calendar-month-title", {
+      hover: '.calendar-month-title:not([aria-disabled="true"]):hover',
+      press: '.calendar-month-title:not([aria-disabled="true"]):is(:active, :focus-visible)',
+    }),
+  ],
+  [
+    ".habit-row[data-habit-toggle]",
+    role("surface", ".habit-row[data-habit-toggle]", { rest: ".habit-row" }),
+  ],
+  [".faq-list summary", role("surface", ".faq-list summary")],
+  [
+    ".faq-list summary in an open card",
+    role("surface", ".faq-list > details", {
+      hover: `${OPEN_CARD}:has(> summary:hover)`,
+      press: `${OPEN_CARD}:has(> summary:active)`,
+      focus: ".faq-list summary:focus-visible",
+      rest: OPEN_CARD,
+    }),
+  ],
+  [".downloads-entry", role("surface", ".downloads-entry")],
+  [".downloads-qr", role("surface", ".downloads-qr")],
+  [
+    ".header-links a",
+    role("link", ".header-links a", {
+      underline: ".header-links a > span::after",
+      underlineHover: ".header-links a:hover > span::after",
+      underlinePress: ".header-links a:active > span::after",
+      focus: "outward",
+    }),
+  ],
+  [".text-link", role("link", ".text-link", { focus: "outward" })],
+  [
+    ".demo-continue .text-link",
+    role("link", ".text-link", {
+      hover: ".demo-continue .text-link:hover",
+      press: ".demo-continue .text-link:active",
+      focus: "outward",
+    }),
+  ],
+  [
+    ".carousel-segment",
+    role("mark", ".carousel-marker", {
+      hover: ".carousel-segment:hover .carousel-marker",
+      press: ".carousel-segment:active .carousel-marker",
+      markPaint: lastValue('.carousel-segment[aria-current="true"] .carousel-marker', "background"),
+      focus: "outward",
+    }),
+  ],
+  [
+    ".metric-bar-track",
+    role("mark", ".metric-bar", {
+      hover: "button.metric-bar-track:hover .metric-bar",
+      press: "button.metric-bar-track:active .metric-bar",
+      markPaint: lastValue('.metric-bar[data-selected="true"]', "background"),
+      focus: "button.metric-bar-track:focus-visible",
+    }),
+  ],
+  [
+    ".day-cell",
+    role("mark", ".day-cell-circle", {
+      hover: ".day-cell:hover .day-cell-circle:not(.is-selected)",
+      press: ".day-cell:active .day-cell-circle:not(.is-selected)",
+      markPaint: BG_HOVER,
+      focus: ".day-cell:focus-visible .day-cell-circle",
+    }),
+  ],
+  [
+    ".demo-composer",
+    role("field", ".demo-composer", {
+      hover: ".demo-composer:hover:not(:focus-within, :has(button:hover))",
+      focus: ".demo-composer:has(input:focus-visible)",
+      wraps: ["button"],
+    }),
+  ],
+  ...textFields.map((field) => [field, role("field", field, { hover: fieldHover(field) })]),
+]);
+const STATE_TRANSITIONS = [".downloads-chevron", ".faq-list summary svg"];
+const SUPPRESSIONS = new Map([
+  [
+    ".faq-list details[open] summary:is(:hover, :active)",
+    "an open card paints its question row's hover and press, so the row itself stays clear",
+  ],
+]);
+const withoutPointerFeedback = new Map([
+  [
+    "main#main-content",
+    "the skip link's focus target, not a control: DESIGN.md gives a hover state only to an interactive surface",
+  ],
+]);
 
 function transitionsOf(selector) {
   const found = new Map();
   for (const rule of rulesFor(selector)) {
     const shorthand = declaration(rule.declarations, "transition");
     if (shorthand) {
-      const [property, duration, easing] = shorthand.split(/\s+(?![^(]*\))/);
-      found.set(property, { duration, easing });
+      for (const item of shorthand.split(/,\s*(?![^(]*\))/)) {
+        const [property, duration, easing] = item.trim().split(/\s+(?![^(]*\))/);
+        found.set(property, { duration, easing });
+      }
     }
     const properties = declaration(rule.declarations, "transition-property")?.split(/\s*,\s*/);
     const durations = declaration(rule.declarations, "transition-duration")
@@ -607,25 +727,271 @@ function transitionsOf(selector) {
   return found;
 }
 
-test("every landing control has a transition sized by its frequency tier", () => {
-  for (const [selector, properties, tier] of controls) {
-    const transitions = transitionsOf(selector);
-    assert.ok(transitions.size > 0, `${selector} has no transition`);
+const paints = (rule) =>
+  /(?:^|[;\s])(?:background(?:-color)?|color|box-shadow)\s*:/.test(rule.declarations);
+const paintedBy = (part) =>
+  rules
+    .map((rule, order) => ({ rule, order }))
+    .filter(({ rule }) => paints(rule) && selectorParts(rule.selector).includes(part));
+const paintOf = (found) =>
+  Object.fromEntries(
+    found.flatMap(({ rule }) =>
+      [
+        ...rule.declarations.matchAll(
+          /(?:^|[;\s])(background(?:-color)?|color|box-shadow)\s*:\s*([^;]+);/g,
+        ),
+      ].map(([, property, value]) => [property.replace("-color", ""), value.trim()]),
+    ),
+  );
+
+function rolePaint(control, hover) {
+  if (control.role === "field") return { hover: { "box-shadow": BORDER_CONTROL_RING } };
+  if (control.role === "link") return { hover: { color: FG_1 }, press: { color: FG_1 } };
+  if (control.role === "mark") {
+    return { hover: { background: control.markPaint }, press: { background: control.markPaint } };
+  }
+  if (control.role === "surface") {
+    const paint = {
+      background: BG_HOVER,
+      ...(control.rest ? { "box-shadow": HAIRLINE_STRONG_RING } : {}),
+    };
+    return { hover: paint, press: paint };
+  }
+  return hover.background === PRIMARY_HOVER
+    ? { hover: { background: PRIMARY_HOVER }, press: { background: PRIMARY_PRESSED } }
+    : { hover: { background: BG_HOVER }, press: { background: BG_HOVER } };
+}
+
+test("every interactive element paints exactly the hover and press its one role gives it", () => {
+  for (const [name, control] of controlRoles) {
+    const label = `${name} (${control.role})`;
+    const hovers = paintedBy(control.hover);
+    assert.ok(hovers.length > 0, `${label} has no hover state`);
+    for (const { rule } of hovers) {
+      assert.deepEqual(rule.conditions, [FINE_POINTER], `${label} hover waits for a fine pointer`);
+      assert.doesNotMatch(rule.declarations, /(?:^|[;\s])(?:transform|translate|scale)\s*:/, label);
+    }
+    const expected = rolePaint(control, paintOf(hovers));
+    assert.deepEqual(paintOf(hovers), expected.hover, `${label} hover paint`);
+    if (control.role === "mark") {
+      assert.equal(subjectOf(control.hover), control.base, `${label} hover paints its own mark`);
+    }
+    if (control.role === "field") {
+      assert.match(
+        control.hover,
+        /:not\([^)]*:focus-within/,
+        `${label} hovers while it holds focus`,
+      );
+      assert.equal(control.press, undefined, `${label} has a press fill`);
+      continue;
+    }
+    const presses = paintedBy(control.press);
+    assert.ok(presses.length > 0, `${label} has no press state`);
+    for (const { rule } of presses) {
+      assert.deepEqual(
+        rule.conditions,
+        [],
+        `${label} press shows on touch and under reduced motion`,
+      );
+    }
+    assert.deepEqual(paintOf(presses), expected.press, `${label} press paint`);
+    assert.ok(
+      Math.min(...presses.map(({ order }) => order)) >
+        Math.max(...hovers.map(({ order }) => order)),
+      `${label} press comes after its hover`,
+    );
+    if (control.role === "surface") {
+      assert.ok(
+        presses.some(({ rule }) => declaration(rule.declarations, "transition") === "none"),
+        `${label} press paints at once, as the app's rows do`,
+      );
+    }
+  }
+});
+
+test("a surface moves its hairline only when it draws one, and a link either keeps its underline or draws it on hover", () => {
+  for (const [name, control] of controlRoles) {
+    if (control.role === "surface" && control.rest) {
+      assert.match(
+        lastValue(control.rest, "box-shadow") ?? "",
+        /^inset 0 0 0 1px var\(--color-hairline(?:-ghost)?\)$/,
+        `${name} rests on a hairline`,
+      );
+    } else if (control.role === "surface") {
+      assert.equal(lastValue(control.base, "box-shadow"), undefined, `${name} draws no hairline`);
+    }
+    if (control.role !== "link") continue;
+    if (lastValue(control.base, "text-decoration") === "underline") continue;
+    assert.ok(control.underline, `${name} needs an underline that scales from its leading edge`);
+    assert.equal(lastValue(control.underline, "transform"), "scaleX(0)");
+    assert.equal(lastValue(control.underline, "transform-origin"), "left");
+    assert.equal(lastValue(control.underline, "background"), "currentColor");
+    for (const [selector, conditions] of [
+      [control.underlineHover, [FINE_POINTER]],
+      [control.underlinePress, []],
+    ]) {
+      const found = rulesFor(selector);
+      assert.ok(found.length > 0, selector);
+      for (const rule of found) {
+        assert.deepEqual(rule.conditions, conditions, selector);
+        assert.equal(declaration(rule.declarations, "transform"), "scaleX(1)", selector);
+      }
+    }
+  }
+});
+
+test("every interactive element transitions on its role's frequency tier", () => {
+  for (const [name, control] of controlRoles) {
+    const transitions = transitionsOf(control.base);
+    const { tier, animates } = ROLES[control.role];
+    const properties = [...animates, ...(control.rest ? ["box-shadow"] : [])];
     for (const property of properties) {
       const transition = transitions.get(property);
-      assert.ok(transition, `${selector} does not transition ${property}`);
-      const expected = tier ? TIER[tier] : PRESS.includes(property) ? TIER.press : TIER.control;
-      assert.equal(transition.duration, expected, `${selector} ${property} duration`);
-      assert.match(transition.easing ?? "", /^var\(--ease-(?:standard|out)\)$/, selector);
+      assert.ok(transition, `${name} does not transition ${property}`);
+      assert.equal(transition.duration, TIER[tier], `${name} ${property} duration`);
+      assert.equal(transition.easing, "var(--ease-standard)", `${name} ${property} easing`);
     }
-    assert.ok(!transitions.has("all"), `${selector} animates every property`);
+    if (control.scale) assert.equal(transitions.get("scale")?.duration, TIER.press, name);
+    if (control.underline) {
+      assert.equal(transitionsOf(control.underline).get("transform")?.duration, TIER.surface);
+    }
+    assert.ok(!transitions.has("all"), `${name} animates every property`);
   }
+  for (const selector of STATE_TRANSITIONS) {
+    const transition = transitionsOf(selector).get("transform");
+    assert.equal(transition?.duration, TIER.press, selector);
+    assert.match(transition.easing ?? "", /^var\(--ease-(?:standard|out)\)$/, selector);
+  }
+});
+
+test("every hover or press paint in the stylesheets belongs to one control and follows its role", () => {
+  const declared = new Set(
+    [...controlRoles.values()].flatMap((control) =>
+      [control.hover, control.press, control.underlineHover, control.underlinePress].filter(
+        Boolean,
+      ),
+    ),
+  );
+  const undeclared = [];
+  for (const rule of rules) {
+    if (!paints(rule) && !/(?:^|[;\s])transform\s*:/.test(rule.declarations)) continue;
+    for (const part of selectorParts(rule.selector)) {
+      if (!/:hover\b|:active\b/.test(part) || declared.has(part)) continue;
+      if (SUPPRESSIONS.has(part)) {
+        assert.equal(declaration(rule.declarations, "background"), "transparent", part);
+        continue;
+      }
+      undeclared.push(part);
+    }
+  }
+  assert.deepEqual(
+    undeclared,
+    [],
+    "a hover or press paint needs a control and a role in the table",
+  );
+  const focusFills = rules
+    .filter((rule) => /(?:^|[;\s])background(?:-color)?\s*:/.test(rule.declarations))
+    .flatMap((rule) => selectorParts(rule.selector))
+    .filter((part) => part.includes(":focus-visible"));
+  for (const part of focusFills) {
+    const owner = [...controlRoles.values()].find((control) => control.press === part);
+    assert.equal(owner?.role, "control", `${part}: only a neutral control paints a focus fill`);
+  }
+});
+
+test("a field, a surface, a mark cell and a crowded control draw their focus ring inside their own box", () => {
+  for (const [name, control] of controlRoles) {
+    if (control.focus === "outward") {
+      assert.ok(!["field", "surface"].includes(control.role), `${name} rings outside its box`);
+      continue;
+    }
+    const selector = control.focus === "inset" ? `${control.base}:focus-visible` : control.focus;
+    assert.match(lastValue(selector, "outline-offset") ?? "", /^-\d+px$/, `${name} focus ring`);
+  }
+  for (const selector of [".demo-save:focus-visible", ".skip-to-content:focus-visible"]) {
+    assert.equal(
+      lastValue(selector, "outline-color"),
+      "var(--color-fg-on-primary)",
+      `${selector}: a ring inside a primary fill takes the label colour`,
+    );
+  }
+  assert.equal(
+    lastValue(".demo-composer .demo-send:focus-visible", "box-shadow"),
+    "inset 0 0 0 4px var(--color-bg)",
+    "the filled send separates its inset ring from its fill, as the app's composer does",
+  );
+  assert.ok(
+    !transitionsOf(".demo-send").has("box-shadow"),
+    "the send ring's canvas band appears with the ring",
+  );
+});
+
+test("the Ask Astra composer hovers as a text field and leaves the fills to its send button", () => {
+  assert.equal(lastValue(".demo-composer", "background"), "var(--color-bg-field)");
+  assert.equal(lastValue(".demo-composer", "box-shadow"), BORDER_CONTROL_RING);
+  const hover = ".demo-composer:hover:not(:focus-within, :has(button:hover))";
+  const hovers = rulesFor(hover);
+  assert.ok(hovers.length > 0, "the composer keeps its ring on hover");
+  for (const rule of hovers) {
+    assert.deepEqual(rule.conditions, [FINE_POINTER]);
+    assert.deepEqual(paintOf([{ rule }]), { "box-shadow": BORDER_CONTROL_RING });
+  }
+  assert.deepEqual(
+    rules
+      .filter(paints)
+      .flatMap((rule) => selectorParts(rule.selector))
+      .filter(
+        (part) =>
+          /^\.demo-composer(?::|\[)/.test(part) && !subjectOf(part).startsWith(".demo-send"),
+      )
+      .filter((part) => /:hover|:active/.test(part.replace(/:has\(button:hover\)/, "")))
+      .filter((part) => part !== hover),
+    [],
+    "the composer paints no other hover and no press",
+  );
+  assert.equal(
+    lastValue(".demo-composer[data-has-text] .demo-send:hover", "background"),
+    PRIMARY_HOVER,
+  );
+  assert.equal(
+    lastValue(".demo-composer[data-has-text] .demo-send:active", "background"),
+    PRIMARY_PRESSED,
+  );
+});
+
+test("a control's press fill comes after its hover fill, so a held mouse press paints it", () => {
+  const fills = rules.flatMap((rule, order) =>
+    paints(rule)
+      ? selectorParts(rule.selector).flatMap((part) => {
+          const state = pointerState(part);
+          return state ? [{ order, state, control: withoutPointerState(part) }] : [];
+        })
+      : [],
+  );
+  const presses = fills.filter(({ state }) => state === "active");
+  const hovers = fills.filter(
+    ({ state, control }) => state === "hover" && presses.some((press) => press.control === control),
+  );
+  assert.ok(hovers.some(({ control }) => control === ".back-to-top:state"));
+  assert.deepEqual(
+    hovers
+      .filter((hover) =>
+        presses.some((press) => press.control === hover.control && press.order < hover.order),
+      )
+      .map(({ control }) => control),
+    [],
+    "a hover fill declared after the press fill of the same control hides the press",
+  );
+  assert.equal(lastValue(".back-to-top:hover", "background"), PRIMARY_HOVER);
+  assert.equal(lastValue(".back-to-top:active", "background"), PRIMARY_PRESSED);
 });
 
 test("every pill button carries the shared control transition with the same tiers", () => {
   const utility = globalCss.match(/@utility control-transition\s*\{([^}]+)\}/)[1];
   const properties = declaration(utility, "transition-property").split(/\s*,\s*/);
-  for (const property of [...COLOUR, "opacity", "scale"]) assert.ok(properties.includes(property));
+  for (const property of ["background-color", "color", "box-shadow", "opacity", "scale"]) {
+    assert.ok(properties.includes(property));
+  }
   assert.match(declaration(utility, "transition-duration"), /^var\(--duration-hover-control\)/);
   const primitive = readFileSync("src/components/PillButton.astro", "utf8");
   assert.equal(primitive.match(/control-transition/g).length, 2, "both the link and the button");
@@ -660,130 +1026,6 @@ test("reduced motion removes every control transition and the press movement", (
   assert.equal(declaration(press.declarations, "scale"), "none !important");
 });
 
-const paints = (rule) =>
-  /(?:^|[;\s])(?:background(?:-color)?|color|box-shadow)\s*:/.test(rule.declarations);
-
-test("a control's press fill comes after its hover fill, so a held mouse press paints it", () => {
-  const fills = rules.flatMap((rule, order) =>
-    paints(rule)
-      ? selectorParts(rule.selector).flatMap((part) => {
-          const state = pointerState(part);
-          return state ? [{ order, state, control: withoutPointerState(part) }] : [];
-        })
-      : [],
-  );
-  const presses = fills.filter(({ state }) => state === "active");
-  const hovers = fills.filter(
-    ({ state, control }) => state === "hover" && presses.some((press) => press.control === control),
-  );
-  assert.ok(hovers.some(({ control }) => control === ".back-to-top:state"));
-  assert.deepEqual(
-    hovers
-      .filter((hover) =>
-        presses.some((press) => press.control === hover.control && press.order < hover.order),
-      )
-      .map(({ control }) => control),
-    [],
-    "a hover fill declared after the press fill of the same control hides the press",
-  );
-  assert.equal(lastValue(".back-to-top:hover", "background"), "var(--color-primary-hover)");
-  assert.equal(lastValue(".back-to-top:active", "background"), "var(--color-primary-pressed)");
-});
-
-const EXAMPLE_HOVER = ".example-app :where(button, a):hover";
-const EXAMPLE_PRESS = ".example-app :where(button, a):is(:active, :focus-visible)";
-const OPEN_CARD = ".faq-list > details[open]:not([data-closing])";
-const pointerFeedback = new Map([
-  [".brand", [".brand:hover", ".brand:active"]],
-  [".header-links a", [".header-links a:hover", ".header-links a:active"]],
-  [".text-link", [".text-link:hover", ".text-link:active"]],
-  [
-    ".demo-continue .text-link",
-    [".demo-continue .text-link:hover", ".demo-continue .text-link:active"],
-  ],
-  [".language-toggle", [".language-toggle:hover", ".language-toggle:active"]],
-  [".skip-to-content", [".skip-to-content:hover", ".skip-to-content:active"]],
-  [".billing-option", [".billing-option:hover", ".billing-option:active"]],
-  [
-    ".carousel-segment",
-    [".carousel-segment:hover .carousel-marker", ".carousel-segment:active .carousel-marker"],
-  ],
-  [
-    ".habit-row[data-habit-toggle]",
-    [".habit-row[data-habit-toggle]:hover", ".habit-row[data-habit-toggle]:active"],
-  ],
-  [".demo-chip", [".demo-chip:hover", ".demo-chip:active"]],
-  [
-    ".demo-composer",
-    [
-      ".demo-composer:hover:not(:has(button:hover))",
-      ".demo-composer:active:not(:has(button:active))",
-    ],
-  ],
-  [
-    ".demo-send",
-    [
-      ".demo-composer[data-has-text] .demo-send:hover",
-      ".demo-composer[data-has-text] .demo-send:active",
-    ],
-  ],
-  [".demo-save", [".demo-save:hover", ".demo-save:active"]],
-  [".calendar-nav-button", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
-  [".calendar-month-title", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
-  [".metric-bar-track", [EXAMPLE_HOVER, EXAMPLE_PRESS]],
-  [
-    ".day-cell",
-    [
-      ".day-cell:hover .day-cell-circle:not(.is-selected)",
-      ".day-cell:active .day-cell-circle:not(.is-selected)",
-    ],
-  ],
-  [".downloads-entry", [".downloads-entry:hover", ".downloads-entry:active"]],
-  [".downloads-qr", [".downloads-qr:hover", ".downloads-qr:active"]],
-  [".faq-list summary", [".faq-list summary:hover", ".faq-list summary:active"]],
-  [
-    ".faq-list summary in an open card",
-    [`${OPEN_CARD}:has(> summary:hover)`, `${OPEN_CARD}:has(> summary:active)`],
-  ],
-  [".back-to-top", [".back-to-top:hover", ".back-to-top:active"]],
-  ...textFields.map((field) => [field, [`${field}:hover:not(:focus-visible)`, undefined]]),
-]);
-const FIELD_PRESS =
-  "a press focuses the field, and DESIGN.md gives a field holding focus no hover and the inset 2px primary ring at once";
-const withoutPress = new Map(textFields.map((field) => [field, FIELD_PRESS]));
-const withoutPointerFeedback = new Map([
-  [
-    "main#main-content",
-    "the skip link's focus target, not a control: DESIGN.md gives a hover state only to an interactive surface",
-  ],
-]);
-const paintedBy = (part) =>
-  rules
-    .map((rule, order) => ({ rule, order }))
-    .filter(({ rule }) => paints(rule) && selectorParts(rule.selector).includes(part));
-
-test("every interactive landing element has a hover behind the fine pointer and a press after it", () => {
-  for (const [control, [hover, press]] of pointerFeedback) {
-    const hovers = paintedBy(hover);
-    assert.ok(hovers.length > 0, `${control} has no hover state`);
-    for (const { rule } of hovers) assert.deepEqual(rule.conditions, [FINE_POINTER], hover);
-    if (press === undefined) {
-      assert.ok(withoutPress.has(control), `${control} has no press state`);
-      continue;
-    }
-    const presses = paintedBy(press);
-    assert.ok(presses.length > 0, `${control} has no press state`);
-    for (const { rule } of presses) {
-      assert.ok(!rule.conditions.some((condition) => condition.includes("hover")), press);
-    }
-    assert.ok(
-      Math.min(...presses.map(({ order }) => order)) >
-        Math.max(...hovers.map(({ order }) => order)),
-      `${control} press comes after its hover`,
-    );
-  }
-});
-
 const INTERACTIVE_TAGS = new Set(["a", "button", "summary", "input", "select", "textarea"]);
 const COMPONENT_CONTROLS = {
   PillButton: "PillButton",
@@ -798,6 +1040,11 @@ const CONTROL_BY_ID = {
   "main-content": "main#main-content",
 };
 const classesOf = (node) => (attributeOf(node, "class")?.value ?? "").split(/\s+/).filter(Boolean);
+const isInteractive = (node) =>
+  INTERACTIVE_TAGS.has(node.name) ||
+  Object.hasOwn(COMPONENT_CONTROLS, node.name) ||
+  attributeOf(node, "tabindex") !== undefined ||
+  attributeOf(node, "role")?.value === "button";
 
 function controlKey(node, ancestors) {
   if (COMPONENT_CONTROLS[node.name]) return COMPONENT_CONTROLS[node.name];
@@ -806,7 +1053,7 @@ function controlKey(node, ancestors) {
   if (node.name === "summary") return ".faq-list summary";
   const classes = classesOf(node);
   if (classes.includes("habit-row")) return ".habit-row[data-habit-toggle]";
-  const known = classes.map((name) => `.${name}`).find((key) => pointerFeedback.has(key));
+  const known = classes.map((name) => `.${name}`).find((key) => controlRoles.has(key));
   if (known) return known;
   if (
     node.name === "a" &&
@@ -817,25 +1064,28 @@ function controlKey(node, ancestors) {
 }
 
 function controlsIn(node, ancestors = []) {
-  const interactive =
-    INTERACTIVE_TAGS.has(node.name) ||
-    Object.hasOwn(COMPONENT_CONTROLS, node.name) ||
-    attributeOf(node, "tabindex") !== undefined ||
-    attributeOf(node, "role")?.value === "button";
   return [
-    ...(interactive ? [controlKey(node, ancestors)] : []),
+    ...(isInteractive(node) ? [{ key: controlKey(node, ancestors), node }] : []),
     ...(node.children ?? []).flatMap((child) => controlsIn(child, [...ancestors, node])),
   ];
 }
 
-test("every interactive element the landing renders has an entry in the pointer feedback table", async () => {
-  const found = new Set();
+async function landingMarkup() {
+  const found = [];
   for (const directory of ["src/components", "src/pages", "src/layouts"]) {
     for (const file of readdirSync(directory).filter((name) => name.endsWith(".astro"))) {
       if (file === "PillButton.astro") continue;
       const { ast } = await parse(readFileSync(`${directory}/${file}`, "utf8"));
-      for (const key of controlsIn(ast)) found.add(key);
+      found.push({ file, ast });
     }
+  }
+  return found;
+}
+
+test("every interactive element the landing renders has a role in the pointer feedback table", async () => {
+  const found = new Set();
+  for (const { ast } of await landingMarkup()) {
+    for (const { key } of controlsIn(ast)) found.add(key);
   }
   for (const file of readdirSync("src/scripts").filter((name) => /^[\w-]+\.ts$/.test(name))) {
     for (const [, classes] of readFileSync(`src/scripts/${file}`, "utf8").matchAll(
@@ -845,41 +1095,88 @@ test("every interactive element the landing renders has an entry in the pointer 
         classes
           .split(/\s+/)
           .map((name) => `.${name}`)
-          .find((key) => pointerFeedback.has(key)) ?? classes,
+          .find((key) => controlRoles.has(key)) ?? classes,
       );
     }
   }
   assert.ok(found.has(".day-cell"), "the scripts render the calendar day cells");
   assert.deepEqual(
     [...found].filter(
-      (key) =>
-        key !== "PillButton" && !pointerFeedback.has(key) && !withoutPointerFeedback.has(key),
+      (key) => key !== "PillButton" && !controlRoles.has(key) && !withoutPointerFeedback.has(key),
     ),
     [],
-    "each interactive element needs a hover and a press entry, or an allowlist reason",
+    "each interactive element needs a role entry, or an allowlist reason",
+  );
+});
+
+test("a control that holds other controls drops its own hover while one of them is under the pointer", async () => {
+  const held = new Map();
+  for (const { ast } of await landingMarkup()) {
+    for (const node of nodesOf(ast)) {
+      const key = classesOf(node)
+        .map((name) => `.${name}`)
+        .find((candidate) => controlRoles.has(candidate));
+      if (!key) continue;
+      const own = controlRoles.get(key).role === "field" ? new Set(["input"]) : new Set();
+      const tags = nodesOf(node)
+        .slice(1)
+        .filter(isInteractive)
+        .map((child) => child.name)
+        .filter((tag) => !own.has(tag));
+      held.set(key, new Set([...(held.get(key) ?? []), ...tags]));
+    }
+  }
+  assert.ok(held.get(".demo-composer")?.has("button"), "the composer holds its send button");
+  for (const [key, tags] of held) {
+    assert.deepEqual(
+      [...tags].sort(),
+      [...(controlRoles.get(key).wraps ?? [])].sort(),
+      `${key} lists the controls it holds`,
+    );
+  }
+  for (const [name, control] of controlRoles) {
+    for (const tag of control.wraps ?? []) {
+      assert.match(
+        control.hover,
+        new RegExp(`:not\\(.*:has\\(${tag}:hover\\)`),
+        `${name} lights while its ${tag} is under the pointer`,
+      );
+    }
+  }
+});
+
+test("a disabled control never lights under the pointer or a press", async () => {
+  const disabled = new Set();
+  for (const { ast } of await landingMarkup()) {
+    for (const { key, node } of controlsIn(ast)) {
+      if (attributeOf(node, "disabled") || attributeOf(node, "aria-disabled")) disabled.add(key);
+    }
+  }
+  assert.deepEqual([...disabled].sort(), [".calendar-month-title", ".demo-send", "PillButton"]);
+  const ENABLED = /:enabled|:not\(:disabled\)|:not\(\[aria-disabled="true"\]\)|\[data-has-text\]/;
+  for (const key of disabled) {
+    if (key === "PillButton") continue;
+    const control = controlRoles.get(key);
+    for (const selector of [control.hover, control.press]) {
+      assert.match(selector, ENABLED, `${key} lights while disabled: ${selector}`);
+    }
+  }
+  assert.match(
+    readFileSync("src/scripts/demo.ts", "utf8"),
+    /toggleAttribute\("data-has-text", hasText\);\s*if \(send\) send\.disabled = !hasText;/,
+    "the send is enabled exactly when the composer has text",
   );
   const primitive = readFileSync("src/components/PillButton.astro", "utf8");
   for (const variant of ["primary", "secondary", "ghost"]) {
     const classes = primitive.match(new RegExp(`${variant}:\\s*\\n?\\s*"([^"]+)"`))?.[1] ?? "";
-    assert.match(classes, /(?:^|\s)hover:bg-/, `${variant} pill hover`);
-    assert.match(classes, /(?:^|\s)active:bg-/, `${variant} pill press fill`);
+    assert.match(classes, /(?:^|\s)not-disabled:hover:bg-/, `${variant} pill hover`);
+    assert.match(classes, /(?:^|\s)not-disabled:active:bg-/, `${variant} pill press fill`);
+    assert.doesNotMatch(
+      classes,
+      /(?:^|\s)(?:hover|active):/,
+      `${variant} pill lights while disabled`,
+    );
   }
-});
-
-test("the composer and a disabled month title never light while the pointer is on another control", () => {
-  assert.equal(
-    declaration(
-      rules.find((rule) =>
-        selectorParts(rule.selector).includes(
-          '.example-app .calendar-month-title[aria-disabled="true"]:is(:hover, :active)',
-        ),
-      )?.declarations ?? "",
-      "background",
-    ),
-    "transparent",
-  );
-  assert.ok(paintedBy(".demo-composer:hover").length === 0, "the composer hover skips its button");
-  assert.ok(paintedBy(".demo-composer:active").length === 0, "the composer press skips its button");
 });
 
 test("a focus ring keeps 8px from its neighbours: grouped rows inset it and the hero controls reserve it", () => {
@@ -897,6 +1194,15 @@ test("a focus ring keeps 8px from its neighbours: grouped rows inset it and the 
     Number.parseFloat(lastValue(".hero-controls", "gap")) >= 8 + extension,
     "the downloads toggle ring needs 8px to the hero action fills",
   );
+  for (const [selector, property] of [
+    [".demo-continue", "gap"],
+    [".faq-list p .text-link", "margin-block-start"],
+  ]) {
+    assert.ok(
+      Number.parseFloat(lastValue(selector, property)) >= 8 + extension,
+      `${selector}: a text link's ring needs 8px to the sentence beside it`,
+    );
+  }
 });
 
 test("a chip and a day in the dense week row draw their focus ring inside their own box", () => {
@@ -912,4 +1218,19 @@ test("a chip and a day in the dense week row draw their focus ring inside their 
   );
   assert.match(lastValue(".week-days .day-cell:focus-visible", "outline-offset") ?? "", /^-\d+px$/);
   assert.equal(lastValue(".week-days .day-cell:focus-visible .day-cell-circle", "outline"), "none");
+});
+
+test("a selected bar and a hovered bar take the canon's selected-bar foreground, never the accent text colour", () => {
+  assert.equal(controlRoles.get(".metric-bar-track").markPaint, FG_1);
+  assert.deepEqual(
+    rules
+      .filter((rule) =>
+        /(?:^|[;\s])background(?:-color)?\s*:\s*var\(--color-primary-soft\)/.test(
+          rule.declarations,
+        ),
+      )
+      .map((rule) => rule.selector),
+    [],
+    "DESIGN.md keeps --primary-soft for accent text",
+  );
 });

@@ -109,9 +109,10 @@ test("hero controls cannot evaluate or measure below-the-fold metrics", () => {
 test("the scrolling week row leaves room for the whole focus ring of its edge days", () => {
   const css = source("src/styles/landing.css");
   const ring = css.match(
-    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*(\d+)px solid[^}]*outline-offset:\s*(\d+)px;/,
+    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*(\d+)px solid[^}]*outline-offset:\s*(-?\d+)px;/,
   );
   assert.ok(ring, "the day focus ring rule");
+  const extension = Math.max(0, Number(ring[1]) + Number(ring[2]));
   const week = css.match(/\.week-days\s*\{([^}]*)\}/)?.[1] ?? "";
   assert.match(
     week,
@@ -119,10 +120,7 @@ test("the scrolling week row leaves room for the whole focus ring of its edge da
     "the row scrolls, so it clips what lies outside its padding box",
   );
   const padding = Number(week.match(/padding:\s*(\d+)px;/)?.[1] ?? 0);
-  assert.ok(
-    padding >= Number(ring[1]) + Number(ring[2]),
-    `padding ${padding}px is less than the ${Number(ring[1]) + Number(ring[2])}px ring`,
-  );
+  assert.ok(padding >= extension, `padding ${padding}px is less than the ${extension}px ring`);
 });
 
 test("the selected day panel reserves its caption and two event rows, the most demoEvents returns", () => {

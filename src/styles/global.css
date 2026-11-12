@@ -157,6 +157,10 @@ body {
 .skip-to-content:focus {
   left: 0;
 }
+.skip-to-content:focus-visible {
+  outline-color: var(--color-fg-on-primary);
+  outline-offset: -2px;
+}
 
 @media (hover: hover) and (pointer: fine) {
   .skip-to-content:hover {
@@ -318,7 +322,7 @@ body {
   .language-toggle:hover {
     background: var(--color-bg-hover);
   }
-  #waitlist-email:hover:not(:focus-visible) {
+  #waitlist-email:hover:not(:focus-within) {
     box-shadow: inset 0 0 0 1px var(--color-border-control);
   }
 }
