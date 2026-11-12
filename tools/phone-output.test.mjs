@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { parse } from "@astrojs/compiler";
+import { stylesheetRules } from "./lib/stylesheet-rules.mjs";
 
 const html = readFileSync("dist/index.html", "utf8");
 const css = [
@@ -21,31 +22,21 @@ function splitSelectors(selector) {
     .split("\n")
     .map((value) => value.trim().replace(/\[([\w-]+)="([\w-]+)"\]/g, "[$1=$2]"));
 }
-const rules = [];
-const parents = [];
-for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
-  if (boundary === "{") {
-    parents.push(text.trim());
-    continue;
-  }
-  const selector = parents.pop();
-  if (!selector || selector.startsWith("@")) continue;
-  rules.push({
-    selectors: splitSelectors(selector).flatMap((value) => {
-      const match = value.match(/^(.*):is\(([^()]*)\)(.*)$/);
-      return match
-        ? [value, ...splitSelectors(match[2]).map((item) => `${match[1]}${item}${match[3]}`)]
-        : [value];
-    }),
-    conditions: [...parents],
-    declarations: Object.fromEntries(
-      [...text.matchAll(/(?:^|;)\s*([\w-]+)\s*:\s*([^;]+)/g)].map(([, name, value]) => [
-        name,
-        value.trim(),
-      ]),
-    ),
-  });
-}
+const rules = stylesheetRules(css).map(({ selector, declarations, conditions }) => ({
+  selectors: splitSelectors(selector).flatMap((value) => {
+    const match = value.match(/^(.*):is\(([^()]*)\)(.*)$/);
+    return match
+      ? [value, ...splitSelectors(match[2]).map((item) => `${match[1]}${item}${match[3]}`)]
+      : [value];
+  }),
+  conditions,
+  declarations: Object.fromEntries(
+    [...declarations.matchAll(/(?:^|;)\s*([\w-]+)\s*:\s*([^;]+)/g)].map(([, name, value]) => [
+      name,
+      value.trim(),
+    ]),
+  ),
+}));
 const variables = Object.assign(
   {},
   ...rules.filter(({ selectors }) => selectors.includes(":root")).map((r) => r.declarations),

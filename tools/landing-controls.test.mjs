@@ -346,6 +346,33 @@ test("a header link leaves a press the downloads launcher owns, a modified press
   assert.equal(location.hash, "");
 });
 
+test("a section a header link focuses keeps focus for the next Tab and draws no focus ring", async () => {
+  const { sections, press } = headerScrollHarness();
+  press("#features");
+  await settled();
+  assert.equal(sections.features.focusOptions?.preventScroll, true, "focus moves to the section");
+  assert.equal(sections.features.getAttribute("tabindex"), "-1");
+  for (const id of ["features", "pricing"]) {
+    assert.ok(
+      sourceFiles("src/components").some((path) =>
+        readFileSync(path, "utf8").includes(`<section id="${id}"`),
+      ),
+      `#${id} is a section`,
+    );
+  }
+  const wayfinding = rules.filter(
+    (rule) => rule.selector === ':where(section[id], main[id])[tabindex="-1"]:focus-visible',
+  );
+  assert.equal(wayfinding.length, 1, "one rule covers a focused section and the skip link target");
+  assert.deepEqual(wayfinding[0].conditions, []);
+  assert.equal(declaration(wayfinding[0].declarations, "outline"), "none");
+  assert.equal(
+    lastValue(":focus-visible", "outline"),
+    "2px solid var(--color-primary)",
+    "every control keeps the global ring",
+  );
+});
+
 test("a section lands below the header, whose inset and height each have one source", () => {
   const declared = (property) =>
     rules.flatMap((rule) => {

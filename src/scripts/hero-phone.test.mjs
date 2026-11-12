@@ -4,6 +4,7 @@ import test from "node:test";
 import { parse } from "@astrojs/compiler";
 import ts from "typescript";
 import vm from "node:vm";
+import { stylesheetRules } from "../../tools/lib/stylesheet-rules.mjs";
 
 const source = (name) => readFileSync(`src/components/${name}.astro`, "utf8");
 const attributes = (node) =>
@@ -174,16 +175,7 @@ const viewports = [
 ];
 const minimumScale = 24 / 52;
 const stageAncestry = [".landing-shell", ".hero-stage"];
-const stageRules = [];
-const parents = [];
-for (const [, text, boundary] of css.matchAll(/([^{}]*)([{}])/g)) {
-  if (boundary === "{") parents.push(text.trim());
-  else {
-    const selector = parents.pop();
-    if (stageAncestry.includes(selector))
-      stageRules.push({ selector, body: text, conditions: [...parents] });
-  }
-}
+const stageRules = stylesheetRules(css).filter(({ selector }) => stageAncestry.includes(selector));
 const matchesViewport = (conditions, width, height) =>
   conditions.every((condition) =>
     [
@@ -200,7 +192,7 @@ const viewportScale = (width, height) => {
     ...stageRules
       .filter(({ conditions }) => matchesViewport(conditions, width, height))
       .sort((a, b) => stageAncestry.indexOf(a.selector) - stageAncestry.indexOf(b.selector))
-      .map(({ body }) => declarations(body)),
+      .map((rule) => declarations(rule.declarations)),
   );
   const resolve = (value) =>
     value.replace(/var\((--[\w-]+)\)/g, (_, name) => `(${resolve(properties[name])})`);

@@ -887,6 +887,9 @@
 :where(section[id], main[id]) {
   scroll-margin-block-start: var(--header-offset);
 }
+:where(section[id], main[id])[tabindex="-1"]:focus-visible {
+  outline: none;
+}
 :where(a, button) > [data-copy-en] {
   white-space: nowrap;
 }
