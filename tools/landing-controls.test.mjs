@@ -575,6 +575,7 @@ const PRIMARY_HOVER = "var(--color-primary-hover)";
 const PRIMARY_PRESSED = "var(--color-primary-pressed)";
 const FG_1 = "var(--color-fg-1)";
 const OPEN_CARD = ".faq-list > details[open]:not([data-closing])";
+const MONTH_DAY_RING = ".orbit-month-grid .day-cell:focus-visible .day-cell-circle::after";
 const ROLES = {
   field: { tier: "control", animates: ["box-shadow"] },
   control: { tier: "control", animates: ["background-color"] },
@@ -678,7 +679,7 @@ const controlRoles = new Map([
       hover: ".day-cell:hover .day-cell-circle:not(.is-selected)",
       press: ".day-cell:active .day-cell-circle:not(.is-selected)",
       markPaint: BG_HOVER,
-      focus: ".day-cell:focus-visible .day-cell-circle",
+      focus: MONTH_DAY_RING,
     }),
   ],
   [
@@ -1217,7 +1218,14 @@ test("a chip and a day in the dense week row draw their focus ring inside their 
     "2px solid var(--color-fg-1)",
   );
   assert.match(lastValue(".week-days .day-cell:focus-visible", "outline-offset") ?? "", /^-\d+px$/);
-  assert.equal(lastValue(".week-days .day-cell:focus-visible .day-cell-circle", "outline"), "none");
+  assert.deepEqual(
+    rules
+      .filter((rule) => declaration(rule.declarations, "outline"))
+      .flatMap((rule) => selectorParts(rule.selector))
+      .filter((part) => part.includes(".day-cell-circle") && part !== MONTH_DAY_RING),
+    [],
+    "only a month grid day rings its disc; a week row day rings its column",
+  );
 });
 
 test("a selected bar and a hovered bar take the canon's selected-bar foreground, never the accent text colour", () => {
@@ -1233,4 +1241,143 @@ test("a selected bar and a hovered bar take the canon's selected-bar foreground,
     [],
     "DESIGN.md keeps --primary-soft for accent text",
   );
+});
+
+const STATE_MARKER =
+  /\[(?:aria-(?:checked|pressed|current|selected|expanded)|data-selected|data-outcome|data-has-text|open)\b|\.is-[a-z]+\b/;
+const DAY_MARKERS = [
+  ".day-cell-circle.is-marked::after",
+  ".day-cell-circle.is-selected",
+  ".day-cell-circle.is-raised",
+  '.day-cell[data-outcome="full"] .day-cell-disc',
+  '.day-cell[data-outcome="none"] .day-cell-disc',
+];
+const FOCUS_OVER_MARKERS = [
+  {
+    ring: ".billing-option:focus-visible",
+    own: ['.billing-option[aria-checked="true"]'],
+    cover: '.billing-option[aria-checked="true"]:focus-visible',
+  },
+  { ring: MONTH_DAY_RING, own: DAY_MARKERS, cover: MONTH_DAY_RING },
+  { ring: ".week-days .day-cell:focus-visible", inner: DAY_MARKERS, room: ".day-cell" },
+  { ring: ".demo-chip:focus-visible", own: ['.demo-chip[aria-pressed="true"]'] },
+  {
+    ring: ".demo-composer .demo-send:focus-visible",
+    own: [".demo-composer[data-has-text] .demo-send"],
+    cover: ".demo-composer .demo-send:focus-visible",
+  },
+  {
+    ring: ".carousel-segment:focus-visible",
+    own: ['.carousel-segment[aria-current="true"] .carousel-marker'],
+  },
+  { ring: ".faq-list summary:focus-visible", container: [OPEN_CARD] },
+  {
+    ring: "button.metric-bar-track:focus-visible",
+    inner: ['.metric-bar[data-selected="true"]'],
+    padding: [".metric-bar-track", "padding-inline"],
+  },
+  {
+    ring: ".habit-row[data-habit-toggle]:focus-visible",
+    inner: [".status-ring.is-done"],
+    padding: [".habit-row", "padding"],
+  },
+];
+const INSET_RING = /^inset 0 0 0 ([\d.]+)px (.+)$/;
+
+function focusRingOf(selector) {
+  const [width, , colour] = (
+    lastValue(selector, "outline") ?? lastValue(":focus-visible", "outline")
+  ).split(/\s+(?![^(]*\))/);
+  return {
+    width: Number.parseFloat(width),
+    colour: lastValue(selector, "outline-color") ?? colour,
+    offset: Number.parseFloat(
+      lastValue(selector, "outline-offset") ?? lastValue(":focus-visible", "outline-offset"),
+    ),
+  };
+}
+
+function markerOf(selector) {
+  const ring = lastValue(selector, "box-shadow")?.match(INSET_RING);
+  return {
+    ring: ring && { width: Number.parseFloat(ring[1]), colour: ring[2] },
+    fill: lastValue(selector, "background"),
+  };
+}
+
+test("every state marker a focused control can hold is paired with the focus ring that sits on it", () => {
+  const paired = new Set(
+    FOCUS_OVER_MARKERS.flatMap((pair) => [
+      ...(pair.own ?? []),
+      ...(pair.inner ?? []),
+      ...(pair.container ?? []),
+    ]),
+  );
+  const markers = rules
+    .filter((rule) => /(?:^|[;\s])(?:background(?:-color)?|box-shadow)\s*:/.test(rule.declarations))
+    .flatMap((rule) => selectorParts(rule.selector))
+    .filter((part) => STATE_MARKER.test(part) && !/:(?:hover|active|focus-visible)\b/.test(part));
+  assert.deepEqual(
+    [...new Set(markers)].filter((part) => !paired.has(part)),
+    [],
+    "a new state marker needs a pairing with the focus ring of its control",
+  );
+});
+
+test("a focus ring never shares its colour and band with a state marker its control holds while focused", () => {
+  for (const pair of FOCUS_OVER_MARKERS) {
+    const ring = focusRingOf(pair.ring);
+    const band = -ring.offset;
+    const cover = pair.cover && lastValue(pair.cover, "box-shadow");
+    const coverBand = cover?.match(INSET_RING);
+    for (const selector of pair.own ?? []) {
+      const marker = markerOf(selector);
+      const label = `${pair.ring} on ${selector}`;
+      if (ring.offset > 0) continue;
+      if (marker.ring) {
+        assert.notEqual(ring.colour, marker.ring.colour, `${label}: the ring repeats the marker`);
+        const hidden = marker.ring.width <= band;
+        assert.ok(
+          hidden || cover === "none" || coverBand,
+          `${label}: the marker ring stays beside the focus ring, so the control draws two rings`,
+        );
+      }
+      if (marker.fill === ring.colour) {
+        assert.ok(coverBand, `${label}: the ring sits on a fill of its own colour`);
+        assert.notEqual(coverBand[2], ring.colour, label);
+        assert.ok(
+          Number.parseFloat(coverBand[1]) >= band + 2,
+          `${label}: the band that separates the ring from the fill is too narrow`,
+        );
+      }
+    }
+    for (const selector of pair.container ?? []) {
+      const marker = markerOf(selector);
+      assert.notEqual(ring.colour, marker.ring?.colour, `${pair.ring} repeats ${selector}`);
+      assert.notEqual(ring.colour, marker.fill, `${pair.ring} repeats ${selector}`);
+    }
+    if (pair.inner) {
+      if (pair.padding) {
+        const inset = Number.parseFloat(
+          lastValue(...pair.padding)
+            .split(/\s+/)
+            .at(-1),
+        );
+        assert.ok(inset > band, `${pair.ring}: the marker inside reaches the ring band`);
+      } else {
+        const marker = Number.parseFloat(
+          lastValue(".day-cell-circle", "inline-size").match(/(\d+)px/)[1],
+        );
+        const room = Number.parseFloat(lastValue(pair.room, "min-block-size")) - marker;
+        assert.ok(room >= 8, `${pair.ring}: the column shows its ring beside the day disc`);
+      }
+      for (const selector of pair.inner) {
+        assert.notEqual(
+          ring.colour,
+          markerOf(selector).ring?.colour,
+          `${pair.ring} on ${selector}`,
+        );
+      }
+    }
+  }
 });

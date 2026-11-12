@@ -109,7 +109,7 @@ test("hero controls cannot evaluate or measure below-the-fold metrics", () => {
 test("the scrolling week row leaves room for the whole focus ring of its edge days", () => {
   const css = source("src/styles/landing.css");
   const ring = css.match(
-    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*(\d+)px solid[^}]*outline-offset:\s*(-?\d+)px;/,
+    /\.week-days \.day-cell:focus-visible\s*\{[^}]*outline:\s*(\d+)px solid[^}]*outline-offset:\s*(-?\d+)px;/,
   );
   assert.ok(ring, "the day focus ring rule");
   const extension = Math.max(0, Number(ring[1]) + Number(ring[2]));

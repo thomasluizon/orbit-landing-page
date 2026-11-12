@@ -850,7 +850,7 @@ test("feature cards retain card padding and inset their interactive content from
   assert.match(css, /\.metric-bar-track\s*\{[^}]*padding-inline:\s*8px;[^}]*padding-block:\s*8px/);
   assert.match(
     css,
-    /\.day-cell:focus-visible \.day-cell-circle\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*-2px/,
+    /\.orbit-month-grid \.day-cell:focus-visible \.day-cell-circle::after\s*\{[^}]*outline:\s*2px solid var\(--color-fg-1\);[^}]*outline-offset:\s*-2px/,
   );
   assert.match(
     css,
