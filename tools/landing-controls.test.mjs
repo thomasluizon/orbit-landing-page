@@ -108,7 +108,7 @@ test("a duration token reads the built seconds and the source milliseconds", () 
   assert.equal(motionToken("--ease-out"), "cubic-bezier(.16, 1, .3, 1)");
 });
 
-function faqHarness({ reduced }) {
+function faqHarness({ reduced, openAtStart = [] }) {
   const calls = [];
   class FakeElement {}
   class FakeDetails extends FakeElement {
@@ -182,6 +182,7 @@ function faqHarness({ reduced }) {
     }
   }
   const items = [new FakeDetails("one", 64, 160), new FakeDetails("two", 64, 200)];
+  for (const item of items) item.open = openAtStart.includes(item.name);
   let click;
   const list = { addEventListener: (_, listener) => (click = listener) };
   const builtValues = {
@@ -262,6 +263,54 @@ test("the FAQ changes state without motion when the visitor reduces motion", () 
   assert.equal(one.open, false);
   assert.equal(two.open, true);
   assert.deepEqual(calls, []);
+});
+
+test("an FAQ item opened before the script runs reads as expanded once it runs", () => {
+  const { items, press } = faqHarness({ reduced: false, openAtStart: ["two"] });
+  const [one, two] = items;
+  assert.equal(one.summary.attributes.get("aria-expanded"), "false");
+  assert.equal(two.summary.attributes.get("aria-expanded"), "true");
+  assert.equal(two.open, true, "the script keeps the answer the visitor opened");
+  press(one);
+  assert.ok(two.hasAttribute("data-closing"), "a later press closes it like any other open item");
+});
+
+test("a native toggle outside the script's motion updates aria-expanded", () => {
+  const { items } = faqHarness({ reduced: false });
+  const [one] = items;
+  for (const open of [true, false]) {
+    one.open = open;
+    one.listeners.get("toggle")();
+    assert.equal(one.summary.attributes.get("aria-expanded"), String(open));
+  }
+});
+
+test("an open FAQ card's question row takes the card's top corners, so its focus ring stays inside the card", () => {
+  const card = lastValue(".faq-list > details[open]", "border-radius");
+  assert.equal(card, "var(--radius-xl)");
+  for (const corner of ["border-start-start-radius", "border-start-end-radius"]) {
+    assert.equal(lastValue(".faq-list > details[open] > summary", corner), card, corner);
+  }
+  assert.equal(lastValue(".faq-list summary", "border-radius"), "var(--radius-sm)");
+  assert.match(lastValue(".faq-list summary:focus-visible", "outline-offset") ?? "", /^-\d+px$/);
+  const suppressed = rules.find(
+    (rule) => rule.selector === ".faq-list details[open] summary:is(:hover, :active)",
+  );
+  assert.equal(
+    declaration(suppressed?.declarations ?? "", "background"),
+    "transparent",
+    "the row paints no fill of its own while its card is painted",
+  );
+  assert.deepEqual(
+    rules
+      .filter((rule) => rule.selector.includes("data-closing") && rule.selector.includes("summary"))
+      .filter((rule) =>
+        /(?:^|[;\s])(?:background|border(?:-[a-z-]+)?-radius)\s*:/.test(rule.declarations),
+      )
+      .map((rule) => rule.selector),
+    [],
+    "the row's shape and fill change with the card radius, when the close settles",
+  );
 });
 
 test("a closing FAQ item keeps its card radius until its fill and ring fade out with its height", () => {
