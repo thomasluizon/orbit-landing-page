@@ -1,4 +1,4 @@
-import { pricingFor } from "../config/pricing";
+import { pricingFor } from "../config/pricing-copy";
 
 function mountBillingControl() {
   const group = document.querySelector<HTMLElement>("[data-billing-control]");

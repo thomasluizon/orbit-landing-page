@@ -25,6 +25,54 @@ export function hasNoindexRobotsMeta(pageHtml) {
   });
 }
 
+/** @type {import("vite").Rolldown.OutputBundle} */
+let clientBundle = {};
+
+/** @param {string} fileName @param {Set<string>} graph */
+function staticGraph(fileName, graph = new Set()) {
+  const chunk = clientBundle[fileName];
+  if (graph.has(fileName) || chunk?.type !== "chunk") return graph;
+  graph.add(fileName);
+  for (const imported of chunk.imports) staticGraph(imported, graph);
+  return graph;
+}
+
+/** @param {string} fileName */
+function waitsForStyles(fileName) {
+  return [...staticGraph(fileName)].some((file) => {
+    const chunk = clientBundle[file];
+    return chunk.type === "chunk" && (chunk.viteMetadata?.importedCss.size ?? 0) > 0;
+  });
+}
+
+/**
+ * Keeps only the preloads that start a request: the importer's static graph is already loaded,
+ * and `import()` requests its own chunk in the same task unless it first waits for a stylesheet.
+ * @type {import("vite").ResolveModulePreloadDependenciesFn}
+ */
+function preloadDependencies(fileName, dependencies, { hostId }) {
+  const loaded = staticGraph(hostId);
+  return dependencies.filter(
+    (dependency) =>
+      !loaded.has(dependency) && (dependency !== fileName || waitsForStyles(fileName)),
+  );
+}
+
+/**
+ * Astro replaces `build.modulePreload` in its build config, so the option is set from a plugin.
+ * @type {import("vite").Plugin}
+ */
+const preloadPlugin = {
+  name: "orbit:preload-dependencies",
+  config: () => ({ build: { modulePreload: { resolveDependencies: preloadDependencies } } }),
+  generateBundle: {
+    order: "pre",
+    handler(_options, bundle) {
+      clientBundle = bundle;
+    },
+  },
+};
+
 export default defineConfig({
   site: "https://useorbit.org",
   integrations: [
@@ -66,6 +114,6 @@ export default defineConfig({
   ],
   vite: {
     build: { assetsInlineLimit: 0 },
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), preloadPlugin],
   },
 });

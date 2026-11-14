@@ -89,7 +89,7 @@ src/
     global.css           # Tailwind v4 @theme token mirror + type roles + base
 eslint-rules/
   no-comments.cjs        # Comment policy rule, mirrored from orbit-ui-mobile
-astro.config.mjs         # Site config, fonts, sitemap, Tailwind Vite plugin
+astro.config.mjs         # Site config, fonts, sitemap, Tailwind and preload-list Vite plugins
 ```
 
 ### i18n Implementation

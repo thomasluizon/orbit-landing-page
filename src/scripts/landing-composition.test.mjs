@@ -510,7 +510,7 @@ function billingHarness(language = "en") {
     modules.set(path, exports);
     return exports;
   }
-  const prices = require("../config/pricing");
+  const prices = { ...require("../config/pricing"), ...require("../config/pricing-copy") };
   const { landingCopy } = require("../i18n/translations");
   for (const field of Object.values(fields)) {
     for (const [name, value] of Object.entries(field.dataset)) {
