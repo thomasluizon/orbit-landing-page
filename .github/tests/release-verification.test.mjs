@@ -1,11 +1,15 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
 
 const workflow = readFileSync(new URL("../workflows/release.yml", import.meta.url), "utf8");
+const releaseScript = readFileSync(
+  new URL("../scripts/release-landing.mjs", import.meta.url),
+  "utf8",
+);
 const layout = readFileSync(new URL("../../src/layouts/Layout.astro", import.meta.url), "utf8");
 const sha = "6f1d70422e37f343093fa5ef6561f483e4b6dc20";
 const previousSha = "30c06d7e14c6fa9d749464510e8e16674c9028ff";
@@ -20,8 +24,6 @@ function releaseHarness(
   environment,
   { staging = {}, force = "false", head = sha, render = () => {}, github = () => {} } = {},
 ) {
-  const job = releaseJob(environment);
-  const body = job.split("node --input-type=module <<'NODE'\n")[1].split("          NODE")[0];
   const deploys = [];
   const renderDeploys = [];
   const requests = [];
@@ -32,6 +34,7 @@ function releaseHarness(
   const now = () => startedAt + elapsed;
   const productionOrigin = "https://orbit-landing.onrender.com";
   const env = {
+    RELEASE_ENVIRONMENT: environment,
     RELEASE_SHA: sha,
     RELEASE_BRANCH: "main",
     FORCE_UNSTAGED: force,
@@ -115,7 +118,7 @@ function releaseHarness(
     "console",
     "setTimeout",
     "Date",
-    body.replace(/^\s*import .*;$/gm, ""),
+    releaseScript.replace(/^\s*import .*;$/gm, ""),
   );
   return {
     deploys,
@@ -828,6 +831,7 @@ function shellHarness(t, environment) {
     DISPATCH_SHA: planned,
   };
   return {
+    cwd,
     planned,
     git,
     output: () => readFileSync(output, "utf8"),
@@ -894,14 +898,53 @@ for (const environment of ["staging", "production"]) {
   });
 }
 
-function verifier(environment) {
-  const job = workflow.split(`  ${environment}:\n`)[1].split(/^  \w+:$/m)[0];
-  const body = job
+for (const [environment, name] of [
+  ["staging", "Deploy and verify selected commit"],
+  ["production", "Deploy selected commit"],
+]) {
+  test(`${environment}: the deploy step names its environment for the release script`, () => {
+    const step = releaseJob(environment).split(`- name: ${name}\n`)[1];
+    assert.ok(step, `Missing step: ${name}`);
+    assert.match(step, new RegExp(`\\n {10}RELEASE_ENVIRONMENT: ${environment}\\n`));
+  });
+
+  test(`${environment}: runs the release script of the dispatch commit, not of the selected commit`, (t) => {
+    const shell = shellHarness(t, environment);
+    const runnerTemp = mkdtempSync(join(tmpdir(), "landing-release-temp-"));
+    t.after(() => rmSync(runnerTemp, { recursive: true, force: true }));
+    const script = join(shell.cwd, ".github", "scripts", "release-landing.mjs");
+    shell.git("checkout", "--quiet", "--detach", "refs/remotes/origin/main");
+    mkdirSync(dirname(script), { recursive: true });
+    writeFileSync(
+      script,
+      "console.log(`release ${process.env.RELEASE_ENVIRONMENT} from the dispatch commit`);\n",
+    );
+    shell.git("add", ".github/scripts/release-landing.mjs");
+    shell.git("commit", "--quiet", "-m", "Release script");
+    const dispatch = shell.git("rev-parse", "HEAD");
+    shell.git("update-ref", "refs/remotes/origin/main", dispatch);
+    shell.git("checkout", "--quiet", "--detach", shell.planned);
+    assert.equal(existsSync(script), false);
+    const result = shell.step(name, { GITHUB_SHA: dispatch, RUNNER_TEMP: runnerTemp });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, `release ${environment} from the dispatch commit\n`);
+  });
+}
+
+test("refuses an unknown release environment before any request", async () => {
+  const release = releaseHarness("preview");
+  await assert.rejects(release.run(), /Set RELEASE_ENVIRONMENT to production or staging/);
+  assert.deepEqual(release.requests, []);
+});
+
+function verifier() {
+  const body = releaseScript
     .split('if (!live) throw new Error("Render deploy did not go live before the timeout");')[1]
     .split("const deployment =")[0];
   return new AsyncFunction(
     "sha",
     "serviceOrigin",
+    "production",
     "fetch",
     "sleep",
     "AbortSignal",
@@ -935,9 +978,10 @@ function harness(environment, respond) {
     logs,
     elapsed: () => elapsed,
     run: () =>
-      verifier(environment)(
+      verifier()(
         sha,
         serviceOrigin,
+        environment === "production",
         fetch,
         async (milliseconds) => {
           sleeps.push(milliseconds);
