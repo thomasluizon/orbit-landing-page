@@ -1086,7 +1086,9 @@ test("all app and install links and QR generation share environment-backed produ
   const workflow = readFileSync(".github/workflows/release.yml", "utf8").split("  staging:")[1];
   assert.ok(workflow.includes(staging.PUBLIC_APP_URL));
   assert.ok(workflow.includes(staging.PUBLIC_ANDROID_INSTALL_URL));
-  assert.match(workflow, /buildVariables/);
+  const releaseScript = readFileSync(".github/scripts/release-landing.mjs", "utf8");
+  assert.match(releaseScript, /\["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"\]/);
+  assert.match(releaseScript, /buildVariables/);
 });
 
 test("every current copy key has locale parity and Pro states the approved weekly pool", () => {
