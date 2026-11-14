@@ -1,11 +1,11 @@
-import { translations, pricingCopy } from "../i18n/translations";
+import { translations } from "../i18n/translations";
 
-const plans = {
+export const plans = {
   en: { currency: "USD", locale: "en-US", monthly: 999, yearly: 6999 },
   "pt-BR": { currency: "BRL", locale: "pt-BR", monthly: 2990, yearly: 19900 },
 } as const;
 
-type PriceLanguage = keyof typeof plans;
+export type PriceLanguage = keyof typeof plans;
 
 export function offersFor(language: PriceLanguage) {
   const plan = plans[language];
@@ -50,26 +50,4 @@ export function formatPrice(
     minimumFractionDigits: amount % 1 ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(amount);
-}
-
-export function annualSavings(language: PriceLanguage) {
-  const plan = plans[language];
-  return Math.floor((1 - plan.yearly / (12 * plan.monthly)) * 100);
-}
-
-export function pricingFor(language: PriceLanguage, period: "monthly" | "yearly") {
-  const copy = pricingCopy[language];
-  return {
-    primary: copy["pricing.day"].replace(
-      "{price}",
-      formatPrice(language, period === "yearly" ? "dailyYearly" : "dailyMonthly"),
-    ),
-    billed: copy[period === "yearly" ? "pricing.billedYearly" : "pricing.billedMonthly"].replace(
-      "{price}",
-      formatPrice(language, period),
-    ),
-    annualLabel: copy["pricing.annualLabel"].replace("{percent}", String(annualSavings(language))),
-    savingShort: copy["pricing.savingShort"].replace("{percent}", String(annualSavings(language))),
-    saving: copy["pricing.saving"].replace("{percent}", String(annualSavings(language))),
-  };
 }

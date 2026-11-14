@@ -9,6 +9,7 @@
     ".gitattributes",
     ".gitignore",
     ".lycheeignore",
+    ".node-version",
     ".prettierignore",
     ".prettierrc",
     "CLAUDE.md",
