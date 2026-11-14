@@ -781,8 +781,7 @@ test("production: admits the healthy staging SHA and records admission", async (
   const probe = release.requests.find(({ url }) => url.origin === serviceOrigin);
   assert.ok(probe);
   assert.equal(probe.options.redirect, "manual");
-  assert.equal(probe.options.cache, "no-store");
-  assert.ok(probe.url.searchParams.get("orbit-verify"));
+  assert.equal(probe.url.href, `${serviceOrigin}/`);
   assert.match(release.summaries.join("\n"), new RegExp(`Staging served ${sha}`));
   assert.deepEqual(release.deploys, [{ commitId: sha }]);
 });
@@ -945,17 +944,18 @@ function verifier() {
     "sha",
     "serviceOrigin",
     "production",
+    "deploy",
+    "liveAt",
     "fetch",
     "sleep",
     "AbortSignal",
     "console",
     "performance",
-    "crypto",
     body,
   );
 }
 
-function harness(environment, respond) {
+function harness(environment, respond, liveAt = Number.NaN) {
   let elapsed = 0;
   const requests = [];
   const sleeps = [];
@@ -966,11 +966,11 @@ function harness(environment, respond) {
     requests.push({ url: String(url), options, elapsed, timeout });
     const result = respond({ url: new URL(url), elapsed, advance, timeout });
     if (result instanceof Error) throw result;
-    const { commit = sha, status = 200, html } = result;
+    const { commit = sha, status = 200, html, headers } = result;
     const marker = layout
       .match(/<meta name="orbit-build" content=\{renderBuildCommit\} \/>/)[0]
       .replace("{renderBuildCommit}", `"${commit}"`);
-    return new Response(html ?? marker, { status });
+    return new Response(html ?? marker, { status, headers });
   };
   return {
     requests,
@@ -982,6 +982,8 @@ function harness(environment, respond) {
         sha,
         serviceOrigin,
         environment === "production",
+        { id: "deploy-1" },
+        liveAt,
         fetch,
         async (milliseconds) => {
           sleeps.push(milliseconds);
@@ -995,7 +997,6 @@ function harness(environment, respond) {
         },
         { log: (message) => logs.push(message) },
         { now: () => elapsed },
-        crypto,
       ),
   };
 }
@@ -1027,15 +1028,12 @@ for (const environment of ["staging", "production"]) {
     assert.ok(clock.sleeps.every((milliseconds) => milliseconds === 5_000));
   });
 
-  test(`${environment}: bypasses cached HTML with a unique URL on every probe`, async () => {
+  test(`${environment}: probes the plain root page, because Render's CDN ignores cache-busting`, async () => {
     const clock = harness(environment, ({ elapsed }) => ({
       commit: elapsed < 10_000 ? previousSha : sha,
     }));
     await clock.run();
-    const urls = clock.requests.map(({ url }) => url);
-    assert.equal(new Set(urls).size, urls.length);
-    assert.ok(urls.every((url) => new URL(url).searchParams.get("orbit-verify")));
-    assert.ok(clock.requests.every(({ options }) => options.cache === "no-store"));
+    assert.ok(clock.requests.every(({ url }) => url === `${new URL(url).origin}/`));
   });
 
   test(`${environment}: retries network errors, redirects and missing markers`, async () => {
@@ -1094,6 +1092,84 @@ for (const environment of ["staging", "production"]) {
     await assert.rejects(clock.run(), /does not serve 6f1d7042/);
     assert.equal(clock.elapsed(), 301_000);
     assert.equal(clock.requests.at(-1).timeout, 5_000);
+  });
+
+  const firstServedAt = Date.parse("2026-11-11T16:22:41Z");
+  const wentLive = Date.parse("2026-11-11T16:22:31.407Z");
+  const previousUpload = "Wed, 11 Nov 2026 12:18:50 GMT";
+  const edgeCopy =
+    (storedBeforeFirstProbe, { fetchedByFirstProbe = false, finalProbeTimesOut = false } = {}) =>
+    ({ elapsed }) => {
+      if (finalProbeTimesOut && elapsed === 295_000) {
+        return new Error("The operation was aborted due to timeout");
+      }
+      const cache =
+        fetchedByFirstProbe && elapsed === 0
+          ? { "cf-cache-status": "MISS" }
+          : { "cf-cache-status": "HIT", age: String(storedBeforeFirstProbe + elapsed / 1_000) };
+      return {
+        commit: previousSha,
+        headers: {
+          date: new Date(firstServedAt + elapsed).toUTCString(),
+          "last-modified": previousUpload,
+          ...cache,
+        },
+      };
+    };
+  const live = "deploy deploy-1 live 2026-11-11T16:22:31.407Z";
+
+  for (const [source, respond, liveAt, expected] of [
+    [
+      "an edge copy that Render did not invalidate",
+      edgeCopy(3_600),
+      wentLive,
+      new RegExp(
+        `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, ${live}\\)$`,
+      ),
+    ],
+    [
+      "a copy that Render gave its CDN after it reported the deploy live",
+      edgeCopy(0, { fetchedByFirstProbe: true, finalProbeTimesOut: true }),
+      wentLive,
+      new RegExp(
+        `; Render gave its CDN ${previousSha} after it reported the deploy live \\(edge copy stored 2026-11-11T16:22:41\\.000Z, ${live}\\)$`,
+      ),
+    ],
+    [
+      "a copy stored as the deploy went live",
+      edgeCopy(10),
+      wentLive,
+      new RegExp(
+        `; Render's CDN stored ${previousSha} within 2 s of the deploy going live \\(edge copy stored 2026-11-11T16:22:31\\.000Z, ${live}\\)$`,
+      ),
+    ],
+    ["no reason without the live time", edgeCopy(3_600), Number.NaN, /Render going live$/],
+    [
+      "no reason without cache headers",
+      () => ({ commit: previousSha }),
+      wentLive,
+      /Render going live$/,
+    ],
+  ]) {
+    test(`${environment}: regression: names ${source} when the URL keeps the previous build`, async () => {
+      const clock = harness(environment, respond, liveAt);
+      await assert.rejects(clock.run(), expected);
+      assert.equal(clock.elapsed(), 300_000);
+    });
+  }
+
+  test(`${environment}: logs the CDN cache headers of each previous build`, async () => {
+    const clock = harness(environment, edgeCopy(0, { fetchedByFirstProbe: true }), wentLive);
+    await assert.rejects(clock.run());
+    const served = `${serviceOrigin} returned HTTP 200 serving ${previousSha}`;
+    assert.equal(
+      clock.logs[0],
+      `${served} (cf-cache-status MISS, age none, last-modified ${previousUpload})`,
+    );
+    assert.equal(
+      clock.logs[1],
+      `${served} (cf-cache-status HIT, age 5, last-modified ${previousUpload})`,
+    );
   });
 }
 

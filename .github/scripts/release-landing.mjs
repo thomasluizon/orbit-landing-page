@@ -161,11 +161,8 @@ async function admitStagedCommit() {
   );
   const stagingOrigin = stagingService.serviceDetails?.url;
   if (!stagingOrigin) throw new Error("Render did not return the staging landing service URL");
-  const url = new URL("/", stagingOrigin);
-  url.searchParams.set("orbit-verify", crypto.randomUUID());
-  const response = await fetch(url, {
+  const response = await fetch(new URL("/", stagingOrigin), {
     redirect: "manual",
-    cache: "no-store",
     signal: AbortSignal.timeout(30_000),
   });
   const html = response.status === 200 ? await response.text() : "";
@@ -216,6 +213,7 @@ const deploy = await triggerDeploy();
 console.log(`Render deploy ${deploy.id} for ${sha}`);
 
 let live = false;
+let liveAt = Number.NaN;
 for (let attempt = 0; attempt < 60; attempt++) {
   const current = await jsonRequest(`${renderUrl}/deploys/${deploy.id}`, {
     headers: renderHeaders,
@@ -226,6 +224,7 @@ for (let attempt = 0; attempt < 60; attempt++) {
   console.log(`Render status: ${current.status}`);
   if (current.status === "live") {
     if (current.commit?.id !== sha) throw new Error("Render did not confirm the deployed SHA");
+    liveAt = Date.parse(current.finishedAt);
     live = true;
     break;
   }
@@ -244,23 +243,48 @@ const verificationStarted = performance.now();
 const verificationDeadline = verificationStarted + 300_000;
 
 async function servedCommit(origin) {
-  const url = new URL("/", origin);
-  url.searchParams.set("orbit-verify", crypto.randomUUID());
   const remaining = Math.max(1, Math.ceil(verificationDeadline - performance.now()));
-  const response = await fetch(url, {
+  const response = await fetch(new URL("/", origin), {
     redirect: "manual",
-    cache: "no-store",
     signal: AbortSignal.timeout(Math.min(15_000, remaining)),
   });
-  if (response.status !== 200) return { status: response.status, commit: null };
+  const edge = {
+    cacheStatus: response.headers.get("cf-cache-status"),
+    age: response.headers.get("age"),
+    date: response.headers.get("date"),
+    lastModified: response.headers.get("last-modified"),
+  };
+  if (response.status !== 200) return { status: response.status, commit: null, edge };
   const html = await response.text();
   return {
     status: 200,
     commit: html.match(/<meta name="orbit-build" content="([0-9a-f]{40})"/)?.[1] ?? null,
+    edge,
   };
 }
 
+/**
+ * Render's CDN answers "/" from an edge copy whatever the query string or request cache headers,
+ * so `date` minus `age` dates the copy against the moment Render reported the deploy live.
+ * Both headers count whole seconds, hence the 2 s margin.
+ */
+function previousBuildSource({ commit, edge }) {
+  const storedAt = Date.parse(edge.date) - Number(edge.age ?? 0) * 1_000;
+  if (!commit || commit === sha || !Number.isFinite(storedAt) || !Number.isFinite(liveAt)) {
+    return "";
+  }
+  const times = `edge copy stored ${new Date(storedAt).toISOString()}, deploy ${deploy.id} live ${new Date(liveAt).toISOString()}`;
+  if (storedAt < liveAt - 2_000) {
+    return `; Render's CDN kept a copy of ${commit} from before the deploy went live, so the deploy did not invalidate this edge (${times})`;
+  }
+  if (storedAt > liveAt + 2_000) {
+    return `; Render gave its CDN ${commit} after it reported the deploy live (${times})`;
+  }
+  return `; Render's CDN stored ${commit} within 2 s of the deploy going live (${times})`;
+}
+
 async function requireServedCommit(origin) {
+  let previousBuildReason = "";
   while (performance.now() < verificationDeadline) {
     try {
       const result = await servedCommit(origin);
@@ -274,8 +298,10 @@ async function requireServedCommit(origin) {
         );
         return;
       }
+      previousBuildReason = previousBuildSource(result);
+      const { cacheStatus, age, lastModified } = result.edge;
       console.log(
-        `${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"}`,
+        `${origin} returned HTTP ${result.status} serving ${result.commit ?? "no build marker"} (cf-cache-status ${cacheStatus ?? "none"}, age ${age ?? "none"}, last-modified ${lastModified ?? "none"})`,
       );
     } catch (error) {
       console.log(`${origin} check failed: ${error.message}`);
@@ -283,7 +309,9 @@ async function requireServedCommit(origin) {
     const remaining = verificationDeadline - performance.now();
     if (remaining > 0) await sleep(Math.min(5_000, remaining));
   }
-  throw new Error(`${origin}/ does not serve ${sha} within 300000 ms of Render going live`);
+  throw new Error(
+    `${origin}/ does not serve ${sha} within 300000 ms of Render going live${previousBuildReason}`,
+  );
 }
 
 await requireServedCommit(serviceOrigin);
