@@ -37,29 +37,20 @@ function staticGraph(fileName, graph = new Set()) {
   return graph;
 }
 
-/** @param {string} fileName */
-function waitsForStyles(fileName) {
-  return [...staticGraph(fileName)].some((file) => {
-    const chunk = clientBundle[file];
-    return chunk.type === "chunk" && (chunk.viteMetadata?.importedCss.size ?? 0) > 0;
-  });
-}
-
 /**
  * Keeps only the preloads that start a request: the importer's static graph is already loaded,
- * and `import()` requests its own chunk in the same task unless it first waits for a stylesheet.
+ * and with no stylesheet to await, `import()` requests its own chunk in the same task:
+ * https://github.com/vitejs/vite/blob/v8.3.8/packages/vite/src/node/plugins/importAnalysisBuild.ts
  * @type {import("vite").ResolveModulePreloadDependenciesFn}
  */
 function preloadDependencies(fileName, dependencies, { hostId }) {
   const loaded = staticGraph(hostId);
-  return dependencies.filter(
-    (dependency) =>
-      !loaded.has(dependency) && (dependency !== fileName || waitsForStyles(fileName)),
-  );
+  return dependencies.filter((dependency) => dependency !== fileName && !loaded.has(dependency));
 }
 
 /**
- * Astro replaces `build.modulePreload` in its build config, so the option is set from a plugin.
+ * Astro replaces `build.modulePreload` in its build config, so the option is set from a plugin:
+ * https://github.com/withastro/astro/blob/astro@7.4.12/packages/astro/src/core/build/vite-build-config.ts
  * @type {import("vite").Plugin}
  */
 const preloadPlugin = {
