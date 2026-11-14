@@ -32,7 +32,7 @@ jobs:
           product=true
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             product=false
-            git diff --name-only -z "origin/$GITHUB_BASE_REF...HEAD" > "$RUNNER_TEMP/changed-paths"
+            git diff --name-only --no-renames -z "origin/$GITHUB_BASE_REF...HEAD" > "$RUNNER_TEMP/changed-paths"
             while IFS= read -r -d '' path; do
               case "$path" in
                 .claude/* | .codex/* | .vscode/* | LICENSE) ;;
