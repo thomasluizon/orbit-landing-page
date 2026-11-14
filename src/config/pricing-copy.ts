@@ -1,5 +1,5 @@
 import { pricingCopy } from "../i18n/translations";
-import { formatPrice, plans, type PriceLanguage } from "../config/pricing";
+import { formatPrice, plans, type PriceLanguage } from "./pricing";
 
 function annualSavings(language: PriceLanguage) {
   const plan = plans[language];
