@@ -21,7 +21,6 @@
     "brand:generate": "node tools/generate-brand-assets.mjs"
   },
   "overrides": {
-    "esbuild": "^0.28.1",
     "minimatch": "11.0.4",
     "sharp": "^0.35.5",
     "svgo": "^4.1.0",
