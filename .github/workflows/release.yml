@@ -92,6 +92,7 @@ jobs:
             exit 1
           fi
 
+      # This job builds nothing: it calls the Render API, and the selected commit can predate .node-version.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
@@ -162,6 +163,7 @@ jobs:
             exit 1
           fi
 
+      # This job builds nothing: it calls the Render API, and the selected commit can predate .node-version.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22

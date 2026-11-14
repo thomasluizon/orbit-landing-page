@@ -45,6 +45,34 @@ test("the waitlist, back to top, header link and page scripts load the programma
   }
 });
 
+const staticGraph = (file, graph = new Set()) => {
+  if (graph.has(file)) return graph;
+  graph.add(file);
+  for (const imported of staticImports(file)) staticGraph(imported, graph);
+  return graph;
+};
+const preloadList = (file) => {
+  const list = readFileSync(`${assets}/${file}`, "utf8").match(/m\.f=\[([^\]]*)\]/)?.[1];
+  return list ? JSON.parse(`[${list}]`).map((path) => path.replace(/^_astro\//, "")) : [];
+};
+
+test("each preload list holds every chunk that a dynamic import would load later, and no other", () => {
+  for (const host of chunks) {
+    const loaded = staticGraph(host);
+    const expected = new Set(
+      dynamicImports(host).flatMap((target) =>
+        [...staticGraph(target)].filter((file) => file !== target && !loaded.has(file)),
+      ),
+    );
+    assert.deepEqual(new Set(preloadList(host)), expected, host);
+  }
+  const page = chunkNamed("index.astro_astro_type_script_index_0_lang");
+  assert.deepEqual(
+    new Set(preloadList(page)),
+    new Set([chunkNamed("day-cell"), chunkNamed("motion-token")]),
+  );
+});
+
 test("the page script loads the downloads panel chunk only on demand", () => {
   const panel = chunkNamed("downloads-panel");
   assert.ok(panel, "the dismissal code ships as its own lazy chunk");

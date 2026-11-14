@@ -209,7 +209,6 @@ export const pricingCopy = {
 } as const;
 
 const landingEn = {
-  ...pricingCopy["en"],
   "product.insight": "I can help you start again.",
   "today.astra": "One habit at a time.",
   "product.todo": "To do",
@@ -341,7 +340,6 @@ const landingEn = {
 export type LandingKey = keyof typeof landingEn;
 
 const landingPt: Record<LandingKey, string> = {
-  ...pricingCopy["pt-BR"],
   "product.insight": "Posso te ajudar a recomeçar.",
   "today.astra": "Um hábito de cada vez.",
   "product.todo": "A fazer",

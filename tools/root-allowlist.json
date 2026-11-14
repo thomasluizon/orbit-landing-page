@@ -8,6 +8,7 @@
     ".env.production.local",
     ".gitattributes",
     ".gitignore",
+    ".node-version",
     ".prettierignore",
     ".prettierrc",
     "CLAUDE.md",

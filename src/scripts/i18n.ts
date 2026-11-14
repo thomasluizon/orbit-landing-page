@@ -20,7 +20,7 @@ function setLangCookie(lang: Language) {
 }
 
 function applyTranslations(lang: Language) {
-  document.documentElement.lang = lang === "pt-BR" ? "pt-BR" : "en";
+  document.documentElement.lang = lang;
   const table: Record<string, string> = translations[lang];
   document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((element) => {
     const key = element.getAttribute("data-i18n");
@@ -61,7 +61,6 @@ function applyTranslations(lang: Language) {
   if (toggle) {
     toggle.setAttribute("aria-label", translations[lang]["language.switch"]);
   }
-  document.documentElement.lang = lang;
 }
 
 function applyAttributes(lang: Language) {

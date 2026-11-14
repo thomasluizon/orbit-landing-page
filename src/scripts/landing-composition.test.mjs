@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { posix } from "node:path";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
@@ -497,20 +498,26 @@ function billingHarness(language = "en") {
     Intl,
   });
   const modules = new Map();
-  function require(path) {
-    if (modules.has(path)) return modules.get(path);
+  function load(file) {
+    if (modules.has(file)) return modules.get(file);
     const code = ts.transpileModule(
-      readFileSync(`src/scripts/${path}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
+      readFileSync(`${file}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
       {
         compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
       },
     ).outputText;
     const exports = {};
-    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(exports, require);
-    modules.set(path, exports);
+    // WHY: cache before running, so an import cycle gets the partial exports: https://nodejs.org/api/modules.html#cycles
+    modules.set(file, exports);
+    const requireFromFile = (specifier) => load(posix.join(posix.dirname(file), specifier));
+    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(
+      exports,
+      requireFromFile,
+    );
     return exports;
   }
-  const prices = require("../config/pricing");
+  const require = (specifier) => load(posix.join("src/scripts", specifier));
+  const prices = { ...require("../config/pricing"), ...require("../config/pricing-copy") };
   const { landingCopy } = require("../i18n/translations");
   for (const field of Object.values(fields)) {
     for (const [name, value] of Object.entries(field.dataset)) {
