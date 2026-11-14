@@ -46,7 +46,7 @@ Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Bra
 
 ## Prerequisites
 
-- **Node.js** `^22.22.3 || ^24.16.0 || >=26.3.0` (the `engines` range in `package.json`)
+- **Node.js** `22.23.5`, the version in `.node-version`. CI and both Render sites build with this version. The `engines` range in `package.json` (`^22.23.4 || ^24.16.0 || >=26.3.0`) gives each Node.js version that can run the project.
 
 ## Getting Started
 
@@ -126,12 +126,14 @@ gh workflow run release.yml --ref main -f environment=staging -f branch=<branch>
 
 Render build contract:
 
-| Setting           | Value                     |
-| ----------------- | ------------------------- |
-| Node.js           | `NODE_VERSION=22.22.3`    |
-| Build command     | `npm ci && npm run build` |
-| Publish directory | `dist`                    |
-| Auto-deploy       | Disabled                  |
+| Setting           | Value                                       |
+| ----------------- | ------------------------------------------- |
+| Node.js           | `.node-version`; no `NODE_VERSION` variable |
+| Build command     | `npm ci && npm run build`                   |
+| Publish directory | `dist`                                      |
+| Auto-deploy       | Disabled                                    |
+
+Render reads a `NODE_VERSION` variable before `.node-version`. Do not set `NODE_VERSION` on either site, so that CI and Render use the same version. The build log line `Using Node.js version <version> via <source>` shows the version and the source that Render read.
 
 Build-time variables on the Render static site:
 
