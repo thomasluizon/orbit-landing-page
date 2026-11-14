@@ -5,10 +5,11 @@ on:
     branches: [main]
     types: [opened, edited, reopened, synchronize]
 
-# Every run reads the live title and body, so a newer event on the same head makes an older run
-# redundant. The group is the head commit: a body edit never cancels the check of another head.
+# Every run reads the live title and body, so a newer event on the same pull request and head makes
+# an older run redundant. The group is the pull request and its head commit: a run never cancels the
+# check of another head, or of another pull request at the same head.
 concurrency:
-  group: pr-text-${{ github.event.pull_request.head.sha }}
+  group: pr-text-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 permissions:
