@@ -507,12 +507,13 @@ function billingHarness(language = "en") {
       },
     ).outputText;
     const exports = {};
+    // WHY: cache before running, so an import cycle gets the partial exports: https://nodejs.org/api/modules.html#cycles
+    modules.set(file, exports);
     const requireFromFile = (specifier) => load(posix.join(posix.dirname(file), specifier));
     vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(
       exports,
       requireFromFile,
     );
-    modules.set(file, exports);
     return exports;
   }
   const require = (specifier) => load(posix.join("src/scripts", specifier));
