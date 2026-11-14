@@ -46,7 +46,7 @@ Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Bra
 
 ## Prerequisites
 
-- **Node.js** `22.23.5`, the version in `.node-version`. CI and both Render sites build with this version. The `engines` range in `package.json` (`^22.23.4 || ^24.16.0 || >=26.3.0`) gives each Node.js version that can run the project.
+- **Node.js**, the version in `.node-version`. CI and both Render sites build with this version. The `engines` range in `package.json` gives each Node.js version that can run the project.
 
 ## Getting Started
 
