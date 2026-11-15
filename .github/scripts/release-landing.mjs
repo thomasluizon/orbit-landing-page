@@ -263,21 +263,18 @@ async function servedCommit(origin) {
   };
 }
 
-/**
- * Render's CDN answers "/" from an edge copy whatever the query string or request cache headers,
- * so `date` minus `age` dates the copy against the moment Render reported the deploy live.
- * Both headers count whole seconds, hence the 2 s margin.
- */
+const wholeSecondHeaderMarginMs = 2_000;
+
 function previousBuildSource({ commit, edge }) {
   const storedAt = Date.parse(edge.date) - Number(edge.age ?? 0) * 1_000;
   if (!commit || commit === sha || !Number.isFinite(storedAt) || !Number.isFinite(liveAt)) {
     return "";
   }
   const times = `edge copy stored ${new Date(storedAt).toISOString()}, deploy ${deploy.id} live ${new Date(liveAt).toISOString()}`;
-  if (storedAt < liveAt - 2_000) {
+  if (storedAt < liveAt - wholeSecondHeaderMarginMs) {
     return `; Render's CDN kept a copy of ${commit} from before the deploy went live, so the deploy did not invalidate this edge (${times})`;
   }
-  if (storedAt > liveAt + 2_000) {
+  if (storedAt > liveAt + wholeSecondHeaderMarginMs) {
     return `; Render gave its CDN ${commit} after it reported the deploy live (${times})`;
   }
   return `; Render's CDN stored ${commit} within 2 s of the deploy going live (${times})`;

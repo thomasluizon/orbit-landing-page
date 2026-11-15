@@ -36,14 +36,7 @@ const cdnHeaders = ({ date, cacheStatus, age }) => ({
 
 function releaseHarness(
   environment,
-  {
-    staging = {},
-    force = "false",
-    head = sha,
-    render = () => {},
-    github = () => {},
-    served = () => ({}),
-  } = {},
+  { staging = {}, force = "false", render = () => {}, github = () => {}, served = () => ({}) } = {},
 ) {
   const deploys = [];
   const renderDeploys = [];
@@ -134,7 +127,6 @@ function releaseHarness(
   };
   const run = new AsyncFunction(
     "process",
-    "execFileSync",
     "appendFileSync",
     "fetch",
     "console",
@@ -152,7 +144,6 @@ function releaseHarness(
     run: () =>
       run(
         { env },
-        () => head,
         (path, content) => {
           assert.equal(path, env.GITHUB_STEP_SUMMARY);
           summaries.push(content);
@@ -773,13 +764,24 @@ for (const environment of ["staging", "production"]) {
     assert.equal(writes, 1);
   });
 
-  test(`${environment}: deploys the input SHA after the branch head moves`, async () => {
-    const release = releaseHarness(environment, { head: previousSha });
-    await release.run();
+  test(`${environment}: rejects a live deploy of another commit before it probes or records anything`, async () => {
+    let polls = 0;
+    const release = releaseHarness(environment, {
+      render: ({ url }) => {
+        if (url.pathname.endsWith("/deploys/deploy-1")) {
+          polls++;
+          return Response.json(liveDeployResponse(previousSha));
+        }
+      },
+    });
+    await assert.rejects(
+      release.run(),
+      new RegExp(`Render is deploying ${previousSha} instead of ${sha}$`),
+    );
+    assert.equal(polls, 1);
     assert.deepEqual(release.deploys, [{ commitId: sha }]);
-    assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
-    const deployment = release.requests.find(({ url }) => url.pathname.endsWith("/deployments"));
-    assert.equal(JSON.parse(deployment.options.body).ref, sha);
+    assert.ok(release.requests.at(-1).url.pathname.endsWith("/deploys/deploy-1"));
+    assert.doesNotMatch(release.summaries.join("\n"), /Deployed SHA/);
   });
 }
 

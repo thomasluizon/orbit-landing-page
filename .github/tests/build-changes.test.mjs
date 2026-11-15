@@ -139,17 +139,16 @@ function lefthookCommand(name) {
   return command.match(/^ {6}run: (.+)$/m)?.[1];
 }
 
-/**
- * Evaluates the subset of the GitHub expression syntax that the Build step gates use. It fails on
- * any other term, so a new kind of gate needs a matching change here.
- */
 function stepRuns(condition, context) {
   const expression = condition?.match(/^\$\{\{ (.+) \}\}$/)?.[1];
-  assert.ok(expression, `Unsupported step condition: ${condition}`);
+  assert.ok(expression, `stepRuns does not evaluate the step condition ${condition}`);
   return expression.split(" && ").every((term) => {
     if (term === "!cancelled()") return true;
     const [, name, value] = term.match(/^([\w.]+) == '([^']*)'$/) ?? [];
-    assert.ok(name && Object.hasOwn(context, name), `Unsupported condition term: ${term}`);
+    assert.ok(
+      name && Object.hasOwn(context, name),
+      `stepRuns does not evaluate the condition term ${term}; add the term to stepRuns`,
+    );
     return context[name] === value;
   });
 }
