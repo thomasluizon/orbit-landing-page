@@ -530,8 +530,14 @@ for (const visible of [true, false]) {
   });
 }
 
-for (const target of ["status", "POST"]) {
-  test(`staging: fails immediately on ${target} HTTP 401`, async () => {
+for (const [target, status] of [
+  ["status", 400],
+  ["status", 401],
+  ["status", 403],
+  ["status", 404],
+  ["POST", 401],
+]) {
+  test(`staging: fails immediately on ${target} HTTP ${status}`, async () => {
     let failures = 0;
     const release = releaseHarness("staging", {
       render: ({ url, options }) => {
@@ -541,11 +547,11 @@ for (const target of ["status", "POST"]) {
             : options.method === target;
         if (matches) {
           failures++;
-          return new Response("rejected", { status: 401 });
+          return new Response("rejected", { status });
         }
       },
     });
-    await assert.rejects(release.run(), /HTTP 401/);
+    await assert.rejects(release.run(), new RegExp(`HTTP ${status}`));
     assert.equal(failures, 1);
     assert.deepEqual(release.sleeps, []);
   });
@@ -649,6 +655,7 @@ for (const [reason, entries, message] of [
     () => Array.from({ length: 100 }, () => ({ cursor: "next", deploy: { id: "other" } })),
     /exceeded 10 pages/,
   ],
+  ["an HTTP 401", () => new Response("rejected", { status: 401 }), /HTTP 401/],
 ]) {
   test(`staging: refuses to resend after a deploy lookup with ${reason}`, async () => {
     let posts = 0;
@@ -1029,14 +1036,62 @@ for (const environment of ["staging", "production"]) {
   });
 }
 
-test(`production: accepts the planned build immediately`, async () => {
-  const clock = harness("production", () => ({}));
-  await clock.run();
-  assert.equal(clock.elapsed(), 0);
-  assert.equal(clock.requests.length, 2);
-  assert.deepEqual(clock.sleeps, []);
-  assert.ok(clock.requests.every(({ options }) => options.redirect === "manual"));
-});
+for (const [environment, probedOrigins] of [
+  ["staging", [serviceOrigin]],
+  ["production", [serviceOrigin, "https://useorbit.org"]],
+]) {
+  test(`${environment}: accepts the planned build immediately on ${probedOrigins.join(" and ")}`, async () => {
+    const clock = harness(environment, () => ({}));
+    await clock.run();
+    assert.equal(clock.elapsed(), 0);
+    assert.deepEqual(
+      clock.requests.map(({ url }) => url),
+      probedOrigins.map((origin) => `${origin}/`),
+    );
+    assert.deepEqual(clock.sleeps, []);
+    assert.ok(clock.requests.every(({ options }) => options.redirect === "manual"));
+  });
+}
+
+for (const [environment, environmentUrl] of [
+  ["staging", `${serviceOrigin}/`],
+  ["production", "https://useorbit.org/"],
+]) {
+  test(`${environment}: records a ${environment} GitHub Deployment and release summary for the deployed SHA`, async () => {
+    const release = releaseHarness(environment);
+    await release.run();
+    const githubWrites = release.requests
+      .filter(({ url }) => url.hostname === "api.github.com")
+      .map(({ url, options }) => [options.method, url.pathname, JSON.parse(options.body)]);
+    assert.deepEqual(githubWrites, [
+      [
+        "POST",
+        "/repos/owner/landing/deployments",
+        {
+          ref: sha,
+          environment,
+          auto_merge: false,
+          required_contexts: [],
+          description: "Render landing release",
+        },
+      ],
+      [
+        "POST",
+        "/repos/owner/landing/deployments/1/statuses",
+        {
+          state: "success",
+          environment_url: environmentUrl,
+          log_url: "https://github.com/owner/landing/actions/runs/1",
+          description: "Render deploy is live and serves the deployed commit",
+        },
+      ],
+    ]);
+    assert.equal(
+      release.summaries.at(-1),
+      `## Landing ${environment} release\nDeployed SHA: ${sha}\n`,
+    );
+  });
+}
 
 test(`production: logs the CDN cache headers of each previous build`, async () => {
   const clock = harness("production", edgeCopy(0, { fetchedByFirstProbe: true }), wentLive);
