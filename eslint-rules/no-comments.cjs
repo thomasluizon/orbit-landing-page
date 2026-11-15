@@ -1,8 +1,8 @@
 const LINE_BREAK = /\r\n|[\r\n\u2028\u2029]/;
 const TAG_DIRECTIVE =
-  /^(?:@license|@preserve|@vitest-environment(?:-options)?\s|(?:istanbul|[cv]8)\s+ignore\s+(?:start|stop)(?=\W|$))/;
+  /^(?:@license|@preserve|(?:istanbul|[cv]8)\s+ignore\s+(?:start|stop)(?=\W|$))/;
+const VITEST_ENVIRONMENT = /@vitest-environment(?:\s+[\w-]+\b|-options\s+.)/;
 const COVERAGE_HINT = /^(?:istanbul|[cv]8)\s+ignore\s+(?:if|else|next|file)(?=\W|$)/;
-const TYPESCRIPT_SUPPRESSION = /^@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_LINE_SUPPRESSION = /^\/\/\/?\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_LINE_PRAGMA =
@@ -11,7 +11,7 @@ const TYPESCRIPT_BLOCK_PRAGMA = /^@(?:jsx|jsxfrag|jsximportsource|jsxruntime)(?:
 const LINE_DIRECTIVE =
   /^(?:eslint-disable(?:-next)?-line(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__PURE__)/;
 const BLOCK_DIRECTIVE =
-  /^(?:(?:eslint-enable|eslint-disable(?:(?:-next)?-line)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__PURE__|@vite-ignore$)/;
+  /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__PURE__|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
 const TYPE_ANNOTATION =
   /@(?:type|typedef|satisfies|template|import)(?![\w-])|@(?:param|returns)\s*\{/;
@@ -184,10 +184,10 @@ function createExportCheck(sourceCode, filename) {
   };
 }
 
-function isTypeScriptSuppression(comment, firstText) {
+function isTypeScriptSuppression(comment) {
   if (comment.type === "Line") return TYPESCRIPT_LINE_SUPPRESSION.test(`//${comment.value}`);
   const lastLine = `/*${comment.value}*/`.split(LINE_BREAK).at(-1).trimStart();
-  return TYPESCRIPT_SUPPRESSION.test(firstText) && TYPESCRIPT_BLOCK_SUPPRESSION.test(lastLine);
+  return TYPESCRIPT_BLOCK_SUPPRESSION.test(lastLine);
 }
 
 function isDirective(comment, isDocComment) {
@@ -196,7 +196,7 @@ function isDirective(comment, isDocComment) {
   const firstText =
     comment.type === "Block" ? comment.value.replace(/^[ \t]*\*+/gm, "").trim() : opening;
   if (TAG_DIRECTIVE.test(firstText) || COVERAGE_HINT.test(opening)) return true;
-  if (isTypeScriptSuppression(comment, firstText)) return true;
+  if (VITEST_ENVIRONMENT.test(comment.value) || isTypeScriptSuppression(comment)) return true;
   if (comment.type === "Line") {
     return LINE_DIRECTIVE.test(opening) || TYPESCRIPT_LINE_PRAGMA.test(`//${comment.value}`);
   }
