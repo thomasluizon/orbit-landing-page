@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const workflow = readFileSync(new URL("../workflows/build.yml", import.meta.url), "utf8");
 const prTextWorkflow = readFileSync(new URL("../workflows/pr-text.yml", import.meta.url), "utf8");
@@ -133,10 +134,14 @@ function buildStep(name) {
   };
 }
 
+function lefthookBlock(name) {
+  const block = lefthook.split(`\n    ${name}:\n`)[1]?.split(/\n {4}\S/)[0];
+  assert.ok(block, `Missing lefthook command: ${name}`);
+  return block;
+}
+
 function lefthookCommand(name) {
-  const command = lefthook.split(`\n    ${name}:\n`)[1]?.split(/\n {4}\S/)[0];
-  assert.ok(command, `Missing lefthook command: ${name}`);
-  return command.match(/^ {6}run: (.+)$/m)?.[1];
+  return lefthookBlock(name).match(/^ {6}run: (.+)$/m)?.[1];
 }
 
 function stepRuns(condition, context) {
@@ -167,25 +172,11 @@ function pullRequestContext(t, path) {
 }
 
 const wholeTreeGuards = [
-  {
-    step: "Copy follows the register",
-    hook: "copy-register",
-    paths: [
-      "src/i18n/translations.ts",
-      "src/components/Hero.astro",
-      "src/styles/global.css",
-      "tools/check-copy.mjs",
-      "tools/copy-baseline.json",
-    ],
-  },
-  {
-    step: "Root holds only declared entries",
-    hook: "root-allowlist",
-    paths: ["README.md", "NOTES.md", "LICENSE", "notes.txt", ".codex/config.toml"],
-  },
+  { step: "Copy follows the register", hook: "copy-register" },
+  { step: "Root holds only declared entries", hook: "root-allowlist" },
 ];
 
-for (const { step, hook, paths } of wholeTreeGuards) {
+for (const { step, hook } of wholeTreeGuards) {
   test(`Build: "${step}" runs the command of the lefthook ${hook} hook`, () => {
     assert.equal(buildStep(step).command, lefthookCommand(hook));
   });
@@ -199,12 +190,6 @@ for (const { step, hook, paths } of wholeTreeGuards) {
     };
     assert.equal(stepRuns(buildStep(step).condition, context), true);
   });
-
-  for (const path of paths) {
-    test(`Build: "${step}" runs for a pull request that changes ${path}`, (t) => {
-      assert.equal(stepRuns(buildStep(step).condition, pullRequestContext(t, path)), true);
-    });
-  }
 }
 
 test("Build: the whole-tree guards also run for a pull request that changes no product path", (t) => {
@@ -214,6 +199,39 @@ test("Build: the whole-tree guards also run for a pull request that changes no p
     assert.equal(stepRuns(buildStep(step).condition, context), true, step);
   }
 });
+
+const lefthookBinary = fileURLToPath(new URL("../../node_modules/.bin/lefthook", import.meta.url));
+
+for (const [path, runs] of [
+  ["src/i18n/translations.ts", true],
+  ["src/components/Hero.astro", true],
+  ["src/styles/global.css", true],
+  ["tools/check-copy.mjs", true],
+  ["tools/copy-baseline.json", true],
+  ["src/config/validate-turnstile.mjs", false],
+]) {
+  test(`lefthook ${runs ? "runs" : "skips"} copy-register when ${path} is staged`, (t) => {
+    const copyRegister = lefthookBlock("copy-register").replace(
+      /^ {6}run: .+$/m,
+      "      run: echo copy-register-ran",
+    );
+    const { cwd, env, git } = repository(t, {
+      "lefthook.yml": `pre-commit:\n  commands:\n    copy-register:\n${copyRegister}\n`,
+    });
+    edit(path)({ cwd });
+    git("add", path);
+    const lefthookEnv = Object.fromEntries(
+      Object.entries(env).filter(([key]) => !key.startsWith("LEFTHOOK")),
+    );
+    const result = spawnSync(lefthookBinary, ["run", "pre-commit"], {
+      cwd,
+      env: lefthookEnv,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.includes("copy-register-ran"), runs, result.stdout);
+  });
+}
 
 /**
  * Reads the sparse checkout inputs of the PR Text checkout step the way actions/checkout reads

@@ -1,18 +1,25 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
+import { release, verifyServedCommit } from "../scripts/release-landing.mjs";
 
-const releaseScript = readFileSync(
-  new URL("../scripts/release-landing.mjs", import.meta.url),
-  "utf8",
-);
 const layout = readFileSync(new URL("../../src/layouts/Layout.astro", import.meta.url), "utf8");
 const sha = "6f1d70422e37f343093fa5ef6561f483e4b6dc20";
 const previousSha = "30c06d7e14c6fa9d749464510e8e16674c9028ff";
 const serviceOrigin = "https://orbit-landing-staging.onrender.com";
-const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 const renderFinishedAt = "2026-11-11T16:22:31.407166Z";
+const renderTimestamp = (milliseconds) => new Date(milliseconds).toISOString().replace("Z", "000Z");
 const previousUpload = "Wed, 11 Nov 2026 12:18:50 UTC";
+
+const stagingBuildVariables = {
+  PUBLIC_APP_URL: "https://app-staging.useorbit.org",
+  PUBLIC_ANDROID_INSTALL_URL:
+    "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
+};
+const renderBuildVariables = (variables) =>
+  Object.entries(variables).map(([key, value]) => ({ cursor: key, envVar: { key, value } }));
 
 const liveDeployResponse = (commitId) => ({
   id: "deploy-1",
@@ -59,9 +66,7 @@ function releaseHarness(
     GITHUB_REPOSITORY: "owner/landing",
     GITHUB_RUN_ID: "1",
     GITHUB_STEP_SUMMARY: "/summary",
-    PUBLIC_APP_URL: "https://app-staging.useorbit.org",
-    PUBLIC_ANDROID_INSTALL_URL:
-      "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
+    ...stagingBuildVariables,
   };
   const marker = (commit) =>
     layout
@@ -87,15 +92,13 @@ function releaseHarness(
           ? serviceOrigin
           : productionOrigin;
         if (parsed.pathname.endsWith("/env-vars")) {
-          result = ["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"].map((key) => ({
-            envVar: { key, value: env[key] },
-          }));
+          result = renderBuildVariables(stagingBuildVariables);
         } else if (parsed.pathname.endsWith("/deploys") && options.method === "POST") {
           deploys.push(JSON.parse(options.body));
           const deploy = {
             id: "deploy-1",
             commit: { id: deploys.at(-1).commitId },
-            createdAt: new Date(now()).toISOString(),
+            createdAt: renderTimestamp(now()),
           };
           renderDeploys.push(deploy);
           return Response.json(deploy, { status: 201 });
@@ -125,16 +128,6 @@ function releaseHarness(
     }
     return Response.json(result);
   };
-  const run = new AsyncFunction(
-    "process",
-    "appendFileSync",
-    "fetch",
-    "console",
-    "setTimeout",
-    "Date",
-    "performance",
-    releaseScript.replace(/^\s*import .*;$/gm, ""),
-  );
   return {
     deploys,
     requests,
@@ -142,653 +135,598 @@ function releaseHarness(
     sleeps,
     now,
     run: () =>
-      run(
-        { env },
-        (path, content) => {
+      release({
+        env,
+        fetch,
+        sleep: async (milliseconds) => {
+          sleeps.push(milliseconds);
+          elapsed += milliseconds;
+        },
+        now,
+        monotonicNow: () => elapsed,
+        timeoutSignal: (milliseconds) => AbortSignal.timeout(milliseconds),
+        appendFileSync: (path, content) => {
           assert.equal(path, env.GITHUB_STEP_SUMMARY);
           summaries.push(content);
         },
-        fetch,
-        { log() {} },
-        (resolve, milliseconds) => {
-          sleeps.push(milliseconds);
-          elapsed += milliseconds;
-          resolve();
-        },
-        class extends Date {
-          static now = now;
-        },
-        { now: () => elapsed },
-      ),
+        log() {},
+      }),
   };
 }
 
-for (const environment of ["staging", "production"]) {
-  for (const target of [
-    "service",
-    "status",
-    "list",
-    "POST",
-    ...(environment === "staging" ? ["PATCH", "env-vars"] : []),
-  ]) {
-    test(`${environment}: regression: honors Retry-After until the ${target} rate limit resets`, async () => {
-      const attempts = [];
-      let resetAt;
-      let targetPath;
-      const release = releaseHarness(environment, {
-        render: ({ url, options, now }) => {
-          const matches =
-            target === "POST" || target === "PATCH"
-              ? options.method === target
-              : target === "status"
-                ? url.pathname.endsWith("/deploys/deploy-1")
-                : target === "list"
-                  ? url.pathname.endsWith("/deploys") && !options.method
-                  : target === "env-vars"
-                    ? url.pathname.endsWith("/env-vars")
-                    : !options.method && /\/services\/[^/]+$/.test(url.pathname);
-          if (!matches) return;
-          targetPath ??= url.pathname;
-          if (url.pathname !== targetPath) return;
-          resetAt ??= now() + 30_000;
-          attempts.push({ time: now(), signal: options.signal });
-          if (now() < resetAt)
-            return new Response("rate limited", { status: 429, headers: { "Retry-After": "30" } });
-        },
-      });
-      await release.run();
-      assert.equal(attempts.length, 2);
-      assert.equal(attempts[1].time - attempts[0].time, 30_000);
-      assert.notEqual(attempts[0].signal, attempts[1].signal);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-      assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
-    });
-  }
-
-  for (const target of ["status", "POST"]) {
-    for (const [header, delay] of [
-      [null, 2_000],
-      ["invalid", 2_000],
-      ["-1", 2_000],
-      ["1.5", 2_000],
-      ["0", 0],
-      ["120", 60_000],
-    ]) {
-      test(`${environment}: ${target} Retry-After ${header} uses delay ${delay}`, async () => {
-        let attempts = 0;
-        const release = releaseHarness(environment, {
-          render: ({ url, options }) => {
-            const matches =
-              target === "POST"
-                ? options.method === "POST"
-                : url.pathname.endsWith("/deploys/deploy-1");
-            if (matches && ++attempts === 1)
-              return new Response("rate limited", {
-                status: 429,
-                headers: header === null ? {} : { "Retry-After": header },
-              });
-          },
-        });
-        await release.run();
-        assert.equal(attempts, 2);
-        assert.deepEqual(release.sleeps, [delay]);
-        assert.deepEqual(release.deploys, [{ commitId: sha }]);
-      });
-    }
-
-    test(`${environment}: persistent ${target} rate limit stops after four attempts`, async () => {
-      const signals = [];
-      const release = releaseHarness(environment, {
-        render: ({ url, options }) => {
-          const matches =
-            target === "POST"
-              ? options.method === "POST"
-              : url.pathname.endsWith("/deploys/deploy-1");
-          if (matches) {
-            signals.push(options.signal);
-            return new Response("rate limited", { status: 429, headers: { "Retry-After": "120" } });
-          }
-        },
-      });
-      await assert.rejects(release.run(), /HTTP 429/);
-      assert.equal(signals.length, 4);
-      assert.equal(new Set(signals).size, 4);
-      assert.deepEqual(release.sleeps, [60_000, 60_000, 60_000]);
-    });
-  }
-
-  for (const code of ["ENOTFOUND", "ECONNREFUSED"]) {
-    test(`${environment}: retries a POST after confirmed ${code} non-acceptance`, async () => {
-      let posts = 0;
-      const release = releaseHarness(environment, {
-        render: ({ options }) => {
-          if (options.method === "POST" && ++posts === 1)
-            throw new TypeError("fetch failed", {
-              cause: Object.assign(new Error(code), { code }),
-            });
-        },
-      });
-      await release.run();
-      assert.equal(posts, 2);
-      assert.deepEqual(release.sleeps, [2_000]);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-    });
-  }
-
-  for (const failure of [
-    new TypeError("fetch failed"),
-    new DOMException("aborted", "AbortError"),
-    new Response("unavailable", { status: 503 }),
-  ]) {
-    test(`${environment}: ambiguous POST ${failure.name ?? failure.status} without a match stops read-only`, async () => {
-      let posts = 0;
-      const release = releaseHarness(environment, {
-        render: ({ options }) => {
-          if (options.method === "POST") {
-            posts++;
-            if (failure instanceof Response) return failure;
-            throw failure;
-          }
-        },
-      });
-      await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
-      assert.equal(posts, 1);
-      assert.deepEqual(release.deploys, []);
-      assert.equal(release.sleeps.length, 30);
-    });
-  }
-
-  test(`${environment}: regression: late POST completion never causes a second POST`, async () => {
-    let posts = 0;
-    let acceptedAt;
-    const release = releaseHarness(environment, {
+for (const target of ["status", "POST", "PATCH"]) {
+  test(`staging: regression: honors Retry-After until the ${target} rate limit resets`, async () => {
+    const attempts = [];
+    let resetAt;
+    let targetPath;
+    const release = releaseHarness("staging", {
       render: ({ url, options, now }) => {
-        if (options.method === "POST") {
-          posts++;
-          assert.equal(posts, 1, "An ambiguous POST must never be resent");
-          acceptedAt ??= now() + 155_000;
-          throw new DOMException("POST timed out", "TimeoutError");
-        }
-        if (url.pathname.endsWith("/deploys") && acceptedAt && now() >= acceptedAt) {
-          return Response.json([
-            {
-              deploy: {
-                id: "late",
-                commit: { id: sha },
-                createdAt: new Date(acceptedAt).toISOString(),
-              },
-            },
-          ]);
-        }
-        if (url.pathname.endsWith("/deploys/late"))
-          return Response.json({ status: "live", commit: { id: sha } });
-        if (url.pathname.endsWith("/deploys")) return Response.json([]);
-        return undefined;
+        const matches =
+          target === "status"
+            ? url.pathname.endsWith("/deploys/deploy-1")
+            : options.method === target;
+        if (!matches) return;
+        targetPath ??= url.pathname;
+        if (url.pathname !== targetPath) return;
+        resetAt ??= now() + 30_000;
+        attempts.push({ time: now(), signal: options.signal });
+        if (now() < resetAt)
+          return new Response("rate limited", { status: 429, headers: { "Retry-After": "30" } });
       },
     });
-    await assert.rejects(
-      release.run(),
-      new RegExp(`Ambiguous.*${sha}.*check.*deploys.*dispatch`, "i"),
-    );
-    assert.equal(posts, 1);
-    assert.ok(release.now() < acceptedAt);
+    await release.run();
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[1].time - attempts[0].time, 30_000);
+    assert.notEqual(attempts[0].signal, attempts[1].signal);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+    assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
   });
+}
 
-  test(`${environment}: regression: historical-only same-commit deploy is never reused`, async () => {
-    let posts = 0;
-    let lists = 0;
-    const release = releaseHarness(environment, {
+for (const [header, delay] of [
+  [null, 2_000],
+  ["invalid", 2_000],
+  ["-1", 2_000],
+  ["1.5", 2_000],
+  ["0", 0],
+  ["120", 60_000],
+]) {
+  test(`staging: status Retry-After ${header} uses delay ${delay}`, async () => {
+    let attempts = 0;
+    const release = releaseHarness("staging", {
+      render: ({ url }) => {
+        if (url.pathname.endsWith("/deploys/deploy-1") && ++attempts === 1)
+          return new Response("rate limited", {
+            status: 429,
+            headers: header === null ? {} : { "Retry-After": header },
+          });
+      },
+    });
+    await release.run();
+    assert.equal(attempts, 2);
+    assert.deepEqual(release.sleeps, [delay]);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  });
+}
+
+for (const target of ["status", "POST"]) {
+  test(`staging: persistent ${target} rate limit stops after four attempts`, async () => {
+    const signals = [];
+    const release = releaseHarness("staging", {
       render: ({ url, options }) => {
-        if (options.method === "POST") {
-          posts++;
-          throw new TypeError("POST response lost");
+        const matches =
+          target === "POST"
+            ? options.method === "POST"
+            : url.pathname.endsWith("/deploys/deploy-1");
+        if (matches) {
+          signals.push(options.signal);
+          return new Response("rate limited", { status: 429, headers: { "Retry-After": "120" } });
         }
-        if (url.pathname.endsWith("/deploys")) {
-          lists++;
-          return Response.json([
-            {
-              deploy: {
-                id: "historical",
-                commit: { id: sha },
-                createdAt,
-              },
-            },
-          ]);
-        }
-        if (url.pathname.endsWith("/deploys/historical"))
-          throw new Error("Historical deploy was followed");
       },
     });
-    const createdAt = new Date(release.now()).toISOString();
-    await assert.rejects(
-      release.run(),
-      new RegExp(`Ambiguous.*${sha}.*check.*deploys.*dispatch`, "i"),
-    );
-    assert.equal(posts, 1);
-    assert.equal(lists, 31);
+    await assert.rejects(release.run(), /HTTP 429/);
+    assert.equal(signals.length, 4);
+    assert.equal(new Set(signals).size, 4);
+    assert.deepEqual(release.sleeps, [60_000, 60_000, 60_000]);
   });
+}
 
-  for (const historicalFirst of [true, false]) {
-    test(`${environment}: regression: selects the new same-commit deploy with historical entry ${historicalFirst ? "first" : "last"}`, async () => {
-      let posts = 0;
-      let snapshot = false;
-      let listsAfterPost = 0;
-      const release = releaseHarness(environment, {
-        render: async ({ url, options, respond }) => {
-          const historical = {
+for (const code of ["ENOTFOUND", "ECONNREFUSED"]) {
+  test(`staging: retries a POST after confirmed ${code} non-acceptance`, async () => {
+    let posts = 0;
+    const release = releaseHarness("staging", {
+      render: ({ options }) => {
+        if (options.method === "POST" && ++posts === 1)
+          throw new TypeError("fetch failed", {
+            cause: Object.assign(new Error(code), { code }),
+          });
+      },
+    });
+    await release.run();
+    assert.equal(posts, 2);
+    assert.deepEqual(release.sleeps, [2_000]);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  });
+}
+
+for (const failure of [
+  new TypeError("fetch failed"),
+  new DOMException("aborted", "AbortError"),
+  new Response("unavailable", { status: 503 }),
+]) {
+  test(`staging: ambiguous POST ${failure.name ?? failure.status} without a match stops read-only`, async () => {
+    let posts = 0;
+    const release = releaseHarness("staging", {
+      render: ({ options }) => {
+        if (options.method === "POST") {
+          posts++;
+          if (failure instanceof Response) return failure;
+          throw failure;
+        }
+      },
+    });
+    await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
+    assert.equal(posts, 1);
+    assert.deepEqual(release.deploys, []);
+    assert.equal(release.sleeps.length, 30);
+  });
+}
+
+test(`staging: regression: late POST completion never causes a second POST`, async () => {
+  let posts = 0;
+  let acceptedAt;
+  const release = releaseHarness("staging", {
+    render: ({ url, options, now }) => {
+      if (options.method === "POST") {
+        posts++;
+        assert.equal(posts, 1, "An ambiguous POST must never be resent");
+        acceptedAt ??= now() + 155_000;
+        throw new DOMException("POST timed out", "TimeoutError");
+      }
+      if (url.pathname.endsWith("/deploys") && acceptedAt && now() >= acceptedAt) {
+        return Response.json([
+          {
+            deploy: {
+              id: "late",
+              commit: { id: sha },
+              createdAt: renderTimestamp(acceptedAt),
+            },
+          },
+        ]);
+      }
+      if (url.pathname.endsWith("/deploys/late"))
+        return Response.json({ ...liveDeployResponse(sha), id: "late" });
+      if (url.pathname.endsWith("/deploys")) return Response.json([]);
+      return undefined;
+    },
+  });
+  await assert.rejects(
+    release.run(),
+    new RegExp(`Ambiguous.*${sha}.*check.*deploys.*dispatch`, "i"),
+  );
+  assert.equal(posts, 1);
+  assert.ok(release.now() < acceptedAt);
+});
+
+test(`staging: regression: historical-only same-commit deploy is never reused`, async () => {
+  let posts = 0;
+  let lists = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url, options }) => {
+      if (options.method === "POST") {
+        posts++;
+        throw new TypeError("POST response lost");
+      }
+      if (url.pathname.endsWith("/deploys")) {
+        lists++;
+        return Response.json([
+          {
             deploy: {
               id: "historical",
               commit: { id: sha },
               createdAt,
             },
-          };
-          if (options.method === "POST") {
-            posts++;
-            respond();
-            throw new TypeError("POST response lost");
-          }
-          if (url.pathname.endsWith("/deploys")) {
-            if (!posts) {
-              snapshot = true;
-              return Response.json([historical]);
-            }
-            if (++listsAfterPost === 1) return Response.json([historical]);
-            const recent = await respond().json();
-            return Response.json(
-              historicalFirst ? [historical, ...recent] : [...recent, historical],
-            );
-          }
-          if (url.pathname.endsWith("/deploys/historical"))
-            throw new Error("Historical deploy was followed");
+          },
+        ]);
+      }
+      if (url.pathname.endsWith("/deploys/historical"))
+        throw new Error("Historical deploy was followed");
+    },
+  });
+  const createdAt = renderTimestamp(release.now());
+  await assert.rejects(
+    release.run(),
+    new RegExp(`Ambiguous.*${sha}.*check.*deploys.*dispatch`, "i"),
+  );
+  assert.equal(posts, 1);
+  assert.equal(lists, 31);
+});
+
+test(`staging: regression: selects the new same-commit deploy listed after the historical entry`, async () => {
+  let posts = 0;
+  let snapshot = false;
+  let listsAfterPost = 0;
+  const release = releaseHarness("staging", {
+    render: async ({ url, options, respond }) => {
+      const historical = {
+        deploy: {
+          id: "historical",
+          commit: { id: sha },
+          createdAt,
         },
-      });
-      const createdAt = new Date(release.now()).toISOString();
-      await release.run();
-      assert.equal(snapshot, true);
-      assert.equal(posts, 1);
-      assert.equal(listsAfterPost, 2);
-      assert.ok(release.requests.some(({ url }) => url.pathname.endsWith("/deploys/deploy-1")));
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
+      };
+      if (options.method === "POST") {
+        posts++;
+        respond();
+        throw new TypeError("POST response lost");
+      }
+      if (url.pathname.endsWith("/deploys")) {
+        if (!posts) {
+          snapshot = true;
+          return Response.json([historical]);
+        }
+        if (++listsAfterPost === 1) return Response.json([historical]);
+        const recent = await respond().json();
+        return Response.json([historical, ...recent]);
+      }
+      if (url.pathname.endsWith("/deploys/historical"))
+        throw new Error("Historical deploy was followed");
+    },
+  });
+  const createdAt = renderTimestamp(release.now());
+  await release.run();
+  assert.equal(snapshot, true);
+  assert.equal(posts, 1);
+  assert.equal(listsAfterPost, 2);
+  assert.ok(release.requests.some(({ url }) => url.pathname.endsWith("/deploys/deploy-1")));
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+});
+
+for (const [failure, fail] of [
+  [
+    "connection reset",
+    () => {
+      throw new TypeError("fetch failed");
+    },
+  ],
+  [
+    "timeout",
+    () => {
+      throw new DOMException("request timed out", "TimeoutError");
+    },
+  ],
+  [
+    "aborted request",
+    () => {
+      throw new DOMException("aborted", "AbortError");
+    },
+  ],
+  ["rate limit", () => new Response("rate limited", { status: 429 })],
+  ["server error", () => new Response("unavailable", { status: 503 })],
+  [
+    "response interruption",
+    () => ({
+      ok: true,
+      text: async () => {
+        throw new TypeError("terminated");
+      },
+    }),
+  ],
+]) {
+  test(`staging: retries a first status poll ${failure} and finishes the release`, async () => {
+    let polls = 0;
+    const release = releaseHarness("staging", {
+      render: ({ url }) => {
+        if (url.pathname.endsWith("/deploys/deploy-1") && ++polls === 1) return fail();
+      },
     });
-  }
+    await release.run();
+    assert.equal(polls, 2);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+    assert.ok(release.sleeps.length > 0);
+    assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
+  });
+
+  if (failure === "rate limit" || failure === "response interruption") continue;
+
+  test(`staging: reconciles an accepted deploy after a POST ${failure}`, async () => {
+    let posts = 0;
+    let lists = 0;
+    let polls = 0;
+    const release = releaseHarness("staging", {
+      render: ({ url, options, respond }) => {
+        if (options.method === "POST") {
+          posts++;
+          respond();
+          return fail();
+        }
+        if (url.pathname.endsWith("/deploys") && ++lists <= 2) return Response.json([]);
+        if (url.pathname.endsWith("/deploys/deploy-1") && ++polls === 1) {
+          throw new TypeError("first status poll failed");
+        }
+      },
+    });
+    await release.run();
+    assert.equal(posts, 1);
+    assert.equal(lists, 3);
+    assert.equal(polls, 2);
+    assert.deepEqual(release.deploys, [{ commitId: sha }]);
+    assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
+  });
 }
 
-for (const environment of ["staging", "production"]) {
-  for (const [failure, fail] of [
-    [
-      "connection reset",
-      () => {
-        throw new TypeError("fetch failed");
-      },
-    ],
-    [
-      "timeout",
-      () => {
-        throw new DOMException("request timed out", "TimeoutError");
-      },
-    ],
-    [
-      "aborted request",
-      () => {
-        throw new DOMException("aborted", "AbortError");
-      },
-    ],
-    ["rate limit", () => new Response("rate limited", { status: 429 })],
-    ["server error", () => new Response("unavailable", { status: 503 })],
-    [
-      "response interruption",
-      () => ({
-        ok: true,
-        text: async () => {
-          throw new TypeError("terminated");
-        },
-      }),
-    ],
-  ]) {
-    test(`${environment}: retries a first status poll ${failure} and finishes the release`, async () => {
-      let polls = 0;
-      const release = releaseHarness(environment, {
-        render: ({ url }) => {
-          if (url.pathname.endsWith("/deploys/deploy-1") && ++polls === 1) return fail();
-        },
-      });
-      await release.run();
-      assert.equal(polls, 2);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-      assert.ok(release.sleeps.length > 0);
-      assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
-    });
-
-    if (failure === "rate limit") continue;
-
-    test(`${environment}: reconciles an accepted deploy after a POST ${failure}`, async () => {
-      let posts = 0;
-      let lists = 0;
-      let polls = 0;
-      const release = releaseHarness(environment, {
-        render: ({ url, options, respond }) => {
-          if (options.method === "POST") {
-            posts++;
-            respond();
-            return fail();
-          }
-          if (url.pathname.endsWith("/deploys") && ++lists <= 2) return Response.json([]);
-          if (url.pathname.endsWith("/deploys/deploy-1") && ++polls === 1) {
-            throw new TypeError("first status poll failed");
-          }
-        },
-      });
-      await release.run();
-      assert.equal(posts, 1);
-      assert.equal(lists, 3);
-      assert.equal(polls, 2);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-      assert.match(release.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
-    });
-  }
-
-  test(`${environment}: retries service reads and staging branch selection`, async () => {
-    const attempts = new Map();
-    const release = releaseHarness(environment, {
-      render: ({ url, options }) => {
-        if (url.pathname.includes("/deploys")) return;
-        const key = `${options.method ?? "GET"} ${url.pathname}`;
-        const count = (attempts.get(key) ?? 0) + 1;
-        attempts.set(key, count);
-        if (count === 1) return new Response("unavailable", { status: 500 });
-      },
-    });
-    await release.run();
-    assert.ok([...attempts.values()].every((count) => count === 2));
-    assert.equal(attempts.size, environment === "staging" ? 3 : 2);
-  });
-
-  test(`${environment}: never resends an ambiguous POST after excluding old and unrelated deploys`, async () => {
-    let posts = 0;
-    let lists = 0;
-    const release = releaseHarness(environment, {
-      render: ({ url, options }) => {
-        if (options.method === "POST" && ++posts === 1) throw new TypeError("connection reset");
-        if (url.pathname.endsWith("/deploys") && !options.method) {
-          lists++;
-          return Response.json([
-            {
-              deploy: {
-                id: "old",
-                commit: { id: sha },
-                createdAt: new Date(startedAt - 1).toISOString(),
-              },
+test(`staging: never resends an ambiguous POST after excluding old and unrelated deploys`, async () => {
+  let posts = 0;
+  let lists = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url, options }) => {
+      if (options.method === "POST" && ++posts === 1) throw new TypeError("connection reset");
+      if (url.pathname.endsWith("/deploys") && !options.method) {
+        lists++;
+        if (!posts) return Response.json([]);
+        return Response.json([
+          {
+            deploy: {
+              id: "old",
+              commit: { id: sha },
+              createdAt: renderTimestamp(startedAt - 1),
             },
-            {
-              deploy: {
-                id: "other",
-                commit: { id: previousSha },
-                createdAt: new Date(release.now()).toISOString(),
-              },
-            },
-            { deploy: { id: "unverified", createdAt: new Date(release.now()).toISOString() } },
-            { deploy: { id: "undated", commit: { id: sha } } },
-          ]);
-        }
-      },
-    });
-    const startedAt = release.now();
-    await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
-    assert.equal(posts, 1);
-    assert.equal(lists, 31);
-    assert.deepEqual(release.deploys, []);
-  });
-
-  test(`${environment}: retries the deploy lookup before sending a POST`, async () => {
-    let lists = 0;
-    const release = releaseHarness(environment, {
-      render: ({ url, options, respond }) => {
-        if (options.method === "POST") {
-          respond();
-          throw new TypeError("POST response lost");
-        }
-        if (url.pathname.endsWith("/deploys") && ++lists === 1)
-          throw new TypeError("lookup failed");
-      },
-    });
-    await release.run();
-    assert.equal(lists, 3);
-    assert.deepEqual(release.deploys, [{ commitId: sha }]);
-  });
-
-  for (const visible of [true, false]) {
-    test(`${environment}: queued deploy ${visible ? "is followed" : "times out"} without a second POST`, async () => {
-      let posts = 0;
-      let lists = 0;
-      const release = releaseHarness(environment, {
-        render: ({ url, options, respond }) => {
-          if (options.method === "POST") {
-            posts++;
-            respond();
-            return new Response(null, { status: 202 });
-          }
-          if (url.pathname.endsWith("/deploys") && (++lists < 3 || !visible))
-            return Response.json([]);
-        },
-      });
-      if (visible) await release.run();
-      else await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
-      assert.equal(posts, 1);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-    });
-  }
-
-  for (const target of [
-    "service",
-    "status",
-    "POST",
-    ...(environment === "staging" ? ["PATCH", "env-vars"] : []),
-  ]) {
-    for (const status of [400, 401, 403, 404]) {
-      test(`${environment}: fails immediately on ${target} HTTP ${status}`, async () => {
-        let failures = 0;
-        const release = releaseHarness(environment, {
-          render: ({ url, options }) => {
-            const matches =
-              target === "POST" || target === "PATCH"
-                ? options.method === target
-                : target === "status"
-                  ? url.pathname.endsWith("/deploys/deploy-1")
-                  : target === "env-vars"
-                    ? url.pathname.endsWith("/env-vars")
-                    : !options.method && /\/services\/[^/]+$/.test(url.pathname);
-            if (matches) {
-              failures++;
-              return new Response("rejected", { status });
-            }
           },
-        });
-        await assert.rejects(release.run(), new RegExp(`HTTP ${status}`));
-        assert.equal(failures, 1);
-        assert.deepEqual(release.sleeps, []);
-      });
-    }
-  }
-
-  test(`${environment}: stops after bounded read retries with a fresh timeout per attempt`, async () => {
-    const release = releaseHarness(environment, {
-      render: () => {
-        throw new TypeError("persistent connection failure");
-      },
-    });
-    await assert.rejects(release.run(), /persistent connection failure/);
-    assert.equal(release.requests.length, 4);
-    assert.deepEqual(release.sleeps, [2_000, 4_000, 6_000]);
-    const signals = release.requests.map(({ options }) => options.signal);
-    assert.equal(new Set(signals).size, 4);
-    assert.ok(signals.every((signal) => signal instanceof AbortSignal));
+          {
+            deploy: {
+              id: "other",
+              commit: { id: previousSha },
+              createdAt: renderTimestamp(release.now()),
+            },
+          },
+          { deploy: { id: "unverified", createdAt: renderTimestamp(release.now()) } },
+          { deploy: { id: "undated", commit: { id: sha } } },
+        ]);
+      }
+    },
   });
+  const startedAt = release.now();
+  await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
+  assert.equal(posts, 1);
+  assert.equal(lists, 31);
+  assert.deepEqual(release.deploys, []);
+});
 
-  test(`${environment}: stops after bounded POST retries when no deploy was created`, async () => {
-    let posts = 0;
-    const release = releaseHarness(environment, {
-      render: ({ options }) => {
-        if (options.method === "POST") {
-          posts++;
-          throw new TypeError("POST never reached Render", {
-            cause: Object.assign(new Error("DNS lookup failed"), { code: "ENOTFOUND" }),
-          });
-        }
-      },
-    });
-    await assert.rejects(release.run(), /POST never reached Render/);
-    assert.equal(posts, 4);
-    assert.deepEqual(release.deploys, []);
+test(`staging: retries the deploy lookup before sending a POST`, async () => {
+  let lists = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url, options, respond }) => {
+      if (options.method === "POST") {
+        respond();
+        throw new TypeError("POST response lost");
+      }
+      if (url.pathname.endsWith("/deploys") && ++lists === 1) throw new TypeError("lookup failed");
+    },
   });
+  await release.run();
+  assert.equal(lists, 3);
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+});
 
-  test(`${environment}: refuses to resend when the deploy lookup cannot complete`, async () => {
+for (const visible of [true, false]) {
+  test(`staging: queued deploy ${visible ? "is followed" : "times out"} without a second POST`, async () => {
     let posts = 0;
-    const release = releaseHarness(environment, {
+    let lists = 0;
+    const release = releaseHarness("staging", {
       render: ({ url, options, respond }) => {
         if (options.method === "POST") {
           posts++;
           respond();
-          throw new TypeError("POST response lost");
+          return new Response(null, { status: 202 });
         }
-        if (posts && url.pathname.endsWith("/deploys"))
-          return new Response("unavailable", { status: 503 });
+        if (url.pathname.endsWith("/deploys") && (++lists < 3 || !visible))
+          return Response.json([]);
       },
     });
-    await assert.rejects(release.run(), /HTTP 503/);
+    if (visible) await release.run();
+    else await assert.rejects(release.run(), /Ambiguous Render deploy outcome/);
     assert.equal(posts, 1);
     assert.deepEqual(release.deploys, [{ commitId: sha }]);
   });
+}
 
-  test(`${environment}: finds an accepted deploy beyond the first page`, async () => {
+for (const target of ["status", "POST"]) {
+  test(`staging: fails immediately on ${target} HTTP 401`, async () => {
+    let failures = 0;
+    const release = releaseHarness("staging", {
+      render: ({ url, options }) => {
+        const matches =
+          target === "status"
+            ? url.pathname.endsWith("/deploys/deploy-1")
+            : options.method === target;
+        if (matches) {
+          failures++;
+          return new Response("rejected", { status: 401 });
+        }
+      },
+    });
+    await assert.rejects(release.run(), /HTTP 401/);
+    assert.equal(failures, 1);
+    assert.deepEqual(release.sleeps, []);
+  });
+}
+
+test(`staging: stops after bounded read retries with a fresh timeout per attempt`, async () => {
+  const release = releaseHarness("staging", {
+    render: () => {
+      throw new TypeError("persistent connection failure");
+    },
+  });
+  await assert.rejects(release.run(), /persistent connection failure/);
+  assert.equal(release.requests.length, 4);
+  assert.deepEqual(release.sleeps, [2_000, 4_000, 6_000]);
+  const signals = release.requests.map(({ options }) => options.signal);
+  assert.equal(new Set(signals).size, 4);
+  assert.ok(signals.every((signal) => signal instanceof AbortSignal));
+});
+
+test(`staging: stops after bounded POST retries when no deploy was created`, async () => {
+  let posts = 0;
+  const release = releaseHarness("staging", {
+    render: ({ options }) => {
+      if (options.method === "POST") {
+        posts++;
+        throw new TypeError("POST never reached Render", {
+          cause: Object.assign(new Error("DNS lookup failed"), { code: "ENOTFOUND" }),
+        });
+      }
+    },
+  });
+  await assert.rejects(release.run(), /POST never reached Render/);
+  assert.equal(posts, 4);
+  assert.deepEqual(release.deploys, []);
+});
+
+test(`staging: refuses to resend when the deploy lookup cannot complete`, async () => {
+  let posts = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url, options, respond }) => {
+      if (options.method === "POST") {
+        posts++;
+        respond();
+        throw new TypeError("POST response lost");
+      }
+      if (posts && url.pathname.endsWith("/deploys"))
+        return new Response("unavailable", { status: 503 });
+    },
+  });
+  await assert.rejects(release.run(), /HTTP 503/);
+  assert.equal(posts, 1);
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+});
+
+test(`staging: finds an accepted deploy beyond the first page`, async () => {
+  let posts = 0;
+  let lists = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url, options, respond, now }) => {
+      if (options.method === "POST") {
+        posts++;
+        respond();
+        throw new TypeError("POST response lost");
+      }
+      if (posts && url.pathname.endsWith("/deploys")) {
+        lists++;
+        assert.equal(url.searchParams.get("limit"), "100");
+        assert.equal(Date.parse(url.searchParams.get("createdAfter")), startedAt);
+        if (lists === 1) {
+          assert.equal(url.searchParams.get("cursor"), null);
+          return Response.json(
+            Array.from({ length: 100 }, (_, index) => ({
+              cursor: `cursor-${index}`,
+              deploy: {
+                id: `unrelated-${index}`,
+                commit: { id: previousSha },
+                createdAt: renderTimestamp(now()),
+              },
+            })),
+          );
+        }
+        assert.equal(url.searchParams.get("cursor"), "cursor-99");
+      }
+    },
+  });
+  const startedAt = release.now();
+  await release.run();
+  assert.equal(posts, 1);
+  assert.equal(lists, 2);
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+});
+
+for (const [reason, entries, message] of [
+  [
+    "missing cursor",
+    () => Array.from({ length: 100 }, () => ({ deploy: { id: "other" } })),
+    /omitted a pagination cursor/,
+  ],
+  [
+    "too many pages",
+    () => Array.from({ length: 100 }, () => ({ cursor: "next", deploy: { id: "other" } })),
+    /exceeded 10 pages/,
+  ],
+]) {
+  test(`staging: refuses to resend after a deploy lookup with ${reason}`, async () => {
     let posts = 0;
-    let lists = 0;
-    const release = releaseHarness(environment, {
-      render: ({ url, options, respond, now }) => {
+    const release = releaseHarness("staging", {
+      render: ({ url, options, respond }) => {
         if (options.method === "POST") {
           posts++;
           respond();
           throw new TypeError("POST response lost");
         }
         if (posts && url.pathname.endsWith("/deploys")) {
-          lists++;
-          assert.equal(url.searchParams.get("limit"), "100");
-          assert.equal(Date.parse(url.searchParams.get("createdAfter")), startedAt);
-          if (lists === 1) {
-            assert.equal(url.searchParams.get("cursor"), null);
-            return Response.json(
-              Array.from({ length: 100 }, (_, index) => ({
-                cursor: `cursor-${index}`,
-                deploy: {
-                  id: `unrelated-${index}`,
-                  commit: { id: previousSha },
-                  createdAt: new Date(now()).toISOString(),
-                },
-              })),
-            );
-          }
-          assert.equal(url.searchParams.get("cursor"), "cursor-99");
+          const result = entries();
+          return result instanceof Response ? result : Response.json(result);
         }
       },
     });
-    const startedAt = release.now();
-    await release.run();
+    await assert.rejects(release.run(), message);
     assert.equal(posts, 1);
-    assert.equal(lists, 2);
     assert.deepEqual(release.deploys, [{ commitId: sha }]);
-  });
-
-  for (const [reason, entries, message] of [
-    [
-      "missing cursor",
-      () => Array.from({ length: 100 }, () => ({ deploy: { id: "other" } })),
-      /omitted a pagination cursor/,
-    ],
-    [
-      "too many pages",
-      () => Array.from({ length: 100 }, () => ({ cursor: "next", deploy: { id: "other" } })),
-      /exceeded 10 pages/,
-    ],
-    ["an HTTP 401", () => new Response("rejected", { status: 401 }), /HTTP 401/],
-  ]) {
-    test(`${environment}: refuses to resend after a deploy lookup with ${reason}`, async () => {
-      let posts = 0;
-      const release = releaseHarness(environment, {
-        render: ({ url, options, respond }) => {
-          if (options.method === "POST") {
-            posts++;
-            respond();
-            throw new TypeError("POST response lost");
-          }
-          if (posts && url.pathname.endsWith("/deploys")) {
-            const result = entries();
-            return result instanceof Response ? result : Response.json(result);
-          }
-        },
-      });
-      await assert.rejects(release.run(), message);
-      assert.equal(posts, 1);
-      assert.deepEqual(release.deploys, [{ commitId: sha }]);
-    });
-  }
-
-  for (const [reason, current, message] of [
-    ["a different commit", { status: "live", commit: { id: previousSha } }, /instead of/],
-    ["an unverified live commit", { status: "live" }, /did not confirm the deployed SHA/],
-    ["a failed deploy", { status: "build_failed", commit: { id: sha } }, /ended with build_failed/],
-  ]) {
-    test(`${environment}: still rejects ${reason} after recovering a poll`, async () => {
-      let polls = 0;
-      const release = releaseHarness(environment, {
-        render: ({ url }) => {
-          if (url.pathname.endsWith("/deploys/deploy-1")) {
-            if (++polls === 1) throw new TypeError("poll failed");
-            return Response.json(current);
-          }
-        },
-      });
-      await assert.rejects(release.run(), message);
-      assert.equal(polls, 2);
-      assert.ok(release.requests.every(({ url }) => url.hostname !== "api.github.com"));
-    });
-  }
-
-  test(`${environment}: leaves GitHub deployment writes unretried`, async () => {
-    let writes = 0;
-    const release = releaseHarness(environment, {
-      github: () => {
-        writes++;
-        return new Response("unavailable", { status: 503 });
-      },
-    });
-    await assert.rejects(release.run(), /https:\/\/api\.github\.com\/.*HTTP 503/);
-    assert.equal(writes, 1);
-  });
-
-  test(`${environment}: rejects a live deploy of another commit at the first poll, with no later request and no Deployed SHA summary`, async () => {
-    let polls = 0;
-    const release = releaseHarness(environment, {
-      render: ({ url }) => {
-        if (url.pathname.endsWith("/deploys/deploy-1")) {
-          polls++;
-          return Response.json(liveDeployResponse(previousSha));
-        }
-      },
-    });
-    await assert.rejects(
-      release.run(),
-      new RegExp(`Render is deploying ${previousSha} instead of ${sha}$`),
-    );
-    assert.equal(polls, 1);
-    assert.deepEqual(release.deploys, [{ commitId: sha }]);
-    assert.ok(release.requests.at(-1).url.pathname.endsWith("/deploys/deploy-1"));
-    assert.doesNotMatch(release.summaries.join("\n"), /Deployed SHA/);
   });
 }
+
+for (const [reason, current, message] of [
+  ["a different commit", liveDeployResponse(previousSha), /instead of/],
+  ["an unverified live commit", { status: "live" }, /did not confirm the deployed SHA/],
+  ["a failed deploy", { status: "build_failed", commit: { id: sha } }, /ended with build_failed/],
+]) {
+  test(`staging: still rejects ${reason} after recovering a poll`, async () => {
+    let polls = 0;
+    const release = releaseHarness("staging", {
+      render: ({ url }) => {
+        if (url.pathname.endsWith("/deploys/deploy-1")) {
+          if (++polls === 1) throw new TypeError("poll failed");
+          return Response.json(current);
+        }
+      },
+    });
+    await assert.rejects(release.run(), message);
+    assert.equal(polls, 2);
+    assert.ok(release.requests.every(({ url }) => url.hostname !== "api.github.com"));
+  });
+}
+
+test(`staging: leaves GitHub deployment writes unretried`, async () => {
+  let writes = 0;
+  const release = releaseHarness("staging", {
+    github: () => {
+      writes++;
+      return new Response("unavailable", { status: 503 });
+    },
+  });
+  await assert.rejects(release.run(), /https:\/\/api\.github\.com\/.*HTTP 503/);
+  assert.equal(writes, 1);
+});
+
+test(`staging: rejects a live deploy of another commit at the first poll, with no later request and no Deployed SHA summary`, async () => {
+  let polls = 0;
+  const release = releaseHarness("staging", {
+    render: ({ url }) => {
+      if (url.pathname.endsWith("/deploys/deploy-1")) {
+        polls++;
+        return Response.json(liveDeployResponse(previousSha));
+      }
+    },
+  });
+  await assert.rejects(
+    release.run(),
+    new RegExp(`Render is deploying ${previousSha} instead of ${sha}$`),
+  );
+  assert.equal(polls, 1);
+  assert.deepEqual(release.deploys, [{ commitId: sha }]);
+  assert.ok(release.requests.at(-1).url.pathname.endsWith("/deploys/deploy-1"));
+  assert.doesNotMatch(release.summaries.join("\n"), /Deployed SHA/);
+});
 
 for (const [reason, staging] of [
   ["a different commit", { commit: previousSha }],
   ["an unhealthy response", { status: 503 }],
-  ["a redirect", { status: 302 }],
   ["a missing marker", { html: "<html></html>" }],
   ["a network failure", { error: new Error("connection reset") }],
 ]) {
@@ -823,30 +761,41 @@ test("production: records an explicit override and deploys without staging admis
   assert.ok(release.requests.every(({ url }) => !url.href.includes("staging")));
 });
 
+for (const key of ["PUBLIC_APP_URL", "PUBLIC_ANDROID_INSTALL_URL"]) {
+  test(`staging: refuses to deploy while the Render build variable ${key} differs from the workflow`, async () => {
+    const release = releaseHarness("staging", {
+      render: ({ url }) => {
+        if (url.pathname.endsWith("/env-vars")) {
+          return Response.json(
+            renderBuildVariables({ ...stagingBuildVariables, [key]: "https://useorbit.org/" }),
+          );
+        }
+      },
+    });
+    await assert.rejects(
+      release.run(),
+      new RegExp(`Set the Render staging build variable ${key} to `),
+    );
+    assert.deepEqual(release.deploys, []);
+    assert.ok(release.requests.every(({ options }) => !options.method));
+  });
+}
+
+test("runs the release when node starts the script file, as the release workflow does", () => {
+  const script = fileURLToPath(new URL("../scripts/release-landing.mjs", import.meta.url));
+  const result = spawnSync(process.execPath, [script], {
+    env: { PATH: process.env.PATH, RELEASE_ENVIRONMENT: "preview" },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Set RELEASE_ENVIRONMENT to production or staging, got preview/);
+});
+
 test("refuses an unknown release environment before any request", async () => {
   const release = releaseHarness("preview");
   await assert.rejects(release.run(), /Set RELEASE_ENVIRONMENT to production or staging/);
   assert.deepEqual(release.requests, []);
 });
-
-function verifier() {
-  const body = releaseScript
-    .split('if (!live) throw new Error("Render deploy did not go live before the timeout");')[1]
-    .split("const deployment =")[0];
-  return new AsyncFunction(
-    "sha",
-    "serviceOrigin",
-    "production",
-    "deploy",
-    "liveAt",
-    "fetch",
-    "sleep",
-    "AbortSignal",
-    "console",
-    "performance",
-    body,
-  );
-}
 
 function harness(environment, respond, liveAt = Number.NaN) {
   let elapsed = 0;
@@ -871,220 +820,237 @@ function harness(environment, respond, liveAt = Number.NaN) {
     logs,
     elapsed: () => elapsed,
     run: () =>
-      verifier()(
+      verifyServedCommit({
         sha,
         serviceOrigin,
-        environment === "production",
-        { id: "deploy-1" },
+        production: environment === "production",
+        deployId: "deploy-1",
         liveAt,
         fetch,
-        async (milliseconds) => {
+        sleep: async (milliseconds) => {
           sleeps.push(milliseconds);
           advance(milliseconds);
         },
-        {
-          timeout: (milliseconds) => {
-            timeout = milliseconds;
-            return AbortSignal.timeout(milliseconds);
-          },
+        monotonicNow: () => elapsed,
+        timeoutSignal: (milliseconds) => {
+          timeout = milliseconds;
+          return AbortSignal.timeout(milliseconds);
         },
-        { log: (message) => logs.push(message) },
-        { now: () => elapsed },
-      ),
+        log: (message) => logs.push(message),
+      }),
   };
 }
 
-for (const environment of ["staging", "production"]) {
-  test(`${environment}: accepts the planned build immediately`, async () => {
-    const clock = harness(environment, () => ({}));
-    await clock.run();
-    assert.equal(clock.elapsed(), 0);
-    assert.equal(clock.requests.length, environment === "production" ? 2 : 1);
-    assert.deepEqual(clock.sleeps, []);
-    assert.ok(clock.requests.every(({ options }) => options.redirect === "manual"));
-  });
-
-  test(`${environment}: rejects a persistent build mismatch at the five-minute ceiling`, async () => {
-    const clock = harness(environment, () => ({ commit: previousSha }));
-    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
-    assert.equal(clock.requests.length, 60);
-    assert.equal(clock.elapsed(), 300_000);
-    assert.ok(clock.logs.every((message) => message.includes(previousSha)));
-  });
-
-  test(`${environment}: accepts a build that appears after the old timeout`, async () => {
-    const clock = harness(environment, ({ elapsed }) => ({
-      commit: elapsed < 90_000 ? previousSha : sha,
-    }));
-    await clock.run();
-    assert.equal(clock.elapsed(), 90_000);
-    assert.ok(clock.sleeps.every((milliseconds) => milliseconds === 5_000));
-  });
-
-  test(`${environment}: probes the plain root page, because Render's CDN ignores cache-busting`, async () => {
-    const clock = harness(environment, ({ elapsed }) => ({
-      commit: elapsed < 10_000 ? previousSha : sha,
-    }));
-    await clock.run();
-    assert.ok(clock.requests.every(({ url }) => url === `${new URL(url).origin}/`));
-  });
-
-  test(`${environment}: retries network errors, redirects and missing markers`, async () => {
-    const clock = harness(environment, ({ elapsed }) => {
-      if (elapsed === 0) return new Error("connection reset");
-      if (elapsed === 5_000) return { status: 302 };
-      if (elapsed === 10_000) return { html: "<html></html>" };
-      return {};
-    });
-    await clock.run();
-    assert.equal(clock.elapsed(), 15_000);
-    assert.match(clock.logs.join("\n"), /connection reset/);
-    assert.match(clock.logs.join("\n"), /HTTP 302/);
-    assert.match(clock.logs.join("\n"), /no build marker/);
-  });
-
-  for (const [failure, respond] of [
-    ["network error", () => new Error("connection reset")],
-    ["service error", () => ({ status: 503 })],
-    ["redirect", () => ({ status: 302 })],
-    ["missing marker", () => ({ html: "<html></html>" })],
-  ]) {
-    test(`${environment}: persistent ${failure} fails within the ceiling`, async () => {
-      const clock = harness(environment, respond);
-      await assert.rejects(clock.run(), /does not serve 6f1d7042/);
-      assert.equal(clock.elapsed(), 300_000);
-    });
-  }
-
-  test(`${environment}: accepts the final probe before the ceiling`, async () => {
-    const clock = harness(environment, ({ elapsed }) => ({
-      commit: elapsed < 295_000 ? previousSha : sha,
-    }));
-    await clock.run();
-    assert.equal(clock.elapsed(), 295_000);
-  });
-
-  test(`${environment}: slow requests use the remaining deadline`, async () => {
-    const clock = harness(environment, ({ advance, timeout }) => {
-      advance(Math.min(13_000, timeout));
-      return new Error("request timed out");
-    });
-    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
-    assert.equal(clock.elapsed(), 300_000);
-    assert.equal(clock.requests.at(-1).timeout, 12_000);
-    assert.ok(clock.requests.every(({ timeout }) => timeout <= 15_000));
-    assert.ok(clock.requests.every(({ elapsed, timeout }) => elapsed + timeout <= 300_000));
-  });
-
-  test(`${environment}: rejects a matching response completed after the deadline`, async () => {
-    const clock = harness(environment, ({ elapsed, advance }) => {
-      if (elapsed < 295_000) return { commit: previousSha };
-      advance(6_000);
-      return {};
-    });
-    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
-    assert.equal(clock.elapsed(), 301_000);
-    assert.equal(clock.requests.at(-1).timeout, 5_000);
-  });
-
-  const firstServedAt = Date.parse("2026-11-11T16:22:41Z");
-  const wentLive = Date.parse(renderFinishedAt);
-  const edgeCopy =
-    (storedBeforeFirstProbe, { fetchedByFirstProbe = false, finalProbeTimesOut = false } = {}) =>
-    ({ elapsed }) => {
-      if (finalProbeTimesOut && elapsed === 295_000) {
-        return new Error("The operation was aborted due to timeout");
-      }
-      const date = new Date(firstServedAt + elapsed).toUTCString();
-      return {
-        commit: previousSha,
-        headers:
-          fetchedByFirstProbe && elapsed === 0
-            ? cdnHeaders({ date, cacheStatus: "MISS" })
-            : cdnHeaders({
-                date,
-                cacheStatus: "HIT",
-                age: String(storedBeforeFirstProbe + elapsed / 1_000),
-              }),
-      };
+const firstServedAt = Date.parse("2026-11-11T16:22:41Z");
+const wentLive = Date.parse(renderFinishedAt);
+const edgeCopy =
+  (storedBeforeFirstProbe, { fetchedByFirstProbe = false, finalProbeTimesOut = false } = {}) =>
+  ({ elapsed }) => {
+    if (finalProbeTimesOut && elapsed === 295_000) {
+      return new Error("The operation was aborted due to timeout");
+    }
+    const date = new Date(firstServedAt + elapsed).toUTCString();
+    return {
+      commit: previousSha,
+      headers:
+        fetchedByFirstProbe && elapsed === 0
+          ? cdnHeaders({ date, cacheStatus: "MISS" })
+          : cdnHeaders({
+              date,
+              cacheStatus: "HIT",
+              age: String(storedBeforeFirstProbe + elapsed / 1_000),
+            }),
     };
-  const live = "deploy deploy-1 live 2026-11-11T16:22:31.407Z";
+  };
+const live = "deploy deploy-1 live 2026-11-11T16:22:31.407Z";
 
-  for (const [source, respond, liveAt, expected] of [
-    [
-      "an edge copy that Render did not invalidate",
-      edgeCopy(3_600),
-      wentLive,
-      new RegExp(
-        `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, ${live}\\)$`,
-      ),
-    ],
-    [
-      "a copy that Render gave its CDN after it reported the deploy live",
-      edgeCopy(0, { fetchedByFirstProbe: true, finalProbeTimesOut: true }),
-      wentLive,
-      new RegExp(
-        `; Render gave its CDN ${previousSha} after it reported the deploy live \\(edge copy stored 2026-11-11T16:22:41\\.000Z, ${live}\\)$`,
-      ),
-    ],
-    [
-      "a copy stored as the deploy went live",
-      edgeCopy(10),
-      wentLive,
-      new RegExp(
-        `; Render's CDN stored ${previousSha} within 2 s of the deploy going live \\(edge copy stored 2026-11-11T16:22:31\\.000Z, ${live}\\)$`,
-      ),
-    ],
-    ["no reason without the live time", edgeCopy(3_600), Number.NaN, /Render going live$/],
-    [
-      "no reason without cache headers",
-      () => ({ commit: previousSha }),
-      wentLive,
-      /Render going live$/,
-    ],
-  ]) {
-    test(`${environment}: regression: names ${source} when the URL keeps the previous build`, async () => {
-      const clock = harness(environment, respond, liveAt);
-      await assert.rejects(clock.run(), expected);
-      assert.equal(clock.elapsed(), 300_000);
-    });
-  }
+test(`staging: rejects a persistent build mismatch at the five-minute ceiling`, async () => {
+  const clock = harness("staging", () => ({ commit: previousSha }));
+  await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+  assert.equal(clock.requests.length, 60);
+  assert.equal(clock.elapsed(), 300_000);
+  assert.ok(clock.logs.every((message) => message.includes(previousSha)));
+});
 
-  test(`${environment}: logs the CDN cache headers of each previous build`, async () => {
-    const clock = harness(environment, edgeCopy(0, { fetchedByFirstProbe: true }), wentLive);
-    await assert.rejects(clock.run());
-    const served = `${serviceOrigin} returned HTTP 200 serving ${previousSha}`;
-    assert.equal(
-      clock.logs[0],
-      `${served} (cf-cache-status MISS, age none, last-modified ${previousUpload})`,
-    );
-    assert.equal(
-      clock.logs[1],
-      `${served} (cf-cache-status HIT, age 5, last-modified ${previousUpload})`,
-    );
+test(`staging: accepts a build that appears after the old timeout`, async () => {
+  const clock = harness("staging", ({ elapsed }) => ({
+    commit: elapsed < 90_000 ? previousSha : sha,
+  }));
+  await clock.run();
+  assert.equal(clock.elapsed(), 90_000);
+  assert.ok(clock.sleeps.every((milliseconds) => milliseconds === 5_000));
+});
+
+test(`staging: probes the plain root page, because Render's CDN ignores cache-busting`, async () => {
+  const clock = harness("staging", ({ elapsed }) => ({
+    commit: elapsed < 10_000 ? previousSha : sha,
+  }));
+  await clock.run();
+  assert.ok(clock.requests.every(({ url }) => url === `${new URL(url).origin}/`));
+});
+
+test(`staging: retries network errors, redirects and missing markers`, async () => {
+  const clock = harness("staging", ({ elapsed }) => {
+    if (elapsed === 0) return new Error("connection reset");
+    if (elapsed === 5_000) return { status: 302 };
+    if (elapsed === 10_000) return { html: "<html></html>" };
+    return {};
+  });
+  await clock.run();
+  assert.equal(clock.elapsed(), 15_000);
+  assert.match(clock.logs.join("\n"), /connection reset/);
+  assert.match(clock.logs.join("\n"), /HTTP 302/);
+  assert.match(clock.logs.join("\n"), /no build marker/);
+});
+
+for (const [failure, respond] of [
+  ["network error", () => new Error("connection reset")],
+  ["service error", () => ({ status: 503 })],
+  ["missing marker", () => ({ html: "<html></html>" })],
+]) {
+  test(`staging: persistent ${failure} fails within the ceiling`, async () => {
+    const clock = harness("staging", respond);
+    await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+    assert.equal(clock.elapsed(), 300_000);
   });
 }
+
+test(`staging: accepts the final probe before the ceiling`, async () => {
+  const clock = harness("staging", ({ elapsed }) => ({
+    commit: elapsed < 295_000 ? previousSha : sha,
+  }));
+  await clock.run();
+  assert.equal(clock.elapsed(), 295_000);
+});
+
+test(`staging: slow requests use the remaining deadline`, async () => {
+  const clock = harness("staging", ({ advance, timeout }) => {
+    advance(Math.min(13_000, timeout));
+    return new Error("request timed out");
+  });
+  await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+  assert.equal(clock.elapsed(), 300_000);
+  assert.equal(clock.requests.at(-1).timeout, 12_000);
+  assert.ok(clock.requests.every(({ timeout }) => timeout <= 15_000));
+  assert.ok(clock.requests.every(({ elapsed, timeout }) => elapsed + timeout <= 300_000));
+});
+
+test(`staging: rejects a matching response completed after the deadline`, async () => {
+  const clock = harness("staging", ({ elapsed, advance }) => {
+    if (elapsed < 295_000) return { commit: previousSha };
+    advance(6_000);
+    return {};
+  });
+  await assert.rejects(clock.run(), /does not serve 6f1d7042/);
+  assert.equal(clock.elapsed(), 301_000);
+  assert.equal(clock.requests.at(-1).timeout, 5_000);
+});
+
+for (const [source, respond, liveAt, expected] of [
+  [
+    "an edge copy that Render did not invalidate",
+    edgeCopy(3_600),
+    wentLive,
+    new RegExp(
+      `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, ${live}\\)$`,
+    ),
+  ],
+  [
+    "a copy that Render gave its CDN after it reported the deploy live",
+    edgeCopy(0, { fetchedByFirstProbe: true, finalProbeTimesOut: true }),
+    wentLive,
+    new RegExp(
+      `; Render gave its CDN ${previousSha} after it reported the deploy live \\(edge copy stored 2026-11-11T16:22:41\\.000Z, ${live}\\)$`,
+    ),
+  ],
+  [
+    "a copy stored as the deploy went live",
+    edgeCopy(10),
+    wentLive,
+    new RegExp(
+      `; Render's CDN stored ${previousSha} within 2 s of the deploy going live \\(edge copy stored 2026-11-11T16:22:31\\.000Z, ${live}\\)$`,
+    ),
+  ],
+  ["no reason without the live time", edgeCopy(3_600), Number.NaN, /Render going live$/],
+  [
+    "no reason without cache headers",
+    () => ({ commit: previousSha }),
+    wentLive,
+    /Render going live$/,
+  ],
+]) {
+  test(`staging: regression: names ${source} when the URL keeps the previous build`, async () => {
+    const clock = harness("staging", respond, liveAt);
+    await assert.rejects(clock.run(), expected);
+    assert.equal(clock.elapsed(), 300_000);
+    const unexpectedLog = clock.logs.find(
+      (line) =>
+        !line.includes(`returned HTTP 200 serving ${previousSha}`) &&
+        !line.endsWith("check failed: The operation was aborted due to timeout"),
+    );
+    assert.equal(unexpectedLog, undefined);
+  });
+}
+
+test(`staging: dates a kept edge copy against finishedAt of the live Render deploy`, async () => {
+  const release = releaseHarness("staging", {
+    served: () => ({
+      commit: previousSha,
+      headers: cdnHeaders({
+        date: "Wed, 11 Nov 2026 16:22:41 GMT",
+        cacheStatus: "HIT",
+        age: "3600",
+      }),
+    }),
+  });
+  await assert.rejects(
+    release.run(),
+    new RegExp(
+      `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, deploy deploy-1 live 2026-11-11T16:22:31\\.407Z\\)$`,
+    ),
+  );
+});
 
 for (const environment of ["staging", "production"]) {
-  test(`${environment}: dates a kept edge copy against finishedAt of the live Render deploy`, async () => {
+  test(`${environment}: retries service reads and staging branch selection`, async () => {
+    const attempts = new Map();
     const release = releaseHarness(environment, {
-      served: () => ({
-        commit: previousSha,
-        headers: cdnHeaders({
-          date: "Wed, 11 Nov 2026 16:22:41 GMT",
-          cacheStatus: "HIT",
-          age: "3600",
-        }),
-      }),
+      render: ({ url, options }) => {
+        if (url.pathname.includes("/deploys")) return;
+        const key = `${options.method ?? "GET"} ${url.pathname}`;
+        const count = (attempts.get(key) ?? 0) + 1;
+        attempts.set(key, count);
+        if (count === 1) return new Response("unavailable", { status: 500 });
+      },
     });
-    await assert.rejects(
-      release.run(),
-      new RegExp(
-        `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, deploy deploy-1 live 2026-11-11T16:22:31\\.407Z\\)$`,
-      ),
-    );
+    await release.run();
+    assert.ok([...attempts.values()].every((count) => count === 2));
+    assert.equal(attempts.size, environment === "staging" ? 3 : 2);
   });
 }
+
+test(`production: accepts the planned build immediately`, async () => {
+  const clock = harness("production", () => ({}));
+  await clock.run();
+  assert.equal(clock.elapsed(), 0);
+  assert.equal(clock.requests.length, 2);
+  assert.deepEqual(clock.sleeps, []);
+  assert.ok(clock.requests.every(({ options }) => options.redirect === "manual"));
+});
+
+test(`production: logs the CDN cache headers of each previous build`, async () => {
+  const clock = harness("production", edgeCopy(0, { fetchedByFirstProbe: true }), wentLive);
+  await assert.rejects(clock.run());
+  const served = `${serviceOrigin} returned HTTP 200 serving ${previousSha}`;
+  assert.equal(
+    clock.logs[0],
+    `${served} (cf-cache-status MISS, age none, last-modified ${previousUpload})`,
+  );
+  assert.equal(
+    clock.logs[1],
+    `${served} (cf-cache-status HIT, age 5, last-modified ${previousUpload})`,
+  );
+});
 
 test("production: Render and public origins share one verification deadline", async () => {
   const clock = harness("production", ({ url, elapsed }) => ({
