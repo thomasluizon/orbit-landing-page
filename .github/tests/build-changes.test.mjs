@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -26,26 +26,31 @@ function changesScript() {
   return script.replace(/^ {10}/gm, "");
 }
 
-function pullRequest(t, change) {
+function repository(t, files) {
   const root = mkdtempSync(join(tmpdir(), "landing-build-changes-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const cwd = join(root, "repository");
-  const runnerTemp = join(root, "runner");
-  const output = join(runnerTemp, "output");
   mkdirSync(cwd);
-  mkdirSync(runnerTemp);
-  writeFileSync(output, "");
   const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
   const git = (...args) => execFileSync("git", args, { cwd, env, encoding: "utf8" });
   git("init", "--quiet", "--initial-branch=main");
   git("config", "user.name", "Build Test");
   git("config", "user.email", "build@example.org");
-  for (const [path, content] of Object.entries(baseFiles)) {
+  for (const [path, content] of Object.entries(files)) {
     mkdirSync(dirname(join(cwd, path)), { recursive: true });
     writeFileSync(join(cwd, path), content);
   }
   git("add", "--all");
   git("commit", "--quiet", "-m", "Base");
+  return { root, cwd, env, git };
+}
+
+function pullRequest(t, change) {
+  const { root, cwd, env, git } = repository(t, baseFiles);
+  const runnerTemp = join(root, "runner");
+  const output = join(runnerTemp, "output");
+  mkdirSync(runnerTemp);
+  writeFileSync(output, "");
   git("update-ref", "refs/remotes/origin/main", "HEAD");
   git("switch", "--quiet", "-c", "pull-request");
   change({ cwd, git });
@@ -149,7 +154,20 @@ function stepRuns(condition, context) {
   });
 }
 
-for (const { step, hook, paths } of [
+function pullRequestContext(t, path) {
+  const result = pullRequest(t, edit(path)).run();
+  assert.equal(result.status, 0, result.stderr);
+  const product = result.output.match(/^product=(true|false)$/m)?.[1];
+  assert.ok(product, result.output);
+  return {
+    "github.event_name": "pull_request",
+    "steps.changes.outcome": "success",
+    "steps.changes.outputs.product": product,
+    "steps.install.outcome": "failure",
+  };
+}
+
+const wholeTreeGuards = [
   {
     step: "Copy follows the register",
     hook: "copy-register",
@@ -166,7 +184,9 @@ for (const { step, hook, paths } of [
     hook: "root-allowlist",
     paths: ["README.md", "NOTES.md", "LICENSE", "notes.txt", ".codex/config.toml"],
   },
-]) {
+];
+
+for (const { step, hook, paths } of wholeTreeGuards) {
   test(`Build: "${step}" runs the command of the lefthook ${hook} hook`, () => {
     assert.equal(buildStep(step).command, lefthookCommand(hook));
   });
@@ -183,20 +203,51 @@ for (const { step, hook, paths } of [
 
   for (const path of paths) {
     test(`Build: "${step}" runs for a pull request that changes ${path}`, (t) => {
-      const result = pullRequest(t, edit(path)).run();
-      assert.equal(result.status, 0, result.stderr);
-      const product = result.output.match(/^product=(true|false)$/m)?.[1];
-      assert.ok(product, result.output);
-      const context = {
-        "github.event_name": "pull_request",
-        "steps.changes.outcome": "success",
-        "steps.changes.outputs.product": product,
-        "steps.install.outcome": "failure",
-      };
-      assert.equal(stepRuns(buildStep(step).condition, context), true);
+      assert.equal(stepRuns(buildStep(step).condition, pullRequestContext(t, path)), true);
     });
   }
 }
+
+test("Build: the whole-tree guards also run for a pull request that changes no product path", (t) => {
+  const context = pullRequestContext(t, "README.md");
+  assert.equal(context["steps.changes.outputs.product"], "false");
+  for (const { step } of wholeTreeGuards) {
+    assert.equal(stepRuns(buildStep(step).condition, context), true, step);
+  }
+});
+
+/**
+ * Reads the sparse checkout inputs of the PR Text checkout step the way actions/checkout reads
+ * them: one pattern per line, and cone mode unless `sparse-checkout-cone-mode` is false.
+ * https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/src/input-helper.ts
+ */
+function prTextSparseCheckout() {
+  const step = prTextWorkflow
+    .split(/^ {6}- uses: actions\/checkout@.+\n/m)[1]
+    ?.split(/\n {6}- /)[0];
+  assert.ok(step, "Missing checkout step in PR Text");
+  const [, value, block] = step.match(/^ {10}sparse-checkout: (.+)\n((?: {12}.+\n)*)/m) ?? [];
+  assert.ok(value, "The PR Text checkout step has no sparse-checkout input");
+  const patterns = (value === "|" ? block : value)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const coneMode = step.match(/^ {10}sparse-checkout-cone-mode: (.+)$/m)?.[1] ?? "true";
+  return { patterns, coneMode: coneMode.toUpperCase() === "TRUE" };
+}
+
+test("PR Text: the sparse checkout keeps .node-version for setup-node and tools for the checks", (t) => {
+  const { patterns, coneMode } = prTextSparseCheckout();
+  const { cwd, git } = repository(t, {
+    ".node-version": "22.23.5\n",
+    "tools/check-dashes.mjs": "export {};\n",
+    "src/lib/x.ts": "export const x = 1;\n",
+  });
+  git("sparse-checkout", "set", coneMode ? "--cone" : "--no-cone", ...patterns);
+  assert.equal(existsSync(join(cwd, "src/lib/x.ts")), false, "The sparse checkout kept src/");
+  assert.ok(existsSync(join(cwd, ".node-version")), "The sparse checkout drops .node-version");
+  assert.ok(existsSync(join(cwd, "tools/check-dashes.mjs")), "The sparse checkout drops tools/");
+});
 
 test("PR Text sets up Node with the same pinned action and .node-version as Build", () => {
   const setupNode = workflow.match(
