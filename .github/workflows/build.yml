@@ -79,6 +79,14 @@ jobs:
         if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
         run: node tools/check-dashes.mjs --check-baseline
 
+      - name: Copy follows the register
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        run: node tools/check-copy.mjs --check
+
+      - name: Root holds only declared entries
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        run: node tools/check-root-allowlist.mjs
+
       - name: Pull request commits carry no attribution lines
         # The PR Text workflow checks the body, because an edit of the body does not run Build.
         if: ${{ !cancelled() && steps.changes.outcome == 'success' && github.event_name == 'pull_request' }}

@@ -6,6 +6,8 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 
 const workflow = readFileSync(new URL("../workflows/build.yml", import.meta.url), "utf8");
+const prTextWorkflow = readFileSync(new URL("../workflows/pr-text.yml", import.meta.url), "utf8");
+const lefthook = readFileSync(new URL("../../lefthook.yml", import.meta.url), "utf8");
 const stepName = "Select the checks this change needs";
 const baseFiles = {
   "src/pages/about.md": "# About\n\nOrbit tracks habits.\n",
@@ -75,8 +77,10 @@ function pullRequest(t, change) {
 
 const edit =
   (path) =>
-  ({ cwd }) =>
+  ({ cwd }) => {
+    mkdirSync(dirname(join(cwd, path)), { recursive: true });
     writeFileSync(join(cwd, path), "Changed.\n", { flag: "a" });
+  };
 
 for (const [name, change, product, renamed = false] of [
   [
@@ -113,4 +117,92 @@ test("Build changes: a failed diff fails the step and never skips the product ch
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /origin\/missing/);
   assert.equal(result.output, "");
+});
+
+function buildStep(name) {
+  const step = workflow.split(`- name: ${name}\n`)[1]?.split(/\n {6}- /)[0];
+  assert.ok(step, `Missing Build step: ${name}`);
+  return {
+    condition: step.match(/^ {8}if: (.+)$/m)?.[1],
+    command: step.match(/^ {8}run: (.+)$/m)?.[1],
+  };
+}
+
+function lefthookCommand(name) {
+  const command = lefthook.split(`\n    ${name}:\n`)[1]?.split(/\n {4}\S/)[0];
+  assert.ok(command, `Missing lefthook command: ${name}`);
+  return command.match(/^ {6}run: (.+)$/m)?.[1];
+}
+
+/**
+ * Evaluates the subset of the GitHub expression syntax that the Build step gates use. It fails on
+ * any other term, so a new kind of gate needs a matching change here.
+ */
+function stepRuns(condition, context) {
+  const expression = condition?.match(/^\$\{\{ (.+) \}\}$/)?.[1];
+  assert.ok(expression, `Unsupported step condition: ${condition}`);
+  return expression.split(" && ").every((term) => {
+    if (term === "!cancelled()") return true;
+    const [, name, value] = term.match(/^([\w.]+) == '([^']*)'$/) ?? [];
+    assert.ok(name && Object.hasOwn(context, name), `Unsupported condition term: ${term}`);
+    return context[name] === value;
+  });
+}
+
+for (const { step, hook, paths } of [
+  {
+    step: "Copy follows the register",
+    hook: "copy-register",
+    paths: [
+      "src/i18n/translations.ts",
+      "src/components/Hero.astro",
+      "src/styles/global.css",
+      "tools/check-copy.mjs",
+      "tools/copy-baseline.json",
+    ],
+  },
+  {
+    step: "Root holds only declared entries",
+    hook: "root-allowlist",
+    paths: ["README.md", "NOTES.md", "LICENSE", "notes.txt", ".codex/config.toml"],
+  },
+]) {
+  test(`Build: "${step}" runs the command of the lefthook ${hook} hook`, () => {
+    assert.equal(buildStep(step).command, lefthookCommand(hook));
+  });
+
+  test(`Build: "${step}" runs on each push to main, also when npm ci fails`, () => {
+    const context = {
+      "github.event_name": "push",
+      "steps.changes.outcome": "success",
+      "steps.changes.outputs.product": "true",
+      "steps.install.outcome": "failure",
+    };
+    assert.equal(stepRuns(buildStep(step).condition, context), true);
+  });
+
+  for (const path of paths) {
+    test(`Build: "${step}" runs for a pull request that changes ${path}`, (t) => {
+      const result = pullRequest(t, edit(path)).run();
+      assert.equal(result.status, 0, result.stderr);
+      const product = result.output.match(/^product=(true|false)$/m)?.[1];
+      assert.ok(product, result.output);
+      const context = {
+        "github.event_name": "pull_request",
+        "steps.changes.outcome": "success",
+        "steps.changes.outputs.product": product,
+        "steps.install.outcome": "failure",
+      };
+      assert.equal(stepRuns(buildStep(step).condition, context), true);
+    });
+  }
+}
+
+test("PR Text sets up Node with the same pinned action and .node-version as Build", () => {
+  const setupNode = workflow.match(
+    /^ {6}- uses: actions\/setup-node@.+\n {8}with:\n(?: {10}.+\n)+/m,
+  );
+  assert.ok(setupNode, "Missing setup-node step in Build");
+  assert.match(setupNode[0], /node-version-file: \.node-version\n/);
+  assert.ok(prTextWorkflow.includes(setupNode[0]), "PR Text does not copy the setup-node step");
 });

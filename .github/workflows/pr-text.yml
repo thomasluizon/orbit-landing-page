@@ -27,6 +27,12 @@ jobs:
           sparse-checkout: tools
           persist-credentials: false
 
+      # The cone-mode sparse checkout keeps the root files, .node-version included.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+
       - name: Read the live title and body
         id: read
         # Bot PR bodies quote upstream prose that this repository cannot edit.
