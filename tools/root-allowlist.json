@@ -8,7 +8,6 @@
     ".env.production.local",
     ".gitattributes",
     ".gitignore",
-    ".lycheeignore",
     ".node-version",
     ".prettierignore",
     ".prettierrc",

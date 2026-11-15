@@ -2,41 +2,131 @@ name: Build
 
 on:
   pull_request:
-    branches: [main, redesign/main]
+    branches: [main]
+  push:
+    branches: [main]
 
 permissions:
   contents: read
+
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 8
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - name: Select the checks this change needs
+        id: changes
+        run: |
+          set -euo pipefail
+          product=true
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            product=false
+            git diff --name-only --no-renames -z "origin/$GITHUB_BASE_REF...HEAD" > "$RUNNER_TEMP/changed-paths"
+            while IFS= read -r -d '' path; do
+              case "$path" in
+                .claude/* | .codex/* | .vscode/* | LICENSE) ;;
+                */*) product=true ;;
+                *.md) ;;
+                *) product=true ;;
+              esac
+            done < "$RUNNER_TEMP/changed-paths"
+          fi
+          echo "product=$product" >> "$GITHUB_OUTPUT"
+          echo "Product checks: $product"
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
-          cache: npm
+          package-manager-cache: false
 
-      - run: npm ci
+      - name: Restore the npm cache
+        id: npm-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
 
-      - run: npm audit --audit-level=moderate
+      - name: Install
+        id: install
+        run: npm ci
 
-      - run: npm test
+      - name: Save the npm cache
+        if: github.event_name == 'push' && steps.npm-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ steps.npm-cache.outputs.cache-primary-key }}
 
-      - run: npm run lint
+      - name: Changed files carry no new dashes
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' && github.event_name == 'pull_request' }}
+        run: |
+          git diff --name-only --diff-filter=ACMR "origin/$GITHUB_BASE_REF...HEAD" -z \
+            | xargs -0 --no-run-if-empty node tools/check-dashes.mjs --files
 
-      - run: npm run format:check
+      - name: Dash baseline only shrinks
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        run: node tools/check-dashes.mjs --check-baseline
 
-      - run: npm run check
+      - name: Copy follows the register
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        run: node tools/check-copy.mjs --check
 
-      - run: npm run build
+      - name: Root holds only declared entries
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        run: node tools/check-root-allowlist.mjs
+
+      - name: Pull request commits carry no attribution lines
+        # The PR Text workflow checks the body, because an edit of the body does not run Build.
+        if: ${{ !cancelled() && steps.changes.outcome == 'success' && github.event_name == 'pull_request' }}
+        env:
+          PULL_REQUEST_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
+        run: node tools/check-attribution.mjs --range "$PULL_REQUEST_RANGE" --not origin/main
+
+      - name: Text is timeless
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node tools/check-timeless.mjs --all
+
+      - name: Audit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm audit --audit-level=moderate
+
+      - name: Test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm test
+
+      - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run lint
+
+      - name: Format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run format:check
+
+      - name: Type check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.changes.outputs.product == 'true' }}
+        run: npm run check
+
+      - name: Build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.changes.outputs.product == 'true' }}
+        run: npm run build
         env:
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
 
       - name: Check internal links
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         with:
           args: >-
@@ -47,30 +137,9 @@ jobs:
             ./dist
           fail: true
 
-      - name: Share the checked build
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: lighthouse-dist
-          path: dist
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 1
-
-  lighthouse:
-    name: Lighthouse
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Download the checked build
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: lighthouse-dist
-          path: dist
-
-      - uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12.6.2
+      - name: Lighthouse
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12.6.2
         with:
           configPath: ./lighthouserc.json
           uploadArtifacts: true

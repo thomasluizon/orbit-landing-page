@@ -41,9 +41,9 @@ const commitRange = (label, messages) => {
 };
 
 /**
- * A pull request head that merges `redesign/main`, whose tainted commit already landed there, and
- * then adds `newMessage`. The repository records `main` and `redesign/main` as `origin` refs, the
- * same shape that a checkout with all history gives the Guards job.
+ * A pull request head that merges `main` after `main` moved past the pull request base to a
+ * landed tainted commit, and then adds `newMessage`. The repository records `main` as an
+ * `origin` ref, the same shape that a checkout with all history gives the Build job.
  */
 const mergeHistory = (label, newMessage) => {
   const root = mkdtempSync(join(tmpdir(), `attribution-merge-${label}-`));
@@ -57,12 +57,11 @@ const mergeHistory = (label, newMessage) => {
   const landed = git(root, ["commit-tree", tree, "-p", base, "-m", `feat: landed\n\n${TRAILER}`]);
   const merge = git(root, ["commit-tree", tree, "-p", base, "-p", landed, "-m", "chore: carry"]);
   const head = git(root, ["commit-tree", tree, "-p", merge, "-m", newMessage]);
-  git(root, ["update-ref", "refs/remotes/origin/main", base]);
-  git(root, ["update-ref", "refs/remotes/origin/redesign/main", landed]);
+  git(root, ["update-ref", "refs/remotes/origin/main", landed]);
   return { root, landed, range: ["--root", root, "--range", `${base}..${head}`] };
 };
 
-const LONG_LIVED = ["--not", "origin/main", "--not", "origin/redesign/main"];
+const LANDED = ["--not", "origin/main"];
 
 const bodyFile = (label, text) => {
   const path = join(mkdtempSync(join(tmpdir(), `attribution-body-${label}-`)), "body.md");
@@ -114,7 +113,7 @@ test("commit range: each banned line in any commit fails", () => {
   assert.match(generated.stderr, /a generated-with line/);
 });
 
-test("commit range: a merged commit that a long-lived branch reaches fails without --not", () => {
+test("commit range: a merged commit that main reaches fails without --not", () => {
   const { landed, range } = mergeHistory("unexcluded", "feat: new work");
   const result = run(range);
   assert.equal(result.status, 1);
@@ -125,11 +124,11 @@ test("commit range: a merged commit that a long-lived branch reaches fails witho
 });
 
 test("commit range: --not skips a landed tainted commit and still checks new commits", () => {
-  const clean = run([...mergeHistory("excluded-clean", "feat: new work").range, ...LONG_LIVED]);
+  const clean = run([...mergeHistory("excluded-clean", "feat: new work").range, ...LANDED]);
   assert.equal(clean.status, 0, clean.stderr);
   assert.match(clean.stdout, /Attribution guard passed/);
   const { landed, range } = mergeHistory("excluded-tainted", `feat: new work\n\n${GENERATED}`);
-  const tainted = run([...range, ...LONG_LIVED]);
+  const tainted = run([...range, ...LANDED]);
   assert.equal(tainted.status, 1);
   assert.match(tainted.stderr, /line 3: a generated-with line/);
   assert.doesNotMatch(tainted.stderr, new RegExp(landed.slice(0, 12)));

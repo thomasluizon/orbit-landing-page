@@ -1,4 +1,5 @@
 min_version: "2.1.10"
+assert_lefthook_installed: true
 pre-commit:
   commands:
     timeless:
@@ -12,5 +13,8 @@ pre-commit:
     dashes:
       run: node tools/check-dashes.mjs --files {staged_files}
     copy-register:
-      glob: "src/i18n/translations.ts"
+      glob:
+        - "src/*.{astro,css,ts}"
+        - "tools/check-copy.mjs"
+        - "tools/copy-baseline.json"
       run: node tools/check-copy.mjs --check
