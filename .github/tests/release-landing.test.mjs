@@ -11,10 +11,39 @@ const sha = "6f1d70422e37f343093fa5ef6561f483e4b6dc20";
 const previousSha = "30c06d7e14c6fa9d749464510e8e16674c9028ff";
 const serviceOrigin = "https://orbit-landing-staging.onrender.com";
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+const renderFinishedAt = "2026-11-11T16:22:31.407166Z";
+const previousUpload = "Wed, 11 Nov 2026 12:18:50 UTC";
+
+const liveDeployResponse = (commitId) => ({
+  id: "deploy-1",
+  commit: { id: commitId, message: "fix: the release commit", createdAt: "2026-11-11T16:16:29Z" },
+  status: "live",
+  trigger: "api",
+  createdAt: "2026-11-11T16:21:40.081357Z",
+  updatedAt: renderFinishedAt,
+  startedAt: "2026-11-11T16:21:40.079623Z",
+  finishedAt: renderFinishedAt,
+});
+
+const cdnHeaders = ({ date, cacheStatus, age }) => ({
+  "cache-control": "public, max-age=0, must-revalidate",
+  "cf-cache-status": cacheStatus,
+  date,
+  "last-modified": previousUpload,
+  server: "cloudflare",
+  ...(age === undefined ? {} : { age }),
+});
 
 function releaseHarness(
   environment,
-  { staging = {}, force = "false", head = sha, render = () => {}, github = () => {} } = {},
+  {
+    staging = {},
+    force = "false",
+    head = sha,
+    render = () => {},
+    github = () => {},
+    served = () => ({}),
+  } = {},
 ) {
   const deploys = [];
   const renderDeploys = [];
@@ -55,7 +84,8 @@ function releaseHarness(
       });
     }
     if ([serviceOrigin, productionOrigin, "https://useorbit.org"].includes(parsed.origin)) {
-      return new Response(marker(deploys.at(-1).commitId));
+      const { commit = deploys.at(-1).commitId, headers } = served();
+      return new Response(marker(commit), { headers });
     }
     let result;
     if (parsed.hostname === "api.render.com") {
@@ -82,7 +112,7 @@ function releaseHarness(
             deploy,
           }));
         } else if (parsed.pathname.endsWith("/deploys/deploy-1")) {
-          result = { status: "live", commit: { id: deploys.at(-1).commitId } };
+          result = liveDeployResponse(deploys.at(-1).commitId);
         } else if (/\/services\/(production|staging)-service$/.test(parsed.pathname)) {
           result = { autoDeploy: "no", branch: "main", serviceDetails: { url: origin } };
         } else {
@@ -110,6 +140,7 @@ function releaseHarness(
     "console",
     "setTimeout",
     "Date",
+    "performance",
     releaseScript.replace(/^\s*import .*;$/gm, ""),
   );
   return {
@@ -136,6 +167,7 @@ function releaseHarness(
         class extends Date {
           static now = now;
         },
+        { now: () => elapsed },
       ),
   };
 }
@@ -954,25 +986,24 @@ for (const environment of ["staging", "production"]) {
   });
 
   const firstServedAt = Date.parse("2026-11-11T16:22:41Z");
-  const wentLive = Date.parse("2026-11-11T16:22:31.407Z");
-  const previousUpload = "Wed, 11 Nov 2026 12:18:50 GMT";
+  const wentLive = Date.parse(renderFinishedAt);
   const edgeCopy =
     (storedBeforeFirstProbe, { fetchedByFirstProbe = false, finalProbeTimesOut = false } = {}) =>
     ({ elapsed }) => {
       if (finalProbeTimesOut && elapsed === 295_000) {
         return new Error("The operation was aborted due to timeout");
       }
-      const cache =
-        fetchedByFirstProbe && elapsed === 0
-          ? { "cf-cache-status": "MISS" }
-          : { "cf-cache-status": "HIT", age: String(storedBeforeFirstProbe + elapsed / 1_000) };
+      const date = new Date(firstServedAt + elapsed).toUTCString();
       return {
         commit: previousSha,
-        headers: {
-          date: new Date(firstServedAt + elapsed).toUTCString(),
-          "last-modified": previousUpload,
-          ...cache,
-        },
+        headers:
+          fetchedByFirstProbe && elapsed === 0
+            ? cdnHeaders({ date, cacheStatus: "MISS" })
+            : cdnHeaders({
+                date,
+                cacheStatus: "HIT",
+                age: String(storedBeforeFirstProbe + elapsed / 1_000),
+              }),
       };
     };
   const live = "deploy deploy-1 live 2026-11-11T16:22:31.407Z";
@@ -1028,6 +1059,27 @@ for (const environment of ["staging", "production"]) {
     assert.equal(
       clock.logs[1],
       `${served} (cf-cache-status HIT, age 5, last-modified ${previousUpload})`,
+    );
+  });
+}
+
+for (const environment of ["staging", "production"]) {
+  test(`${environment}: dates a kept edge copy against finishedAt of the live Render deploy`, async () => {
+    const release = releaseHarness(environment, {
+      served: () => ({
+        commit: previousSha,
+        headers: cdnHeaders({
+          date: "Wed, 11 Nov 2026 16:22:41 GMT",
+          cacheStatus: "HIT",
+          age: "3600",
+        }),
+      }),
+    });
+    await assert.rejects(
+      release.run(),
+      new RegExp(
+        `; Render's CDN kept a copy of ${previousSha} from before the deploy went live, so the deploy did not invalidate this edge \\(edge copy stored 2026-11-11T15:22:41\\.000Z, deploy deploy-1 live 2026-11-11T16:22:31\\.407Z\\)$`,
+      ),
     );
   });
 }
