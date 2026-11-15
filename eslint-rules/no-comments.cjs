@@ -194,7 +194,9 @@ module.exports = {
     function isAllowed(comment) {
       if (URL_RE.test(comment.value)) return true;
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
-      const value = (isDocComment ? comment.value.replace(/^\*+/, "") : comment.value).trim();
+      const value = (
+        isDocComment ? comment.value.replace(/^[ \t]*\*+/gm, "") : comment.value
+      ).trim();
       if (comment.type === "Line" && value.startsWith("/")) return true;
       if (DIRECTIVE.test(value)) return true;
       if (!isDocComment) return false;
