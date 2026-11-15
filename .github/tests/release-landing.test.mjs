@@ -764,7 +764,7 @@ for (const environment of ["staging", "production"]) {
     assert.equal(writes, 1);
   });
 
-  test(`${environment}: rejects a live deploy of another commit before it probes or records anything`, async () => {
+  test(`${environment}: rejects a live deploy of another commit at the first poll, with no later request and no Deployed SHA summary`, async () => {
     let polls = 0;
     const release = releaseHarness(environment, {
       render: ({ url }) => {

@@ -277,7 +277,7 @@ function previousBuildSource({ commit, edge }) {
   if (storedAt > liveAt + wholeSecondHeaderMarginMs) {
     return `; Render gave its CDN ${commit} after it reported the deploy live (${times})`;
   }
-  return `; Render's CDN stored ${commit} within 2 s of the deploy going live (${times})`;
+  return `; Render's CDN stored ${commit} within ${wholeSecondHeaderMarginMs / 1_000} s of the deploy going live (${times})`;
 }
 
 async function requireServedCommit(origin) {
