@@ -93,6 +93,7 @@ const upstreamLinks = [
   "// WHY: https://example.com/doc\nconst limit = 1;\n",
 ].map(typescript);
 
+const javaScriptFiles = ["sample.js", "sample.jsx", "sample.mjs", "sample.cjs"];
 const typeAnnotations = [
   "/** @type {number} */\nlet count = 0;\n",
   "/** @typedef {{ limit: number }} Options */\n",
@@ -105,15 +106,14 @@ const typeAnnotations = [
   "function load(value) {\n  return /** @type {string} */ (value);\n}\n",
   "/** @template T */\nclass Box {}\n",
   '/** @import * as options from "./options" */\n',
-].flatMap((code) =>
-  ["sample.js", "sample.jsx", "sample.mjs", "sample.cjs"].map((filename) => ({ code, filename })),
-);
+].flatMap((code) => javaScriptFiles.map((filename) => ({ code, filename })));
 
-const typedTags = [
+const loadFunction = "function load(name) {\n  return name;\n}\n";
+const jsdocTags = [
   "@type {number}",
   "@typedef {object} Options",
   "@template {string} Key",
-  "@callback {Function} Loader",
+  "@callback Loader",
   "@property {number} limit",
   "@prop {number} limit",
   "@satisfies {Record<string, number>}",
@@ -128,23 +128,26 @@ const typedTags = [
   "@extends {Base}",
   "@implements {Reader}",
   "@param{string} name",
+  "@param name {string}",
+  "@param name The name.",
+  "@this string",
+  "@throws When the name is empty.",
 ];
-const loadFunction = "function load(name) {\n  return name;\n}\n";
-const typedTagDeclarations = {
-  "sample.js": { exported: `export ${loadFunction}`, unexported: loadFunction },
-  "sample.mjs": { exported: `export ${loadFunction}`, unexported: loadFunction },
-  "sample.cjs": {
-    exported: `${loadFunction}module.exports = { load };\n`,
-    unexported: loadFunction,
-  },
-};
-const typedTagAnnotations = typedTags.flatMap((tag) =>
-  Object.entries(typedTagDeclarations).flatMap(([filename, declarations]) =>
-    Object.values(declarations).map((declaration) => ({
-      code: `/** ${tag} */\n${declaration}`,
-      filename,
-    })),
-  ),
+const jsdocTagBlocks = [
+  ...jsdocTags.map((tag) => `/** ${tag} */\n${loadFunction}`),
+  `/**@type {number}*/\n${loadFunction}`,
+  `/**\n * @param\n * {string} name\n */\n${loadFunction}`,
+  `/**\n * @returns\n * {string}\n */\n${loadFunction}`,
+  "/** @enum string */\nconst Level = { Low: 'low' };\n",
+  "/**\n * @enum\n * {string}\n */\nconst Level = { Low: 'low' };\n",
+  "/** @extends Base<string> */\nclass Box extends Base {}\n",
+  "/** @implements Reader */\nclass Box {\n  read() {}\n}\n",
+  "/** @callback Noop */\nconst limit = 1;\n",
+  "class Box {\n  /** @readonly */\n  size = 0;\n}\n",
+  "class Box {\n  /** @private */\n  size = 0;\n}\n",
+];
+const jsdocTagAnnotations = jsdocTagBlocks.flatMap((code) =>
+  javaScriptFiles.map((filename) => ({ code, filename })),
 );
 
 const directives = [
@@ -415,7 +418,7 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
       ...astroProps,
       ...upstreamLinks,
       ...typeAnnotations,
-      ...typedTagAnnotations,
+      ...jsdocTagAnnotations,
       ...directives,
       ...legalComments,
       ...jsxPragmas,
@@ -516,15 +519,16 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
       rejected(typescript("const limit = 1; /** Doc. */\n"), "const limit = 1;\n"),
       rejected(typescript("/** @type {number} */\nlet count = 0;\n"), "let count = 0;\n"),
       rejected(
-        module("/** @param name The name. */\nfunction load(name) {}\n"),
+        typescript("/** @param name The name. */\nfunction load(name) {}\n"),
         "function load(name) {}\n",
       ),
-      ...["sample.js", "sample.mjs", "sample.cjs"].flatMap((filename) => [
+      ...javaScriptFiles.flatMap((filename) => [
+        rejected({ code: `/** Reads {@link load}. */\n${loadFunction}`, filename }, loadFunction),
         rejected(
-          { code: `/** @throws When the name is empty. */\n${loadFunction}`, filename },
+          { code: `/** Mails owner@example.org. */\n${loadFunction}`, filename },
           loadFunction,
         ),
-        rejected({ code: `/** Reads {@link load}. */\n${loadFunction}`, filename }, loadFunction),
+        rejected({ code: `/** Costs 5 @ 2. */\n${loadFunction}`, filename }, loadFunction),
       ]),
       rejected(
         commonJs("/** Doc. */\nfunction load() {}\nmodule.exports = {};\n"),

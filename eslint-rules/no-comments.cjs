@@ -17,7 +17,7 @@ const LINE_DIRECTIVE =
 const BLOCK_DIRECTIVE =
   /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
-const TYPE_ANNOTATION = /@(?:type|typedef|satisfies|template|import)(?![\w-])|@[\w-]+\s*\{/;
+const JSDOC_TAG = /(?:^[ \t*]*|\s)@[A-Za-z]/m;
 const JAVASCRIPT_FILE = /\.[cm]?jsx?$/;
 const ASTRO_FILE = /\.astro$/;
 
@@ -230,7 +230,7 @@ module.exports = {
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
       if (isDirective(comment, isDocComment)) return true;
       if (!isDocComment) return false;
-      if (JAVASCRIPT_FILE.test(filename) && TYPE_ANNOTATION.test(comment.value)) return true;
+      if (JAVASCRIPT_FILE.test(filename) && JSDOC_TAG.test(comment.value)) return true;
       return isOnExportedSymbol(comment);
     }
 

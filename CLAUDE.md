@@ -26,7 +26,7 @@ Same 10 rules as the monorepo's root `CLAUDE.md`: root cause over workarounds; d
 
 ### Comment policy (lint-enforced via `local/no-comments`, autofix strips violations)
 
-- Allowed: `/** */` JSDoc on exported symbols; tooling directives in the comment form their tool reads (`/* eslint-disable */`, `@ts-expect-error`, `// @ts-check`, a JSDoc type annotation such as `@type` in a JavaScript file); WHY comments ONLY when they link an upstream issue/PR/doc URL.
+- Allowed: `/** */` JSDoc on exported symbols; tooling directives in the comment form their tool reads (`/* eslint-disable */`, `@ts-expect-error`, `// @ts-check`, a JSDoc block that holds any `@` tag, such as `@type` or `@param`, in a JavaScript file); WHY comments ONLY when they link an upstream issue/PR/doc URL.
 - Banned: everything else. No narration, no section bars, no TODOs. Rename or extract instead.
 - The rule source is `eslint-rules/no-comments.cjs`. Keep its behavior aligned with the sibling repository's rule.
 - Write rules, docs, and comments timelessly: no dates except load-bearing data, names or attributions, incident stories, or machine paths. `tools/check-timeless.mjs` enforces this.
