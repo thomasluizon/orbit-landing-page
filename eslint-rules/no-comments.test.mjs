@@ -191,6 +191,33 @@ const directives = [
   "/* The type is wrong upstream.\n @ts-expect-error */\nconst limit: string = 1;\n",
 ].map(typescript);
 
+const legalComments = [
+  "/** Reads the @license text. */\nfunction load() {}\n",
+  "/**\n * Store 1.0\n * @license MIT\n */\nconst limit = 1;\n",
+  "// Store 1.0 @license MIT\nconst limit = 1;\n",
+  "/* Store 1.0 @preserve */\nconst limit = 1;\n",
+  "// Store 1.0 @preserve\nconst limit = 1;\n",
+  "/*! Store 1.0 */\nconst limit = 1;\n",
+  "//! Store 1.0\nconst limit = 1;\n",
+].map(typescript);
+
+const jsxPragmas = [
+  "// @jsx h\nconst limit = 1;\n",
+  "// @jsxFrag Fragment\nconst limit = 1;\n",
+  "// @jsxRuntime classic\nconst limit = 1;\n",
+  "// @jsxImportSource preact\nconst limit = 1;\n",
+  "//@jsxImportSource preact\nconst limit = 1;\n",
+  "// Renders with Preact. @jsxImportSource preact\nconst limit = 1;\n",
+  "/* Renders with Preact. @jsxImportSource preact */\nconst limit = 1;\n",
+  "/** Renders with Preact. @jsxImportSource preact */\nconst limit = 1;\n",
+  "/**\n * Renders with Preact.\n * @jsxImportSource preact\n */\nconst limit = 1;\n",
+  "/**\n * Classic.\n * @jsx h\n */\nconst limit = 1;\n",
+  "/** Classic. @jsxRuntime classic */\nconst limit = 1;\n",
+  "/** Classic. @jsxFrag Fragment */\nconst limit = 1;\n",
+  "/* @JSX h */\nconst limit = 1;\n",
+  "/* @jsx\nh */\nconst limit = 1;\n",
+].map(jsx);
+
 const shebang = module("#!/usr/bin/env node\nconst limit = 1;\n");
 
 const ignoredByTool = [
@@ -209,7 +236,11 @@ const ignoredByTool = [
   ["// ts-check\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** @ts-check */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/**\n * @ts-ignore\n */\nconst limit = 1;\n", "const limit = 1;\n"],
-  ["// @jsx h\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// @JSX h\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// The x@jsx h text.\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// @jsxImportSource\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/* @jsx */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/** Reads the @jsxh text. */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/// narration\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// prettier-ignore because the table aligns\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** prettier-ignore */\nconst limit = 1;\n", "const limit = 1;\n"],
@@ -231,8 +262,10 @@ const ignoredByTool = [
   ["/** global state for the menu. */\nconst menu = {};\n", "const menu = {};\n"],
   ["/*\n * eslint-disable no-undef\n */\nload();\n", "load();\n"],
   ["/* webpack bundles this file. */\nconst menu = {};\n", "const menu = {};\n"],
-  ["/** Reads the @license text. */\nfunction load() {}\n", "function load() {}\n"],
-  ["/**\n * Store 1.0\n * @license MIT\n */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/* Store 1.0 @License */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/* ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// ! Store 1.0\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/**! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
   [
     "/**\n * The type is wrong upstream.\n * @ts-ignore\n */\nconst limit = 1;\n",
     "const limit = 1;\n",
@@ -255,6 +288,8 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
       ...upstreamLinks,
       ...typeAnnotations,
       ...directives,
+      ...legalComments,
+      ...jsxPragmas,
       shebang,
       jsx("export const Reader = () => <div>{/* https://example.com/reader */}</div>;\n"),
     ],
