@@ -271,6 +271,18 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
         "export function load(options: {\n  limit: number;\n}) {}\n",
       ),
       rejected(
+        typescript(
+          "interface Base {\n  /** Doc. */\n  limit: number;\n}\nexport interface Options extends Base {}\n",
+        ),
+        "interface Base {\n  limit: number;\n}\nexport interface Options extends Base {}\n",
+      ),
+      rejected(
+        typescript(
+          "interface Props {\n  /** Doc. */\n  limit: number;\n}\nexport function load(props: Props) {}\n",
+        ),
+        "interface Props {\n  limit: number;\n}\nexport function load(props: Props) {}\n",
+      ),
+      rejected(
         typescript("export const useStore = create(() => ({\n  /** Doc. */\n  read() {},\n}));\n"),
         "export const useStore = create(() => ({\n  read() {},\n}));\n",
       ),
