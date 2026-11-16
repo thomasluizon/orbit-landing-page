@@ -17,8 +17,7 @@ const LINE_DIRECTIVE =
 const BLOCK_DIRECTIVE =
   /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
-const TYPE_ANNOTATION =
-  /@(?:type|typedef|satisfies|template|import)(?![\w-])|@(?:param|returns)\s*\{/;
+const TYPE_ANNOTATION = /@(?:type|typedef|satisfies|template|import)(?![\w-])|@[\w-]+\s*\{/;
 const JAVASCRIPT_FILE = /\.[cm]?jsx?$/;
 const ASTRO_FILE = /\.astro$/;
 

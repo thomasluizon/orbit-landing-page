@@ -103,8 +103,48 @@ const typeAnnotations = [
   "/** @returns {number} */\nfunction count() {\n  return 1;\n}\n",
   "function load() {\n  /** @type {string[]} */\n  const names = [];\n  return names;\n}\n",
   "function load(value) {\n  return /** @type {string} */ (value);\n}\n",
+  "/** @template T */\nclass Box {}\n",
+  '/** @import * as options from "./options" */\n',
 ].flatMap((code) =>
   ["sample.js", "sample.jsx", "sample.mjs", "sample.cjs"].map((filename) => ({ code, filename })),
+);
+
+const typedTags = [
+  "@type {number}",
+  "@typedef {object} Options",
+  "@template {string} Key",
+  "@callback {Function} Loader",
+  "@property {number} limit",
+  "@prop {number} limit",
+  "@satisfies {Record<string, number>}",
+  "@enum {number}",
+  "@this {Window}",
+  "@arg {string} name",
+  "@argument {string} name",
+  "@return {number}",
+  "@yields {number}",
+  "@throws {TypeError}",
+  "@augments {Base}",
+  "@extends {Base}",
+  "@implements {Reader}",
+  "@param{string} name",
+];
+const loadFunction = "function load(name) {\n  return name;\n}\n";
+const typedTagDeclarations = {
+  "sample.js": { exported: `export ${loadFunction}`, unexported: loadFunction },
+  "sample.mjs": { exported: `export ${loadFunction}`, unexported: loadFunction },
+  "sample.cjs": {
+    exported: `${loadFunction}module.exports = { load };\n`,
+    unexported: loadFunction,
+  },
+};
+const typedTagAnnotations = typedTags.flatMap((tag) =>
+  Object.entries(typedTagDeclarations).flatMap(([filename, declarations]) =>
+    Object.values(declarations).map((declaration) => ({
+      code: `/** ${tag} */\n${declaration}`,
+      filename,
+    })),
+  ),
 );
 
 const directives = [
@@ -375,6 +415,7 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
       ...astroProps,
       ...upstreamLinks,
       ...typeAnnotations,
+      ...typedTagAnnotations,
       ...directives,
       ...legalComments,
       ...jsxPragmas,
@@ -478,6 +519,13 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
         module("/** @param name The name. */\nfunction load(name) {}\n"),
         "function load(name) {}\n",
       ),
+      ...["sample.js", "sample.mjs", "sample.cjs"].flatMap((filename) => [
+        rejected(
+          { code: `/** @throws When the name is empty. */\n${loadFunction}`, filename },
+          loadFunction,
+        ),
+        rejected({ code: `/** Reads {@link load}. */\n${loadFunction}`, filename }, loadFunction),
+      ]),
       rejected(
         commonJs("/** Doc. */\nfunction load() {}\nmodule.exports = {};\n"),
         "function load() {}\nmodule.exports = {};\n",
