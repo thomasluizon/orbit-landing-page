@@ -184,16 +184,23 @@ function createExportCheck(sourceCode, filename) {
   };
 }
 
-function holdsJsDocTag(commentValue) {
-  if (!commentValue.includes("@")) return false;
-  const host = typescript.createSourceFile(
-    "comment.js",
-    `/*${commentValue}*/\nfunction host() {}\n`,
+function taggedJsDocStarts(filename, text) {
+  const sourceFile = typescript.createSourceFile(
+    filename,
+    text,
     typescript.ScriptTarget.Latest,
-    true,
+    false,
     typescript.ScriptKind.JS,
   );
-  return typescript.getJSDocTags(host.statements[0]).some((tag) => tag.tagName.text !== "");
+  const starts = new Set();
+  const visit = (node) => {
+    for (const jsDoc of node.jsDoc ?? []) {
+      if (jsDoc.tags?.some((tag) => tag.tagName.text !== "")) starts.add(jsDoc.pos);
+    }
+    typescript.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return starts;
 }
 
 function isTypeScriptSuppression(comment) {
@@ -237,14 +244,20 @@ module.exports = {
     const sourceCode = context.sourceCode ?? context.getSourceCode();
     const filename = context.filename ?? context.getFilename();
     const isOnExportedSymbol = createExportCheck(sourceCode, filename);
+    let jsDocTagStarts;
+
+    function holdsJsDocTag(comment) {
+      if (!JAVASCRIPT_FILE.test(filename) || !comment.value.includes("@")) return false;
+      jsDocTagStarts ??= taggedJsDocStarts(filename, sourceCode.text);
+      return jsDocTagStarts.has(comment.range[0]);
+    }
 
     function isAllowed(comment) {
       if (URL_RE.test(comment.value)) return true;
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
       if (isDirective(comment, isDocComment)) return true;
       if (!isDocComment) return false;
-      if (JAVASCRIPT_FILE.test(filename) && holdsJsDocTag(comment.value)) return true;
-      return isOnExportedSymbol(comment);
+      return holdsJsDocTag(comment) || isOnExportedSymbol(comment);
     }
 
     return {

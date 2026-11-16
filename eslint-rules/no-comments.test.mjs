@@ -1,6 +1,8 @@
+import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { RuleTester } from "eslint";
+import { Linter, RuleTester } from "eslint";
 import eslintPluginAstro from "eslint-plugin-astro";
+import compiler from "typescript";
 import tseslint from "typescript-eslint";
 import noComments from "./no-comments.cjs";
 
@@ -160,6 +162,9 @@ const jsdocTagBlocks = [
   "/** @callback Noop */\nconst limit = 1;\n",
   "class Box {\n  /** @readonly */\n  size = 0;\n}\n",
   "class Box {\n  /** @private */\n  size = 0;\n}\n",
+  "function outer() {\n  /** @ a\n        *@param {string} name\n   */\n  function load(name) {\n    return name;\n  }\n  return load;\n}\n",
+  "class Box {\n  /** @ a\n        *@param {string} name\n   */\n  load(name) {\n    return name;\n  }\n}\n",
+  "function outer() {\n  /** @ a\n        *@type {string}\n   */\n  const count = 1;\n  return count;\n}\n",
 ];
 const jsdocTagAnnotations = jsdocTagBlocks.flatMap((code) =>
   javaScriptFiles.map((filename) => ({ code, filename })),
@@ -554,6 +559,14 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
           loadFunction,
         ),
         rejected({ code: `/** Ends with @ */\n${loadFunction}`, filename }, loadFunction),
+        rejected(
+          { code: `const count = 1; /** @param {string} name */\n${loadFunction}`, filename },
+          `const count = 1;\n${loadFunction}`,
+        ),
+        rejected(
+          { code: `/** @typedef {string} Name */\n/** Loads it. */\n${loadFunction}`, filename },
+          `/** @typedef {string} Name */\n${loadFunction}`,
+        ),
       ]),
       rejected(
         commonJs("/** Doc. */\nfunction load() {}\nmodule.exports = {};\n"),
@@ -593,3 +606,131 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
     ],
   },
 );
+
+const blockFirstLines = [
+  "@ a",
+  "@",
+  "@ {string}",
+  "@1",
+  "Loads it.",
+  "@param {string} name",
+  "@@param",
+  " @ ",
+];
+const blockPieces = [
+  " ",
+  "  ",
+  "    ",
+  "\t",
+  "\n",
+  "\n *",
+  "\n * ",
+  "*",
+  "@",
+  "@ ",
+  "a",
+  "1",
+  "{",
+  "param",
+  "{string}",
+  "name",
+  ".",
+];
+const blockLaterTags = [
+  "*@param {string} name",
+  "*@type {string}",
+  "* @returns {string}",
+  "@param {string} name",
+];
+const blockPlacements = [
+  { depth: 0, column: 0 },
+  { depth: 0, column: 3 },
+  { depth: 0, column: 8 },
+  { depth: 1, column: 2 },
+  { depth: 2, column: 4 },
+  { depth: 3, column: 13 },
+  { depth: 0, column: 2, member: true },
+  { depth: 1, column: 10, member: true },
+  { depth: 0, column: 0, prefix: (index) => `const count${index} = 1; ` },
+];
+
+function seededBlockBodies(count) {
+  let seed = 4242;
+  const random = (limit) => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) % limit;
+  return Array.from({ length: count }, () => {
+    let body = `* ${blockFirstLines[random(blockFirstLines.length)]}`;
+    for (let piece = random(4); piece > 0; piece--) body += blockPieces[random(blockPieces.length)];
+    if (random(4))
+      body += `\n${" ".repeat(random(15))}${blockLaterTags[random(blockLaterTags.length)]}`;
+    return `${body}\n `;
+  });
+}
+
+function placeBlocks(bodies, { depth, column, member = false, prefix = () => "" }) {
+  const lines = [];
+  for (let level = 0; level < depth; level++) lines.push(`function outer${level}() {`);
+  if (member) lines.push("class Box {");
+  const indent = " ".repeat(column);
+  const blockLines = new Map();
+  bodies.forEach((body, index) => {
+    blockLines.set(lines.length + 1, index);
+    lines.push(...`${indent}${prefix(index)}/*${body}*/`.split("\n"));
+    lines.push(`${indent}${member ? "" : "function "}load${index}(name) {}`);
+  });
+  const closing = depth + (member ? 1 : 0);
+  return { code: `${[...lines, ...Array(closing).fill("}")].join("\n")}\n`, blockLines };
+}
+
+function declarationsReadingNamedTags(code) {
+  const sourceFile = compiler.createSourceFile(
+    "sample.js",
+    code,
+    compiler.ScriptTarget.Latest,
+    true,
+    compiler.ScriptKind.JS,
+  );
+  const reading = new Set();
+  const visit = (node) => {
+    const isLoad = compiler.isFunctionDeclaration(node) || compiler.isMethodDeclaration(node);
+    const name = isLoad ? node.name.text : "";
+    if (
+      /^load\d+$/.test(name) &&
+      compiler.getJSDocTags(node).some((tag) => tag.tagName.text !== "")
+    ) {
+      reading.add(Number(name.slice(4)));
+    }
+    compiler.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return reading;
+}
+
+describe("a JSDoc block at its own column and nesting depth", () => {
+  const bodies = seededBlockBodies(400);
+  const linter = new Linter();
+  const config = [
+    {
+      files: ["**/*.js"],
+      languageOptions: { parser: tseslint.parser },
+      plugins: { local: { rules: { "no-comments": noComments } } },
+      rules: { "local/no-comments": "error" },
+    },
+  ];
+
+  for (const placement of blockPlacements) {
+    it(`keeps a block exactly when TypeScript reads a named tag on its declaration: ${JSON.stringify({ ...placement, prefix: Boolean(placement.prefix) })}`, () => {
+      const { code, blockLines } = placeBlocks(bodies, placement);
+      const messages = linter.verify(code, config, { filename: "sample.js" });
+      assert.deepEqual(
+        messages.filter((message) => message.ruleId !== "local/no-comments"),
+        [],
+      );
+      const deleted = new Set(messages.map((message) => blockLines.get(message.line)));
+      const reading = declarationsReadingNamedTags(code);
+      const disagreements = bodies.filter((_, index) => deleted.has(index) === reading.has(index));
+      assert.deepEqual(disagreements, []);
+      assert.equal(deleted.size + reading.size, bodies.length);
+      if (!placement.prefix) assert.ok(reading.size > 0);
+    });
+  }
+});
