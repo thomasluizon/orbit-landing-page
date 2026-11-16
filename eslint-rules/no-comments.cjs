@@ -3,6 +3,7 @@ const TAG_DIRECTIVE = /^(?:@license|@preserve)/;
 const COVERAGE_RANGE = /(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:start|stop)(?=\W|$)/;
 const VITEST_ENVIRONMENT = /@(?:vitest|jest)-environment(?:\s+[\w-]+\b|-options\s+.)/;
 const VITEST_MODULE_TAG = /(?:\/\/|\*)\s*@module-tag\s+[\w\-/]+\b/;
+const TERSER_ANNOTATION = /[@#]__(?:PURE|INLINE|NOINLINE|KEY|MANGLE_PROP)__/;
 const COVERAGE_HINT = /^(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:if|else|next|file)(?=\W|$)/;
 const TYPESCRIPT_LINE_SUPPRESSION = /^\/\/\/?\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignore)/;
@@ -10,9 +11,9 @@ const TYPESCRIPT_LINE_PRAGMA =
   /^\/\/\/?\s*@(?:ts-check|ts-nocheck)(?:[^\S\r\n]|:|$)|^\/\/\/\s*<(?:reference|amd-dependency|amd-module)\s.*?\/>/i;
 const TYPESCRIPT_BLOCK_PRAGMA = /^@(?:jsx|jsxfrag|jsximportsource|jsxruntime)(?:\s|$)/i;
 const LINE_DIRECTIVE =
-  /^(?:eslint-disable(?:-next)?-line(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__PURE__)/;
+  /^(?:eslint-disable(?:-next)?-line(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:)/;
 const BLOCK_DIRECTIVE =
-  /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__PURE__|@vite-ignore$)/;
+  /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|[@#]__NO_SIDE_EFFECTS__$|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
 const TYPE_ANNOTATION =
   /@(?:type|typedef|satisfies|template|import)(?![\w-])|@(?:param|returns)\s*\{/;
@@ -198,6 +199,7 @@ function isDirective(comment, isDocComment) {
   if (TAG_DIRECTIVE.test(firstText) || COVERAGE_HINT.test(opening)) return true;
   if (VITEST_ENVIRONMENT.test(comment.value) || VITEST_MODULE_TAG.test(commentText)) return true;
   if (isCoverageRange(comment.value) || isTypeScriptSuppression(comment)) return true;
+  if (TERSER_ANNOTATION.test(comment.value)) return true;
   if (comment.type === "Line")
     return LINE_DIRECTIVE.test(opening) || TYPESCRIPT_LINE_PRAGMA.test(commentText);
   if (TYPESCRIPT_BLOCK_PRAGMA.test(firstText)) return true;
