@@ -1,8 +1,8 @@
 const LINE_BREAK = /\r\n|[\r\n\u2028\u2029]/;
 const TAG_DIRECTIVE =
-  /^(?:@license|@preserve|(?:istanbul|[cv]8)\s+ignore\s+(?:start|stop)(?=\W|$))/;
-const VITEST_ENVIRONMENT = /@vitest-environment(?:\s+[\w-]+\b|-options\s+.)/;
-const COVERAGE_HINT = /^(?:istanbul|[cv]8)\s+ignore\s+(?:if|else|next|file)(?=\W|$)/;
+  /^(?:@license|@preserve|(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:start|stop)(?=\W|$))/;
+const VITEST_ENVIRONMENT = /@(?:vitest|jest)-environment(?:\s+[\w-]+\b|-options\s+.)/;
+const COVERAGE_HINT = /^(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:if|else|next|file)(?=\W|$)/;
 const TYPESCRIPT_LINE_SUPPRESSION = /^\/\/\/?\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_LINE_PRAGMA =
