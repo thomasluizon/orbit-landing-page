@@ -28,6 +28,9 @@ const run = (cwd, args, input) =>
     encoding: "utf8",
   });
 const git = (cwd, ...args) => spawnSync("git", args, { cwd, encoding: "utf8" });
+const date = ["2026", "-08-12"].join("");
+const owner = ["Tho", "mas"].join("");
+const machine = ["/", "Users/example/work"].join("");
 
 const fixture = (label, path, content) => {
   const root = mkdtempSync(join(tmpdir(), `timeless-${label}-`));
@@ -47,8 +50,6 @@ const fixture = (label, path, content) => {
 };
 
 test("timeless checker modes and exceptions", () => {
-  const date = ["2026", "-08-12"].join("");
-  const owner = ["Tho", "mas"].join("");
   const path = ["/", "Users/alex/project"].join("");
   const windowsPath = ["C:", "\\", "Users", "\\", "alex"].join("");
   const cases = [
@@ -243,7 +244,6 @@ test("timeless checker modes and exceptions", () => {
 });
 
 test("Astro TypeScript comments are checked without treating markup as code", () => {
-  const date = ["2026", "-08-12"].join("");
   const cases = [
     ["frontmatter", `---\n// ${date}\nconst title = "ready"\n---\n<p>{title}</p>\n`, 2],
     ["script", `<p>ready</p>\n<script>\n// ${date}\nconst title = "ready"\n</script>\n`, 3],
@@ -261,17 +261,10 @@ test("Astro TypeScript comments are checked without treating markup as code", ()
   for (const [label, planted, line] of cases) {
     const root = fixture(`astro-${label}`, "sample.astro", "<p>clean</p>\n");
     symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
-    const hook = run(
-      root,
-      ["--hook"],
-      JSON.stringify({
-        tool_name: "Write",
-        tool_input: { file_path: join(root, "sample.astro"), content: planted },
-      }),
-    );
+    const written = hook(root, "sample.astro", planted);
     T(
       `${label} date fails hook at the source line`,
-      hook.status === 2 && hook.stderr.includes(`sample.astro:${line}: dated-anecdote`),
+      written.status === 2 && written.stderr.includes(`sample.astro:${line}: dated-anecdote`),
     );
     writeFileSync(join(root, "sample.astro"), planted);
     git(root, "add", "sample.astro");
@@ -285,15 +278,10 @@ test("Astro TypeScript comments are checked without treating markup as code", ()
   const root = fixture("astro-markup", "sample.astro", `<p>${date}</p>\n`);
   symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
   T("Astro markup date passes all", run(root, ["--all"]).status === 0);
-  const hook = run(
-    root,
-    ["--hook"],
-    JSON.stringify({
-      tool_name: "Write",
-      tool_input: { file_path: join(root, "sample.astro"), content: `<p>changed ${date}</p>\n` },
-    }),
+  T(
+    "Astro markup date passes hook",
+    hook(root, "sample.astro", `<p>changed ${date}</p>\n`).status === 0,
   );
-  T("Astro markup date passes hook", hook.status === 0);
   const six = Array.from({ length: 6 }, (_, index) => `// reason ${index}`).join("\n");
   for (const content of [`---\n${six}\n---\n<p>ready</p>\n`, `<script>\n${six}\n</script>\n`]) {
     writeFileSync(join(root, "sample.astro"), content);
@@ -317,7 +305,6 @@ test("Astro TypeScript comments are checked without treating markup as code", ()
 });
 
 test("XML build files have their comments checked", () => {
-  const date = ["2026", "-08-12"].join("");
   for (const name of ["sample.csproj", "Directory.Build.props", "nuget.config"]) {
     const root = fixture(`xml-${name}`, name, "<Project />\n");
     writeFileSync(join(root, name), `<Project>\n  <!-- ${date} -->\n</Project>\n`);
@@ -332,7 +319,6 @@ test("XML build files have their comments checked", () => {
 });
 
 test("an escaped backslash closes a YAML string before a trailing comment", () => {
-  const date = ["2026", "-08-12"].join("");
   const root = fixture("yaml-escape", "sample.yml", "value: clean\n");
   writeFileSync(join(root, "sample.yml"), `value: "foo\\\\" # ${date}\n`);
   git(root, "add", "sample.yml");
@@ -345,7 +331,6 @@ test("an escaped backslash closes a YAML string before a trailing comment", () =
 });
 
 test("--staged checks a staged file whose working copy is gone", () => {
-  const owner = ["Tho", "mas"].join("");
   const root = fixture("staged-removed", "sample.md", "clean\n");
   writeFileSync(join(root, "sample.md"), `Ask ${owner}.\n`);
   git(root, "add", "sample.md");
@@ -359,7 +344,6 @@ test("--staged checks a staged file whose working copy is gone", () => {
 });
 
 test("a dated comment inside an empty call fails --all", () => {
-  const date = ["2026", "-08-12"].join("");
   const root = fixture("empty-call-comment", "sample.ts", "consume()\n");
   symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
   writeFileSync(join(root, "sample.ts"), `consume(/* ${date} */)\n`);
@@ -372,7 +356,6 @@ test("a dated comment inside an empty call fails --all", () => {
 });
 
 test("a Write hook rejects a date exposed by wrapping code in a comment", () => {
-  const date = ["2026", "-08-12"].join("");
   const line = `const value = new Date("${date}")`;
   const root = fixture("wrap-existing-code", "sample.js", `${line}\n`);
   symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
@@ -393,20 +376,10 @@ test("a Write hook rejects a date exposed by wrapping code in a comment", () => 
 });
 
 test("moving an existing dated comment passes diff checks", () => {
-  const date = ["2026", "-08-12"].join("");
   const comment = `// ${date}`;
   const root = fixture("move-existing-comment", "sample.js", `${comment}\nconst value = 1\n`);
   const moved = `const value = 1\n${comment}\n`;
-  const hook = run(
-    root,
-    ["--hook"],
-    JSON.stringify({
-      tool_name: "Write",
-      tool_input: { file_path: join(root, "sample.js"), content: moved },
-      cwd: root,
-    }),
-  );
-  T("the hook accepts the moved finding", hook.status === 0);
+  T("the hook accepts the moved finding", hook(root, "sample.js", moved).status === 0);
   writeFileSync(join(root, "sample.js"), moved);
   git(root, "add", "sample.js");
   T("staged mode accepts the moved finding", run(root, ["--staged"]).status === 0);
@@ -445,7 +418,6 @@ test("directory allowlists accept comment length but reject machine paths", () =
 test("a dated comment inside an empty call fails all", () => {
   const root = fixture("empty-call-comment", "sample.js", "run()\n");
   symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
-  const date = ["2026", "-08-12"].join("");
   writeFileSync(join(root, "sample.js"), `run(/* ${date} */)\n`);
   const result = run(root, ["--all"]);
   T(
@@ -456,7 +428,6 @@ test("a dated comment inside an empty call fails all", () => {
 });
 
 test("Write hook rejects an existing date line wrapped in a comment", () => {
-  const date = ["2026", "-08-12"].join("");
   const line = `const value = new Date("${date}")`;
   const root = fixture("comment-wrapped-date", "sample.js", `${line}\n`);
   symlinkSync(join(checker, "..", "..", "node_modules"), join(root, "node_modules"), "dir");
@@ -500,9 +471,6 @@ test("directory allowlist accepts comment length but refuses machine paths", () 
   rmSync(root, { recursive: true, force: true });
 });
 
-const date = ["2026", "-08-12"].join("");
-const owner = ["Tho", "mas"].join("");
-const machine = ["/", "Users/example/work"].join("");
 const make = (name, content = "clean\n") => fixture("port", name, content);
 const gitOutput = (root, ...args) => {
   const result = git(root, ...args);
@@ -656,11 +624,11 @@ test("moving the only covered file out of the scope fails base on the unused ent
 test("a checker change that leaves an entry unused fails base", () => {
   const { root, base } = canvasFixture();
   try {
-    const checker = join(root, "tools/check-timeless.mjs");
-    const full = readFileSync(checker, "utf8");
+    const fixtureChecker = join(root, "tools/check-timeless.mjs");
+    const full = readFileSync(fixtureChecker, "utf8");
     const withoutDateRule = full.replace('["dated-anecdote", date], ', "");
     assert.notEqual(withoutDateRule, full);
-    writeFileSync(checker, withoutDateRule);
+    writeFileSync(fixtureChecker, withoutDateRule);
     gitOutput(root, "commit", "-qam", "narrow");
     const guard = run(root, ["--base", base]);
     assert.equal(guard.status, 1);
@@ -732,14 +700,14 @@ test("a checker change that matches an unchanged file fails base", () => {
     gitOutput(root, "add", "notes.md");
     gitOutput(root, "commit", "-qm", "notes");
     const base = gitOutput(root, "rev-parse", "HEAD");
-    const checker = join(root, "tools/check-timeless.mjs");
-    const hyphenOnly = readFileSync(checker, "utf8");
+    const fixtureChecker = join(root, "tools/check-timeless.mjs");
+    const hyphenOnly = readFileSync(fixtureChecker, "utf8");
     const slashToo = hyphenOnly.replace(
       "\\d{2}-(?:0[1-9]|1[0-2])-(",
       "\\d{2}[-/](?:0[1-9]|1[0-2])[-/](",
     );
     assert.notEqual(slashToo, hyphenOnly);
-    writeFileSync(checker, slashToo);
+    writeFileSync(fixtureChecker, slashToo);
     gitOutput(root, "commit", "-qam", "widen");
     const guard = run(root, ["--base", base]);
     assert.equal(guard.status, 1);
@@ -868,7 +836,7 @@ test("a landed Edit is checked on the bytes in the file, not on its old_string a
   try {
     const planted = landedEdit(root, "sample.md", `Ask ${owner}.\n`);
     assert.equal(planted.status, 2);
-    assert.equal(planted.stderr.trim(), `sample.md:1: owner-name: ${owner}`);
+    assert.equal(planted.stderr.trim(), ownerFinding("sample.md"));
     writeFileSync(join(root, "sample.md"), "clean\n");
     const tool_input = {
       file_path: join(root, "sample.md"),
@@ -918,7 +886,7 @@ test("a landed Edit is judged against HEAD, as the staged check judges the file"
     gitOutput(root, "add", "sample.md");
     const staged = landedEdit(root, "sample.md", `Ask ${owner}.\nmore\n`);
     assert.equal(staged.status, 2);
-    assert.equal(staged.stderr.trim(), `sample.md:1: owner-name: ${owner}`);
+    assert.equal(staged.stderr.trim(), ownerFinding("sample.md"));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -959,41 +927,30 @@ test("a landed Edit on a CRLF blob does not report a finding the blob already ha
   }
 });
 
-for (const [session, other] of [
-  ["orbit-landing-page", "orbit-ui-mobile"],
-  ["orbit-ui-mobile", "orbit-landing-page"],
-]) {
-  test(`a hook in ${session} judges a file of ${other} against the HEAD and allowlist of ${other}, not through its checker`, () => {
-    const sessionRoot = make("sample.md"),
-      otherRoot = make("kept.md", `Ask ${owner}.\n`);
-    try {
-      writeFileSync(join(otherRoot, "tools/check-timeless.mjs"), "process.exit(0)\n");
-      writeFileSync(join(otherRoot, ".gitignore"), "local/\n");
-      assert.equal(
-        landedEdit(otherRoot, "kept.md", `Ask ${owner}.\nmore\n`, sessionRoot).status,
-        0,
-      );
-      const planted = landedEdit(otherRoot, "sample.md", `Ask ${owner}.\n`, sessionRoot);
-      assert.equal(planted.status, 2);
-      assert.equal(planted.stderr.trim(), `sample.md:1: owner-name: ${owner}`);
-      const written = hook(sessionRoot, join(otherRoot, "new.md"), `Ask ${owner}.\n`);
-      assert.equal(written.status, 2);
-      assert.equal(written.stderr.trim(), `new.md:1: owner-name: ${owner}`);
-      mkdirSync(join(otherRoot, "local"));
-      assert.equal(
-        landedEdit(otherRoot, "local/notes.md", `Ask ${owner}.\n`, sessionRoot).status,
-        0,
-      );
-      writeAllowlist(otherRoot, [
-        { path: "sample.md", rule: "owner-name", match: owner, reason: "reviewed" },
-      ]);
-      assert.equal(landedEdit(otherRoot, "sample.md", `Ask ${owner}.\n`, sessionRoot).status, 0);
-    } finally {
-      rmSync(sessionRoot, { recursive: true, force: true });
-      rmSync(otherRoot, { recursive: true, force: true });
-    }
-  });
-}
+test("a hook judges a file of another repository against that repository's HEAD and allowlist, not through its checker", () => {
+  const sessionRoot = make("sample.md"),
+    otherRoot = make("kept.md", `Ask ${owner}.\n`);
+  try {
+    writeFileSync(join(otherRoot, "tools/check-timeless.mjs"), "process.exit(0)\n");
+    writeFileSync(join(otherRoot, ".gitignore"), "local/\n");
+    assert.equal(landedEdit(otherRoot, "kept.md", `Ask ${owner}.\nmore\n`, sessionRoot).status, 0);
+    const planted = landedEdit(otherRoot, "sample.md", `Ask ${owner}.\n`, sessionRoot);
+    assert.equal(planted.status, 2);
+    assert.equal(planted.stderr.trim(), ownerFinding("sample.md"));
+    const written = hook(sessionRoot, join(otherRoot, "new.md"), `Ask ${owner}.\n`);
+    assert.equal(written.status, 2);
+    assert.equal(written.stderr.trim(), ownerFinding("new.md"));
+    mkdirSync(join(otherRoot, "local"));
+    assert.equal(landedEdit(otherRoot, "local/notes.md", `Ask ${owner}.\n`, sessionRoot).status, 0);
+    writeAllowlist(otherRoot, [
+      { path: "sample.md", rule: "owner-name", match: owner, reason: "reviewed" },
+    ]);
+    assert.equal(landedEdit(otherRoot, "sample.md", `Ask ${owner}.\n`, sessionRoot).status, 0);
+  } finally {
+    rmSync(sessionRoot, { recursive: true, force: true });
+    rmSync(otherRoot, { recursive: true, force: true });
+  }
+});
 
 test("a mis-cased path is judged at the case the file system stores", (t) => {
   const root = make("README.md", `Ask ${owner}.\n`);
@@ -1005,7 +962,7 @@ test("a mis-cased path is judged at the case the file system stores", (t) => {
     }
     const written = hook(root, join(misCased, "sample.md"), `Ask ${owner}.\n`);
     assert.equal(written.status, 2);
-    assert.equal(written.stderr.trim(), `sample.md:1: owner-name: ${owner}`);
+    assert.equal(written.stderr.trim(), ownerFinding("sample.md"));
     const landed = landedEdit(
       root,
       "sample.md",
@@ -1014,7 +971,7 @@ test("a mis-cased path is judged at the case the file system stores", (t) => {
       join(misCased, "sample.md"),
     );
     assert.equal(landed.status, 2);
-    assert.equal(landed.stderr.trim(), `sample.md:1: owner-name: ${owner}`);
+    assert.equal(landed.stderr.trim(), ownerFinding("sample.md"));
     const kept = landedEdit(
       root,
       "README.md",
