@@ -230,6 +230,19 @@ const jsxPragmas = [
   "/* @jsxRuntime automatic */\n/* @JSXIMPORTSOURCE preact */\nconst limit = 1;\n",
   "const limit = 1;\n/* @jsxRuntime automatic @jsxImportSource preact */\nconst other = 2;\n",
   "const limit = 1;\n/**\n * Renders with Preact.\n * @jsxImportSource preact for this file\n */\nconst other = 2;\n",
+  "// The x@jsx h text.\nconst limit = 1;\n",
+  "const limit = 1;\n// Renders the @jsxImportSource preact tree.\nconst other = 2;\n",
+  "const limit = 1;\n/** Renders the @jsxImportSource preact tree. */\nconst other = 2;\n",
+  'import { load } from "./load";\n// Renders with Preact. @jsxImportSource preact\nload();\n',
+  "const limit = 1;\n// @jsx h is the factory.\nconst other = 2;\n",
+  "function load() {\n  /* @jsxRuntime automatic @jsxImportSource preact */\n  return 1;\n}\n",
+  "const limit = 1; /* @jsxRuntime automatic @jsxImportSource preact */\nconst other = 2;\n",
+  "// see a@jsxImportSource preact\nconst limit = 1;\n",
+  "function load() {\n  // @jsx\u3000h is the factory.\n  return 1;\n}\n",
+  "/* @jsxImportSource\u0085preact */\nconst limit = 1;\n",
+  "const limit = 1;\n/* @jsxImportSource\u0085preact */\nconst other = 2;\n",
+  "const limit = 1;\n/* @jsxOther x @jsx\u0085h */\nconst other = 2;\n",
+  "const limit = 1;\n/* @jsx\nh */\nconst other = 2;\n",
 ].map(jsx);
 
 const shebang = module("#!/usr/bin/env node\nconst limit = 1;\n");
@@ -251,7 +264,6 @@ const ignoredByTool = [
   ["/** @ts-check */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/**\n * @ts-ignore\n */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// @JSX h\nconst limit = 1;\n", "const limit = 1;\n"],
-  ["// The x@jsx h text.\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// @jsxImportSource\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/* @jsx */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** Reads the @jsxh text. */\nconst limit = 1;\n", "const limit = 1;\n"],
@@ -279,29 +291,22 @@ const ignoredByTool = [
   ["/* ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// ! Store 1.0\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
-  [
-    "const limit = 1;\n// Renders the @jsxImportSource preact tree.\nconst other = 2;\n",
-    "const limit = 1;\nconst other = 2;\n",
-  ],
-  [
-    "const limit = 1;\n/** Renders the @jsxImportSource preact tree. */\nconst other = 2;\n",
-    "const limit = 1;\nconst other = 2;\n",
-  ],
-  [
-    'import { load } from "./load";\n// Renders with Preact. @jsxImportSource preact\nload();\n',
-    'import { load } from "./load";\nload();\n',
-  ],
   ['"use client";\n/* @JSX h */\nconst limit = 1;\n', '"use client";\nconst limit = 1;\n'],
+  ["// @jsxImportSource\u0085preact\nconst limit = 1;\n", "const limit = 1;\n"],
   [
-    "const limit = 1;\n// @jsx h is the factory.\nconst other = 2;\n",
-    "const limit = 1;\nconst other = 2;\n",
-  ],
-  [
-    "function load() {\n  /* @jsxRuntime automatic @jsxImportSource preact */\n  return 1;\n}\n",
+    "function load() {\n  /* @jsxImportSource\u0085preact */\n  return 1;\n}\n",
     "function load() {\n  return 1;\n}\n",
   ],
   [
-    "const limit = 1; /* @jsxRuntime automatic @jsxImportSource preact */\nconst other = 2;\n",
+    "const limit = 1;\n/* @jsxImportSource\u200bpreact */\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
+  [
+    "const limit = 1;\n/* @jsxOther x y @jsx\u0085h */\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
+  [
+    "const limit = 1;\n/* @jsxImportSource\npreact extra */\nconst other = 2;\n",
     "const limit = 1;\nconst other = 2;\n",
   ],
   [

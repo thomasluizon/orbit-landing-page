@@ -12,9 +12,11 @@ const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignor
 const TYPESCRIPT_LINE_PRAGMA =
   /^\/\/\/?\s*@(?:ts-check|ts-nocheck)(?:[^\S\r\n]|:|$)|^\/\/\/\s*<(?:reference|amd-dependency|amd-module)\s.*?\/>/i;
 const BABEL_JSX_PRAGMA = /^\s*(?:\*\s*)?@jsx(?:Frag|ImportSource|Runtime)?\s+\S+\s*$/m;
-const OXC_JSX_PRAGMA = /(?:^|[\s*])@jsx(?:Frag|ImportSource|Runtime)?[ \t]+\S/;
+const ESBUILD_JSX_PRAGMA =
+  /@jsx(?:Frag|ImportSource|Runtime)?[\t\v\f \u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]+[^\t\v\f \u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff]/;
 const TYPESCRIPT_JSX_PRAGMA = /@jsx(?:frag|importsource|runtime)?\s+\S/i;
-const SWC_JSX_PRAGMA = /^[^\S\n]*\*?[^\S\n]*@jsx(?:Frag|ImportSource|Runtime)?[^\S\n]+\S/m;
+const SWC_SPACE = /[\t\v\f\r \u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/;
+const JSX_PRAGMA_NAME = /^@jsx(?:Frag|ImportSource|Runtime)?$/;
 const LINE_DIRECTIVE =
   /^(?:eslint-disable(?:-next)?-line(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:)/;
 const BLOCK_DIRECTIVE =
@@ -210,9 +212,18 @@ function isDirective(comment, isDocComment) {
   return !isDocComment && BLOCK_DIRECTIVE.test(opening);
 }
 
+function hasSwcJsxPragma(line) {
+  const words = line.split(SWC_SPACE).filter(Boolean);
+  if (words[0]?.startsWith("*")) words[0] = words[0].slice(1);
+  if (words[0] === "") words.shift();
+  if (!words[0]?.startsWith("@jsx")) return false;
+  return words.some(
+    (word, index) => index % 2 === 0 && index + 1 < words.length && JSX_PRAGMA_NAME.test(word),
+  );
+}
+
 function createJsxPragmaCheck(sourceCode) {
   const statements = sourceCode.ast.body;
-  const firstStatement = statements.find((statement) => !statement.directive);
 
   function leadsStatement(comment) {
     const next = sourceCode.getTokenAfter(comment);
@@ -223,13 +234,11 @@ function createJsxPragmaCheck(sourceCode) {
   }
 
   return function isJsxPragma(comment) {
-    if (BABEL_JSX_PRAGMA.test(comment.value)) return true;
-    const isBeforeStatements = !firstStatement || comment.range[1] <= firstStatement.range[0];
-    if (isBeforeStatements && OXC_JSX_PRAGMA.test(comment.value)) return true;
+    if (BABEL_JSX_PRAGMA.test(comment.value) || ESBUILD_JSX_PRAGMA.test(comment.value)) return true;
     if (comment.type !== "Block") return false;
     if (!sourceCode.getTokenBefore(comment) && TYPESCRIPT_JSX_PRAGMA.test(comment.value))
       return true;
-    return SWC_JSX_PRAGMA.test(comment.value) && leadsStatement(comment);
+    return comment.value.split("\n").some(hasSwcJsxPragma) && leadsStatement(comment);
   };
 }
 
