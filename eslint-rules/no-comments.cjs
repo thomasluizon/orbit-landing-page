@@ -2,6 +2,7 @@ const LINE_BREAK = /\r\n|[\r\n\u2028\u2029]/;
 const TAG_DIRECTIVE = /^(?:@license|@preserve)/;
 const COVERAGE_RANGE = /(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:start|stop)(?=\W|$)/;
 const VITEST_ENVIRONMENT = /@(?:vitest|jest)-environment(?:\s+[\w-]+\b|-options\s+.)/;
+const VITEST_MODULE_TAG = /(?:\/\/|\*)\s*@module-tag\s+[\w\-/]+\b/;
 const COVERAGE_HINT = /^(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:if|else|next|file)(?=\W|$)/;
 const TYPESCRIPT_LINE_SUPPRESSION = /^\/\/\/?\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignore)/;
@@ -190,15 +191,15 @@ const isCoverageRange = (text) => text.split("\n").some((line) => COVERAGE_RANGE
 
 function isDirective(comment, isDocComment) {
   if (comment.type === "Shebang") return true;
+  const commentText = comment.type === "Line" ? `//${comment.value}` : `/*${comment.value}*/`;
   const opening = (isDocComment ? comment.value.slice(1) : comment.value).trim();
   const firstText =
     comment.type === "Block" ? comment.value.replace(/^[ \t]*\*+/gm, "").trim() : opening;
   if (TAG_DIRECTIVE.test(firstText) || COVERAGE_HINT.test(opening)) return true;
-  if (VITEST_ENVIRONMENT.test(comment.value) || isCoverageRange(comment.value)) return true;
-  if (isTypeScriptSuppression(comment)) return true;
-  if (comment.type === "Line") {
-    return LINE_DIRECTIVE.test(opening) || TYPESCRIPT_LINE_PRAGMA.test(`//${comment.value}`);
-  }
+  if (VITEST_ENVIRONMENT.test(comment.value) || VITEST_MODULE_TAG.test(commentText)) return true;
+  if (isCoverageRange(comment.value) || isTypeScriptSuppression(comment)) return true;
+  if (comment.type === "Line")
+    return LINE_DIRECTIVE.test(opening) || TYPESCRIPT_LINE_PRAGMA.test(commentText);
   if (TYPESCRIPT_BLOCK_PRAGMA.test(firstText)) return true;
   return !isDocComment && BLOCK_DIRECTIVE.test(opening);
 }
