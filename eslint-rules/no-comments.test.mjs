@@ -199,6 +199,11 @@ const legalComments = [
   "// Store 1.0 @preserve\nconst limit = 1;\n",
   "/*! Store 1.0 */\nconst limit = 1;\n",
   "//! Store 1.0\nconst limit = 1;\n",
+  "/* Store 1.0 @License */\nconst limit = 1;\n",
+  "/**! Store 1.0 */\nconst limit = 1;\n",
+  "/* Store 1.0 @copyright */\nconst limit = 1;\n",
+  "// Store 1.0 @lic\nconst limit = 1;\n",
+  "/* Store 1.0 @cc_on */\nconst limit = 1;\n",
 ].map(typescript);
 
 const jsxPragmas = [
@@ -216,6 +221,15 @@ const jsxPragmas = [
   "/** Classic. @jsxFrag Fragment */\nconst limit = 1;\n",
   "/* @JSX h */\nconst limit = 1;\n",
   "/* @jsx\nh */\nconst limit = 1;\n",
+  "// @jsx\u00a0h\nconst limit = 1;\n",
+  "const limit = 1;\n// @jsx h\nconst other = 2;\n",
+  "function load() {\n  /* @jsx h */\n  return 1;\n}\n",
+  '"use client";\n// Renders with Preact. @jsxImportSource preact\nconst limit = 1;\n',
+  '"use client";\n/** Renders the @jsxImportSource preact tree. */\nconst limit = 1;\n',
+  "// Renders the @jsxImportSource preact tree.\nconst limit = 1;\n",
+  "/* @jsxRuntime automatic */\n/* @JSXIMPORTSOURCE preact */\nconst limit = 1;\n",
+  "const limit = 1;\n/* @jsxRuntime automatic @jsxImportSource preact */\nconst other = 2;\n",
+  "const limit = 1;\n/**\n * Renders with Preact.\n * @jsxImportSource preact for this file\n */\nconst other = 2;\n",
 ].map(jsx);
 
 const shebang = module("#!/usr/bin/env node\nconst limit = 1;\n");
@@ -262,10 +276,34 @@ const ignoredByTool = [
   ["/** global state for the menu. */\nconst menu = {};\n", "const menu = {};\n"],
   ["/*\n * eslint-disable no-undef\n */\nload();\n", "load();\n"],
   ["/* webpack bundles this file. */\nconst menu = {};\n", "const menu = {};\n"],
-  ["/* Store 1.0 @License */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/* ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// ! Store 1.0\nconst limit = 1;\n", "const limit = 1;\n"],
-  ["/**! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/** ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
+  [
+    "const limit = 1;\n// Renders the @jsxImportSource preact tree.\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
+  [
+    "const limit = 1;\n/** Renders the @jsxImportSource preact tree. */\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
+  [
+    'import { load } from "./load";\n// Renders with Preact. @jsxImportSource preact\nload();\n',
+    'import { load } from "./load";\nload();\n',
+  ],
+  ['"use client";\n/* @JSX h */\nconst limit = 1;\n', '"use client";\nconst limit = 1;\n'],
+  [
+    "const limit = 1;\n// @jsx h is the factory.\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
+  [
+    "function load() {\n  /* @jsxRuntime automatic @jsxImportSource preact */\n  return 1;\n}\n",
+    "function load() {\n  return 1;\n}\n",
+  ],
+  [
+    "const limit = 1; /* @jsxRuntime automatic @jsxImportSource preact */\nconst other = 2;\n",
+    "const limit = 1;\nconst other = 2;\n",
+  ],
   [
     "/**\n * The type is wrong upstream.\n * @ts-ignore\n */\nconst limit = 1;\n",
     "const limit = 1;\n",

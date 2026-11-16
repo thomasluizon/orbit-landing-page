@@ -1,5 +1,5 @@
 const LINE_BREAK = /\r\n|[\r\n\u2028\u2029]/;
-const LEGAL_COMMENT = /^!|@license|@preserve/;
+const LEGAL_COMMENT = /@preserve|@copyright|@lic|@cc_on|^\**!/i;
 const COVERAGE_RANGE = /(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:start|stop)(?=\W|$)/;
 const VITEST_ENVIRONMENT = /@(?:vitest|jest)-environment(?:\s+[\w-]+\b|-options\s+.)/;
 const VITEST_MODULE_TAG = /(?:\/\/|\*)\s*@module-tag\s+[\w\-/]+\b/;
@@ -11,8 +11,10 @@ const TYPESCRIPT_LINE_SUPPRESSION = /^\/\/\/?\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_BLOCK_SUPPRESSION = /^(?:\/|\*)*\s*@(?:ts-expect-error|ts-ignore)/;
 const TYPESCRIPT_LINE_PRAGMA =
   /^\/\/\/?\s*@(?:ts-check|ts-nocheck)(?:[^\S\r\n]|:|$)|^\/\/\/\s*<(?:reference|amd-dependency|amd-module)\s.*?\/>/i;
-const TYPESCRIPT_JSX_PRAGMA = /@jsx(?:frag|importsource|runtime)?\s+\S/i;
+const BABEL_JSX_PRAGMA = /^\s*(?:\*\s*)?@jsx(?:Frag|ImportSource|Runtime)?\s+\S+\s*$/m;
 const OXC_JSX_PRAGMA = /(?:^|[\s*])@jsx(?:Frag|ImportSource|Runtime)?[ \t]+\S/;
+const TYPESCRIPT_JSX_PRAGMA = /@jsx(?:frag|importsource|runtime)?\s+\S/i;
+const SWC_JSX_PRAGMA = /^[^\S\n]*\*?[^\S\n]*@jsx(?:Frag|ImportSource|Runtime)?[^\S\n]+\S/m;
 const LINE_DIRECTIVE =
   /^(?:eslint-disable(?:-next)?-line(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:)/;
 const BLOCK_DIRECTIVE =
@@ -203,11 +205,32 @@ function isDirective(comment, isDocComment) {
   if (TERSER_ANNOTATION.test(comment.value)) return true;
   if (!isDocComment && ROLLDOWN_NO_SIDE_EFFECTS.test(opening)) return true;
   if (comment.type === "Block" && SWC_NO_SIDE_EFFECTS.test(comment.value)) return true;
-  if (OXC_JSX_PRAGMA.test(comment.value)) return true;
   if (comment.type === "Line")
     return LINE_DIRECTIVE.test(opening) || TYPESCRIPT_LINE_PRAGMA.test(commentText);
-  if (TYPESCRIPT_JSX_PRAGMA.test(comment.value)) return true;
   return !isDocComment && BLOCK_DIRECTIVE.test(opening);
+}
+
+function createJsxPragmaCheck(sourceCode) {
+  const statements = sourceCode.ast.body;
+  const firstStatement = statements.find((statement) => !statement.directive);
+
+  function leadsStatement(comment) {
+    const next = sourceCode.getTokenAfter(comment);
+    if (!next || !statements.some((statement) => statement.range[0] === next.range[0]))
+      return false;
+    const previous = sourceCode.getTokenBefore(comment);
+    return !previous || previous.loc.end.line < comment.loc.start.line;
+  }
+
+  return function isJsxPragma(comment) {
+    if (BABEL_JSX_PRAGMA.test(comment.value)) return true;
+    const isBeforeStatements = !firstStatement || comment.range[1] <= firstStatement.range[0];
+    if (isBeforeStatements && OXC_JSX_PRAGMA.test(comment.value)) return true;
+    if (comment.type !== "Block") return false;
+    if (!sourceCode.getTokenBefore(comment) && TYPESCRIPT_JSX_PRAGMA.test(comment.value))
+      return true;
+    return SWC_JSX_PRAGMA.test(comment.value) && leadsStatement(comment);
+  };
 }
 
 module.exports = {
@@ -228,11 +251,12 @@ module.exports = {
     const sourceCode = context.sourceCode ?? context.getSourceCode();
     const filename = context.filename ?? context.getFilename();
     const isOnExportedSymbol = createExportCheck(sourceCode, filename);
+    const isJsxPragma = createJsxPragmaCheck(sourceCode);
 
     function isAllowed(comment) {
       if (URL_RE.test(comment.value)) return true;
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
-      if (isDirective(comment, isDocComment)) return true;
+      if (isDirective(comment, isDocComment) || isJsxPragma(comment)) return true;
       if (!isDocComment) return false;
       if (JAVASCRIPT_FILE.test(filename) && TYPE_ANNOTATION.test(comment.value)) return true;
       return isOnExportedSymbol(comment);
