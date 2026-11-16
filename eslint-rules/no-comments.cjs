@@ -17,7 +17,7 @@ const LINE_DIRECTIVE =
 const BLOCK_DIRECTIVE =
   /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
-const JSDOC_TAG = /(?:^[ \t*]*|\s)@[A-Za-z]/m;
+const JSDOC_TAG = /(?:^[\s\u0085\u200b*]*|[\s\u0085\u200b])@(?:[A-Za-z]|\\u)/m;
 const JAVASCRIPT_FILE = /\.[cm]?jsx?$/;
 const ASTRO_FILE = /\.astro$/;
 
