@@ -567,6 +567,45 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
           { code: `/** @typedef {string} Name */\n/** Loads it. */\n${loadFunction}`, filename },
           `/** @typedef {string} Name */\n${loadFunction}`,
         ),
+        rejected(
+          {
+            code: `/* Note. */ /** @ a\n            *@param {string} name\n */\n${loadFunction}`,
+            filename,
+          },
+          null,
+        ),
+        rejected(
+          {
+            code: "function outer() {\n  /* \u00e9\ud83d\ude00 */ /** @ a\n               *@type {string}\n   */\n  const count = 1;\n  return count;\n}\n",
+            filename,
+          },
+          null,
+        ),
+        rejected(
+          {
+            code: `/* Note. */ /** @see load\n            *@param {string} name\n */\n${loadFunction}`,
+            filename,
+          },
+          null,
+        ),
+        rejected(
+          {
+            code: "function outer() {\n  /* Note.\n   */ /** @ a\n          *@param {string} name\n   */\n  function load(name) {\n    return name;\n  }\n  return load;\n}\n",
+            filename,
+          },
+          null,
+        ),
+        rejected(
+          {
+            code: "let first = 1, /* Note.\n */ /** @ a\n                *@type {string}\n */ second = 1;\nexport { first, second };\n",
+            filename,
+          },
+          null,
+        ),
+        rejected(
+          { code: `/** @ a\n            *@param {string} name\n */\n${loadFunction}`, filename },
+          loadFunction,
+        ),
       ]),
       rejected(
         commonJs("/** Doc. */\nfunction load() {}\nmodule.exports = {};\n"),

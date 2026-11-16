@@ -252,6 +252,21 @@ module.exports = {
       return jsDocTagStarts.has(comment.range[0]);
     }
 
+    function movesDocBlock(comment) {
+      if (!JAVASCRIPT_FILE.test(filename)) return false;
+      const lineEnd = sourceCode.text.indexOf("\n", comment.range[1]);
+      return sourceCode
+        .getAllComments()
+        .some(
+          (other) =>
+            other.range[0] >= comment.range[1] &&
+            (lineEnd === -1 || other.range[0] < lineEnd) &&
+            other.type === "Block" &&
+            other.value.startsWith("*") &&
+            other.value.includes("@"),
+        );
+    }
+
     function isAllowed(comment) {
       if (URL_RE.test(comment.value)) return true;
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
@@ -268,6 +283,7 @@ module.exports = {
             loc: comment.loc,
             messageId: "noComment",
             fix(fixer) {
+              if (movesDocBlock(comment)) return null;
               const text = sourceCode.getText();
               let start = comment.range[0];
               let end = comment.range[1];
