@@ -145,7 +145,7 @@ function declaredNames(node) {
 
 function createExportCheck(sourceCode, filename) {
   const exportedNames = exportedLocalNames(sourceCode.ast);
-  const isAstroFrontmatter = ASTRO_FILE.test(filename);
+  if (ASTRO_FILE.test(filename)) exportedNames.add("Props");
 
   function isExportedDeclaration(node) {
     if (EXPORT_STATEMENTS.has(node.type)) return true;
@@ -154,11 +154,7 @@ function createExportCheck(sourceCode, filename) {
     const statement = node.type === "VariableDeclarator" ? node.parent : node;
     if (EXPORT_STATEMENTS.has(statement.parent?.type)) return true;
     if (statement.parent?.type !== "Program") return false;
-    const names = declaredNames(node);
-    if (names.some((name) => exportedNames.has(name))) return true;
-    const isPropsType =
-      node.type === "TSInterfaceDeclaration" || node.type === "TSTypeAliasDeclaration";
-    return isAstroFrontmatter && isPropsType && names.includes("Props");
+    return declaredNames(node).some((name) => exportedNames.has(name));
   }
 
   function isMemberOfExported(member) {
