@@ -243,7 +243,65 @@ const jsxPragmas = [
   "const limit = 1;\n/* @jsxImportSource\u0085preact */\nconst other = 2;\n",
   "const limit = 1;\n/* @jsxOther x @jsx\u0085h */\nconst other = 2;\n",
   "const limit = 1;\n/* @jsx\nh */\nconst other = 2;\n",
+  "// @JSX h\nconst limit = 1;\n",
+  "/* @jsx */\nconst limit = 1;\n",
+  '"use client";\n/* @JSX h */\nconst limit = 1;\n',
+  "// @jsxImportSource\u0085preact\nconst limit = 1;\n",
+  "function load() {\n  /* @jsxImportSource\u0085preact */\n  return 1;\n}\n",
+  "const limit = 1;\n/* @jsxOther x y @jsx\u0085h */\nconst other = 2;\n",
+  "const limit = 1;\n/* @jsxImportSource\npreact extra */\nconst other = 2;\n",
 ].map(jsx);
+
+const pragmaSpaces = [
+  "\t",
+  "\v",
+  "\f",
+  "\u00a0",
+  "\u1680",
+  "\u2000",
+  "\u2005",
+  "\u200a",
+  "\u202f",
+  "\u205f",
+  "\u3000",
+  "\ufeff",
+];
+const lineBreaks = ["\n", "\r\n", "\r", "\u2028", "\u2029"];
+const afterStatement = (comment) => jsx(`const limit = 1;\n${comment}\nconst other = 2;\n`);
+
+const spacedPragmas = [
+  ["jsx", "h"],
+  ["jsxFrag", "Frag"],
+  ["jsxImportSource", "preact"],
+  ["jsxRuntime", "classic"],
+]
+  .flatMap(([name, value]) =>
+    pragmaSpaces.flatMap((space) => [
+      `// @${name}${space}${value}`,
+      `/* @${name}${space}${value} */`,
+    ]),
+  )
+  .map(afterStatement);
+
+const metroBabelPragmas = [
+  ["jsx", "h"],
+  ["jsxFrag", "Frag"],
+]
+  .flatMap(([name, value]) => [
+    ...lineBreaks.flatMap((lineBreak) => [
+      `/* @${name}${lineBreak}${value} extra */`,
+      `/* *\t@${name}${lineBreak}${value} extra */`,
+      `/* Uses @${name}${lineBreak}${value} */`,
+      `/* Uses @${name}${lineBreak}${value} extra */`,
+    ]),
+    `/* see @${name}\n  ${value} below */`,
+  ])
+  .map(afterStatement);
+
+const pragmaFileTypes = [
+  typescript("const limit = 1;\n// Uses @jsx h for the tree.\nconst other = 2;\n"),
+  module("/** Renders the @jsxImportSource preact tree. */\nconst limit = 1;\n"),
+];
 
 const shebang = module("#!/usr/bin/env node\nconst limit = 1;\n");
 
@@ -263,10 +321,11 @@ const ignoredByTool = [
   ["// ts-check\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** @ts-check */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/**\n * @ts-ignore\n */\nconst limit = 1;\n", "const limit = 1;\n"],
-  ["// @JSX h\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// @jsxImportSource\nconst limit = 1;\n", "const limit = 1;\n"],
-  ["/* @jsx */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** Reads the @jsxh text. */\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["/*@jsx*/\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// @jsx.h\nconst limit = 1;\n", "const limit = 1;\n"],
+  ["// Sets the JSX factory to h.\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/// narration\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// prettier-ignore because the table aligns\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** prettier-ignore */\nconst limit = 1;\n", "const limit = 1;\n"],
@@ -291,22 +350,8 @@ const ignoredByTool = [
   ["/* ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
   ["// ! Store 1.0\nconst limit = 1;\n", "const limit = 1;\n"],
   ["/** ! Store 1.0 */\nconst limit = 1;\n", "const limit = 1;\n"],
-  ['"use client";\n/* @JSX h */\nconst limit = 1;\n', '"use client";\nconst limit = 1;\n'],
-  ["// @jsxImportSource\u0085preact\nconst limit = 1;\n", "const limit = 1;\n"],
-  [
-    "function load() {\n  /* @jsxImportSource\u0085preact */\n  return 1;\n}\n",
-    "function load() {\n  return 1;\n}\n",
-  ],
   [
     "const limit = 1;\n/* @jsxImportSource\u200bpreact */\nconst other = 2;\n",
-    "const limit = 1;\nconst other = 2;\n",
-  ],
-  [
-    "const limit = 1;\n/* @jsxOther x y @jsx\u0085h */\nconst other = 2;\n",
-    "const limit = 1;\nconst other = 2;\n",
-  ],
-  [
-    "const limit = 1;\n/* @jsxImportSource\npreact extra */\nconst other = 2;\n",
     "const limit = 1;\nconst other = 2;\n",
   ],
   [
@@ -333,6 +378,9 @@ new RuleTester({ languageOptions: { parser: tseslint.parser } }).run(
       ...directives,
       ...legalComments,
       ...jsxPragmas,
+      ...spacedPragmas,
+      ...metroBabelPragmas,
+      ...pragmaFileTypes,
       shebang,
       jsx("export const Reader = () => <div>{/* https://example.com/reader */}</div>;\n"),
     ],
