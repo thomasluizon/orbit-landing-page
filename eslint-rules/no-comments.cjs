@@ -1,3 +1,5 @@
+const typescript = require("typescript");
+
 const LINE_BREAK = /\r\n|[\r\n\u2028\u2029]/;
 const LEGAL_COMMENT = /@preserve|@copyright|@lic|@cc_on|^\**!/i;
 const COVERAGE_RANGE = /(?:istanbul|[cv]8|node:coverage)\s+ignore\s+(?:start|stop)(?=\W|$)/;
@@ -17,7 +19,6 @@ const LINE_DIRECTIVE =
 const BLOCK_DIRECTIVE =
   /^(?:(?:eslint(?:-enable|-disable(?:(?:-next)?-line)?)?|globals?|exported)(?:\s|$)|prettier-ignore$|webpack[A-Z][A-Za-z]+:|@vite-ignore$)/;
 const URL_RE = /https?:\/\//;
-const JSDOC_TAG = /(?:^[\s\u0085\u200b*]*|[\s\u0085\u200b])@(?:[A-Za-z]|\\u)/m;
 const JAVASCRIPT_FILE = /\.[cm]?jsx?$/;
 const ASTRO_FILE = /\.astro$/;
 
@@ -183,6 +184,18 @@ function createExportCheck(sourceCode, filename) {
   };
 }
 
+function holdsJsDocTag(commentValue) {
+  if (!commentValue.includes("@")) return false;
+  const host = typescript.createSourceFile(
+    "comment.js",
+    `/*${commentValue}*/\nfunction host() {}\n`,
+    typescript.ScriptTarget.Latest,
+    true,
+    typescript.ScriptKind.JS,
+  );
+  return typescript.getJSDocTags(host.statements[0]).some((tag) => tag.tagName.text !== "");
+}
+
 function isTypeScriptSuppression(comment) {
   if (comment.type === "Line") return TYPESCRIPT_LINE_SUPPRESSION.test(`//${comment.value}`);
   const lastLine = `/*${comment.value}*/`.split(LINE_BREAK).at(-1).trimStart();
@@ -230,7 +243,7 @@ module.exports = {
       const isDocComment = comment.type === "Block" && comment.value.startsWith("*");
       if (isDirective(comment, isDocComment)) return true;
       if (!isDocComment) return false;
-      if (JAVASCRIPT_FILE.test(filename) && JSDOC_TAG.test(comment.value)) return true;
+      if (JAVASCRIPT_FILE.test(filename) && holdsJsDocTag(comment.value)) return true;
       return isOnExportedSymbol(comment);
     }
 
