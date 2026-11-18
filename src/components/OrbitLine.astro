@@ -13,6 +13,9 @@ const { name } = Astro.props;
   {
     name && (
       <p class="orbit-line-text">
+        <span class="sr-only" translate="no">
+          Orbit:
+        </span>
         <Copy name={name} />
       </p>
     )

@@ -2933,6 +2933,11 @@ button.metric-bar-track:active .metric-bar {
       animation-timeline: view();
       animation-range: entry 0% cover 30%;
     }
+    .plan-card:focus-within,
+    .faq-list:focus-within,
+    .ios-section #waitlist-form:focus-within {
+      animation-name: none;
+    }
   }
 }
 @media (prefers-reduced-motion: no-preference) {

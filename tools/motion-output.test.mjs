@@ -58,3 +58,38 @@ test("each built Orbit moon sits on one ring: the counter scale undoes the ring 
   const [{ opening, counter }] = layers;
   assert.ok(Math.abs(Number(opening) * Number(counter) - 1) < 1e-4, `${opening} x ${counter}`);
 });
+
+test("a container with a focusable control ends its scroll arrival while focus is inside", () => {
+  const arriving = rules
+    .filter((rule) => values(rule.declarations, "animation-name").includes("section-arrive"))
+    .flatMap((rule) => rule.selector.split(",").map((selector) => selector.trim()));
+  const focusable = arriving.filter((selector) =>
+    /plan-card|faq-list|waitlist-form/.test(selector),
+  );
+  assert.ok(focusable.length >= 3, "the plans, the questions and the waitlist form arrive");
+  const settled = new Set(
+    rules
+      .filter((rule) => values(rule.declarations, "animation-name").includes("none"))
+      .flatMap((rule) => rule.selector.split(",").map((selector) => selector.trim())),
+  );
+  for (const selector of focusable) {
+    assert.ok(
+      settled.has(`${selector}:focus-within`),
+      `${selector} stays faded while a control inside holds focus`,
+    );
+  }
+});
+
+test("each guide line names Orbit as the speaker for assistive technology", () => {
+  const lines = [...html.matchAll(/<p class="orbit-line-text">([\s\S]*?)<\/p>/g)].map(
+    ([, body]) => body,
+  );
+  assert.equal(lines.length, 4, "the four section guides with a line");
+  for (const body of lines) {
+    assert.match(
+      body,
+      /^\s*<span class="sr-only" translate="no">\s*Orbit:\s*<\/span>/,
+      "the line starts with a hidden speaker name",
+    );
+  }
+});
