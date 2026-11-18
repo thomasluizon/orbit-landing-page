@@ -21,7 +21,7 @@ Orbit the mascot leads the hero and guides each section with one short line. The
 
 - Three example requests replay locally, with no model or network call. Each shows a proposed habit change; approval, edit and rejection labels are visual examples.
 - English and Brazilian Portuguese copy switches through `data-i18n` attributes with cookie persistence.
-- The iPhone waitlist opens in a native dialog, including direct links to `/#ios`, and keeps the existing email confirmation and Turnstile flow.
+- The iPhone waitlist is its own section at `/#ios`, with email confirmation and Turnstile.
 - Open Graph, Twitter metadata and application structured data describe Orbit and the supported platforms.
 
 ## Design system
@@ -38,11 +38,11 @@ The canon lives in `orbit-ui-mobile/DESIGN.md`. This repository mirrors its dark
 
 Type sizes step with viewport width. The Orbit proposal uses a tonal preview with approval controls. See `CLAUDE.md` for token rules and code standards.
 
-## Viewport assertions
+## Motion and checks
 
-The landing follows a scrolling composition with a centered Orbit device, floating product cards, feature sections, pricing, questions and a closing invitation. Node tests check section order, accent actions, bilingual copy, pricing and motion startup. The animation libraries load after paint and interaction. Reduced motion keeps the static composition and does not load the scroll driver.
+The page scrolls through the hero, the trust strip, the feature rows, pricing, the iPhone waitlist, the questions and a closing invitation. The live Orbit moves once from page load, and each section arrives on a scroll timeline. No animation runs longer than 5 seconds without a visitor action. Lenis and GSAP load after paint and interaction. Reduced motion keeps a still version of each element and does not load the scroll driver.
 
-Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Brazilian Portuguese, including the pinned hero, no horizontal overflow, whole control labels and a static reduced motion page. Rendered evidence and Lighthouse remain part of the orchestrator's verification.
+`npm test` runs the source and unit suites. `npm run build` runs the suites that read the built page in `dist/`. Lighthouse runs in CI on the built site.
 
 ## Prerequisites
 
@@ -62,35 +62,16 @@ The site runs at `http://localhost:4321`.
 
 ```
 src/
-  pages/
-    index.astro          # One-screen composition and waitlist dialog
-    404.astro            # Not-found page
-    waitlist-confirmed.astro # Email confirmation result
-  layouts/
-    Layout.astro         # HTML, metadata, fonts and application structured data
-  components/
-    Header.astro         # Orbit lockup, language toggle and install action
-    Hero.astro           # Copy, conversation and actions in one column
-    OrbitDemo.astro      # Proposed changes and example request chips
-    OrbitMascot.astro    # The Orbit mascot rig and the small static face
-    OrbitLine.astro      # Orbit and its one line above a section heading
-    IosWaitlist.astro    # Waitlist dialog and form
-    Footer.astro         # Privacy, terms and copyright
-    PillButton.astro     # Shared action primitive
-  i18n/
-    translations.ts      # Typed English and Brazilian Portuguese copy
-  scripts/
-    i18n.ts              # Language cookie, toggle and translated metadata
-    demo.ts              # Local scripted examples
-    waitlist.ts          # Turnstile and waitlist submission
-    waitlist-section.ts  # Fragment navigation and email focus
-    scroll.ts           # Deferred scroll animation startup
-    landing-motion.ts   # Lenis and GSAP choreography
-  styles/
-    global.css           # Tailwind v4 @theme token mirror + type roles + base
-eslint-rules/
-  no-comments.cjs        # Comment policy rule, mirrored from orbit-ui-mobile
-astro.config.mjs         # Site config, fonts, sitemap, Tailwind and preload-list Vite plugins
+  pages/        # index, 404, waitlist-confirmed and the install QR endpoint
+  layouts/      # Layout.astro: HTML, metadata, fonts and application structured data
+  components/   # Header, Hero, OrbitDemo, OrbitMascot, OrbitLine, FeatureRows, Pricing, Faq, FinalCta and the rest
+  config/       # links, prices, example fixtures and the mascot rig reader
+  i18n/         # typed English and Brazilian Portuguese copy
+  scripts/      # client modules and their node tests
+  styles/       # global.css (the token mirror) and landing.css (the page, the mascot and the motion)
+public/         # files served at the site root: icons, brand sources, robots.txt, llms.txt, og-image.png
+tools/          # guards, the brand asset generator and the node suites
+eslint-rules/   # the comment policy rule, aligned with orbit-ui-mobile
 ```
 
 ### i18n Implementation
@@ -157,7 +138,7 @@ Use a selected deployment branch rule matching only `main` for both environments
 
 Both jobs run `.github/scripts/release-landing.mjs` from the dispatch commit on `main`, with `RELEASE_ENVIRONMENT` set to the job's environment, so a selected commit never changes the code that deploys it. Both jobs use the Render API to check that auto-deploy is disabled, deploy the selected commit, wait for it to go live, and confirm that the Render service URL serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. The staging job first sets the service's tracked branch to the selected branch. Before deploying, production reads the staging service URL from Render using `RENDER_LANDING_STAGING_SERVICE_ID` and requires an HTTP 200 response serving the selected build marker. A failed request, redirect, missing marker or different commit refuses production. The explicit `force_unstaged` boolean bypasses this admission check and is recorded with the selected SHA in the job summary. Production also requires `https://useorbit.org/` to serve the same build marker after deployment; a missing or different marker fails the run, and the Deployment records the public URL. Each job records a GitHub Deployment for the verified commit and prints `Deployed SHA: <sha>` in its summary.
 
-The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the former `vercel.json` delivery rules. Edit Terraform there for changes to:
+The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the delivery rules. Edit Terraform there for changes to:
 
 - The canonical `Link` header on `/`: `<https://useorbit.org/>; rel="canonical"`.
 - Security headers on all paths: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, and `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`.

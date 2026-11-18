@@ -1,6 +1,5 @@
 {
   "files": [
-    "AGENTS.md",
     ".env",
     ".env.development.local",
     ".env.local",
@@ -20,15 +19,12 @@
     "lighthouserc.json",
     "package-lock.json",
     "package.json",
-    "tsconfig.json",
-    "vercel.json"
+    "tsconfig.json"
   ],
   "directories": [
     ".astro",
     ".claude",
-    ".codex",
     ".github",
-    ".idea",
     ".vscode",
     "dist",
     "eslint-rules",

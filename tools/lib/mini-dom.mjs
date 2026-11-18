@@ -18,8 +18,7 @@ function matchesSimple(element, selector) {
   return element.tagName === selector;
 }
 
-/** Wraps a parse5 tree in the small DOM surface the landing scripts use. */
-export function elementFor(node, cache = new WeakMap()) {
+function elementFor(node, cache = new WeakMap()) {
   if (cache.has(node)) return cache.get(node);
   const wrap = (child) => elementFor(child, cache);
   const listeners = new Map();
