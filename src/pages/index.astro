@@ -62,6 +62,8 @@ import { appUrl, googlePlayUrl } from "../config/links";
           );
         if (target.matches(".hero-device")) void afterLoad([() => import("../scripts/demo")]);
         if (target.matches("#faq")) void afterLoad([() => import("../scripts/faq")]);
+        if (target.matches("[data-orbit-guide]"))
+          void afterLoad([() => import("../scripts/guide-blink")]);
         if (target.matches('[data-section="features"]')) {
           void import("../scripts/demo-views").catch(() =>
             target
@@ -75,6 +77,8 @@ import { appUrl, googlePlayUrl } from "../config/links";
     { rootMargin: "160px" },
   );
   document
-    .querySelectorAll('.hero-device, [data-week-card], [data-section="features"], #faq')
+    .querySelectorAll(
+      '.hero-device, [data-week-card], [data-section="features"], #faq, [data-orbit-guide]',
+    )
     .forEach((surface) => previewObserver.observe(surface));
 </script>
