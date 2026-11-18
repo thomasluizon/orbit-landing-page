@@ -20,11 +20,11 @@ the ICO, the Apple icon and `logo.png`. The generator reads only these files.
 - Each favicon is the small static face on a `#09090B` disc. The 16px layer is
   the native `small-16` drawing in one ink. The 32px and 48px layers draw the
   24 face with the accent moon.
-- The 180px Apple icon is the rig at 70% width on `#09090B`. The rig keeps its
-  eyes only when each eye is at least 2px wide in the 48px icon render. The
-  generator prints that measure. With the rig of `orbit-mascot.svg` each eye
-  measures 1.70px, so the icon has no eyes.
+- The 180px Apple icon is the rig with its eyes at 70% width on `#09090B`. It
+  has the same bytes as `apps/web/app/apple-icon.png` in `orbit-ui-mobile`.
 - The 96px transparent `logo.png` is the rig with its eyes at 80% width.
+- Each rig layer draws each eye at least 2px wide. The generator prints the
+  eye width of each layer and stops when a layer is under that floor.
 
 `public/og-image.png` is the 2400 by 1260 social card. It is a byte copy of
 `thomas-brain/orbit/web/og-image.png`, and the generator does not write it.

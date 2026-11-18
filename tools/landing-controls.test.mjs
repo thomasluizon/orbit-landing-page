@@ -1419,3 +1419,35 @@ test("a focus ring never shares its colour and band with a state marker its cont
     }
   }
 });
+
+test("every hover rule waits for a fine pointer, so a tap on a touch screen leaves no hover behind", () => {
+  const outside = rules
+    .filter((rule) => !rule.conditions.includes(FINE_POINTER))
+    .flatMap((rule) => selectorParts(rule.selector))
+    .filter((part) => /:hover\b/.test(part) && !SUPPRESSIONS.has(part));
+  assert.deepEqual(outside, []);
+});
+
+test("a small Orbit face paints its symbol classes with rules that reach the clone of its use", async () => {
+  const { ast } = await parse(readFileSync("src/components/OrbitMascot.astro", "utf8"));
+  const symbolClasses = new Set(
+    nodesOf(ast)
+      .filter((node) => node.name === "symbol")
+      .flatMap((symbol) => nodesOf(symbol))
+      .flatMap((node) => (attributeOf(node, "class")?.value ?? "").split(/\s+/).filter(Boolean)),
+  );
+  const inks = new Map([
+    ["orbit-ink", "currentColor"],
+    ["orbit-eye-ink", "var(--color-bg)"],
+    ["orbit-moon-ink", "var(--color-primary)"],
+  ]);
+  assert.deepEqual([...symbolClasses].sort(), [...inks.keys()].sort());
+  for (const [name, fill] of inks) {
+    const reach = new RegExp(`\\.${name}(?![\\w-])`);
+    const scoped = rules
+      .flatMap((rule) => selectorParts(rule.selector))
+      .filter((part) => reach.test(part) && part !== `.${name}`);
+    assert.deepEqual(scoped, [], `${name}: an ancestor outside the symbol never matches the clone`);
+    assert.equal(lastValue(`.${name}`, "fill"), fill, name);
+  }
+});

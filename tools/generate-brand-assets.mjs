@@ -13,7 +13,6 @@ const renderDensity = 384;
 const moonFill = "var(--primary, currentColor)";
 const outlineFill = "var(--orbit-surface, var(--bg, #09090B))";
 const eyeFill = "var(--bg, #09090B)";
-const eyePath = /<path fill="var\(--bg, #09090B\)"[^>]*\/>\n?/g;
 
 const rigSource = await readFile("public/brand/orbit-mascot.svg", "utf8");
 const smallSource = await readFile("public/brand/orbit-mascot-small.svg", "utf8");
@@ -56,9 +55,11 @@ async function smallFaceLayer(size, canvas, accent) {
   return scaled.png().toBuffer({ resolveWithObject: true });
 }
 
-async function rigLayer(width, { eyes }) {
-  const source = eyes ? rigSource : rigSource.replace(eyePath, "");
-  const trimmed = await sharp(Buffer.from(bakeColours(source, { accent: true })), {
+async function rigLayer(width) {
+  if (eyeWidth(width) < eyeFloorPixels) {
+    throw new Error(`the ${width}px rig layer draws each eye under ${eyeFloorPixels}px`);
+  }
+  const trimmed = await sharp(Buffer.from(bakeColours(rigSource, { accent: true })), {
     density: renderDensity,
   })
     .trim({ background: transparent })
@@ -91,14 +92,10 @@ const inkUnits = await sharp(Buffer.from(bakeColours(rigSource, { accent: true }
   .then(({ info }) => (info.width * 72) / renderDensity);
 const eyeWidth = (inkPixels) => (eyeUnits * inkPixels) / inkUnits;
 const iconScale = 0.7;
-const adaptiveSafeFraction = 66 / 108;
-const markCircleUnits = 380;
-const iconEyeAt48 = eyeWidth((48 * adaptiveSafeFraction * inkUnits) / markCircleUnits);
-const iconHasEyes = iconEyeAt48 >= eyeFloorPixels;
+const appleIconWidth = Math.round(180 * iconScale);
 const logoWidth = Math.round(96 * 0.8);
-if (eyeWidth(logoWidth) < eyeFloorPixels) throw new Error("the 96px logo eye is under 2px");
 process.stdout.write(
-  `icon eye at 48px: ${iconEyeAt48.toFixed(2)}px, so the app icon and the Apple icon ${iconHasEyes ? "keep" : "drop"} the eyes (rig ink ${inkUnits.toFixed(1)} of ${rigBoxWidth} units)\n`,
+  `eye width: ${eyeWidth(appleIconWidth).toFixed(2)}px in the Apple icon, ${eyeWidth(logoWidth).toFixed(2)}px in the logo (rig ink ${inkUnits.toFixed(1)} of ${rigBoxWidth} units)\n`,
 );
 
 const faviconLayers = [
@@ -111,8 +108,8 @@ await writeFile("public/favicon-32x32.png", faviconLayers[1]);
 await writeFile("public/favicon.ico", await pngToIco(faviconLayers));
 await writeFile(
   "public/apple-touch-icon.png",
-  await compose(180, await rigLayer(Math.round(180 * iconScale), { eyes: iconHasEyes }), {
+  await compose(180, await rigLayer(appleIconWidth), {
     background: canvasColor,
   }),
 );
-await writeFile("public/logo.png", await compose(96, await rigLayer(logoWidth, { eyes: true })));
+await writeFile("public/logo.png", await compose(96, await rigLayer(logoWidth)));

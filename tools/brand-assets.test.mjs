@@ -60,18 +60,23 @@ test("the brand sources are the mascot rig, the small static face and the lockup
   assert.match(small, /<symbol id="small-16" viewBox="0 0 16 12">/);
 });
 
-test("the Apple icon is the planet, the ring and the moon with no eyes", async () => {
+test("the Apple icon is the mascot at rest with both eyes, as the app icon draws it", async () => {
   const { data, info } = await sharp("public/apple-touch-icon.png")
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
   const row = Math.round(info.height * 0.42);
-  let dark = 0;
+  const runs = [];
+  let inEye = false;
   for (let x = Math.round(info.width * 0.38); x < Math.round(info.width * 0.62); x++) {
     const pixel = (row * info.width + x) * 4;
-    if (data[pixel] < 60) dark++;
+    const dark = data[pixel] < 60;
+    if (dark && !inEye) runs.push(0);
+    if (dark) runs[runs.length - 1] += 1;
+    inEye = dark;
   }
-  assert.equal(dark, 0, "the planet face holds no canvas-coloured eye");
+  assert.equal(runs.length, 2, "the planet face holds two canvas-coloured eyes");
+  for (const width of runs) assert.ok(width >= 2, `each eye is at least 2px wide, not ${width}px`);
 });
 
 test("larger public assets contain the canonical foreground and accent moon", async () => {

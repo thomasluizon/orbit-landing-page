@@ -2605,17 +2605,17 @@ button.metric-bar-track:active .metric-bar {
   flex: none;
   color: var(--color-fg-1);
 }
-.orbit-face .orbit-ink,
+.orbit-ink,
 .orbit-mascot .orbit-ring-ink,
 .orbit-mascot .orbit-planet {
   fill: currentColor;
 }
-.orbit-face .orbit-eye-ink,
+.orbit-eye-ink,
 .orbit-mascot .orbit-eye,
 .orbit-mascot .orbit-ring-outline {
   fill: var(--color-bg);
 }
-.orbit-face .orbit-moon-ink,
+.orbit-moon-ink,
 .orbit-mascot .orbit-moon {
   fill: var(--color-primary);
 }
@@ -2660,9 +2660,15 @@ button.metric-bar-track:active .metric-bar {
   inline-size: 96px;
   block-size: auto;
 }
-.hero:has(.hero-device:hover, .orbit-demo :focus-visible, .demo-composer:focus-within) .hero-orbit {
+.hero:has(.orbit-demo :focus-visible, .demo-composer:focus-within) .hero-orbit {
   --orbit-look-x: 14px;
   --orbit-look-y: 10px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hero:has(.hero-device:hover) .hero-orbit {
+    --orbit-look-x: 14px;
+    --orbit-look-y: 10px;
+  }
 }
 .hero:has(#demo-today:not([hidden])) .hero-orbit .orbit-eyes-pill,
 .ios-section:has(#waitlist-status[data-kind="success"]:not(:empty)) .orbit-eyes-pill {
