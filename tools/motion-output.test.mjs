@@ -40,7 +40,7 @@ test("the built stylesheet keeps each scroll timeline as a longhand that the bro
   assert.deepEqual(
     [...new Set(scrolled.flatMap((rule) => values(rule.declarations, "animation-name")))].sort(),
     [
-      ...["orbit-arrive", "orbit-blink", "orbit-counter-spin", "orbit-line-arrive"],
+      ...["orbit-arrive", "orbit-counter-spin", "orbit-line-arrive"],
       ...["orbit-moon-back", "orbit-moon-front", "orbit-spin", "orbit-tilt", "section-arrive"],
     ],
     "each guide Orbit, line and section arrival ships with its scroll timeline",

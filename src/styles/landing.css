@@ -2909,13 +2909,6 @@ button.metric-bar-track:active .metric-bar {
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
-    .orbit-line .orbit-eye {
-      animation-name: orbit-blink;
-      animation-timing-function: linear;
-      animation-fill-mode: both;
-      animation-timeline: view();
-      animation-range: cover 44% cover 52%;
-    }
     .orbit-line-text {
       animation-name: orbit-line-arrive;
       animation-timing-function: linear;

@@ -1047,13 +1047,20 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
         /(?<![\w-])(\d+(?:\.\d+)?m?s)\b|var\(--orbit-(turn|blink|turn-delay)\)/g,
       ),
     ].map(([, literal, token]) =>
-      literal ? milliseconds(literal) : { turn: 900, blink: 336, "turn-delay": 160 }[token],
+      literal
+        ? milliseconds(literal)
+        : Math.max(
+            ...rules
+              .map((other) => declaration(other.declarations, `--orbit-${token}`))
+              .filter(Boolean)
+              .map(milliseconds),
+          ),
     );
     timed++;
     assert.ok(times.reduce((sum, time) => sum + time, 0) <= 5000, rule.selector);
   }
   assert.ok(timed > 0, "the hero Orbit greets the visitor on load");
-  assert.ok(scrolled >= 9, "each guide Orbit, line and section arrives on a scroll timeline");
+  assert.ok(scrolled >= 8, "each guide Orbit, line and section arrives on a scroll timeline");
   const mascot = rules.find((rule) => rule.selector === ".orbit-mascot");
   assert.equal(declaration(mascot.declarations, "--orbit-turn"), "900ms");
   assert.equal(declaration(mascot.declarations, "--orbit-blink"), "336ms");
@@ -1062,6 +1069,19 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
     hops.map((rule) => rule.selector),
     ['.page-orbit[data-orbit-state="feliz"] .orbit-body'],
     "Orbit hops only in its happy face",
+  );
+});
+
+test("no scroll position leaves an Orbit with its eyes shut", () => {
+  const scrolledBlinks = rules.filter(
+    (rule) =>
+      /animation-timeline:\s*view\(\)/.test(rule.declarations) &&
+      (/\.orbit-eye/.test(rule.selector) || /orbit-blink/.test(rule.declarations)),
+  );
+  assert.deepEqual(
+    scrolledBlinks.map((rule) => rule.selector),
+    [],
+    "a blink on a scroll timeline holds its closed frame when the visitor stops scrolling",
   );
 });
 
