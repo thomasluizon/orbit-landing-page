@@ -192,7 +192,7 @@ test("the application metadata describes Orbit as the AI without retired FAQ str
   );
   assert.equal(applications.length, 2);
   for (const app of applications) {
-    assert.match(app.description, /^Tell Orbit what you want to do, and it turns it into habits/);
+    assert.match(app.description, /^Tell Orbit what you want to do, and it turns that into habits/);
     assert.deepEqual(
       app.offers.map(({ price }) => price),
       [0, 9.99, 69.99],
