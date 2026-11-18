@@ -1034,7 +1034,7 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
         /(?<![\w-])(\d+(?:\.\d+)?m?s)\b|var\(--orbit-(turn|blink|turn-delay)\)/g,
       ),
     ].map(([, literal, token]) =>
-      literal ? milliseconds(literal) : { turn: 900, blink: 336, "turn-delay": 560 }[token],
+      literal ? milliseconds(literal) : { turn: 900, blink: 336, "turn-delay": 160 }[token],
     );
     timed++;
     assert.ok(times.reduce((sum, time) => sum + time, 0) <= 5000, rule.selector);
@@ -1043,6 +1043,12 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
   const mascot = rules.find((rule) => rule.selector === ".orbit-mascot");
   assert.equal(declaration(mascot.declarations, "--orbit-turn"), "900ms");
   assert.equal(declaration(mascot.declarations, "--orbit-blink"), "336ms");
+  const hops = rules.filter((rule) => /animation:\s*orbit-hop\b/.test(rule.declarations));
+  assert.deepEqual(
+    hops.map((rule) => rule.selector),
+    ['.page-orbit[data-orbit-state="feliz"] .orbit-body'],
+    "Orbit hops only in its happy face",
+  );
 });
 
 test("reduced motion removes every control transition and the press movement", () => {

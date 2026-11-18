@@ -2810,12 +2810,11 @@ button.metric-bar-track:active .metric-bar {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .hero-orbit:not([data-orbit-turn]) .orbit-body,
-  .page-orbit .orbit-body {
+  .page-orbit[data-orbit-state="feliz"] .orbit-body {
     animation: orbit-hop 640ms var(--ease-out) 160ms;
   }
   .hero-orbit:not([data-orbit-turn]) {
-    --orbit-turn-delay: 560ms;
+    --orbit-turn-delay: 160ms;
   }
   .hero-orbit:not([data-orbit-turn]) .orbit-tilt,
   .orbit-mascot[data-orbit-turn="run"] .orbit-tilt {
