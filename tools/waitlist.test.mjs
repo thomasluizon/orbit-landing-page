@@ -57,6 +57,7 @@ function createHarness(
       value: "person@example.com",
       textContent: "",
       style: {},
+      dataset: {},
       disabled: true,
       listeners: new Map(),
       addEventListener(type, listener) {
@@ -670,6 +671,7 @@ for (const language of ["en", "pt-BR"]) {
       await h.solve(token);
       await h.submit();
       assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.success"]);
+      assert.equal(h.elements.get("waitlist-status").dataset.kind, "success");
     }
     assert.equal(h.requests.length, 2);
     assert.ok(

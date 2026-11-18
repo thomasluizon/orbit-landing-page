@@ -2,7 +2,7 @@
 import { landingCopy, type LandingKey } from "../i18n/translations";
 interface Props {
   name: LandingKey;
-  accent?: "Orbit" | "Astra";
+  accent?: "Orbit";
 }
 const { name, accent } = Astro.props;
 const words = (language: "en" | "pt-BR") =>
@@ -27,7 +27,7 @@ const words = (language: "en" | "pt-BR") =>
     </span>
   ) : (
     <span
-      translate={/\b(?:Orbit|Astra)\b/.test(landingCopy.en[name]) ? "no" : undefined}
+      translate={/\bOrbit\b/.test(landingCopy.en[name]) ? "no" : undefined}
       data-copy-en={landingCopy.en[name]}
       data-copy-pt={landingCopy["pt-BR"][name]}
     >

@@ -33,7 +33,6 @@
   pointer-events: auto;
 }
 .brand {
-  --primary: var(--color-primary);
   display: flex;
   align-items: center;
   min-block-size: 48px;
@@ -353,7 +352,7 @@
   background: var(--color-fg-2);
   pointer-events: none;
 }
-.astra-demo {
+.orbit-demo {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1120,7 +1119,7 @@
 .faq-list details[open] summary:is(:hover, :active) {
   background: transparent;
 }
-.astra-product {
+.ai-product {
   display: grid;
   gap: 16px;
   inline-size: 100%;
@@ -2012,7 +2011,7 @@ button.metric-bar-track:focus-visible {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
-.phone-today-astra {
+.phone-today-orbit {
   align-items: center;
   flex-shrink: 0;
   min-block-size: 48px;
@@ -2074,7 +2073,7 @@ button.metric-bar-track:focus-visible {
   word-break: normal;
   white-space: normal;
 }
-.phone-slide .astra-demo {
+.phone-slide .orbit-demo {
   inline-size: 100%;
   gap: 0;
   padding: 0;
@@ -2599,4 +2598,325 @@ button.metric-bar-track:active .metric-bar {
 .demo-save:active,
 .demo-composer[data-has-text] .demo-send:active {
   background: var(--color-primary-pressed);
+}
+
+.orbit-face,
+.orbit-mascot {
+  flex: none;
+  color: var(--color-fg-1);
+}
+.orbit-face .orbit-ink,
+.orbit-mascot .orbit-ring-ink,
+.orbit-mascot .orbit-planet {
+  fill: currentColor;
+}
+.orbit-face .orbit-eye-ink,
+.orbit-mascot .orbit-eye,
+.orbit-mascot .orbit-ring-outline {
+  fill: var(--color-bg);
+}
+.orbit-face .orbit-moon-ink,
+.orbit-mascot .orbit-moon {
+  fill: var(--color-primary);
+}
+.orbit-mascot {
+  --orbit-turn: 900ms;
+  --orbit-blink: 336ms;
+  --orbit-turn-delay: 0ms;
+  --orbit-look-x: 0px;
+  --orbit-look-y: 0px;
+  overflow: visible;
+}
+.orbit-mascot g {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+.orbit-mascot .orbit-eyes-pill,
+.orbit-mascot .orbit-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.orbit-mascot .orbit-eyes {
+  translate: var(--orbit-look-x) var(--orbit-look-y);
+  transition: translate var(--duration-slow) var(--ease-standard);
+}
+.orbit-mascot .orbit-eyes-happy {
+  opacity: 0;
+  fill: none;
+  stroke: var(--color-bg);
+  stroke-width: 17;
+  stroke-linecap: round;
+}
+.orbit-mascot[data-orbit-state="feliz"] .orbit-eyes-pill {
+  opacity: 0;
+}
+.orbit-mascot[data-orbit-state="feliz"] .orbit-eyes-happy {
+  opacity: 1;
+}
+.orbit-mascot .orbit-moon-back {
+  opacity: 0;
+}
+.hero-orbit {
+  inline-size: 96px;
+  block-size: auto;
+}
+.hero:has(.hero-device:hover, .orbit-demo :focus-visible, .demo-composer:focus-within) .hero-orbit {
+  --orbit-look-x: 14px;
+  --orbit-look-y: 10px;
+}
+.hero:has(#demo-today:not([hidden])) .hero-orbit .orbit-eyes-pill,
+.ios-section:has(#waitlist-status[data-kind="success"]:not(:empty)) .orbit-eyes-pill {
+  opacity: 0;
+}
+.hero:has(#demo-today:not([hidden])) .hero-orbit .orbit-eyes-happy,
+.ios-section:has(#waitlist-status[data-kind="success"]:not(:empty)) .orbit-eyes-happy {
+  opacity: 1;
+}
+.orbit-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-fg-2);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  text-align: start;
+}
+.page-orbit {
+  margin-block-end: -8px;
+}
+@media (width >= 1024px) {
+  .hero-orbit {
+    inline-size: 128px;
+  }
+}
+
+@keyframes orbit-hop {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  45% {
+    translate: 0 -28px;
+  }
+  70% {
+    translate: 0 4px;
+  }
+}
+@keyframes orbit-arrive {
+  0% {
+    translate: -56px 28px;
+    opacity: 0;
+  }
+  55% {
+    translate: -16px -20px;
+    opacity: 1;
+  }
+  100% {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+@keyframes orbit-tilt {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  30% {
+    rotate: 5deg;
+  }
+  70% {
+    rotate: -5deg;
+  }
+}
+@keyframes orbit-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+@keyframes orbit-counter-spin {
+  to {
+    rotate: -360deg;
+  }
+}
+@keyframes orbit-moon-front {
+  0%,
+  8.6% {
+    opacity: 1;
+  }
+  8.61%,
+  58.6% {
+    opacity: 0;
+  }
+  58.61%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes orbit-moon-back {
+  0%,
+  8.6% {
+    opacity: 0;
+  }
+  8.61%,
+  58.6% {
+    opacity: 1;
+  }
+  58.61%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes orbit-widen {
+  0%,
+  100% {
+    scale: 1;
+  }
+  40%,
+  70% {
+    scale: 1.12 1.08;
+  }
+}
+@keyframes orbit-blink {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1 0.1;
+  }
+}
+@keyframes orbit-look {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25%,
+  75% {
+    translate: 14px 10px;
+  }
+}
+@keyframes orbit-line-arrive {
+  from {
+    translate: 0 16px;
+    opacity: 0;
+  }
+}
+@keyframes section-arrive {
+  from {
+    translate: 0 32px;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-orbit:not([data-orbit-turn]) .orbit-body,
+  .page-orbit .orbit-body {
+    animation: orbit-hop 640ms var(--ease-out) 160ms;
+  }
+  .hero-orbit:not([data-orbit-turn]) {
+    --orbit-turn-delay: 560ms;
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-tilt,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-tilt {
+    animation: orbit-tilt var(--orbit-turn) var(--ease-standard) var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-moon-spin,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-moon-spin {
+    animation: orbit-spin var(--orbit-turn) linear var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-moon-counter,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-moon-counter {
+    animation: orbit-counter-spin var(--orbit-turn) linear var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-moon-front,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-moon-front {
+    animation: orbit-moon-front var(--orbit-turn) linear var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-moon-back,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-moon-back {
+    animation: orbit-moon-back var(--orbit-turn) linear var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-eyes-pill,
+  .orbit-mascot[data-orbit-turn="run"] .orbit-eyes-pill {
+    animation: orbit-widen var(--orbit-turn) var(--ease-standard) var(--orbit-turn-delay);
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-eye,
+  .page-orbit .orbit-eye {
+    animation: orbit-blink var(--orbit-blink) var(--ease-standard) 1900ms;
+  }
+  .hero-orbit:not([data-orbit-turn]) .orbit-eyes {
+    animation: orbit-look 1400ms var(--ease-standard) 2500ms;
+  }
+  .orbit-mascot[data-orbit-turn="reset"] g,
+  .orbit-mascot[data-orbit-turn="reset"] path {
+    animation: none !important;
+  }
+  .orbit-mascot .orbit-eyes-pill,
+  .orbit-mascot .orbit-eyes-happy {
+    transition: opacity var(--duration-fast) var(--ease-standard);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .orbit-line .orbit-body {
+      animation: orbit-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 35%;
+    }
+    .orbit-line .orbit-moon-spin {
+      animation: orbit-spin linear both;
+      animation-timeline: view();
+      animation-range: cover 20% cover 80%;
+    }
+    .orbit-line .orbit-moon-counter {
+      animation: orbit-counter-spin linear both;
+      animation-timeline: view();
+      animation-range: cover 20% cover 80%;
+    }
+    .orbit-line .orbit-moon-front {
+      animation: orbit-moon-front linear both;
+      animation-timeline: view();
+      animation-range: cover 20% cover 80%;
+    }
+    .orbit-line .orbit-moon-back {
+      animation: orbit-moon-back linear both;
+      animation-timeline: view();
+      animation-range: cover 20% cover 80%;
+    }
+    .orbit-line .orbit-tilt {
+      animation: orbit-tilt linear both;
+      animation-timeline: view();
+      animation-range: cover 20% cover 80%;
+    }
+    .orbit-line .orbit-eye {
+      animation: orbit-blink linear both;
+      animation-timeline: view();
+      animation-range: cover 44% cover 52%;
+    }
+    .orbit-line-text {
+      animation: orbit-line-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 40%;
+    }
+    .section-heading > :not(.orbit-line),
+    .plan-card,
+    .faq-list,
+    .ios-section #waitlist-form {
+      animation: section-arrive linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
+}
+[data-section]:has(:focus-visible) .orbit-line .orbit-mascot {
+  --orbit-look-y: 12px;
+}
+@media (hover: hover) and (pointer: fine) {
+  [data-section]:has(.plan-card:hover, .faq-list details:hover, #waitlist-form:hover)
+    .orbit-line
+    .orbit-mascot {
+    --orbit-look-y: 12px;
+  }
 }

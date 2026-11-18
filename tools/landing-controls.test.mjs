@@ -82,7 +82,7 @@ const HAIRLINE_STRONG_RING = "inset 0 0 0 1px var(--color-hairline-strong)";
 const textFields = ["#waitlist-email", ".demo-edit-form input", ".demo-edit-form select"];
 const fieldHover = (field) => `${field}:hover:not(:focus-within)`;
 
-test("the Ask Astra focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
+test("the Ask Orbit focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
   assert.equal(lastValue(".demo-composer", "border-radius"), "28px");
   assert.equal(lastValue(".demo-composer", "min-block-size"), "56px");
   const ring = ".demo-composer:has(input:focus-visible)";
@@ -927,7 +927,7 @@ test("a field, a surface, a mark cell and a crowded control draw their focus rin
   );
 });
 
-test("the Ask Astra composer hovers as a text field and leaves the fills to its send button", () => {
+test("the Ask Orbit composer hovers as a text field and leaves the fills to its send button", () => {
   assert.equal(lastValue(".demo-composer", "background"), "var(--color-bg-field)");
   assert.equal(lastValue(".demo-composer", "box-shadow"), BORDER_CONTROL_RING);
   const hover = ".demo-composer:hover:not(:focus-within, :has(button:hover))";
@@ -1004,13 +1004,45 @@ test("no stylesheet animates every property or forces a transition outside reduc
     ["landing.css", landingCss],
   ]) {
     assert.ok(!/transition(?:-property)?\s*:\s*all\b/.test(source), `${name} animates all`);
-    assert.ok(!/@keyframes/.test(source), `${name} declares keyframes`);
   }
+  assert.ok(!/@keyframes/.test(globalCss), "global.css declares keyframes");
   for (const rule of rules) {
     const reducedBlock = rule.conditions.some((text) => text.includes("prefers-reduced-motion"));
     if (!reducedBlock)
       assert.ok(!/transition[^;]*!important/.test(rule.declarations), rule.selector);
   }
+});
+
+test("motion runs only with motion allowed, and a timed animation ends within 5 seconds", () => {
+  const keyframes = [...landingCss.matchAll(/@keyframes\s+([\w-]+)/g)].map(([, name]) => name);
+  assert.ok(keyframes.length > 0, "the page has its Orbit and section motion");
+  for (const name of keyframes) assert.match(name, /^(?:orbit|section)-/, name);
+  const milliseconds = (value) =>
+    value.endsWith("ms") ? Number.parseFloat(value) : Number.parseFloat(value) * 1000;
+  let timed = 0;
+  for (const rule of rules) {
+    const animation = declaration(rule.declarations, "animation");
+    if (!animation || animation === "none !important") continue;
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      `${rule.selector} animates outside the motion preference`,
+    );
+    assert.doesNotMatch(animation, /infinite|alternate/, rule.selector);
+    if (/animation-timeline:\s*view\(\)/.test(rule.declarations)) continue;
+    const times = [
+      ...animation.matchAll(
+        /(?<![\w-])(\d+(?:\.\d+)?m?s)\b|var\(--orbit-(turn|blink|turn-delay)\)/g,
+      ),
+    ].map(([, literal, token]) =>
+      literal ? milliseconds(literal) : { turn: 900, blink: 336, "turn-delay": 560 }[token],
+    );
+    timed++;
+    assert.ok(times.reduce((sum, time) => sum + time, 0) <= 5000, rule.selector);
+  }
+  assert.ok(timed > 0, "the hero Orbit greets the visitor on load");
+  const mascot = rules.find((rule) => rule.selector === ".orbit-mascot");
+  assert.equal(declaration(mascot.declarations, "--orbit-turn"), "900ms");
+  assert.equal(declaration(mascot.declarations, "--orbit-blink"), "336ms");
 });
 
 test("reduced motion removes every control transition and the press movement", () => {

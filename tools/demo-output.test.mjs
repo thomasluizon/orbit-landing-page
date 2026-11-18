@@ -152,6 +152,7 @@ function harness(language = "en", threadHeight = 415) {
     },
     exports: {},
     document,
+    requestAnimationFrame: (callback) => callback(),
     window: {
       addEventListener: (name, fn) => events.set(name, fn),
       location: { assign: (value) => intents.push(value) },
@@ -185,6 +186,7 @@ function harness(language = "en", threadHeight = 415) {
   require("./demo");
   require("./app-entry");
   return {
+    document,
     elements,
     intents,
     enter() {
@@ -484,6 +486,19 @@ for (const language of ["en", "pt-BR"]) {
       assert.deepEqual(h.visibleRows(), originalRows);
       assert.equal(h.get("demo-continue").hidden, true);
     }
+  });
+  test(`${language}: each demo step turns the hero Orbit once and the page load starts none`, () => {
+    const h = harness(language);
+    const orbit = h.document.querySelector(".hero-copy").querySelector("[data-orbit-mascot]");
+    assert.ok(orbit, "the hero holds the live Orbit");
+    assert.equal(orbit.dataset.orbitTurn, undefined);
+    h.chips[1].fire("click");
+    assert.equal(orbit.dataset.orbitTurn, "run");
+    orbit.dataset.orbitTurn = "done";
+    h.get("demo-approve").fire("click");
+    assert.equal(orbit.dataset.orbitTurn, "run");
+    orbit.onanimationend({ animationName: "orbit-spin", currentTarget: orbit });
+    assert.equal(orbit.dataset.orbitTurn, "done");
   });
   test(`${language}: single approvals replace the matching habit and retain the other rows in order`, () => {
     const h = harness(language);

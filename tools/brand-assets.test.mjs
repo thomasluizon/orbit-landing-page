@@ -24,20 +24,54 @@ test("document head declares the ICO and both sized PNG favicons", async () => {
   ]);
 });
 
-test("16px favicon uses the native redraw on a canvas disc", async () => {
-  const source = await readFile("public/brand/orbit-mark-16.svg", "utf8");
-  const native = await sharp(Buffer.from(source.replaceAll("currentColor", "#F4F4F6")))
+test("16px favicon draws the native small static face on a canvas disc", async () => {
+  const source = await readFile("public/brand/orbit-mascot-small.svg", "utf8");
+  const [, viewBox, inner] = /<symbol id="small-16" viewBox="([^"]+)">([\s\S]*?)<\/symbol>/.exec(
+    source,
+  );
+  const native = await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" width="16" height="12" fill="none">${inner}</svg>`
+        .replaceAll("var(--primary, currentColor)", "#F4F4F6")
+        .replaceAll("var(--orbit-surface, var(--bg, #09090B))", "#09090B")
+        .replaceAll("var(--bg, #09090B)", "#09090B")
+        .replaceAll("currentColor", "#F4F4F6"),
+    ),
+  )
     .png()
     .toBuffer();
   const expected = await sharp(
     Buffer.from('<svg width="16" height="16"><circle cx="8" cy="8" r="8" fill="#09090B"/></svg>'),
   )
-    .composite([{ input: native }])
+    .composite([{ input: native, left: 0, top: 2 }])
     .ensureAlpha()
     .raw()
     .toBuffer();
   const actual = await sharp("public/favicon-16x16.png").ensureAlpha().raw().toBuffer();
   assert.deepEqual(actual, expected);
+});
+
+test("the brand sources are the mascot rig, the small static face and the lockup", async () => {
+  const rig = await readFile("public/brand/orbit-mascot.svg", "utf8");
+  assert.match(rig, /viewBox="-210 -150 420 300"/);
+  assert.equal(rig.match(/fill="var\(--bg, #09090B\)"/g)?.length, 2, "the rig has two eyes");
+  assert.equal(rig.match(/var\(--primary/g)?.length, 1, "the moon is the one accent element");
+  const small = await readFile("public/brand/orbit-mascot-small.svg", "utf8");
+  assert.match(small, /<symbol id="small-16" viewBox="0 0 16 12">/);
+});
+
+test("the Apple icon is the planet, the ring and the moon with no eyes", async () => {
+  const { data, info } = await sharp("public/apple-touch-icon.png")
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const row = Math.round(info.height * 0.42);
+  let dark = 0;
+  for (let x = Math.round(info.width * 0.38); x < Math.round(info.width * 0.62); x++) {
+    const pixel = (row * info.width + x) * 4;
+    if (data[pixel] < 60) dark++;
+  }
+  assert.equal(dark, 0, "the planet face holds no canvas-coloured eye");
 });
 
 test("larger public assets contain the canonical foreground and accent moon", async () => {

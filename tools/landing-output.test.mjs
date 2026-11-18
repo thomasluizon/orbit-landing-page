@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { parse } from "@astrojs/compiler";
 import qrcode from "qrcode-generator";
 import { scriptsFrom } from "../src/scripts/html.test-helper.mjs";
+import { demoAnchor, retiredName } from "./lib/retired-name.mjs";
 
 const html = readFileSync("dist/index.html", "utf8");
 function scriptSource({ attributes, body }) {
@@ -54,20 +55,18 @@ for (const [opening, closing] of [
   });
 }
 
-test("the built header lockup paints pale ink with only the moon in the accent", async () => {
+test("the built header lockup paints the small static face and the wordmark in one pale ink", async () => {
   const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0];
   const lockup = header?.match(/<svg\b[\s\S]*?<\/svg>/)?.[0];
   assert.ok(lockup, "the header must inline the lockup so currentColor resolves");
   const css =
     readFileSync("src/styles/global.css", "utf8") + readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.brand\s*\{[^}]*color:\s*var\(--color-fg-1\)/);
-  assert.match(css, /--primary:\s*var\(--color-primary\)/);
   const token = (name) => css.match(new RegExp(`--color-${name}:\\s*(#[0-9a-f]+)`))?.[1];
   const fills = [...lockup.matchAll(/<path\b[^>]*fill="([^"]+)"/g)].map(([, fill]) => fill);
-  assert.deepEqual(fills, ["currentColor", "var(--primary, currentColor)", "currentColor"]);
-  const resolved = lockup
-    .replaceAll("var(--primary, currentColor)", token("primary"))
-    .replaceAll("currentColor", token("fg-1"));
+  assert.ok(fills.length > 0);
+  assert.ok(fills.every((fill) => fill === "currentColor"));
+  const resolved = lockup.replaceAll("currentColor", token("fg-1"));
   const { data } = await sharp(Buffer.from(resolved))
     .resize({ width: 448 })
     .ensureAlpha()
@@ -76,16 +75,18 @@ test("the built header lockup paints pale ink with only the moon in the accent",
   const pixels = Array.from({ length: data.length / 4 }, (_, index) =>
     [...data.subarray(index * 4, index * 4 + 4)].map(Number),
   );
-  for (const name of ["fg-1", "primary"]) {
-    const color = token(name)
-      .slice(1)
-      .match(/../g)
-      .map((channel) => Number.parseInt(channel, 16));
-    assert.ok(
-      pixels.some((pixel) => pixel[3] === 255 && color.every((value, i) => pixel[i] === value)),
-      `${name} must be visible in the built lockup`,
-    );
-  }
+  const ink = token("fg-1")
+    .slice(1)
+    .match(/../g)
+    .map((channel) => Number.parseInt(channel, 16));
+  assert.ok(
+    pixels.some((pixel) => pixel[3] === 255 && ink.every((value, i) => pixel[i] === value)),
+    "fg-1 must be visible in the built lockup",
+  );
+  assert.ok(
+    pixels.every((pixel) => pixel[3] < 32 || Math.abs(pixel[0] - pixel[2]) < 24),
+    "the lockup carries no accent colour",
+  );
 });
 
 for (const [event, region, label] of [
@@ -150,7 +151,7 @@ for (const [plan, copy, path] of [
   });
 }
 
-test("the built homepage follows the scrolling Astra composition with the dedicated waitlist section", () => {
+test("the built homepage follows the scrolling Orbit composition with the dedicated waitlist section", () => {
   assert.match(html, /class="landing-shell"/);
   assert.match(html, /id="astra-demo"/);
   assert.match(html, /<section[^>]*id="ios"[^>]*aria-labelledby="ios-title"/);
@@ -183,7 +184,7 @@ test("the built proposal has one trailing row of two ghost actions and a filled 
   }
 });
 
-test("the application metadata describes Astra without retired FAQ structured data", () => {
+test("the application metadata describes Orbit as the AI without retired FAQ structured data", () => {
   assert.equal(structured.length, 1);
   assert.doesNotMatch(html, /FAQPage/);
   const applications = structured[0]["@graph"].filter((entry) =>
@@ -191,7 +192,7 @@ test("the application metadata describes Astra without retired FAQ structured da
   );
   assert.equal(applications.length, 2);
   for (const app of applications) {
-    assert.match(app.description, /Astra/);
+    assert.match(app.description, /^Tell Orbit what you want to do, and it turns it into habits/);
     assert.deepEqual(
       app.offers.map(({ price }) => price),
       [0, 9.99, 69.99],
@@ -412,22 +413,90 @@ test("built product examples carry the localized templates their controls consum
       .filter((node) => node.name === "symbol")
       .map((node) => [attrs(node).id, attrs(node).viewBox]),
   );
-  const glyphs = nodes.filter(
-    (node) =>
-      node.name === "svg" &&
-      descendants(node).some(
-        (child) => child.name === "use" && attrs(child).href?.startsWith("#astra-mark"),
-      ),
-  );
-  assert.ok(glyphs.length > 0);
-  for (const glyph of glyphs) {
-    const use = descendants(glyph).find((node) => node.name === "use");
-    const name = attrs(use).href.slice(1);
-    const asset = readFileSync(`public/brand/${name}.svg`, "utf8");
-    const viewBox = asset.match(/viewBox="([^"]+)"/)[1];
-    assert.equal(attrs(glyph).viewBox, viewBox);
-    assert.equal(frames.get(name), viewBox);
+  const faces = nodes.filter((node) => node.name === "svg" && attrs(node).class === "orbit-face");
+  assert.ok(faces.length > 0);
+  for (const face of faces) {
+    const use = descendants(face).find((node) => node.name === "use");
+    assert.match(attrs(use).href, /^#orbit-face-(?:16|24)$/);
+    assert.equal(attrs(face).viewBox, frames.get(attrs(use).href.slice(1)));
   }
+});
+
+async function mascotNodes() {
+  const { ast } = await parse(html);
+  const descendants = (node) => [node, ...(node.children ?? []).flatMap(descendants)];
+  const attrs = (node) =>
+    Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
+  const nodes = descendants(ast);
+  return { nodes, descendants, attrs };
+}
+
+test("the built page draws Orbit as a still mascot hidden from assistive technology", async () => {
+  const { nodes, descendants, attrs } = await mascotNodes();
+  const mascots = nodes.filter((node) => node.name === "svg" && "data-orbit-mascot" in attrs(node));
+  assert.ok(mascots.length >= 6, "the hero and each section guide draw Orbit");
+  for (const mascot of mascots) assert.ok(["48", "96", "128"].includes(attrs(mascot).width));
+  const faces = nodes.filter((node) => node.name === "svg" && attrs(node).class === "orbit-face");
+  for (const drawing of [...mascots, ...faces]) {
+    assert.equal(attrs(drawing)["aria-hidden"], "true");
+    assert.equal(attrs(drawing).focusable, "false");
+    for (const part of descendants(drawing)) {
+      assert.doesNotMatch(attrs(part).class ?? "", /mouth|brow/);
+      assert.ok(!["animate", "animateTransform", "animateMotion"].includes(part.name));
+    }
+  }
+  const hero = mascots.find((node) => (attrs(node).class ?? "").includes("hero-orbit"));
+  assert.ok(hero, "Orbit leads the hero");
+  assert.equal(attrs(hero)["data-orbit-state"], "parado");
+  for (const script of scriptsFrom(html))
+    assert.doesNotMatch(scriptSource(script), /orbitTurn|data-orbit-turn/, "load starts no turn");
+});
+
+test("the demo header names Orbit and keeps the name untranslated", async () => {
+  const { nodes, descendants, attrs } = await mascotNodes();
+  const title = nodes.find((node) => attrs(node).id === "demo-title");
+  assert.equal(
+    title.children
+      .map((child) => child.value ?? "")
+      .join("")
+      .trim(),
+    "Orbit",
+  );
+  assert.equal(attrs(title).translate, "no");
+  const demo = nodes.find((node) => attrs(node).id === "astra-demo");
+  const mark = descendants(demo).find(
+    (node) => node.name === "svg" && attrs(node).class === "orbit-face",
+  );
+  assert.equal(attrs(mark).width, "16");
+});
+
+test("the built page keeps every anchor and landmark id, the demo anchor included", () => {
+  const outsideSvg = html.replace(/<svg\b[\s\S]*?<\/svg>/g, "");
+  assert.deepEqual(
+    [...outsideSvg.matchAll(/\sid="([^"]+)"/g)].map(([, id]) => id),
+    [
+      ...["site-header", "lang-toggle", "lang-label", "main-content", "hero", "hero-download"],
+      ...["downloads", "downloads-toggle", "downloads-panel", "ios-trigger", "hero-stage"],
+      ...["phone-chat", demoAnchor, "demo-title", "demo-request", "demo-response", "demo-reply"],
+      ...["demo-preview", "demo-habit", "demo-repeat", "demo-second", "demo-second-repeat"],
+      ...["demo-edit-form", "demo-edit-name", "demo-edit-schedule", "demo-reject", "demo-edit"],
+      ...["demo-approve", "demo-result", "demo-announcement", "demo-today", "demo-today-habit"],
+      ...["demo-today-repeat", "demo-today-second", "demo-today-second-repeat", "demo-continue"],
+      ...["demo-continue-link", "demo-composer", "demo-input", "phone-today", "features"],
+      ...["features-title", "pricing", "pricing-title", "ios", "ios-title", "ios-description"],
+      ...["waitlist-form", "waitlist-email", "waitlist-turnstile", "waitlist-submit"],
+      ...["waitlist-submit-label", "waitlist-status", "waitlist-privacy", "faq", "faq-title"],
+      ...["faq-answer-what", "faq-answer-approval", "faq-answer-miss", "faq-answer-plans"],
+      ...["faq-answer-platforms", "final-title", "cookie-preferences", "back-to-top"],
+      ...["consent-banner", "consent-decline", "consent-accept"],
+    ],
+  );
+});
+
+test("the built page names only Orbit in text, attributes, metadata and structured data", () => {
+  assert.doesNotMatch(html.replaceAll(`id="${demoAnchor}"`, ""), retiredName);
+  for (const script of scriptsFrom(html))
+    assert.doesNotMatch(scriptSource(script).replaceAll(demoAnchor, ""), retiredName);
 });
 
 test("the built feature compositions use full width without backing panels", () => {

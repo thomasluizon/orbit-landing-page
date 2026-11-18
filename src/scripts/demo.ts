@@ -2,6 +2,7 @@ import { translations, type TranslationKey } from "../i18n/translations";
 import { getLang } from "./i18n";
 import { planFromWords } from "./demo-plan";
 import { bindHabitCompletion, toggleHabitCompletion } from "./habit-completion";
+import { turnOrbit } from "./orbit-turn";
 
 type Example = "start" | "restart" | "move";
 type AcceptedPlan = {
@@ -86,6 +87,7 @@ function resetProposal() {
     .forEach((chip) => chip.setAttribute("aria-pressed", String(chip.dataset.demo === current)));
   renderPlan();
   revealProposal();
+  turnOrbit(document.querySelector(".hero-copy"));
 }
 
 function play(example: Example) {
@@ -156,6 +158,7 @@ function updateToday(plan: AcceptedPlan) {
 }
 
 function finish(accept: boolean) {
+  turnOrbit(document.querySelector(".hero-copy"));
   setCopy("demo-result", accept ? `demo.${current}.approved` : "demo.rejected");
   if (result) result.hidden = false;
   if (preview) preview.hidden = true;

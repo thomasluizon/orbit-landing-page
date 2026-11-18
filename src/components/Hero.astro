@@ -1,10 +1,10 @@
 ---
-import AstraDemo from "./AstraDemo.astro";
+import OrbitDemo from "./OrbitDemo.astro";
 import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
 import PhoneHeader from "./PhoneHeader.astro";
 import HabitRow from "./HabitRow.astro";
-import AstraGlyph from "./AstraGlyph.astro";
+import OrbitMascot from "./OrbitMascot.astro";
 import TrustStrip from "./TrustStrip.astro";
 import DownloadsPanel from "./DownloadsPanel.astro";
 import PlatformMark from "./PlatformMark.astro";
@@ -25,6 +25,7 @@ const todayDate = clockText("today", buildNow);
 
 <section id="hero" class="hero" data-section="hero">
   <div class="hero-copy">
+    <OrbitMascot size={128} class="hero-orbit" />
     <h1 class="t-hero" data-i18n="hero.title">{en["hero.title"]}</h1>
     <p class="hero-description" translate="no" data-i18n="hero.subtitle">{en["hero.subtitle"]}</p>
   </div>
@@ -91,7 +92,7 @@ const todayDate = clockText("today", buildNow);
               </div>
               <div class="phone-carousel" data-phone-carousel>
                 <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
-                  <AstraDemo appUrl={appUrl} />
+                  <OrbitDemo appUrl={appUrl} />
                 </div>
                 <div
                   class="phone-slide"
@@ -120,9 +121,9 @@ const todayDate = clockText("today", buildNow);
                     </div>
                   </PhoneHeader>
                   <div class="phone-content phone-today-content">
-                    <div class="proactive-line phone-today-astra">
-                      <AstraGlyph size={16} />
-                      <p><Copy name="today.astra" /></p>
+                    <div class="proactive-line phone-today-orbit">
+                      <OrbitMascot size={16} />
+                      <p><Copy name="today.ai" /></p>
                     </div>
                     <div class="phone-today-habits">
                       <HabitRow habit="water" timing="done" time="08:00" data-first-visible />

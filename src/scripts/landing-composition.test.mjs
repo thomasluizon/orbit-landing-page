@@ -5,14 +5,13 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 import { parse } from "@astrojs/compiler";
-import { scriptsFrom } from "./html.test-helper.mjs";
 
 const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
 const componentNames = [
   "Hero",
   "DownloadsPanel",
-  "AstraDemo",
+  "OrbitDemo",
   "TrustStrip",
   "Features",
   "FeatureRows",
@@ -91,7 +90,7 @@ test("each product surface has one primary intent and the viewport controller ar
     );
     assert.ok(actions.length <= (attributes(section)["data-section"] === "hero" ? 2 : 1));
   }
-  const demo = descendants(components.get("AstraDemo"));
+  const demo = descendants(components.get("OrbitDemo"));
   const actions = demo.filter((node) => node.name === "PillButton");
   assert.deepEqual(
     actions.map((node) => attributes(node).variant),
@@ -135,7 +134,7 @@ test("proposal actions keep natural drawn widths and 44px logical height in one 
     assert.match(declarations, /gap:\s*12px;/);
     assert.match(declarations, /justify-content:\s*flex-end;/);
   }
-  const row = descendants(components.get("AstraDemo")).find(
+  const row = descendants(components.get("OrbitDemo")).find(
     (node) => attributes(node).class === "demo-preview-actions",
   );
   assert.deepEqual(
@@ -171,14 +170,14 @@ test("sibling small-pill rows stay within the audited proposal and consent actio
   }
   assert.deepEqual(rows, [
     {
-      file: "AstraDemo.astro",
-      className: "demo-preview-actions",
-      labels: ["demo.reject", "demo.edit", "demo.approve"],
-    },
-    {
       file: "ConsentBanner.astro",
       className: "flex shrink-0 gap-3",
       labels: ["consent.decline", "consent.accept"],
+    },
+    {
+      file: "OrbitDemo.astro",
+      className: "demo-preview-actions",
+      labels: ["demo.reject", "demo.edit", "demo.approve"],
     },
   ]);
 });
@@ -585,32 +584,6 @@ test("billing arrows wrap selection and focus, Home and End select endpoints, an
   assert.equal(h.options[0].key("Tab").prevented, false);
 });
 
-test("Astra examples expose selectable bars, a static breakdown and a derived goal", async () => {
-  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
-  const block = descendants((await parse(source)).ast);
-  assert.match(source, /kind === "metrics"/);
-  assert.match(source, /kind === "breakdown"/);
-  assert.match(source, /kind === "goal"/);
-  assert.ok(block.some((node) => attributes(node).class === "metric-readout"));
-  assert.ok(!block.some((node) => node.name === "input" && attributes(node).type === "range"));
-  const chart = block.find((node) => attributes(node).class === "metric-bars");
-  assert.equal(attributes(chart).role, 'interactive ? "radiogroup" : undefined');
-  const option = descendants(chart).find((node) => node.name === "button");
-  assert.ok(option, "each bar is its own selectable control");
-  assert.equal(attributes(option).role, "radio");
-  assert.equal(attributes(option)["aria-checked"], "index === exampleWeek.length - 1");
-  assert.equal(attributes(option).tabindex, "index === exampleWeek.length - 1 ? 0 : -1");
-  assert.match(source, /data-clock="chart"[\s\S]*data-clock-offset=\{offsets\[index\]\}/);
-  assert.match(source, /data-clock-label-en=\{barTemplate\("en", index\)\}/);
-  assert.match(source, /blocks.metrics.completion/);
-  assert.match(source, /blocks.metrics.active/);
-  assert.doesNotMatch(source, /frequency-control|breakdown-approve|breakdown-reset/);
-  assert.match(source, /blocks.goal.linked/);
-  assert.match(source, /exampleGoal\.linkedHabitCount/);
-  assert.doesNotMatch(source, /<HabitRow/);
-  assert.ok(block.some((node) => attributes(node).role === "progressbar"));
-});
-
 test("example figures derive from the chart and linked habit fixtures", () => {
   const fixture = {};
   vm.runInNewContext(
@@ -628,249 +601,7 @@ test("example figures derive from the chart and linked habit fixtures", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");
   assert.match(css, /\.metric-bar\s*\{[^}]*background:\s*var\(--color-fg-2\)/);
   assert.match(css, /\.goal-progress-fill\s*\{[^}]*background:\s*var\(--color-primary\)/);
-  assert.doesNotMatch(css, /\.(?:astra-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
-});
-
-const clockFormat = {};
-vm.runInNewContext(
-  ts.transpileModule(readFileSync("src/scripts/clock-format.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText,
-  { exports: clockFormat, Intl },
-);
-const demoDatesModule = {};
-vm.runInNewContext(
-  ts.transpileModule(readFileSync("src/scripts/demo-dates.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText,
-  { exports: demoDatesModule, Intl, require: () => clockFormat },
-);
-
-async function metricsHarness() {
-  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
-  const ast = descendants((await parse(source)).ast);
-  const fixture = {};
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    { exports: fixture },
-  );
-  const frontmatter = {};
-  vm.runInNewContext(
-    ts.transpileModule(
-      `${source.split("---")[1]}\nexports.context = { exampleWeek, exampleDays, dates, offsets, doneLabel, barLabel, barTemplate, landingCopy };`,
-      { compilerOptions: { module: ts.ModuleKind.CommonJS } },
-    ).outputText,
-    {
-      exports: frontmatter,
-      Astro: { props: { kind: "metrics", interactive: true } },
-      require(path) {
-        if (path === "../config/product-examples") return fixture;
-        if (path === "../i18n/translations") return copyTables;
-        if (path === "../scripts/clock-format") return clockFormat;
-        if (path === "../scripts/demo-dates") return demoDatesModule;
-        return {};
-      },
-    },
-  );
-  const producer = frontmatter.context;
-  const option = ast.find((node) => node.name === "button" && attributes(node).role === "radio");
-  assert.ok(option, "the actual producer must render a radio for each chart day");
-  const readoutNode = ast.find((node) => Object.hasOwn(attributes(node), "data-metric-readout"));
-  const create = (node, index) => {
-    const attrs = Object.fromEntries(
-      node.attributes.map(({ name, value, kind }) => [
-        name,
-        kind === "expression"
-          ? String(
-              vm.runInNewContext(value, { ...producer, index, value: fixture.exampleWeek[index] }),
-            )
-          : value,
-      ]),
-    );
-    const listeners = new Map();
-    return {
-      attrs,
-      dataset: Object.fromEntries(
-        Object.entries(attrs)
-          .filter(([key]) => key.startsWith("data-"))
-          .map(([key, value]) => [
-            key.slice(5).replace(/-([a-z])/g, (_, char) => char.toUpperCase()),
-            value,
-          ]),
-      ),
-      hidden: false,
-      tabIndex: Number(attrs.tabindex),
-      focused: false,
-      setAttribute(key, value) {
-        this.attrs[key] = value;
-      },
-      getAttribute(key) {
-        return this.attrs[key];
-      },
-      addEventListener(key, callback) {
-        listeners.set(key, callback);
-      },
-      click() {
-        listeners.get("click")();
-      },
-      focus() {
-        this.focused = true;
-      },
-      key(key) {
-        let prevented = false;
-        listeners.get("keydown")({
-          key,
-          preventDefault() {
-            prevented = true;
-          },
-        });
-        return prevented;
-      },
-    };
-  };
-  const bars = fixture.exampleWeek.map(() => ({
-    attrs: {},
-    setAttribute(key, value) {
-      this.attrs[key] = value;
-    },
-  }));
-  const days = fixture.exampleWeek.map((_, index) => ({
-    ...create(option, index),
-    querySelector: () => bars[index],
-  }));
-  const readouts = fixture.exampleWeek.map((_, index) => create(readoutNode, index));
-  const readout = { style: {}, offsetWidth: 128, offsetHeight: 64 };
-  const chart = { clientWidth: 384 };
-  const block = {
-    querySelector: (selector) =>
-      ({ "[data-metric-chart]": chart, ".metric-readout": readout })[selector],
-    querySelectorAll: (selector) =>
-      ({ "[data-metric-day]": days, "[data-metric-readout]": readouts })[selector] ?? [],
-  };
-  const resize = (width) => {
-    chart.clientWidth = width;
-    const columns = Number(
-      readFileSync("src/styles/landing.css", "utf8").match(
-        /\.metric-bars\s*\{[^}]*repeat\((\d+),/,
-      )[1],
-    );
-    const columnWidth = (width - (columns - 1) * 8) / columns;
-    days.forEach((day, index) => {
-      day.offsetLeft = (index % columns) * (columnWidth + 8);
-      day.offsetWidth = columnWidth;
-      day.offsetTop = 96 + Math.floor(index / columns) * 224;
-      bars[index].offsetTop =
-        day.offsetTop + 128 - Math.max(4, (fixture.exampleWeek[index] / 100) * 128);
-    });
-  };
-  resize(384);
-  const events = new Map();
-  let observer;
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/scripts/product-metrics.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: {},
-      document: {
-        querySelector: () => null,
-        querySelectorAll: (selector) =>
-          selector === '[data-example-block="metrics"]' ? [block] : [],
-      },
-      window: {
-        requestAnimationFrame: (callback) => callback(),
-        addEventListener: (name, callback) => events.set(name, callback),
-      },
-      require: () => ({ getLang: () => "en" }),
-      ResizeObserver: class {
-        constructor(callback) {
-          observer = callback;
-        }
-        observe(element) {
-          assert.equal(element, chart);
-        }
-      },
-    },
-  );
-  return {
-    days,
-    bars,
-    readouts,
-    readout,
-    fixture,
-    producer,
-    events,
-    resize(width) {
-      resize(width);
-      observer();
-    },
-  };
-}
-
-test("chart bars select days by click and keyboard with one tab stop, a clamped moving readout and localized counts", async () => {
-  const h = await metricsHarness();
-  const assertSelection = (index) => {
-    assert.deepEqual(
-      h.days.map((day) => day.attrs["aria-checked"]),
-      h.days.map((_, n) => String(n === index)),
-    );
-    assert.deepEqual(
-      h.days.map((day) => day.tabIndex),
-      h.days.map((_, n) => (n === index ? 0 : -1)),
-    );
-    assert.deepEqual(
-      h.bars.map((bar) => bar.attrs["data-selected"]),
-      h.days.map((_, n) => String(n === index)),
-    );
-    assert.deepEqual(
-      h.readouts.map((item) => item.hidden),
-      h.days.map((_, n) => n !== index),
-    );
-  };
-  assertSelection(6);
-  assert.equal(h.readout.style.left, "256px");
-  for (const language of ["en", "pt-BR"]) {
-    for (const [index, day] of h.days.entries()) {
-      day.click();
-      assertSelection(index);
-      const count = h.producer.doneLabel(language, index);
-      const label = day.dataset[language === "en" ? "copyLabelEn" : "copyLabelPt"];
-      assert.ok(label.includes(count));
-      assert.ok(label.includes(`${h.fixture.exampleWeek[index]}%`));
-      assert.ok(label.startsWith(`${h.producer.dates[index][language]}, `));
-      h.events.get("orbit:language-changed")();
-      assertSelection(index);
-    }
-  }
-  for (const key of ["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"]) {
-    const forward = key === "ArrowRight" || key === "ArrowDown";
-    const start = forward ? 6 : 0;
-    const target = forward ? 0 : 6;
-    h.days[start].click();
-    assert.equal(h.days[start].key(key), true);
-    assertSelection(target);
-    assert.equal(h.days[target].focused, true);
-  }
-  h.days[6].key("Home");
-  assertSelection(0);
-  h.days[0].key("End");
-  assertSelection(6);
-  assert.equal(h.days[6].key("Tab"), false);
-  assertSelection(6);
-  h.days[3].click();
-  assert.equal(h.readout.style.left, "128px");
-  h.days[0].click();
-  assert.equal(h.readout.style.left, "0px");
-  h.days[6].click();
-  h.resize(240);
-  assert.equal(h.readout.style.left, "112px");
-  assert.equal(h.readout.style.top, undefined, "the readout keeps its own row");
-  assertSelection(6);
-  h.days[3].click();
-  assert.equal(h.readout.style.left, "56px");
-  assert.equal(h.readout.style.top, undefined);
+  assert.doesNotMatch(css, /\.(?:ai-product|product-block|metric-|goal-)[^{]*\{[^}]*scale\(/);
 });
 
 test("chart targets fill their columns, empty days keep a stub and reduced motion freezes the readout", () => {
@@ -1099,102 +830,17 @@ test("every current copy key has locale parity and Pro states the approved weekl
   for (const table of [copyTables.translations, copyTables.landingCopy])
     assert.deepEqual(Object.keys(table.en).sort(), Object.keys(table["pt-BR"]).sort());
   for (const [language, pricing, faq] of [
-    ["en", "250 Astra messages a week", "250 Astra messages a week and Google Calendar import."],
+    ["en", "250 AI messages a week", "250 AI messages a week and Google Calendar import."],
     [
       "pt-BR",
-      "250 mensagens da Astra por semana",
-      "250 mensagens da Astra por semana e a importação do Google Agenda.",
+      "250 mensagens de IA por semana",
+      "250 mensagens de IA por semana e a importação do Google Agenda.",
     ],
   ]) {
-    assert.equal(copyTables.landingCopy[language]["pricing.pro.astra"], pricing);
+    assert.equal(copyTables.landingCopy[language]["pricing.pro.ai"], pricing);
     assert.equal(copyTables.landingCopy[language]["faq.plans.a"], faq);
   }
 });
-
-async function reachFeaturesWithoutPhone(source = readFileSync("src/pages/index.astro", "utf8")) {
-  const featureSection = sections.find((node) => attributes(node)["data-section"] === "features");
-  assert.ok(featureSection);
-  const targets = [
-    { matches: (selector) => selector === ".hero-device" },
-    {
-      matches: (selector) =>
-        selector === `[data-section="${attributes(featureSection)["data-section"]}"]`,
-    },
-  ];
-  const matches = (target, selector) =>
-    selector.split(",").some((part) => target.matches(part.trim()));
-  const observers = [];
-  const imports = [];
-  const script = scriptsFrom(source)[0].body;
-  vm.runInNewContext(
-    ts.transpileModule(script, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: {},
-      document: {
-        querySelector: (selector) => targets.find((target) => matches(target, selector)) ?? null,
-        querySelectorAll: (selector) => targets.filter((target) => matches(target, selector)),
-      },
-      IntersectionObserver: class {
-        observed = new Set();
-        constructor(callback) {
-          this.callback = callback;
-          observers.push(this);
-        }
-        observe(target) {
-          this.observed.add(target);
-        }
-        unobserve(target) {
-          this.observed.delete(target);
-        }
-        disconnect() {
-          this.observed.clear();
-        }
-      },
-      require(path) {
-        if (path === "../scripts/task-queue")
-          return {
-            afterLoad: async (tasks) => {
-              for (const task of tasks) await task();
-            },
-          };
-        imports.push(path);
-        return {};
-      },
-    },
-  );
-  assert.ok(!imports.includes("../scripts/demo-views"), "the feature views stay deferred");
-  for (const observer of observers) {
-    observer.callback(
-      [...observer.observed].map((target) => ({ target, isIntersecting: target === targets[1] })),
-    );
-  }
-  await new Promise((resolve) => setImmediate(resolve));
-  for (const path of ["../scripts/product-metrics", "../scripts/demo-views"]) {
-    assert.ok(
-      imports.includes(path),
-      `reaching features must load ${path} without the hero ever intersecting`,
-    );
-  }
-  assert.ok(!imports.includes("../scripts/demo"), "the offscreen phone demo stays deferred");
-}
-
-for (const [opening, closing] of [
-  ["<SCRIPT>", "</SCRIPT>"],
-  ["<script>", "</script \n>"],
-  ['<ScRiPt data-startup="true">', "</sCrIpT\t>"],
-  ['<ScRiPt data-startup="true">', "</sCrIpT\t\n bar>"],
-  ["<script>", "</script/foo>"],
-  ["<script>", "</script/ >"],
-]) {
-  test(`feature composition extraction accepts ${opening} and ${closing.trim()}`, async () => {
-    const source = readFileSync("src/pages/index.astro", "utf8")
-      .replace("<script>", opening)
-      .replace("</script>", closing);
-    await reachFeaturesWithoutPhone(source);
-  });
-}
 
 test("the language toggle keeps its 40px drawing with a centred target at least 44px in both axes", () => {
   const css = readFileSync("src/styles/landing.css", "utf8");

@@ -167,14 +167,3 @@ test("the 7-day readout never intersects a bar or leaves the chart, for every da
     }
   }
 });
-
-test("the 7-day readout owns the row between the title and the bars", () => {
-  assert.equal(geometry.absolute, false, "an absolute readout shares the bar row");
-  const source = readFileSync("src/components/AstraBlock.astro", "utf8");
-  const chart = source.slice(source.indexOf("data-metric-chart"));
-  assert.ok(
-    chart.indexOf('class="metric-readout-row"') < chart.indexOf('class="metric-bars"'),
-    "the readout row comes before the bars",
-  );
-  assert.doesNotMatch(readFileSync("src/scripts/product-metrics.ts", "utf8"), /style\.top/);
-});

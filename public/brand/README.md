@@ -1,21 +1,30 @@
 # Orbit brand sources
 
-The SVGs mirror `orbit-ui-mobile/design/brand/`. Keep their geometry aligned
-with the app's `tools/generate-brand-assets.mjs`.
+Orbit is the app, its AI and its mascot. The SVG files here are byte copies of
+`orbit-ui-mobile/design/brand/`. Copy them again when that folder changes.
 
-Run `npm run brand:generate` from the landing repository root to regenerate the
-favicons, the Apple icon, the logo PNG and the ICO. Generation reads only files in this repository.
+| File                     | Use on the page                                                     |
+| ------------------------ | ------------------------------------------------------------------- |
+| `orbit-mascot.svg`       | The live rig at rest: planet, two pill eyes, one ring and one moon  |
+| `orbit-mascot-feliz.svg` | The happy eyes that the rig shows after a visitor action            |
+| `orbit-mascot-small.svg` | The small static face at 16 and 24, under the 40px floor of the rig |
+| `orbit-lockup.svg`       | The header and footer lockup: the small face and the wordmark       |
 
-The 16px favicon uses the native redraw without trimming or scaling. The larger
-favicons use the accent mark at 68% width. All favicon layers have a `#09090B`
-disc. The 180px Apple icon uses a solid canvas and 60% mark width. The shared
-96px transparent logo uses 80% mark width. Foreground and moon colors follow
-the canonical generator; landing CSS tokens remain unchanged.
+`src/components/OrbitMascot.astro` inlines the rig and the small face, so
+`currentColor` and the tokens resolve. Planet and ring use `--color-fg-1`, the
+eyes use `--color-bg`, and the moon is the one element in `--color-primary`.
 
-`public/og-image.png` is the 2400 by 1260 social card: the Orbit lockup with
-the accent moon and the line "An AI that tracks habits." on `#09090B`, the same
-composition as the app's launch brand images. It is a committed source image,
-and the generator does not write it.
+Run `npm run brand:generate` from the repository root to write the favicons,
+the ICO, the Apple icon and `logo.png`. The generator reads only these files.
 
-The SVGs use `currentColor`; inline them when consuming them directly. Image
-elements use the baked `logo.png` so the foreground and moon colors resolve.
+- Each favicon is the small static face on a `#09090B` disc. The 16px layer is
+  the native `small-16` drawing in one ink. The 32px and 48px layers draw the
+  24 face with the accent moon.
+- The 180px Apple icon is the rig at 70% width on `#09090B`. The rig keeps its
+  eyes only when each eye is at least 2px wide in the 48px icon render. The
+  generator prints that measure. With the rig of `orbit-mascot.svg` each eye
+  measures 1.70px, so the icon has no eyes.
+- The 96px transparent `logo.png` is the rig with its eyes at 80% width.
+
+`public/og-image.png` is the 2400 by 1260 social card. It is a byte copy of
+`thomas-brain/orbit/web/og-image.png`, and the generator does not write it.

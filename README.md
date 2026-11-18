@@ -1,6 +1,6 @@
 # Orbit Landing Page
 
-One screen for **Orbit**, an AI that tracks habits. Astra turns a plain request into a proposed routine change for the person to review.
+The landing page for **Orbit**, an AI that tracks habits. Orbit is the app, its AI and its mascot. It turns a plain request into a proposed routine change for the person to review.
 
 **Live:** [useorbit.org](https://useorbit.org) | **App:** [app.useorbit.org](https://app.useorbit.org) | **API:** [api.useorbit.org](https://api.useorbit.org)
 
@@ -17,12 +17,12 @@ One screen for **Orbit**, an AI that tracks habits. Astra turns a plain request 
 
 ## Page
 
-The header, headline, Astra conversation, actions and footer share one centred column. The page uses the visible viewport height, with fewer conversation turns in short windows.
+Orbit the mascot leads the hero and guides each section with one short line. The hero phone shows the Orbit conversation and the Today screen.
 
 - Three example requests replay locally, with no model or network call. Each shows a proposed habit change; approval, edit and rejection labels are visual examples.
 - English and Brazilian Portuguese copy switches through `data-i18n` attributes with cookie persistence.
 - The iPhone waitlist opens in a native dialog, including direct links to `/#ios`, and keeps the existing email confirmation and Turnstile flow.
-- Open Graph, Twitter metadata and application structured data describe Astra and the supported platforms.
+- Open Graph, Twitter metadata and application structured data describe Orbit and the supported platforms.
 
 ## Design system
 
@@ -36,11 +36,11 @@ The canon lives in `orbit-ui-mobile/DESIGN.md`. This repository mirrors its dark
 | Card surface | `rgba(250,250,250,0.04)`                      |
 | Hairline     | `rgba(255,255,255,0.08)`                      |
 
-Type sizes step with viewport width. The Astra proposal uses a tonal preview with approval controls. See `CLAUDE.md` for token rules and code standards.
+Type sizes step with viewport width. The Orbit proposal uses a tonal preview with approval controls. See `CLAUDE.md` for token rules and code standards.
 
 ## Viewport assertions
 
-The landing follows a scrolling composition with a centered Astra device, floating product cards, feature sections, pricing, questions and a closing invitation. Node tests check section order, accent actions, bilingual copy, pricing and motion startup. The animation libraries load after paint and interaction. Reduced motion keeps the static composition and does not load the scroll driver.
+The landing follows a scrolling composition with a centered Orbit device, floating product cards, feature sections, pricing, questions and a closing invitation. Node tests check section order, accent actions, bilingual copy, pricing and motion startup. The animation libraries load after paint and interaction. Reduced motion keeps the static composition and does not load the scroll driver.
 
 Rendered checks cover 1352, 1100, 840, 412 and 320 CSS pixels in English and Brazilian Portuguese, including the pinned hero, no horizontal overflow, whole control labels and a static reduced motion page. Rendered evidence and Lighthouse remain part of the orchestrator's verification.
 
@@ -71,8 +71,9 @@ src/
   components/
     Header.astro         # Orbit lockup, language toggle and install action
     Hero.astro           # Copy, conversation and actions in one column
-    AstraDemo.astro      # Proposed changes and example request chips
-    AstraGlyph.astro     # Astra identity
+    OrbitDemo.astro      # Proposed changes and example request chips
+    OrbitMascot.astro    # The Orbit mascot rig and the small static face
+    OrbitLine.astro      # Orbit and its one line above a section heading
     IosWaitlist.astro    # Waitlist dialog and form
     Footer.astro         # Privacy, terms and copyright
     PillButton.astro     # Shared action primitive

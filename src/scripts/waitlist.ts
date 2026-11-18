@@ -86,6 +86,7 @@ function setStatus(message: string, kind: StatusKind) {
   statusKind = kind;
   if (status.textContent !== message) status.textContent = message;
   status.style.color = kind === "success" ? "var(--color-fg-1)" : "var(--color-status-bad)";
+  status.dataset.kind = kind;
 }
 
 function updateSubmitButton(strings: Strings) {

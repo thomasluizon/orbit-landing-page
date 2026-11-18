@@ -1,6 +1,6 @@
 ---
 import { Bell } from "@lucide/astro";
-import AstraGlyph from "./AstraGlyph.astro";
+import OrbitMascot from "./OrbitMascot.astro";
 import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
@@ -74,7 +74,7 @@ const week = copy ? weekHtml(buildNow, dayKey(buildNow), "en", copy) : undefined
     kind === "insight" && (
       <>
         <div class="product-top">
-          <AstraGlyph />
+          <OrbitMascot size={24} />
         </div>
         <p>
           <Copy name="product.insight" />

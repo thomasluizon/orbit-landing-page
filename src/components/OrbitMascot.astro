@@ -1,0 +1,106 @@
+---
+import rigSource from "../../public/brand/orbit-mascot.svg?raw";
+import happySource from "../../public/brand/orbit-mascot-feliz.svg?raw";
+import smallSource from "../../public/brand/orbit-mascot-small.svg?raw";
+import { mascotRig, smallFaces } from "../config/orbit-mascot";
+interface Props {
+  definitions?: boolean;
+  size?: 16 | 24 | 48 | 96 | 128;
+  state?: "parado" | "feliz";
+  class?: string;
+}
+const { definitions = false, size = 24, state = "parado", class: className } = Astro.props;
+const small = size === 16 || size === 24;
+const rig = mascotRig(rigSource, happySource);
+const faces = smallFaces(smallSource);
+const moonLayer = (layer: "back" | "front") =>
+  `<g class="orbit-moon orbit-moon-${layer}"><g class="orbit-tilt"><g transform="rotate(-18) scale(1 0.29)"><g class="orbit-moon-spin"><g transform="rotate(${rig.moonAngle}) translate(180 0) rotate(${-rig.moonAngle})"><g class="orbit-moon-counter"><circle r="${rig.moonRadius}" transform="scale(1 3.4483)"/></g></g></g></g></g></g>`;
+---
+
+{
+  definitions ? (
+    <svg width="0" height="0" aria-hidden="true" focusable="false" class="glyph-definitions">
+      <defs>
+        <clipPath id="orbit-planet-clip">
+          <circle r="100" />
+        </clipPath>
+        <symbol id="orbit-ring-back" overflow="visible">
+          <path d={rig.ringBack} />
+        </symbol>
+        <symbol id="orbit-ring-outline" overflow="visible">
+          <path d={rig.ringOutline} />
+        </symbol>
+        <symbol id="orbit-ring-front" overflow="visible">
+          <path d={rig.ringFront} />
+        </symbol>
+        {faces.map((face) => (
+          <symbol id={`orbit-face-${face.size}`} viewBox={face.viewBox}>
+            <clipPath id={`orbit-face-${face.size}-cut`}>
+              <path d={face.cut} clip-rule="evenodd" />
+            </clipPath>
+            <path class="orbit-ink" d={face.ringBack} />
+            <g clip-path={`url(#orbit-face-${face.size}-cut)`}>
+              <path class="orbit-ink" d={face.planet} />
+              {face.eyes.map((eye) => (
+                <path class="orbit-eye-ink" d={eye} />
+              ))}
+            </g>
+            <path class="orbit-ink" d={face.ringFront} />
+            <path class="orbit-moon-ink" d={face.moon} />
+          </symbol>
+        ))}
+      </defs>
+    </svg>
+  ) : small ? (
+    <svg
+      viewBox={size === 16 ? "0 0 16 12" : "0 0 24 18"}
+      width={size}
+      height={size * 0.75}
+      aria-hidden="true"
+      focusable="false"
+      class:list={["orbit-face", className]}
+    >
+      <use href={`#orbit-face-${size}`} />
+    </svg>
+  ) : (
+    <svg
+      viewBox="-210 -150 420 300"
+      width={size}
+      height={Math.round((size * 300) / 420)}
+      aria-hidden="true"
+      focusable="false"
+      class:list={["orbit-mascot", className]}
+      data-orbit-mascot
+      data-orbit-state={state}
+    >
+      <g class="orbit-body">
+        <g class="orbit-tilt orbit-ring-ink">
+          <use href="#orbit-ring-back" />
+        </g>
+        <Fragment set:html={moonLayer("back")} />
+        <circle r="100" class="orbit-planet" />
+        <g class="orbit-eyes">
+          <g class="orbit-eyes-pill">
+            {rig.eyes.map((eye) => (
+              <path class="orbit-eye" d={eye} />
+            ))}
+          </g>
+          <g class="orbit-eyes-happy">
+            {rig.happyEyes.map((eye) => (
+              <path d={eye} />
+            ))}
+          </g>
+        </g>
+        <g clip-path="url(#orbit-planet-clip)">
+          <g class="orbit-tilt orbit-ring-outline">
+            <use href="#orbit-ring-outline" />
+          </g>
+        </g>
+        <g class="orbit-tilt orbit-ring-ink">
+          <use href="#orbit-ring-front" />
+        </g>
+        <Fragment set:html={moonLayer("front")} />
+      </g>
+    </svg>
+  )
+}
