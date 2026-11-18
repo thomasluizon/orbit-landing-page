@@ -1075,7 +1075,7 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
 test("no scroll position leaves an Orbit with its eyes shut", () => {
   const scrolledBlinks = rules.filter(
     (rule) =>
-      /animation-timeline:\s*view\(\)/.test(rule.declarations) &&
+      /animation-timeline:\s*(?:view|scroll)\(/.test(rule.declarations) &&
       (/\.orbit-eye/.test(rule.selector) || /orbit-blink/.test(rule.declarations)),
   );
   assert.deepEqual(
@@ -1083,6 +1083,41 @@ test("no scroll position leaves an Orbit with its eyes shut", () => {
     [],
     "a blink on a scroll timeline holds its closed frame when the visitor stops scrolling",
   );
+});
+
+test("each guide Orbit blinks once on a time timeline that a script starts on arrival", () => {
+  const blinks = rules.filter((rule) =>
+    /\.orbit-line\[data-orbit-blink\]\s+\.orbit-eye/.test(rule.selector),
+  );
+  assert.equal(blinks.length, 1, "one rule blinks the eyes of a guide Orbit");
+  const [blink] = blinks;
+  assert.ok(
+    blink.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+    "reduced motion keeps the eyes open and never blinks",
+  );
+  assert.match(blink.declarations, /animation:\s*orbit-blink\s/);
+  assert.doesNotMatch(
+    blink.declarations,
+    /animation-timeline|view\(|scroll\(|infinite|forwards|both/,
+  );
+  const blinking = rules.filter((rule) =>
+    /(?:^|;)\s*animation(?:-name)?\s*:[^;]*orbit-blink/.test(rule.declarations),
+  );
+  for (const rule of blinking) {
+    assert.doesNotMatch(rule.declarations, /(?:view|scroll)\(/, rule.selector);
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      rule.selector,
+    );
+  }
+  const turn = readFileSync("src/scripts/orbit-turn.ts", "utf8");
+  assert.match(turn, /export function blinkGuides/);
+  assert.match(turn, /IntersectionObserver/);
+  assert.match(turn, /\[data-orbit-guide\]/);
+  assert.match(turn, /dataset\.orbitBlink/);
+  assert.match(turn, /unobserve/);
+  assert.match(readFileSync("src/scripts/demo.ts", "utf8"), /blinkGuides\(\);/);
+  assert.match(readFileSync("src/components/OrbitLine.astro", "utf8"), /data-orbit-guide/);
 });
 
 test("Orbit moves its eyes toward a control only with motion allowed", () => {

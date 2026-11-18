@@ -2,7 +2,7 @@ import { translations, type TranslationKey } from "../i18n/translations";
 import { getLang } from "./i18n";
 import { planFromWords } from "./demo-plan";
 import { bindHabitCompletion, toggleHabitCompletion } from "./habit-completion";
-import { turnOrbit } from "./orbit-turn";
+import { blinkGuides, turnOrbit } from "./orbit-turn";
 
 type Example = "start" | "restart" | "move";
 type AcceptedPlan = {
@@ -231,6 +231,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-habit-toggle]").forEach((row
 document.getElementById("demo-approve")?.addEventListener("click", () => finish(true));
 document.getElementById("demo-reject")?.addEventListener("click", () => finish(false));
 document.getElementById("demo-edit")?.addEventListener("click", openEditor);
+blinkGuides();
 window.addEventListener("orbit:language-changed", () => {
   renderPlan();
   if (acceptedPlan) updateToday(acceptedPlan);

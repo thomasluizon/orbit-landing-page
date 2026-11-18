@@ -14,6 +14,7 @@ const attributes = (node) =>
 function harness(language = "en", threadHeight = 415) {
   const events = new Map();
   const observers = [];
+  const watchers = [];
   const elements = new Map();
   function element(node, parent = null) {
     const attrs = attributes(node);
@@ -150,6 +151,19 @@ function harness(language = "en", threadHeight = 415) {
         this.targets.add(target);
       }
     },
+    IntersectionObserver: class {
+      targets = new Set();
+      constructor(callback) {
+        this.callback = callback;
+        watchers.push(this);
+      }
+      observe(target) {
+        this.targets.add(target);
+      }
+      unobserve(target) {
+        this.targets.delete(target);
+      }
+    },
     exports: {},
     document,
     requestAnimationFrame: (callback) => callback(),
@@ -213,6 +227,12 @@ function harness(language = "en", threadHeight = 415) {
     exchange,
     thread,
     observers,
+    arrive(target) {
+      for (const watcher of watchers) {
+        if (watcher.targets.has(target)) watcher.callback([{ target, isIntersecting: true }]);
+      }
+    },
+    watched: () => watchers.flatMap((watcher) => [...watcher.targets]),
     resize(target) {
       for (const observer of observers) {
         if (observer.targets.has(target)) observer.callback();
@@ -360,6 +380,22 @@ test("every habit toggle sits in the hero phone, whose demo binds it", () => {
   const toggles = nodes.filter(isToggle);
   assert.ok(toggles.length > 0);
   assert.equal(descendants(phone).filter(isToggle).length, toggles.length);
+});
+
+test("a guide Orbit blinks once when it arrives and never before", () => {
+  const h = harness("en");
+  const guides = nodes.filter((node) => "data-orbit-guide" in attributes(node));
+  assert.ok(guides.length >= 5, "the hero and each section guide an Orbit");
+  const watched = h.watched();
+  assert.equal(watched.length, guides.length, "each guide waits for its arrival");
+  for (const guide of watched) {
+    assert.equal(guide.dataset.orbitBlink, undefined, "no guide blinks before it arrives");
+  }
+  const [first, ...rest] = watched;
+  h.arrive(first);
+  assert.equal(first.dataset.orbitBlink, "", "the arriving guide starts its blink");
+  for (const guide of rest) assert.equal(guide.dataset.orbitBlink, undefined);
+  assert.ok(!h.watched().includes(first), "a guide blinks once and is not watched again");
 });
 
 test("exchange growth retains the reveal observer without scrolling the phone or page", () => {

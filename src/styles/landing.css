@@ -2852,6 +2852,9 @@ button.metric-bar-track:active .metric-bar {
   .page-orbit .orbit-eye {
     animation: orbit-blink var(--orbit-blink) var(--ease-standard) 1900ms;
   }
+  .orbit-line[data-orbit-blink] .orbit-eye {
+    animation: orbit-blink var(--orbit-blink) var(--ease-standard) 240ms;
+  }
   .hero-orbit:not([data-orbit-turn]) .orbit-eyes {
     animation: orbit-look 1400ms var(--ease-standard) 2500ms;
   }

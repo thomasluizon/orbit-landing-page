@@ -16,3 +16,17 @@ export function turnOrbit(element: Element | null) {
     }),
   );
 }
+
+/** One timed blink for each guide Orbit when it comes into view. The blink never follows the scroll position, so the eyes end open. */
+export function blinkGuides() {
+  const watch = new IntersectionObserver(
+    (entries) =>
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        (entry.target as HTMLElement).dataset.orbitBlink = "";
+        watch.unobserve(entry.target);
+      }),
+    { threshold: 0.6 },
+  );
+  document.querySelectorAll("[data-orbit-guide]").forEach((guide) => watch.observe(guide));
+}

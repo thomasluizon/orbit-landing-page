@@ -93,3 +93,29 @@ test("each guide line names Orbit as the speaker for assistive technology", () =
     );
   }
 });
+
+test("each built guide Orbit blinks on a time timeline that ends with open eyes", () => {
+  const guides = [...html.matchAll(/<div class="orbit-line" data-orbit-guide/g)];
+  assert.ok(guides.length >= 5, "the hero and each section guide an Orbit");
+  const blinking = rules.filter((rule) =>
+    values(rule.declarations, "animation").some((value) => /^orbit-blink\b/.test(value)),
+  );
+  const guideBlink = blinking.filter((rule) => /data-orbit-blink/.test(rule.selector));
+  assert.equal(guideBlink.length, 1, "one built rule blinks a guide Orbit");
+  for (const rule of blinking) {
+    assert.ok(
+      rule.conditions.some((condition) =>
+        /prefers-reduced-motion:\s*no-preference/.test(condition),
+      ),
+      `${rule.selector} blinks outside the motion preference`,
+    );
+    assert.doesNotMatch(
+      rule.declarations,
+      /animation-timeline|(?:view|scroll)\(|infinite|forwards|both/,
+    );
+  }
+  for (const rule of rules) {
+    if (!values(rule.declarations, "animation-name").includes("orbit-blink")) continue;
+    assert.fail(`${rule.selector}: a blink on a scroll timeline can freeze with the eyes shut`);
+  }
+});
