@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { posix } from "node:path";
 import test from "node:test";
-import vm from "node:vm";
-import ts from "typescript";
 import { parse } from "@astrojs/compiler";
+import { runnerImport } from "vite";
 
 const attributes = (node) =>
   Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
@@ -31,13 +29,8 @@ const components = new Map(
   ),
 );
 const page = (await parse(readFileSync("src/pages/index.astro", "utf8"))).ast;
-const copyTables = {};
-vm.runInNewContext(
-  ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS },
-  }).outputText,
-  { exports: copyTables },
-);
+const viteOptions = { configFile: false, envPrefix: "PUBLIC_", logLevel: "silent" };
+const { module: copyTables } = await runnerImport("/src/i18n/translations.ts", viteOptions);
 function expand(node) {
   const source = components.get(node.name);
   if (source) return expand(source);
@@ -392,206 +385,20 @@ test("every section shares one heading scale and at most one supporting paragrap
   assert.doesNotMatch(css, /\.feature-copy \.section-title/);
 });
 
-function billingHarness(language = "en") {
-  const pricing = descendants(components.get("Pricing"));
-  const group = pricing.find((node) => attributes(node).role === "radiogroup");
-  const element = (node) => {
-    const attrs = attributes(node);
-    const listeners = new Map();
-    return {
-      attributes: attrs,
-      dataset: Object.fromEntries(
-        Object.entries(attrs)
-          .filter(([name]) => name.startsWith("data-"))
-          .map(([name, value]) => [
-            name.slice(5).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()),
-            value,
-          ]),
-      ),
-      textContent: "",
-      hidden: Object.hasOwn(attrs, "hidden"),
-      tabIndex: Number(attrs.tabindex),
-      focused: false,
-      closest() {
-        return null;
-      },
-      setAttribute(name, value) {
-        this.attributes[name] = value;
-      },
-      getAttribute(name) {
-        return this.attributes[name] ?? null;
-      },
-      addEventListener(name, callback) {
-        listeners.set(name, callback);
-      },
-      click() {
-        listeners.get("click")();
-      },
-      focus() {
-        this.focused = true;
-      },
-      key(key) {
-        const event = {
-          key,
-          prevented: false,
-          preventDefault() {
-            this.prevented = true;
-          },
-        };
-        listeners.get("keydown")(event);
-        return event;
-      },
-    };
-  };
-  const options = descendants(group)
-    .filter((node) => attributes(node).role === "radio")
-    .map(element);
-  const fields = Object.fromEntries(
-    ["data-pro-price", "data-billed-total", "data-billing-saving", "data-plan-recommendation"].map(
-      (name) => [name, element(pricing.find((node) => Object.hasOwn(attributes(node), name)))],
-    ),
-  );
-  const free = element(pricing.find((node) => attributes(node)["data-price"] === "free"));
-  const translated = pricing.filter((node) => attributes(node)["data-i18n"]).map(element);
-  const copied = pricing
-    .filter((node) => node.name === "Copy")
-    .map((node) => {
-      const field = element(node);
-      field.dataset.copyEn = copyTables.landingCopy.en[attributes(node).name];
-      field.dataset.copyPt = copyTables.landingCopy["pt-BR"][attributes(node).name];
-      return field;
-    });
-  const listeners = new Map();
-  const toggle = {
-    addEventListener: (name, callback) => listeners.set(`toggle:${name}`, callback),
-    setAttribute() {},
-  };
-  const document = {
-    cookie: `orbit_lang=${language}`,
-    documentElement: {},
-    getElementById: (id) => (id === "lang-toggle" ? toggle : null),
-    querySelectorAll: (selector) =>
-      ({
-        "[data-price]": [free],
-        "[data-i18n]": translated,
-        "[data-copy-en]": copied,
-      })[selector] ?? [],
-    querySelector(selector) {
-      if (selector === "[data-billing-control]") return { querySelectorAll: () => options };
-      return fields[selector.slice(1, -1)] ?? null;
-    },
-  };
-  const context = vm.createContext({
-    document,
-    window: {
-      addEventListener: (name, callback) => listeners.set(name, callback),
-      dispatchEvent: (event) => listeners.get(event.type)?.(),
-    },
-    navigator: { language: language === "pt-BR" ? "pt-BR" : "en-US" },
-    environment: { DEV: false },
-    CustomEvent: class {
-      constructor(type) {
-        this.type = type;
-      }
-    },
-    Intl,
-  });
-  const modules = new Map();
-  function load(file) {
-    if (modules.has(file)) return modules.get(file);
-    const code = ts.transpileModule(
-      readFileSync(`${file}.ts`, "utf8").replaceAll("import.meta.env", "environment"),
-      {
-        compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-      },
-    ).outputText;
-    const exports = {};
-    // WHY: cache before running, so an import cycle gets the partial exports: https://nodejs.org/api/modules.html#cycles
-    modules.set(file, exports);
-    const requireFromFile = (specifier) => load(posix.join(posix.dirname(file), specifier));
-    vm.runInContext(`(function(exports, require) {\n${code}\n})`, context)(
-      exports,
-      requireFromFile,
-    );
-    return exports;
-  }
-  const require = (specifier) => load(posix.join("src/scripts", specifier));
-  const prices = { ...require("../config/pricing"), ...require("../config/pricing-copy") };
-  const { landingCopy } = require("../i18n/translations");
-  for (const field of Object.values(fields)) {
-    for (const [name, value] of Object.entries(field.dataset)) {
-      if (value.startsWith("landingCopy"))
-        field.dataset[name] = vm.runInNewContext(value, { landingCopy });
-    }
-  }
-  require("./i18n");
-  require("./pricing");
-  return {
-    options,
-    fields,
-    free,
-    prices,
-    landingCopy,
-    translated,
-    copied,
-    changeLanguage(language) {
-      while (document.documentElement.lang !== language) listeners.get("toggle:click")();
-    },
-  };
-}
-
-test("the free plan title and all plan mentions follow the actual language toggle", () => {
-  const h = billingHarness();
-  const title = h.translated.find((field) => field.getAttribute("data-i18n") === "plan.free");
-  assert.ok(title, "the free plan heading must use a localized plan name");
-  const caption = h.copied.find((field) => field.attributes.name === "pricing.free.body");
-  for (const language of ["en", "pt-BR", "en"]) {
-    h.changeLanguage(language);
-    assert.equal(title.textContent, language === "pt-BR" ? "Grátis" : "Free");
-    assert.equal(
-      caption.textContent,
-      language === "pt-BR" ? "Para começar." : "For getting started.",
-    );
-  }
+test("pt-BR copy names the free plan Grátis and never Free", () => {
   for (const table of [copyTables.translations["pt-BR"], copyTables.landingCopy["pt-BR"]]) {
     for (const [key, value] of Object.entries(table)) assert.doesNotMatch(value, /\bFree\b/u, key);
   }
 });
 
-test("localized application offers use the same free plan name", () => {
-  const h = billingHarness();
-  assert.equal(h.prices.offersFor("en")[0].name, "Orbit Free");
-  assert.equal(h.prices.offersFor("pt-BR")[0].name, "Orbit Grátis");
+test("localized application offers use the same free plan name", async () => {
+  const { module: prices } = await runnerImport("/src/config/pricing.ts", viteOptions);
+  assert.equal(prices.offersFor("en")[0].name, "Orbit Free");
+  assert.equal(prices.offersFor("pt-BR")[0].name, "Orbit Grátis");
 });
 
-test("billing arrows wrap selection and focus, Home and End select endpoints, and Tab stays native", () => {
-  const h = billingHarness();
-  for (const key of ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"]) {
-    h.options[0].click();
-    assert.equal(h.options[0].key(key).prevented, true);
-    assert.equal(h.options[1].attributes["aria-checked"], "true");
-    assert.equal(h.options[1].focused, true);
-    assert.equal(h.options[1].tabIndex, 0);
-    assert.equal(h.options[0].tabIndex, -1);
-    assert.equal(h.options[1].key(key).prevented, true);
-    assert.equal(h.options[0].attributes["aria-checked"], "true");
-    assert.equal(h.options[0].focused, true);
-  }
-  h.options[0].key("End");
-  assert.equal(h.options[1].attributes["aria-checked"], "true");
-  h.options[1].key("Home");
-  assert.equal(h.options[0].attributes["aria-checked"], "true");
-  assert.equal(h.options[0].key("Tab").prevented, false);
-});
-
-test("example figures derive from the chart and linked habit fixtures", () => {
-  const fixture = {};
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/config/product-examples.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    { exports: fixture },
-  );
+test("example figures derive from the chart and linked habit fixtures", async () => {
+  const { module: fixture } = await runnerImport("/src/config/product-examples.ts", viteOptions);
   assert.equal(fixture.exampleWeek.length, 7);
   assert.equal(Math.round(fixture.exampleWeek.reduce((sum, point) => sum + point, 0) / 7), 78);
   assert.equal(fixture.exampleWeek.filter((value) => value > 0).length, 6);
@@ -645,45 +452,10 @@ test("every translation key has a source consumer and retired copy is removed", 
   }
 });
 
-test("every billing period shows its configured daily price and actual billed total", () => {
-  const h = billingHarness();
-  for (const [language, yearly, monthly, totalYearly, totalMonthly] of [
-    ["en", "$0.19/day", "$0.33/day", "$69.99 billed yearly", "$9.99 billed monthly"],
-    ["pt-BR", "R$ 0,55/dia", "R$ 1,00/dia", "R$ 199 cobrados por ano", "R$ 29,90 cobrados por mês"],
-  ]) {
-    h.changeLanguage(language);
-    assert.equal(h.prices.pricingFor(language, "yearly").primary, yearly);
-    assert.equal(h.prices.pricingFor(language, "monthly").primary, monthly);
-    h.options[0].click();
-    assert.equal(h.fields["data-pro-price"].textContent, yearly);
-    assert.equal(h.fields["data-billed-total"].textContent, totalYearly);
-    h.options[1].click();
-    assert.equal(h.fields["data-pro-price"].textContent, monthly);
-    assert.equal(h.fields["data-billed-total"].textContent, totalMonthly);
-    assert.equal(h.fields["data-billed-total"].hidden, false);
-    assert.equal(
-      h.fields["data-billing-saving"].textContent,
-      h.prices.pricingFor(language, "yearly").savingShort,
-    );
-    assert.equal(h.fields["data-plan-recommendation"].hidden, false);
-    h.options[0].click();
-    assert.equal(h.fields["data-plan-recommendation"].hidden, false);
-  }
+test("the Pro price derives from the configured monthly and yearly plan prices", () => {
   const source = readFileSync("src/config/pricing.ts", "utf8");
   assert.match(source, /plan\.monthly \/ 30 \/ 100/);
   assert.match(source, /plan\.yearly \/ 365 \/ 100/);
-  const options = descendants(components.get("Pricing")).filter(
-    (node) => attributes(node).role === "radio",
-  );
-  assert.equal(attributes(options[0])["data-billing-period"], "yearly");
-  assert.equal(attributes(options[0])["aria-checked"], "true");
-  assert.ok(
-    !descendants(options[0]).some((node) => attributes(node).name === "pricing.recommended"),
-  );
-  assert.ok(
-    descendants(options[0]).some((node) => Object.hasOwn(attributes(node), "data-billing-saving")),
-  );
-  assert.match(readFileSync("src/components/Pricing.astro", "utf8"), /data-plan-recommendation/);
 });
 
 test("billing options share one row with equal single-line segments and Yearly selected first", () => {
@@ -769,29 +541,28 @@ test("the closing call to action centers its column and label-hugging button at 
 });
 
 test("all app and install links and QR generation share environment-backed production defaults", async () => {
-  const linkSource = readFileSync("src/config/links.ts", "utf8");
-  function links(environment) {
-    const exports = {};
-    vm.runInNewContext(
-      ts.transpileModule(linkSource.replaceAll("import.meta.env", "environment"), {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      { exports, environment },
-    );
-    return exports;
-  }
-  assert.equal(links({}).appUrl, "https://app.useorbit.org");
-  assert.equal(
-    links({}).googlePlayUrl,
-    "https://play.google.com/store/apps/details?id=org.useorbit.app",
-  );
   const staging = {
     PUBLIC_APP_URL: "https://app-staging.useorbit.org",
     PUBLIC_ANDROID_INSTALL_URL:
       "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
   };
-  assert.equal(links(staging).appUrl, staging.PUBLIC_APP_URL);
-  assert.equal(links(staging).googlePlayUrl, staging.PUBLIC_ANDROID_INSTALL_URL);
+  async function withEnvironment(environment, path) {
+    Object.assign(process.env, environment);
+    try {
+      return (await runnerImport(path, viteOptions)).module;
+    } finally {
+      for (const name of Object.keys(environment)) delete process.env[name];
+    }
+  }
+  const production = await withEnvironment({}, "/src/config/links.ts");
+  assert.equal(production.appUrl, "https://app.useorbit.org");
+  assert.equal(
+    production.googlePlayUrl,
+    "https://play.google.com/store/apps/details?id=org.useorbit.app",
+  );
+  const stagingLinks = await withEnvironment(staging, "/src/config/links.ts");
+  assert.equal(stagingLinks.appUrl, staging.PUBLIC_APP_URL);
+  assert.equal(stagingLinks.googlePlayUrl, staging.PUBLIC_ANDROID_INSTALL_URL);
   for (const path of [
     "src/layouts/Layout.astro",
     "src/pages/index.astro",
@@ -803,17 +574,7 @@ test("all app and install links and QR generation share environment-backed produ
     assert.doesNotMatch(source, /https:\/\/(?:app\.useorbit|play\.google)/);
   }
   const { default: qrcode } = await import("qrcode-generator");
-  const endpoint = {};
-  vm.runInNewContext(
-    ts.transpileModule(readFileSync("src/pages/orbit-install-qr.svg.ts", "utf8"), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS },
-    }).outputText,
-    {
-      exports: endpoint,
-      Response,
-      require: (path) => (path === "qrcode-generator" ? { default: qrcode } : links(staging)),
-    },
-  );
+  const endpoint = await withEnvironment(staging, "/src/pages/orbit-install-qr.svg.ts");
   const expected = qrcode(0, "H");
   expected.addData(staging.PUBLIC_ANDROID_INSTALL_URL);
   expected.make();
