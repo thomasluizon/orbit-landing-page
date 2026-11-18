@@ -14,7 +14,7 @@ const small = size === 16 || size === 24;
 const rig = mascotRig(rigSource, happySource);
 const faces = smallFaces(smallSource);
 const moonLayer = (layer: "back" | "front") =>
-  `<g class="orbit-moon orbit-moon-${layer}"><g class="orbit-tilt"><g transform="rotate(-18) scale(1 0.29)"><g class="orbit-moon-spin"><g transform="rotate(${rig.moonAngle}) translate(180 0) rotate(${-rig.moonAngle})"><g class="orbit-moon-counter"><circle r="${rig.moonRadius}" transform="scale(1 3.4483)"/></g></g></g></g></g></g>`;
+  `<g class="orbit-moon orbit-moon-${layer}"><g class="orbit-tilt"><g transform="rotate(${rig.ringTilt}) scale(1 ${rig.ringOpening})"><g class="orbit-moon-spin"><g transform="rotate(${rig.moonAngle}) translate(${rig.ringRadius} 0) rotate(${-rig.moonAngle})"><g class="orbit-moon-counter"><circle r="${rig.moonRadius}" transform="scale(1 ${rig.moonCounterScale})"/></g></g></g></g></g></g>`;
 ---
 
 {

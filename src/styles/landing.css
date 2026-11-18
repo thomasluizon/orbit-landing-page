@@ -2660,14 +2660,16 @@ button.metric-bar-track:active .metric-bar {
   inline-size: 96px;
   block-size: auto;
 }
-.hero:has(.orbit-demo :focus-visible, .demo-composer:focus-within) .hero-orbit {
-  --orbit-look-x: 14px;
-  --orbit-look-y: 10px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .hero:has(.hero-device:hover) .hero-orbit {
+@media (prefers-reduced-motion: no-preference) {
+  .hero:has(.orbit-demo :focus-visible, .demo-composer:focus-within) .hero-orbit {
     --orbit-look-x: 14px;
     --orbit-look-y: 10px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .hero:has(.hero-device:hover) .hero-orbit {
+      --orbit-look-x: 14px;
+      --orbit-look-y: 10px;
+    }
   }
 }
 .hero:has(#demo-today:not([hidden])) .hero-orbit .orbit-eyes-pill,
@@ -2866,42 +2868,58 @@ button.metric-bar-track:active .metric-bar {
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
     .orbit-line .orbit-body {
-      animation: orbit-arrive linear both;
+      animation-name: orbit-arrive;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: entry 10% cover 35%;
     }
     .orbit-line .orbit-moon-spin {
-      animation: orbit-spin linear both;
+      animation-name: orbit-spin;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
     .orbit-line .orbit-moon-counter {
-      animation: orbit-counter-spin linear both;
+      animation-name: orbit-counter-spin;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
     .orbit-line .orbit-moon-front {
-      animation: orbit-moon-front linear both;
+      animation-name: orbit-moon-front;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
     .orbit-line .orbit-moon-back {
-      animation: orbit-moon-back linear both;
+      animation-name: orbit-moon-back;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
     .orbit-line .orbit-tilt {
-      animation: orbit-tilt linear both;
+      animation-name: orbit-tilt;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 20% cover 80%;
     }
     .orbit-line .orbit-eye {
-      animation: orbit-blink linear both;
+      animation-name: orbit-blink;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: cover 44% cover 52%;
     }
     .orbit-line-text {
-      animation: orbit-line-arrive linear both;
+      animation-name: orbit-line-arrive;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: entry 30% cover 40%;
     }
@@ -2909,19 +2927,23 @@ button.metric-bar-track:active .metric-bar {
     .plan-card,
     .faq-list,
     .ios-section #waitlist-form {
-      animation: section-arrive linear both;
+      animation-name: section-arrive;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: view();
       animation-range: entry 0% cover 30%;
     }
   }
 }
-[data-section]:has(:focus-visible) .orbit-line .orbit-mascot {
-  --orbit-look-y: 12px;
-}
-@media (hover: hover) and (pointer: fine) {
-  [data-section]:has(.plan-card:hover, .faq-list details:hover, #waitlist-form:hover)
-    .orbit-line
-    .orbit-mascot {
+@media (prefers-reduced-motion: no-preference) {
+  [data-section]:has(:focus-visible) .orbit-line .orbit-mascot {
     --orbit-look-y: 12px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    [data-section]:has(.plan-card:hover, .faq-list details:hover, #waitlist-form:hover)
+      .orbit-line
+      .orbit-mascot {
+      --orbit-look-y: 12px;
+    }
   }
 }

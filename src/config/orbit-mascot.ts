@@ -4,6 +4,10 @@ const pathData = (markup: string, fill: string) =>
     .filter((attributes) => attributes.includes(fill))
     .map((attributes) => /\sd="([^"]+)"/.exec(attributes)?.[1] ?? "");
 
+const RING_REST_TILT_DEGREES = -18;
+const RING_OPENING = 0.29;
+const RING_RADIUS = 180;
+
 /** The parts of the live rig, read from the committed mascot sources at build time. */
 export function mascotRig(rigSource: string, happySource: string) {
   const [ringBack, ringFront] = pathData(rigSource, 'fill="currentColor"');
@@ -12,10 +16,10 @@ export function mascotRig(rigSource: string, happySource: string) {
   if (!ringBack || !ringFront || !ringOutline || !moon) {
     throw new Error("orbit-mascot.svg must hold the ring halves, the ring outline and the moon");
   }
-  const tilt = (-18 * Math.PI) / 180;
+  const tilt = (RING_REST_TILT_DEGREES * Math.PI) / 180;
   const [x, y] = [Number(moon[1]), Number(moon[2])];
   const flatX = x * Math.cos(-tilt) - y * Math.sin(-tilt);
-  const flatY = (x * Math.sin(-tilt) + y * Math.cos(-tilt)) / 0.29;
+  const flatY = (x * Math.sin(-tilt) + y * Math.cos(-tilt)) / RING_OPENING;
   return {
     ringBack,
     ringOutline,
@@ -24,6 +28,10 @@ export function mascotRig(rigSource: string, happySource: string) {
     happyEyes: pathData(happySource, 'stroke="var(--bg, #09090B)"'),
     moonAngle: Number(((Math.atan2(flatY, flatX) * 180) / Math.PI).toFixed(2)),
     moonRadius: Number(moon[3]),
+    ringTilt: RING_REST_TILT_DEGREES,
+    ringOpening: RING_OPENING,
+    ringRadius: RING_RADIUS,
+    moonCounterScale: Number((1 / RING_OPENING).toFixed(4)),
   };
 }
 

@@ -1020,15 +1020,28 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
   const milliseconds = (value) =>
     value.endsWith("ms") ? Number.parseFloat(value) : Number.parseFloat(value) * 1000;
   let timed = 0;
+  let scrolled = 0;
   for (const rule of rules) {
-    const animation = declaration(rule.declarations, "animation");
+    const animation =
+      declaration(rule.declarations, "animation") ??
+      declaration(rule.declarations, "animation-name");
     if (!animation || animation === "none !important") continue;
     assert.ok(
       rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
       `${rule.selector} animates outside the motion preference`,
     );
     assert.doesNotMatch(animation, /infinite|alternate/, rule.selector);
-    if (/animation-timeline:\s*view\(\)/.test(rule.declarations)) continue;
+    if (/animation-timeline:\s*view\(\)/.test(rule.declarations)) {
+      scrolled++;
+      for (const property of ["animation", "animation-duration"]) {
+        assert.equal(
+          declaration(rule.declarations, property),
+          undefined,
+          `${rule.selector}: with ${property}, the minifier folds the timeline into a shorthand that a browser drops`,
+        );
+      }
+      continue;
+    }
     const times = [
       ...animation.matchAll(
         /(?<![\w-])(\d+(?:\.\d+)?m?s)\b|var\(--orbit-(turn|blink|turn-delay)\)/g,
@@ -1040,6 +1053,7 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
     assert.ok(times.reduce((sum, time) => sum + time, 0) <= 5000, rule.selector);
   }
   assert.ok(timed > 0, "the hero Orbit greets the visitor on load");
+  assert.ok(scrolled >= 9, "each guide Orbit, line and section arrives on a scroll timeline");
   const mascot = rules.find((rule) => rule.selector === ".orbit-mascot");
   assert.equal(declaration(mascot.declarations, "--orbit-turn"), "900ms");
   assert.equal(declaration(mascot.declarations, "--orbit-blink"), "336ms");
@@ -1049,6 +1063,19 @@ test("motion runs only with motion allowed, and a timed animation ends within 5 
     ['.page-orbit[data-orbit-state="feliz"] .orbit-body'],
     "Orbit hops only in its happy face",
   );
+});
+
+test("Orbit moves its eyes toward a control only with motion allowed", () => {
+  const looks = rules.filter((rule) =>
+    /--orbit-look-[xy]\s*:\s*(?!0px\b)[^\s;]/.test(rule.declarations),
+  );
+  assert.ok(looks.length >= 4, "the hero and the section guides look at focus and hover");
+  for (const rule of looks) {
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      `${rule.selector} moves the eyes outside the motion preference`,
+    );
+  }
 });
 
 test("reduced motion removes every control transition and the press movement", () => {

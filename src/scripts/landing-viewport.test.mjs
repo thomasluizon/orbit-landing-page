@@ -738,6 +738,26 @@ test("Orbit marks mirror the canonical mascot sources and the lockup", () => {
   );
 });
 
+test("the ring tilt, opening and radius have one owner, so the moon stays on the ring", () => {
+  const mascot = readFileSync("src/components/OrbitMascot.astro", "utf8");
+  const moonLayer = mascot.match(/const moonLayer = [\s\S]*?`;/)?.[0];
+  assert.ok(moonLayer, "OrbitMascot.astro builds the moon layer");
+  for (const [, transform] of moonLayer.matchAll(/transform="([^"]*)"/g)) {
+    assert.doesNotMatch(
+      transform
+        .replace(/\$\{[^}]*\}/g, "")
+        .replace(/scale\(1 /g, "scale(")
+        .replace(/ 0\)/g, ")"),
+      /\d/,
+      `the moon transform ${transform} writes a number that src/config/orbit-mascot.ts owns`,
+    );
+  }
+  const config = readFileSync("src/config/orbit-mascot.ts", "utf8");
+  for (const value of [/-18\b/g, /\b0\.29\b/g]) {
+    assert.equal(config.match(value)?.length, 1, `orbit-mascot.ts declares ${value} once`);
+  }
+});
+
 test("FAQ questions and answers share one inset and the question row never changes size on open", () => {
   assert.doesNotMatch(
     css,
