@@ -40,17 +40,21 @@ function harness({
       this.attributes.delete(name);
     },
   }));
-  const targets = [".hero-device", '[data-section="features"]', "[data-week-card]", "#faq"].map(
-    (selector) => ({
-      selector,
-      attributes: new Set(["data-clock-pending"]),
-      matches: (value) => value === selector,
-      removeAttribute(name) {
-        this.attributes.delete(name);
-      },
-      querySelectorAll: (value) => (value === "[data-clock-pending]" ? pendingViews : []),
-    }),
-  );
+  const targets = [
+    ".hero-device",
+    '[data-section="features"]',
+    "[data-week-card]",
+    "#faq",
+    "[data-orbit-guide]",
+  ].map((selector) => ({
+    selector,
+    attributes: new Set(["data-clock-pending"]),
+    matches: (value) => value === selector,
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    },
+    querySelectorAll: (value) => (value === "[data-clock-pending]" ? pendingViews : []),
+  }));
   const document = {
     readyState,
     querySelectorAll: (selectors) => {
@@ -252,6 +256,25 @@ test("the hero week card loads its renderer when it comes into view, without wai
     [...firstViewport.map(({ name }) => name), "week"],
   );
   assert.deepEqual(h.mounts, [{ name: "week", target: h.targets[2] }]);
+});
+
+test("a guide that comes near loads the guide blink after load, without the hero demo", async () => {
+  const h = harness();
+  h.intersect(4);
+  await flush();
+  assert.deepEqual(h.bindings, firstViewport);
+  h.load();
+  await h.drain();
+  const names = h.bindings.map(({ name }) => name);
+  assert.ok(names.includes("guide-blink"));
+  assert.ok(!names.includes("demo"));
+});
+
+test("the guide blink stays unloaded until a guide comes near", async () => {
+  const h = harness();
+  h.load();
+  await h.drain();
+  assert.ok(!h.bindings.some(({ name }) => name === "guide-blink"));
 });
 
 test("the calendar and the chart labels load only when the features come near", async () => {

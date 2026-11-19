@@ -1120,12 +1120,6 @@ test("each guide Orbit blinks once on a time timeline that a script starts on ar
   assert.match(blinkSource, /^blinkGuides\(\);$/m, "the module blinks the guides when it loads");
   assert.doesNotMatch(readFileSync("src/scripts/orbit-turn.ts", "utf8"), /blinkGuides/);
   assert.doesNotMatch(readFileSync("src/scripts/demo.ts", "utf8"), /blinkGuides|guide-blink/);
-  const page = readFileSync("src/pages/index.astro", "utf8");
-  assert.match(page, /\[data-orbit-guide\]/, "the page watches each guide for its approach");
-  assert.match(
-    page,
-    /target\.matches\("\[data-orbit-guide\]"\)\)\s*void afterLoad\(\[\(\) => import\("\.\.\/scripts\/guide-blink"\)/,
-  );
   assert.match(readFileSync("src/components/OrbitLine.astro", "utf8"), /data-orbit-guide/);
 });
 
