@@ -67,6 +67,9 @@ test("the guard keeps ordinary words that hold the same letters", () => {
   for (const word of ["cadastrado", "cadastrar", "alastrar", "desastrado", "astray", "astral"]) {
     assert.deepEqual(retiredNameFindings("src/new.ts", `Você já está ${word}`), [], word);
   }
+  for (const word of ["Astral", "Astray", "ASTRAL", "CADASTRADO"]) {
+    assert.deepEqual(retiredNameFindings("src/new.ts", `${word} starts this sentence`), [], word);
+  }
 });
 
 function capitalisedUse(prefix) {

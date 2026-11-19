@@ -9,11 +9,12 @@ export const retiredCapitalised = capitalised;
 
 /**
  * The retired AI name as an identifier, a class, a path or a sentence word. It matches the lowercase name
- * on its own, the capitalised name and the upper case name. It skips the same letters inside an ordinary
- * word, such as "cadastrado" or "astray".
+ * on its own, the capitalised name when no lowercase letter follows it (so an identifier that joins it to
+ * a capitalised word still matches) and the upper case name. It skips the same letters inside an ordinary
+ * word, such as "cadastrado", "astray" or a sentence that starts with "Astral".
  */
 export const retiredName = new RegExp(
-  `(?<![a-z])${word}(?![a-z])|${capitalised}|(?<![A-Z])${word.toUpperCase()}(?![A-Z])`,
+  `(?<![a-z])${word}(?![a-z])|${capitalised}(?![a-z])|(?<![A-Z])${word.toUpperCase()}(?![A-Z])`,
 );
 
 /** The pt-BR feminine article before Orbit, which is masculine in pt-BR. The lookbehind covers a contraction such as the one that starts with a non-ASCII letter. */
