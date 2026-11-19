@@ -547,11 +547,16 @@ test("all app and install links and QR generation share environment-backed produ
       "https://play.google.com/store/apps/details?id=org.useorbit.app.staging",
   };
   async function withEnvironment(environment, path) {
+    const saved = Object.keys(staging).map((name) => [name, process.env[name]]);
+    for (const name of Object.keys(staging)) delete process.env[name];
     Object.assign(process.env, environment);
     try {
       return (await runnerImport(path, viteOptions)).module;
     } finally {
-      for (const name of Object.keys(environment)) delete process.env[name];
+      for (const [name, value] of saved) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
     }
   }
   const production = await withEnvironment({}, "/src/config/links.ts");
