@@ -11,11 +11,9 @@ export const weekdayDate: Intl.DateTimeFormatOptions = {
   day: "numeric",
 };
 
-/** The app's day outcome, resolved from the logged and scheduled habit counts. */
-export type DayOutcome = "full" | "partial" | "none" | "not-scheduled";
+type DayOutcome = "full" | "partial" | "none" | "not-scheduled";
 
-/** What a caller knows about one day: its date, today, the selected key and optional extras. */
-export interface DayCellInput {
+interface DayCellInput {
   date: Date;
   today: Date;
   selectedKey: string;

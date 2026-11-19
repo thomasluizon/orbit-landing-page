@@ -3,12 +3,13 @@ import Layout from "../layouts/Layout.astro";
 import CookiePreferences from "../components/CookiePreferences.astro";
 import PillButton from "../components/PillButton.astro";
 import LanguageToggle from "../components/LanguageToggle.astro";
+import OrbitMascot from "../components/OrbitMascot.astro";
 import { translations } from "../i18n/translations";
 import { appUrl } from "../config/links";
 const en = translations.en;
 ---
 
-<Layout title={en["meta.confirmed"]} titleKey="meta.confirmed" noindex>
+<Layout title={en["meta.confirmed"]} titleKey="meta.confirmed" noindex withOrbitMascot>
   <main class="simple-page page-container">
     <div class="simple-page-tools">
       <a href="/" class="brand" translate="no"
@@ -16,6 +17,7 @@ const en = translations.en;
       ><LanguageToggle />
     </div>
     <div id="confirmed-ok">
+      <OrbitMascot size={96} state="feliz" class="page-orbit" />
       <h1 class="t-display" data-i18n="waitlistConfirmed.ok.title">
         {en["waitlistConfirmed.ok.title"]}
       </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.ok.body">
@@ -26,6 +28,7 @@ const en = translations.en;
       >
     </div>
     <div id="confirmed-invalid" hidden>
+      <OrbitMascot size={96} class="page-orbit" />
       <h1 class="t-display" data-i18n="waitlistConfirmed.invalid.title">
         {en["waitlistConfirmed.invalid.title"]}
       </h1><p class="t-body text-fg-2" data-i18n="waitlistConfirmed.invalid.body">

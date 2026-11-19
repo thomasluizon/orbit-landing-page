@@ -82,7 +82,7 @@ const HAIRLINE_STRONG_RING = "inset 0 0 0 1px var(--color-hairline-strong)";
 const textFields = ["#waitlist-email", ".demo-edit-form input", ".demo-edit-form select"];
 const fieldHover = (field) => `${field}:hover:not(:focus-within)`;
 
-test("the Ask Astra focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
+test("the Ask Orbit focus ring follows the pill shape inside the pill, as the canon composer draws it", () => {
   assert.equal(lastValue(".demo-composer", "border-radius"), "28px");
   assert.equal(lastValue(".demo-composer", "min-block-size"), "56px");
   const ring = ".demo-composer:has(input:focus-visible)";
@@ -927,7 +927,7 @@ test("a field, a surface, a mark cell and a crowded control draw their focus rin
   );
 });
 
-test("the Ask Astra composer hovers as a text field and leaves the fills to its send button", () => {
+test("the Ask Orbit composer hovers as a text field and leaves the fills to its send button", () => {
   assert.equal(lastValue(".demo-composer", "background"), "var(--color-bg-field)");
   assert.equal(lastValue(".demo-composer", "box-shadow"), BORDER_CONTROL_RING);
   const hover = ".demo-composer:hover:not(:focus-within, :has(button:hover))";
@@ -1004,12 +1004,135 @@ test("no stylesheet animates every property or forces a transition outside reduc
     ["landing.css", landingCss],
   ]) {
     assert.ok(!/transition(?:-property)?\s*:\s*all\b/.test(source), `${name} animates all`);
-    assert.ok(!/@keyframes/.test(source), `${name} declares keyframes`);
   }
+  assert.ok(!/@keyframes/.test(globalCss), "global.css declares keyframes");
   for (const rule of rules) {
     const reducedBlock = rule.conditions.some((text) => text.includes("prefers-reduced-motion"));
     if (!reducedBlock)
       assert.ok(!/transition[^;]*!important/.test(rule.declarations), rule.selector);
+  }
+});
+
+test("motion runs only with motion allowed, and a timed animation ends within 5 seconds", () => {
+  const keyframes = [...landingCss.matchAll(/@keyframes\s+([\w-]+)/g)].map(([, name]) => name);
+  assert.ok(keyframes.length > 0, "the page has its Orbit and section motion");
+  for (const name of keyframes) assert.match(name, /^(?:orbit|section)-/, name);
+  const milliseconds = (value) =>
+    value.endsWith("ms") ? Number.parseFloat(value) : Number.parseFloat(value) * 1000;
+  let timed = 0;
+  let scrolled = 0;
+  for (const rule of rules) {
+    const animation =
+      declaration(rule.declarations, "animation") ??
+      declaration(rule.declarations, "animation-name");
+    if (!animation || animation === "none !important") continue;
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      `${rule.selector} animates outside the motion preference`,
+    );
+    assert.doesNotMatch(animation, /infinite|alternate/, rule.selector);
+    if (/animation-timeline:\s*view\(\)/.test(rule.declarations)) {
+      scrolled++;
+      for (const property of ["animation", "animation-duration"]) {
+        assert.equal(
+          declaration(rule.declarations, property),
+          undefined,
+          `${rule.selector}: with ${property}, the minifier folds the timeline into a shorthand that a browser drops`,
+        );
+      }
+      continue;
+    }
+    const times = [
+      ...animation.matchAll(
+        /(?<![\w-])(\d+(?:\.\d+)?m?s)\b|var\(--orbit-(turn|blink|turn-delay)\)/g,
+      ),
+    ].map(([, literal, token]) =>
+      literal
+        ? milliseconds(literal)
+        : Math.max(
+            ...rules
+              .map((other) => declaration(other.declarations, `--orbit-${token}`))
+              .filter(Boolean)
+              .map(milliseconds),
+          ),
+    );
+    timed++;
+    assert.ok(times.reduce((sum, time) => sum + time, 0) <= 5000, rule.selector);
+  }
+  assert.ok(timed > 0, "the hero Orbit greets the visitor on load");
+  assert.ok(scrolled >= 8, "each guide Orbit, line and section arrives on a scroll timeline");
+  const mascot = rules.find((rule) => rule.selector === ".orbit-mascot");
+  assert.equal(declaration(mascot.declarations, "--orbit-turn"), "900ms");
+  assert.equal(declaration(mascot.declarations, "--orbit-blink"), "336ms");
+  const hops = rules.filter((rule) => /animation:\s*orbit-hop\b/.test(rule.declarations));
+  assert.deepEqual(
+    hops.map((rule) => rule.selector),
+    ['.page-orbit[data-orbit-state="feliz"] .orbit-body'],
+    "Orbit hops only in its happy face",
+  );
+});
+
+test("no scroll position leaves an Orbit with its eyes shut", () => {
+  const scrolledBlinks = rules.filter(
+    (rule) =>
+      /animation-timeline:\s*(?:view|scroll)\(/.test(rule.declarations) &&
+      (/\.orbit-eye/.test(rule.selector) || /orbit-blink/.test(rule.declarations)),
+  );
+  assert.deepEqual(
+    scrolledBlinks.map((rule) => rule.selector),
+    [],
+    "a blink on a scroll timeline holds its closed frame when the visitor stops scrolling",
+  );
+});
+
+test("each guide Orbit blinks once on a time timeline that a script starts on arrival", () => {
+  const blinks = rules.filter((rule) =>
+    /\.orbit-line\[data-orbit-blink\]\s+\.orbit-eye/.test(rule.selector),
+  );
+  assert.equal(blinks.length, 1, "one rule blinks the eyes of a guide Orbit");
+  const [blink] = blinks;
+  assert.ok(
+    blink.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+    "reduced motion keeps the eyes open and never blinks",
+  );
+  assert.match(blink.declarations, /animation:\s*orbit-blink\s/);
+  assert.doesNotMatch(
+    blink.declarations,
+    /animation-timeline|view\(|scroll\(|infinite|forwards|both/,
+  );
+  const blinking = rules.filter((rule) =>
+    /(?:^|;)\s*animation(?:-name)?\s*:[^;]*orbit-blink/.test(rule.declarations),
+  );
+  for (const rule of blinking) {
+    assert.doesNotMatch(rule.declarations, /(?:view|scroll)\(/, rule.selector);
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      rule.selector,
+    );
+  }
+  const blinkSource = readFileSync("src/scripts/guide-blink.ts", "utf8");
+  assert.match(blinkSource, /export function blinkGuides/);
+  assert.match(blinkSource, /IntersectionObserver/);
+  assert.match(blinkSource, /\[data-orbit-guide\]/);
+  assert.match(blinkSource, /dataset\.orbitBlink/);
+  assert.match(blinkSource, /unobserve/);
+  assert.match(blinkSource, /rootMargin:\s*"0px 0px -25% 0px"/);
+  assert.match(blinkSource, /^blinkGuides\(\);$/m, "the module blinks the guides when it loads");
+  assert.doesNotMatch(readFileSync("src/scripts/orbit-turn.ts", "utf8"), /blinkGuides/);
+  assert.doesNotMatch(readFileSync("src/scripts/demo.ts", "utf8"), /blinkGuides|guide-blink/);
+  assert.match(readFileSync("src/components/OrbitLine.astro", "utf8"), /data-orbit-guide/);
+});
+
+test("Orbit moves its eyes toward a control only with motion allowed", () => {
+  const looks = rules.filter((rule) =>
+    /--orbit-look-[xy]\s*:\s*(?!0px\b)[^\s;]/.test(rule.declarations),
+  );
+  assert.ok(looks.length >= 4, "the hero and the section guides look at focus and hover");
+  for (const rule of looks) {
+    assert.ok(
+      rule.conditions.includes("@media (prefers-reduced-motion: no-preference)"),
+      `${rule.selector} moves the eyes outside the motion preference`,
+    );
   }
 });
 
@@ -1379,5 +1502,37 @@ test("a focus ring never shares its colour and band with a state marker its cont
         );
       }
     }
+  }
+});
+
+test("every hover rule waits for a fine pointer, so a tap on a touch screen leaves no hover behind", () => {
+  const outside = rules
+    .filter((rule) => !rule.conditions.includes(FINE_POINTER))
+    .flatMap((rule) => selectorParts(rule.selector))
+    .filter((part) => /:hover\b/.test(part) && !SUPPRESSIONS.has(part));
+  assert.deepEqual(outside, []);
+});
+
+test("a small Orbit face paints its symbol classes with rules that reach the clone of its use", async () => {
+  const { ast } = await parse(readFileSync("src/components/OrbitMascot.astro", "utf8"));
+  const symbolClasses = new Set(
+    nodesOf(ast)
+      .filter((node) => node.name === "symbol")
+      .flatMap((symbol) => nodesOf(symbol))
+      .flatMap((node) => (attributeOf(node, "class")?.value ?? "").split(/\s+/).filter(Boolean)),
+  );
+  const inks = new Map([
+    ["orbit-ink", "currentColor"],
+    ["orbit-eye-ink", "var(--color-bg)"],
+    ["orbit-moon-ink", "var(--color-primary)"],
+  ]);
+  assert.deepEqual([...symbolClasses].sort(), [...inks.keys()].sort());
+  for (const [name, fill] of inks) {
+    const reach = new RegExp(`\\.${name}(?![\\w-])`);
+    const scoped = rules
+      .flatMap((rule) => selectorParts(rule.selector))
+      .filter((part) => reach.test(part) && part !== `.${name}`);
+    assert.deepEqual(scoped, [], `${name}: an ancestor outside the symbol never matches the clone`);
+    assert.equal(lastValue(`.${name}`, "fill"), fill, name);
   }
 });

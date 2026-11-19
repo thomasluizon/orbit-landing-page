@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
+import { feminineOrbit, retiredName } from "./lib/retired-name.mjs";
 
 function element(attributes = {}, textContent = "") {
   return {
@@ -189,7 +190,7 @@ test("both locales have the same complete keys and no retired marketing", () => 
     assert.ok(Object.values(table).every((text) => text.length > 0));
     assert.ok(
       !Object.keys(table).some((key) =>
-        /mcp|proof\.(registrations|installs|paying|astraTools|mcpTools)|social|badge/.test(key),
+        /mcp|proof\.(registrations|installs|paying|mcpTools)|social|badge/.test(key),
       ),
     );
     assert.doesNotMatch(
@@ -197,18 +198,36 @@ test("both locales have the same complete keys and no retired marketing", () => 
       /[\u2013\u2014]|unlimited habits|AI memory|MCP|accountability|leaderboard|500 messages|20 AI/i,
     );
     assert.ok(
-      !Object.keys(table).some((key) =>
-        /^(faq|pricing|platforms|proof|features|mockup|preview|astra|cta)\./.test(key),
+      !Object.keys(table).some(
+        (key) =>
+          /^(faq|pricing|platforms|proof|features|mockup|preview|cta)\./.test(key) ||
+          retiredName.test(key),
       ),
     );
   }
 });
 
-test("pt-BR always refers to Astra with feminine articles and contractions", () => {
-  const { tables } = harness();
-  for (const [key, text] of Object.entries(tables["pt-BR"])) {
-    assert.doesNotMatch(text, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
+test("each locale names the AI Orbit, with it in English and the masculine form in pt-BR", () => {
+  const { tables, landingTables } = harness();
+  for (const table of [tables, landingTables]) {
+    for (const [key, text] of Object.entries(table.en)) {
+      assert.doesNotMatch(text, retiredName, key);
+      assert.doesNotMatch(text, /\b(?:she|her|hers|herself)\b/iu, key);
+    }
+    for (const [key, text] of Object.entries(table["pt-BR"])) {
+      assert.doesNotMatch(text, retiredName, key);
+      assert.doesNotMatch(text, feminineOrbit, key);
+      assert.doesNotMatch(text, /\b(?:ela|dela|nela|sozinha)\b/iu, key);
+    }
   }
+});
+
+test("allowances name AI messages, so Orbit keeps one meaning in a sentence", () => {
+  const { landingTables } = harness();
+  assert.equal(landingTables.en["pricing.pro.ai"], "250 AI messages a week");
+  assert.equal(landingTables["pt-BR"]["pricing.pro.ai"], "250 mensagens de IA por semana");
+  assert.match(landingTables.en["faq.plans.a"], /^250 AI messages a week/);
+  assert.match(landingTables["pt-BR"]["faq.plans.a"], /^250 mensagens de IA por semana/);
 });
 
 test("pt-BR demo repeat labels name every time of day with the same adverbial form", () => {
@@ -238,14 +257,13 @@ test("switching the real language toggle updates every landing copy attribute, c
   assert.deepEqual(h.languageEvents, ["orbit:language-changed", "orbit:language-changed"]);
 });
 
-test("every new landing string exists in both languages and Astra remains feminine", () => {
+test("every new landing string exists in both languages and Orbit keeps the masculine form", () => {
   const { landingTables } = harness();
   assert.deepEqual(Object.keys(landingTables.en), Object.keys(landingTables["pt-BR"]));
   for (const [lang, table] of Object.entries(landingTables)) {
     for (const [key, value] of Object.entries(table)) {
       assert.ok(value.length > 0, `${lang}: ${key}`);
       assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
-      if (lang === "pt-BR") assert.doesNotMatch(value, /\b(?:o|do|no|ao|pelo)\s+Astra\b/iu, key);
     }
   }
 });

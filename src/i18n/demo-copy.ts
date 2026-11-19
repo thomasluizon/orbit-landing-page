@@ -1,7 +1,6 @@
 import { LANGUAGES, landingCopy, type LandingKey, type Language } from "./translations";
 
-/** The landing keys the day renderer, the calendar and the week card read in the browser. */
-export type DemoCopyKey = Extract<
+type DemoCopyKey = Extract<
   LandingKey,
   `calendar.${string}` | `week.${string}` | "orbit.teamMeeting" | "orbit.dentist"
 >;

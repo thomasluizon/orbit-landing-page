@@ -287,7 +287,7 @@ test("built status bar centres time and icons beside the island and above both a
   assert.ok(byClass("phone-app-header").every((node) => descendants(carousel).includes(node)));
 });
 
-test("built Astra message aligns its glyph with the thread and proposal inset", () => {
+test("built Orbit message aligns its mark with the thread and proposal inset", () => {
   values(".demo-message", { padding: "0", gap: "8px" });
   values(".demo-thread", { padding: "16px" });
   values(".demo-request", { padding: "12px 16px" });

@@ -1,0 +1,23 @@
+---
+import Copy from "./Copy.astro";
+import OrbitMascot from "./OrbitMascot.astro";
+import type { LandingKey } from "../i18n/translations";
+interface Props {
+  name?: LandingKey;
+}
+const { name } = Astro.props;
+---
+
+<div class="orbit-line" data-orbit-guide>
+  <OrbitMascot size={48} />
+  {
+    name && (
+      <p class="orbit-line-text">
+        <span class="sr-only" translate="no">
+          Orbit:
+        </span>
+        <Copy name={name} />
+      </p>
+    )
+  }
+</div>

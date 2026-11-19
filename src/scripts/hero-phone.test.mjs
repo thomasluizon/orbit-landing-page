@@ -45,7 +45,7 @@ test("stretched phone slides contain layout, paint and style without intrinsic s
 });
 
 test("phone habit reaches mark the visible boundaries before script loading", async () => {
-  const demo = (await parse(source("AstraDemo"))).ast;
+  const demo = (await parse(source("OrbitDemo"))).ast;
   const lists = [
     descendants(hero).find((node) => attributes(node).class === "phone-today-habits"),
     descendants(demo).find((node) => attributes(node).id === "demo-today"),
@@ -85,8 +85,8 @@ test("every phone screen shares the status, 56px app header and 16px content ins
   assert.match(rules(".phone-content").join("\n"), /padding-block-start:\s*16px;/);
   for (const slide of slides) {
     let children = slide.children.filter((node) => node.name);
-    if (children[0]?.name === "AstraDemo") {
-      const ast = (await parse(source("AstraDemo"))).ast;
+    if (children[0]?.name === "OrbitDemo") {
+      const ast = (await parse(source("OrbitDemo"))).ast;
       children = descendants(ast)
         .find((node) => attributes(node).id === "astra-demo")
         .children.filter((node) => node.name);
@@ -94,7 +94,7 @@ test("every phone screen shares the status, 56px app header and 16px content ins
     assert.equal(children[0]?.name, "PhoneHeader", attributes(slide)["data-phone-slide"]);
     assert.ok(attributes(children[1]).class?.split(" ").includes("phone-content"));
   }
-  assert.match(source("AstraDemo"), /<PhoneHeader>\s*<AstraGlyph size=\{16\} \/>\s*<h2/);
+  assert.match(source("OrbitDemo"), /<PhoneHeader>\s*<OrbitMascot size=\{16\} \/>\s*<h2/);
 });
 
 test("one vector layout draws the whole phone at 390 by 845 logical pixels", () => {
@@ -304,9 +304,9 @@ test("scaled controls derive invisible 44px reaches and a 24px floor without cha
       assert.doesNotMatch(declarations, /(?:padding|min-(?:inline|block)-size):/);
     }
   }
-  assert.match(source("AstraDemo"), /<label class="demo-composer-field" for="demo-input">/);
+  assert.match(source("OrbitDemo"), /<label class="demo-composer-field" for="demo-input">/);
   assert.match(
-    source("AstraDemo"),
+    source("OrbitDemo"),
     /<label class="demo-edit-field" for="demo-edit-(?:name|schedule)">/,
   );
 });
@@ -317,7 +317,7 @@ for (const [name, tag] of [
   ["demo-edit-schedule", "select"],
 ]) {
   test(`${name} receives native pointer events above its label reach`, async () => {
-    const nodes = descendants((await parse(source("AstraDemo"))).ast);
+    const nodes = descendants((await parse(source("OrbitDemo"))).ast);
     const field = nodes.find((node) => attributes(node).id === name);
     assert.equal(field.name, tag);
     const label = nodes.find((node) => node.name === "label" && node.children?.includes(field));
@@ -606,7 +606,7 @@ test("proposal actions retain the app small pill geometry and separated targets"
     assert.match(row, /gap:\s*12px;/);
     assert.match(row, /justify-content:\s*flex-end;/);
   }
-  const actions = source("AstraDemo").match(
+  const actions = source("OrbitDemo").match(
     /<div class="demo-preview-actions">([\s\S]*?)<\/div>/,
   )[1];
   assert.deepEqual(
@@ -658,7 +658,7 @@ test("the phone and its pager contain exactly chat and Today", () => {
   assert.doesNotMatch(source("Hero"), /<ProductCard kind="today"/);
 });
 
-test("Today fills the screen with one Astra line and five mixed-state habit rows", () => {
+test("Today fills the screen with one Orbit line and five mixed-state habit rows", () => {
   const today = slides.find((node) => attributes(node)["data-phone-slide"] === "today");
   const nodes = descendants(today);
   const rows = nodes.filter(
@@ -669,7 +669,7 @@ test("Today fills the screen with one Astra line and five mixed-state habit rows
   assert.ok(rows.some((node) => attributes(node).timing === "todo"));
   assert.ok(rows.some((node) => attributes(node).time));
   assert.ok(rows.some((node) => attributes(node).days));
-  assert.equal(nodes.filter((node) => node.name === "AstraGlyph").length, 1);
+  assert.equal(nodes.filter((node) => node.name === "OrbitMascot").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronLeft").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronRight").length, 1);
   assert.ok(nodes.some((node) => attributes(node)["data-clock"] === "today"));
@@ -706,7 +706,7 @@ test("no side card repeats phone copy in either locale", async () => {
     Object.hasOwn(attributes(node), "data-hero-column"),
   );
   const product = (await parse(source("ProductCard"))).ast;
-  const templates = new Map([["AstraDemo", (await parse(source("AstraDemo"))).ast]]);
+  const templates = new Map([["OrbitDemo", (await parse(source("OrbitDemo"))).ast]]);
   async function texts(node, language) {
     const attrs = attributes(node);
     const table = copy.landingCopy[language];

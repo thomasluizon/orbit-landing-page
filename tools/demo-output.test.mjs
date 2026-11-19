@@ -14,6 +14,7 @@ const attributes = (node) =>
 function harness(language = "en", threadHeight = 415) {
   const events = new Map();
   const observers = [];
+  const watchers = [];
   const elements = new Map();
   function element(node, parent = null) {
     const attrs = attributes(node);
@@ -150,8 +151,23 @@ function harness(language = "en", threadHeight = 415) {
         this.targets.add(target);
       }
     },
+    IntersectionObserver: class {
+      targets = new Set();
+      constructor(callback, options = {}) {
+        this.callback = callback;
+        this.options = options;
+        watchers.push(this);
+      }
+      observe(target) {
+        this.targets.add(target);
+      }
+      unobserve(target) {
+        this.targets.delete(target);
+      }
+    },
     exports: {},
     document,
+    requestAnimationFrame: (callback) => callback(),
     window: {
       addEventListener: (name, fn) => events.set(name, fn),
       location: { assign: (value) => intents.push(value) },
@@ -185,6 +201,7 @@ function harness(language = "en", threadHeight = 415) {
   require("./demo");
   require("./app-entry");
   return {
+    document,
     elements,
     intents,
     enter() {
@@ -211,6 +228,14 @@ function harness(language = "en", threadHeight = 415) {
     exchange,
     thread,
     observers,
+    arrive(target) {
+      for (const watcher of watchers) {
+        if (watcher.targets.has(target)) watcher.callback([{ target, isIntersecting: true }]);
+      }
+    },
+    watched: () => watchers.flatMap((watcher) => [...watcher.targets]),
+    watchers: () => watchers,
+    load: (path) => require(path),
     resize(target) {
       for (const observer of observers) {
         if (observer.targets.has(target)) observer.callback();
@@ -360,6 +385,36 @@ test("every habit toggle sits in the hero phone, whose demo binds it", () => {
   assert.equal(descendants(phone).filter(isToggle).length, toggles.length);
 });
 
+test("a guide Orbit blinks once when it arrives and never before", () => {
+  const h = harness("en");
+  const guides = nodes.filter((node) => "data-orbit-guide" in attributes(node));
+  assert.ok(guides.length >= 5, "the hero and each section guide an Orbit");
+  assert.equal(h.watched().length, 0, "the demo module leaves the guides alone");
+  h.load("./guide-blink");
+  const watched = h.watched();
+  assert.equal(watched.length, guides.length, "each guide waits for its arrival");
+  for (const guide of watched) {
+    assert.equal(guide.dataset.orbitBlink, undefined, "no guide blinks before it arrives");
+  }
+  const [first, ...rest] = watched;
+  h.arrive(first);
+  assert.equal(first.dataset.orbitBlink, "", "the arriving guide starts its blink");
+  for (const guide of rest) assert.equal(guide.dataset.orbitBlink, undefined);
+  assert.ok(!h.watched().includes(first), "a guide blinks once and is not watched again");
+});
+
+test("the guide blink waits until the arrival has made the guide visible", () => {
+  const h = harness("en");
+  h.load("./guide-blink");
+  const [watcher] = h.watchers().filter((entry) => entry.targets.size > 0);
+  assert.equal(
+    watcher.options.rootMargin,
+    "0px 0px -25% 0px",
+    "the band keeps the bottom quarter of the viewport out, where the arrival still holds the guide transparent",
+  );
+  assert.equal(watcher.options.threshold, 0.6);
+});
+
 test("exchange growth retains the reveal observer without scrolling the phone or page", () => {
   for (const language of ["en", "pt-BR"]) {
     const h = harness(language, 600);
@@ -484,6 +539,19 @@ for (const language of ["en", "pt-BR"]) {
       assert.deepEqual(h.visibleRows(), originalRows);
       assert.equal(h.get("demo-continue").hidden, true);
     }
+  });
+  test(`${language}: each demo step turns the hero Orbit once and the page load starts none`, () => {
+    const h = harness(language);
+    const orbit = h.document.querySelector(".hero-copy").querySelector("[data-orbit-mascot]");
+    assert.ok(orbit, "the hero holds the live Orbit");
+    assert.equal(orbit.dataset.orbitTurn, undefined);
+    h.chips[1].fire("click");
+    assert.equal(orbit.dataset.orbitTurn, "run");
+    orbit.dataset.orbitTurn = "done";
+    h.get("demo-approve").fire("click");
+    assert.equal(orbit.dataset.orbitTurn, "run");
+    orbit.onanimationend({ animationName: "orbit-spin", currentTarget: orbit });
+    assert.equal(orbit.dataset.orbitTurn, "done");
   });
   test(`${language}: single approvals replace the matching habit and retain the other rows in order`, () => {
     const h = harness(language);

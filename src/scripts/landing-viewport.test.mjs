@@ -461,7 +461,7 @@ test("phone screens share the app header and content top inset at every width", 
     /\.phone-app-header\s*\{[^}]*min-block-size:\s*56px;[^}]*padding-inline:\s*16px;/,
   );
   assert.match(base, /\.phone-content\s*\{[^}]*padding-block-start:\s*16px;/);
-  assert.match(base, /\.phone-slide \.astra-demo\s*\{[^}]*gap:\s*0;[^}]*padding:\s*0;/);
+  assert.match(base, /\.phone-slide \.orbit-demo\s*\{[^}]*gap:\s*0;[^}]*padding:\s*0;/);
   assert.match(base, /\.phone-today-content\s*\{[^}]*gap:\s*16px;/);
 });
 
@@ -643,7 +643,7 @@ for (const name of ["./hero-float", "./landing-motion"]) {
   });
 }
 
-test("the Astra conversation sits in a full phone with status chrome and a home indicator", () => {
+test("the Orbit conversation sits in a full phone with status chrome and a home indicator", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
   assert.match(hero, /class="device-status" aria-hidden="true"/);
   assert.match(hero, /class="device-status-time"\s+data-mock\s+data-clock="time"/);
@@ -715,68 +715,46 @@ test("every landing pill uses the shared app geometry and only hero install is m
   }
 });
 
-test("every inline Astra glyph keeps its asset viewBox and the native 16px drawing", async () => {
-  const { parse } = await import("@astrojs/compiler");
-  const source = readFileSync("src/components/AstraGlyph.astro", "utf8");
-  const { ast } = await parse(source);
-  const nodes = (node) => [node, ...(node.children ?? []).flatMap(nodes)];
-  const inline = nodes(ast).find(
-    (node) => node.name === "svg" && node.attributes.some((a) => a.name === "viewBox"),
-  );
-  const attribute = inline.attributes.find((a) => a.name === "viewBox");
-  for (const size of [16, 20, 24, 48]) {
-    const asset = readFileSync(`public/brand/astra-mark${size === 16 ? "-16" : ""}.svg`, "utf8");
-    const expected = asset.match(/viewBox="([^"]+)"/)[1];
-    if (attribute.kind !== "expression") {
-      assert.equal(
-        attribute.value,
-        expected,
-        "inline viewBox must preserve the asset's orbital band and dot",
-      );
-      continue;
-    }
-    const context = vm.createContext({
-      Astro: { props: { size } },
-      exports: {},
-      require(path) {
-        assert.match(path, /^\.\.\/\.\.\/public\/brand\/astra-mark(?:-16)?\.svg\?raw$/);
-        return { default: readFileSync(path.replace("../../", "").replace("?raw", ""), "utf8") };
-      },
-    });
-    vm.runInContext(
-      ts.transpileModule(source.split("---")[1], {
-        compilerOptions: { module: ts.ModuleKind.CommonJS },
-      }).outputText,
-      context,
-    );
-    assert.equal(vm.runInContext(attribute.value, context), expected);
-    const mark = vm.runInContext("mark", context);
-    assert.deepEqual(
-      [...mark.paths.matchAll(/d="([^"]+)"/g)].map(([, d]) => d),
-      [...asset.matchAll(/d="([^"]+)"/g)].filter(([, d]) => d.startsWith("M")).map(([, d]) => d),
-    );
-  }
-  assert.match(source, /astra-mark-16\.svg\?raw/);
-  for (const symbol of nodes(ast).filter((node) => node.name === "symbol")) {
-    const viewBox = symbol.attributes.find((a) => a.name === "viewBox");
-    assert.equal(viewBox.kind, "expression");
-  }
-  const demo = readFileSync("src/components/AstraDemo.astro", "utf8");
-  assert.match(demo, /<AstraGlyph/);
-});
-
-test("Orbit marks retain the canonical full asset frames", () => {
+test("Orbit marks mirror the canonical mascot sources and the lockup", () => {
   for (const [name, expected] of [
-    ["orbit-mark-accent", "0 0 1024 1024"],
-    ["orbit-mark-16", "0 0 16 16"],
+    ["orbit-mascot", "-210 -150 420 300"],
+    ["orbit-mascot-feliz", "-210 -150 420 300"],
+    ["orbit-mascot-small", "0 0 24 18"],
   ]) {
     const asset = readFileSync(`public/brand/${name}.svg`, "utf8");
     assert.equal(asset.match(/viewBox="([^"]+)"/)[1], expected);
   }
-  for (const component of ["Header"]) {
+  for (const component of ["Header", "FinalCta"]) {
     const source = readFileSync(`src/components/${component}.astro`, "utf8");
     assert.match(source, /orbit-lockup\.svg\?raw/);
     assert.doesNotMatch(source, /viewBox=/);
+  }
+  const mascot = readFileSync("src/components/OrbitMascot.astro", "utf8");
+  for (const file of ["orbit-mascot", "orbit-mascot-feliz", "orbit-mascot-small"])
+    assert.match(mascot, new RegExp(`public/brand/${file}\\.svg\\?raw`));
+  assert.match(
+    readFileSync("src/components/OrbitDemo.astro", "utf8"),
+    /<OrbitMascot size=\{16\} \/>/,
+  );
+});
+
+test("the ring tilt, opening and radius have one owner, so the moon stays on the ring", () => {
+  const mascot = readFileSync("src/components/OrbitMascot.astro", "utf8");
+  const moonLayer = mascot.match(/const moonLayer = [\s\S]*?`;/)?.[0];
+  assert.ok(moonLayer, "OrbitMascot.astro builds the moon layer");
+  for (const [, transform] of moonLayer.matchAll(/transform="([^"]*)"/g)) {
+    assert.doesNotMatch(
+      transform
+        .replace(/\$\{[^}]*\}/g, "")
+        .replace(/scale\(1 /g, "scale(")
+        .replace(/ 0\)/g, ")"),
+      /\d/,
+      `the moon transform ${transform} writes a number that src/config/orbit-mascot.ts owns`,
+    );
+  }
+  const config = readFileSync("src/config/orbit-mascot.ts", "utf8");
+  for (const value of [/-18\b/g, /\b0\.29\b/g]) {
+    assert.equal(config.match(value)?.length, 1, `orbit-mascot.ts declares ${value} once`);
   }
 });
 
@@ -958,7 +936,7 @@ test("mobile removes the floating cards and keeps both screens inside the phone"
   assert.equal((hero.match(/data-phone-slide=/g) ?? []).length, 2);
   assert.match(css, /@media \(width < 768px\)[\s\S]*?\.hero-products\s*\{\s*display:\s*none/);
   assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*36px;[^}]*block-size:\s*4px/);
-  assert.doesNotMatch(readFileSync("src/components/AstraDemo.astro", "utf8"), /demo-playback/);
+  assert.doesNotMatch(readFileSync("src/components/OrbitDemo.astro", "utf8"), /demo-playback/);
   assert.doesNotMatch(hero, /id="hero-playback"/);
 });
 
@@ -1095,7 +1073,7 @@ test("phone content has no vertical scroller or viewport-dependent thread cap", 
 
 test("chat chips and composer occupy separate rows with their full targets in vertical flow", async () => {
   const { parse } = await import("@astrojs/compiler");
-  const { ast } = await parse(readFileSync("src/components/AstraDemo.astro", "utf8"));
+  const { ast } = await parse(readFileSync("src/components/OrbitDemo.astro", "utf8"));
   const find = (node, className) => {
     if (node.attributes?.some(({ name, value }) => name === "class" && value === className)) {
       return node;

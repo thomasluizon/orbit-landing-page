@@ -1,4 +1,5 @@
 ---
+import OrbitLine from "./OrbitLine.astro";
 import PillButton from "./PillButton.astro";
 import { translations } from "../i18n/translations";
 const en = translations.en;
@@ -13,6 +14,7 @@ const en = translations.en;
 >
   <div class="waitlist-content">
     <div class="section-heading">
+      <OrbitLine name="orbit.ios" />
       <span class="coming-soon" data-i18n="ios.soon">{en["ios.soon"]}</span>
       <h2 id="ios-title" class="section-title" data-i18n="ios.title">{en["ios.title"]}</h2><p
         id="ios-description"

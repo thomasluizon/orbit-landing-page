@@ -1,6 +1,7 @@
 ---
 import Copy from "./Copy.astro";
 import CookiePreferences from "./CookiePreferences.astro";
+import OrbitLine from "./OrbitLine.astro";
 import PillButton from "./PillButton.astro";
 import orbitLockup from "../../public/brand/orbit-lockup.svg?raw";
 interface Props {
@@ -13,7 +14,8 @@ const { appUrl } = Astro.props;
   <div class="section-inner">
     <div class="closing-copy">
       <div class="section-heading">
-        <h2 id="final-title" class="section-title"><Copy name="final.title" accent="Astra" /></h2>
+        <OrbitLine />
+        <h2 id="final-title" class="section-title"><Copy name="final.title" accent="Orbit" /></h2>
         <p class="section-description"><Copy name="final.body" /></p>
       </div>
       <PillButton
