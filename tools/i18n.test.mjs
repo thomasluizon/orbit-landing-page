@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
-import { retiredName } from "./lib/retired-name.mjs";
+import { feminineOrbit, retiredName } from "./lib/retired-name.mjs";
 
 function element(attributes = {}, textContent = "") {
   return {
@@ -216,7 +216,7 @@ test("each locale names the AI Orbit, with it in English and the masculine form 
     }
     for (const [key, text] of Object.entries(table["pt-BR"])) {
       assert.doesNotMatch(text, retiredName, key);
-      assert.doesNotMatch(text, /\b(?:a|da|na|à|pela)\s+Orbit\b/iu, key);
+      assert.doesNotMatch(text, feminineOrbit, key);
       assert.doesNotMatch(text, /\b(?:ela|dela|nela|sozinha)\b/iu, key);
     }
   }
@@ -264,7 +264,6 @@ test("every new landing string exists in both languages and Orbit keeps the masc
     for (const [key, value] of Object.entries(table)) {
       assert.ok(value.length > 0, `${lang}: ${key}`);
       assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
-      if (lang === "pt-BR") assert.doesNotMatch(value, /\b(?:a|da|na|à|pela)\s+Orbit\b/iu, key);
     }
   }
 });
