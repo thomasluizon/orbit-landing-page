@@ -19,7 +19,10 @@ const marker = (commit) =>
     .match(/<meta name="orbit-build" content=\{renderBuildCommit\} \/>/)[0]
     .replace("{renderBuildCommit}", `"${commit}"`);
 
-function harness(environment, { force = "false", staging = {}, variables, deployStatus } = {}) {
+function harness(
+  environment,
+  { force = "false", staging = {}, variables, deployStatus, served } = {},
+) {
   const deploys = [];
   const requests = [];
   const summaries = [];
@@ -47,7 +50,7 @@ function harness(environment, { force = "false", staging = {}, variables, deploy
       });
     }
     if (origin === stagingOrigin || origin === "https://useorbit.org") {
-      return new Response(marker(deploys.at(-1).commitId));
+      return new Response(marker(served ?? deploys.at(-1).commitId));
     }
     if (hostname === "api.github.com") {
       return Response.json(
@@ -118,6 +121,14 @@ test("records a GitHub Deployment of the deployed SHA with its public URL", asyn
     assert.equal(status.environment_url, url);
   }
 });
+
+for (const environment of ["staging", "production"]) {
+  test(`${environment}: refuses to record a deploy that the public origin does not serve`, async () => {
+    const run = harness(environment, { served: previousSha });
+    await assert.rejects(run.run(), /must serve/);
+    assert.ok(run.requests.every(({ url }) => url.hostname !== "api.github.com"));
+  });
+}
 
 for (const [reason, staging] of [
   ["a different commit", { commit: previousSha }],
