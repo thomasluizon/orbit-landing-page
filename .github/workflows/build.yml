@@ -109,3 +109,11 @@ jobs:
         with:
           configPath: ./lighthouserc.json
           uploadArtifacts: true
+
+      - name: Build with the App Store listing
+        id: build-store
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run build
+        env:
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+          PUBLIC_IOS_APP_STORE_URL: https://apps.apple.com/us/app/orbit/id1234567890

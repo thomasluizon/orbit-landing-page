@@ -51,7 +51,11 @@ test("each guide line names Orbit as the speaker for assistive technology", () =
   const lines = [...html.matchAll(/<p class="orbit-line-text">([\s\S]*?)<\/p>/g)].map(
     ([, body]) => body,
   );
-  assert.equal(lines.length, 4, "the four section guides with a line");
+  assert.equal(
+    lines.length,
+    process.env.PUBLIC_IOS_APP_STORE_URL ? 3 : 4,
+    "the section guides with a line, without the waitlist guide once the App Store link is set",
+  );
   for (const body of lines) {
     assert.match(
       body,

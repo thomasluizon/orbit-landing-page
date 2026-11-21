@@ -5,8 +5,9 @@ import { desktopDownloads } from "../config/links";
 import { landingCopy } from "../i18n/translations";
 interface Props {
   googlePlayUrl: string;
+  appStoreUrl?: string;
 }
-const { googlePlayUrl } = Astro.props;
+const { googlePlayUrl, appStoreUrl } = Astro.props;
 const desktopMark = { mac: "apple", windows: "windows" } as const;
 ---
 
@@ -42,14 +43,45 @@ const desktopMark = { mac: "apple", windows: "windows" } as const;
       data-analytics-event="android_install_clicked"
       data-analytics-surface="footer"><Copy name="footer.android" /></a
     >
-    <a
-      href="#ios"
-      id="ios-trigger"
-      data-ios-trigger
-      data-download-target="iphone"
-      class="downloads-entry"
-      data-i18n="hero.ios">iPhone waitlist</a
-    >
+    {
+      appStoreUrl ? (
+        <a
+          href={appStoreUrl}
+          class="downloads-entry downloads-entry-badge"
+          data-download-target="iphone"
+          data-analytics-event="ios_install_clicked"
+          data-analytics-surface="footer"
+        >
+          <img
+            class="downloads-badge downloads-badge-en"
+            src="/badges/app-store-en.svg"
+            width="120"
+            height="40"
+            alt={landingCopy.en["download.appStore"]}
+            loading="lazy"
+          />
+          <img
+            class="downloads-badge downloads-badge-pt"
+            src="/badges/app-store-pt-br.svg"
+            width="120"
+            height="40"
+            alt={landingCopy["pt-BR"]["download.appStore"]}
+            loading="lazy"
+          />
+        </a>
+      ) : (
+        <a
+          href="#ios"
+          id="ios-trigger"
+          data-ios-trigger
+          data-download-target="iphone"
+          class="downloads-entry"
+          data-i18n="hero.ios"
+        >
+          iPhone waitlist
+        </a>
+      )
+    }
   </div>
   <a
     class="downloads-qr"

@@ -21,3 +21,16 @@ test("the Build step runs when the install passes", () => {
   assert.ok(build, "the Build step has an id and a condition");
   assert.equal(build[1], "${{ !cancelled() && steps.install.outcome == 'success' }}");
 });
+
+test("the workflow builds once with the App Store listing set", () => {
+  const step = workflow.match(
+    /- name: Build with the App Store listing\n([\s\S]*?)(?=\n\s+- name:|$)/,
+  );
+  assert.ok(step, "the App Store build step exists");
+  assert.match(step[1], /if: \$\{\{ !cancelled\(\) && steps\.build\.outcome == 'success' \}\}/);
+  assert.match(step[1], /run: npm run build\n/);
+  assert.match(
+    step[1],
+    /PUBLIC_IOS_APP_STORE_URL: https:\/\/apps\.apple\.com\/us\/app\/orbit\/id\d+\n/,
+  );
+});
