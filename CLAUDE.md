@@ -31,7 +31,6 @@ The code standards in `../orbit-ui-mobile/CLAUDE.md` apply here. This repository
 - Allowed: `/** */` JSDoc on exported symbols; tooling directives in the comment form their tool reads (`/* eslint-disable */`, `@ts-expect-error`, `// @ts-check`, a JSDoc block that holds any `@` tag, such as `@type` or `@param`, in a JavaScript file); WHY comments ONLY when they link an upstream issue/PR/doc URL.
 - Banned: everything else. No narration, no section bars, no TODOs. Rename or extract instead.
 - The rule source is `eslint-rules/no-comments.cjs`. Keep its behavior aligned with the sibling repository's rule.
-- Write rules, docs, and comments timelessly: no dates except load-bearing data, names or attributions, incident stories, or machine paths. `tools/check-timeless.mjs` enforces this.
 
 ## Architecture
 
@@ -50,7 +49,7 @@ Bilingual EN/PT-BR via `data-i18n` attributes applied client-side. Every new use
 Standard Astro scripts; read `package.json` for the list. The CI-gating ones are
 `format:check` and `check` (`astro check`), not just `lint`.
 
-CI has two required jobs. `build.yml` runs the `Build` job on each PR to main and on each push to main: the timeless, dash, copy register, root allowlist and commit attribution guards, audit, test, lint, format:check, check, build, the internal-link check and Lighthouse, all on one runner. A failed check does not stop the other checks, so one run shows every failure. The dash, copy register, root allowlist and attribution guards need no install. The other checks need a passed `npm ci`, and the link check and Lighthouse also need a passed build. The copy register and the root allowlist run the same commands as the lefthook pre-commit hook. A PR that changes only root Markdown files, `LICENSE`, `.claude/` or `.vscode/` skips check, build, the link check and Lighthouse. A rename counts as a change to both paths. `pr-text.yml` runs the `PR Text` job on each PR event, the body edit included: it checks the live title and body for dashes and the body for attribution lines. Lighthouse collects three samples per page. Performance, LCP and TBT assertions use the median; the other assertions require every sample to pass. Lighthouse blocks merging when the home page falls below 0.90 for performance, accessibility, best practices, or SEO, exceeds 2850 ms LCP or 200 ms TBT, or any audited page exceeds 24 KB of script. The synthetic 404 page carries the same performance and TBT budgets as the home page, alongside the accessibility, best practices, LCP, and script-size assertions; it is not SEO-asserted. The post-waitlist confirmation page (`/waitlist-confirmed/`) is excluded from Lighthouse collection by `ci.collect.autodiscoverUrlBlocklist` in `lighthouserc.json`, which matches its generated path `/waitlist-confirmed/index.html`. No Lighthouse assertions run on that page, including the merge-blocking accessibility assertion (`categories:accessibility` at `error` with a 0.90 minimum score), so accessibility regressions there do not block merging through Lighthouse.
+CI is `.github/workflows/build.yml`; read it.
 
 ## Git workflow
 

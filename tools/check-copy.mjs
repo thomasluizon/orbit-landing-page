@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 // Read translation values because keys are identifiers, not shipped copy.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const BASELINE_PATH = join(REPO_ROOT, "tools", "copy-baseline.json");
 
 const TRANSLATIONS_FILE = "src/i18n/translations.ts";
 const TOKEN_FILE = "src/styles/global.css";
@@ -150,42 +149,22 @@ const brandColorFindings = () => {
   return findings;
 };
 
-const keyOf = (finding) => `${finding.kind} :: ${finding.file} :: ${finding.key}`;
-
 const mode = process.argv[2];
 const findings = [...localeFindings(), ...brandColorFindings()];
-const current = findings.map(keyOf).sort();
-
-if (mode === "--write-baseline") {
-  writeFileSync(BASELINE_PATH, JSON.stringify(current, null, 2) + "\n");
-  console.log(`copy-baseline.json written: ${current.length} entries`);
-  process.exit(0);
-}
 
 if (mode === "--check") {
-  const baseline = new Set(
-    existsSync(BASELINE_PATH) ? JSON.parse(readFileSync(BASELINE_PATH, "utf8")) : [],
-  );
-  const fresh = findings.filter((finding) => !baseline.has(keyOf(finding)));
-  if (fresh.length) {
-    console.error("Copy-register violations not in the committed baseline:");
-    for (const finding of fresh)
+  if (findings.length) {
+    console.error("Copy-register violations:");
+    for (const finding of findings)
       console.error(`  [${finding.kind}] ${finding.file} :: ${finding.key} :: ${finding.detail}`);
     console.error(
       "\nSay the plain thing the string does; store copy in natural case (text-transform owns presentation);\n" +
-        "ship real strings, never placeholders; accents come from tokens, never raw literals.\n" +
-        "The baseline (tools/copy-baseline.json) may only shrink.",
+        "ship real strings, never placeholders; accents come from tokens, never raw literals.",
     );
     process.exit(1);
-  }
-  const stale = [...baseline].filter((entry) => !current.includes(entry));
-  if (stale.length) {
-    console.error(
-      `Baseline is stale (${stale.length} fixed entries still listed). Run --write-baseline to shrink it.`,
-    );
   }
   process.exit(0);
 }
 
-console.error("usage: check-copy.mjs --check | --write-baseline");
+console.error("usage: check-copy.mjs --check");
 process.exit(2);

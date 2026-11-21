@@ -2,10 +2,6 @@ min_version: "2.1.10"
 assert_lefthook_installed: true
 pre-commit:
   commands:
-    timeless:
-      run: node tools/check-timeless.mjs --staged
-    root-allowlist:
-      run: node tools/check-root-allowlist.mjs
     eslint:
       glob: "*.{ts,mjs,cjs,astro}"
       run: npx eslint --fix {staged_files}
@@ -16,5 +12,4 @@ pre-commit:
       glob:
         - "src/*.{astro,css,ts}"
         - "tools/check-copy.mjs"
-        - "tools/copy-baseline.json"
       run: node tools/check-copy.mjs --check

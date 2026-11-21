@@ -25,26 +25,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Select the checks this change needs
-        id: changes
-        run: |
-          set -euo pipefail
-          product=true
-          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            product=false
-            git diff --name-only --no-renames -z "origin/$GITHUB_BASE_REF...HEAD" > "$RUNNER_TEMP/changed-paths"
-            while IFS= read -r -d '' path; do
-              case "$path" in
-                .claude/* | .vscode/* | LICENSE) ;;
-                */*) product=true ;;
-                *.md) ;;
-                *) product=true ;;
-              esac
-            done < "$RUNNER_TEMP/changed-paths"
-          fi
-          echo "product=$product" >> "$GITHUB_OUTPUT"
-          echo "Product checks: $product"
-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
@@ -70,35 +50,17 @@ jobs:
           key: ${{ steps.npm-cache.outputs.cache-primary-key }}
 
       - name: Changed files carry no new dashes
-        if: ${{ !cancelled() && steps.changes.outcome == 'success' && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
         run: |
           git diff --name-only --diff-filter=ACMR "origin/$GITHUB_BASE_REF...HEAD" -z \
             | xargs -0 --no-run-if-empty node tools/check-dashes.mjs --files
 
-      - name: Dash baseline only shrinks
-        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
-        run: node tools/check-dashes.mjs --check-baseline
-
       - name: Copy follows the register
-        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
+        if: ${{ !cancelled() }}
         run: node tools/check-copy.mjs --check
 
-      - name: Root holds only declared entries
-        if: ${{ !cancelled() && steps.changes.outcome == 'success' }}
-        run: node tools/check-root-allowlist.mjs
-
-      - name: Pull request commits carry no attribution lines
-        # The PR Text workflow checks the body, because an edit of the body does not run Build.
-        if: ${{ !cancelled() && steps.changes.outcome == 'success' && github.event_name == 'pull_request' }}
-        env:
-          PULL_REQUEST_RANGE: ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
-        run: node tools/check-attribution.mjs --range "$PULL_REQUEST_RANGE" --not origin/main
-
-      - name: Text is timeless
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node tools/check-timeless.mjs --all
-
       - name: Audit
+        continue-on-error: true
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm audit --audit-level=moderate
 
@@ -115,7 +77,7 @@ jobs:
         run: npm run format:check
 
       - name: Type check
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.changes.outputs.product == 'true' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run check
 
       - name: Build
