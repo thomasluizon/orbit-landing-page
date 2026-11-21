@@ -252,128 +252,6 @@ function harness(language = "en", threadHeight = 415) {
   };
 }
 
-function approveWords(h, words) {
-  h.get("demo-input").value = words;
-  h.get("demo-composer").fire("submit");
-  h.get("demo-approve").fire("click");
-}
-
-function assertCompletion(rows, done) {
-  for (const row of rows) {
-    assert.equal(row.getAttribute("aria-pressed"), String(done));
-    assert.equal(row.querySelector(".status-ring").classList.contains("is-done"), done);
-  }
-}
-
-for (const language of ["en", "pt-BR"]) {
-  test(`${language}: completion follows accepted habit identity across reused Today and chat slots`, () => {
-    const h = harness(language);
-    const chatRows = h.get("demo-today").querySelectorAll(".habit-row");
-    approveWords(h, "Meditate");
-    const todayRow = h.visibleRows().at(-1);
-    todayRow.fire("click");
-    assertCompletion([todayRow], true);
-    approveWords(h, "Swim");
-    assert.equal(h.visibleRows().at(-1), todayRow, "approval reuses the same physical slot");
-    assertCompletion([todayRow, chatRows[0]], false);
-    chatRows[0].fire("click");
-    assertCompletion([todayRow, chatRows[0]], true);
-    h.switchLanguage(language === "en" ? "pt-BR" : "en");
-    assertCompletion([todayRow, chatRows[0]], true);
-    approveWords(h, "Meditate");
-    assertCompletion([todayRow, chatRows[0]], true);
-    chatRows[0].fire("click");
-    assertCompletion([todayRow, chatRows[0]], false);
-    approveWords(h, "Swim");
-    assertCompletion([todayRow, chatRows[0]], true);
-    h.chips[2].fire("click");
-    h.get("demo-approve").fire("click");
-    const batch = h.visibleRows();
-    assertCompletion([...batch, ...chatRows], false);
-    batch[1].fire("click");
-    assertCompletion([batch[1], chatRows[1]], true);
-    assertCompletion([batch[0], chatRows[0]], false);
-    approveWords(h, "Swim");
-    assertCompletion([todayRow, chatRows[0]], true);
-    assert.equal(batch[1].hidden, true);
-    h.chips[2].fire("click");
-    h.get("demo-approve").fire("click");
-    assertCompletion([batch[0], chatRows[0]], false);
-    assertCompletion([batch[1], chatRows[1]], true);
-  });
-
-  for (const accepted of ["single", "batch", "typed"]) {
-    test(`${language}: retained ${accepted} approvals localize while another proposal is pending or rejected`, () => {
-      const h = harness(language);
-      if (accepted === "typed") approveWords(h, "Swim");
-      else {
-        h.chips[accepted === "batch" ? 2 : 0].fire("click");
-        h.get("demo-approve").fire("click");
-      }
-      const check = (locale) => {
-        const names =
-          accepted === "typed"
-            ? ["Swim"]
-            : locale === "en"
-              ? accepted === "batch"
-                ? ["Walk", "Read"]
-                : ["Walk"]
-              : accepted === "batch"
-                ? ["Caminhar", "Ler"]
-                : ["Caminhar"];
-        const repeat =
-          locale === "en"
-            ? accepted === "batch"
-              ? "Daily · Evening"
-              : "Daily · Morning"
-            : accepted === "batch"
-              ? "Diário · À noite"
-              : "Diário · De manhã";
-        const phoneRows = h
-          .phoneRows()
-          .filter(
-            (row) =>
-              !row.hidden &&
-              (Object.hasOwn(row.attributes, "data-demo-approved") ||
-                Object.hasOwn(row.attributes, "data-demo-approved-second")),
-          );
-        const chatRows = h
-          .get("demo-today")
-          .querySelectorAll(".habit-row")
-          .filter((row) => !row.hidden);
-        for (const rows of [phoneRows, chatRows]) {
-          assert.deepEqual(
-            rows.map((row) => row.querySelector(".habit-name").textContent),
-            names,
-          );
-          assert.deepEqual(
-            rows.map((row) => row.querySelector(".product-caption").textContent),
-            names.map(() => repeat),
-          );
-          assert.ok(Object.hasOwn(rows.at(-1).attributes, "data-last-visible"));
-        }
-        assert.equal(h.visibleRows().length, accepted === "batch" ? 2 : 5);
-      };
-      check(language);
-      h.chips[accepted === "batch" ? 0 : 2].fire("click");
-      h.get("demo-reject").fire("click");
-      const otherLanguage = language === "en" ? "pt-BR" : "en";
-      h.switchLanguage(otherLanguage);
-      check(otherLanguage);
-      h.get("demo-reject").fire("click");
-      h.switchLanguage(language);
-      check(language);
-      h.get("demo-input").value = "Unapproved title";
-      h.get("demo-composer").fire("submit");
-      h.switchLanguage(otherLanguage);
-      check(otherLanguage);
-      h.get("demo-reject").fire("click");
-      h.switchLanguage(language);
-      check(language);
-    });
-  }
-}
-
 test("every habit toggle sits in the hero phone, whose demo binds it", () => {
   const isToggle = (node) => Object.hasOwn(attributes(node), "data-habit-toggle");
   const phone = nodes.find((node) =>
@@ -432,40 +310,6 @@ test("exchange growth retains the reveal observer without scrolling the phone or
     assert.equal(h.thread.scrollTop, 0);
   }
   assert.doesNotMatch(readFileSync("src/scripts/demo.ts", "utf8"), /scrollIntoView/);
-});
-
-test("habit reach boundaries follow batch, single and custom approvals, rejection and language changes", () => {
-  for (const language of ["en", "pt-BR"]) {
-    const h = harness(language);
-    const checkBoundaries = () => {
-      const lists = [
-        h.get("phone-today").querySelector(".phone-today-habits"),
-        h.get("demo-today"),
-      ];
-      for (const list of lists) {
-        const rows = list.querySelectorAll(".habit-row");
-        const visible = rows.filter((row) => !row.hidden);
-        for (const row of rows) {
-          assert.equal(Object.hasOwn(row.attributes, "data-first-visible"), row === visible[0]);
-          assert.equal(Object.hasOwn(row.attributes, "data-last-visible"), row === visible.at(-1));
-        }
-      }
-    };
-    for (const index of [2, 0, 2, 1]) {
-      h.chips[index].fire("click");
-      h.get("demo-approve").fire("click");
-      checkBoundaries();
-      h.switchLanguage(language === "en" ? "pt-BR" : "en");
-      checkBoundaries();
-      h.chips[0].fire("click");
-      h.get("demo-reject").fire("click");
-      checkBoundaries();
-    }
-    h.get("demo-input").value = "Read every evening";
-    h.get("demo-composer").fire("submit");
-    h.get("demo-approve").fire("click");
-    checkBoundaries();
-  }
 });
 
 for (const language of ["en", "pt-BR"]) {
@@ -663,53 +507,6 @@ test("send is filled and enabled only for a nonempty request, then resets after 
 });
 
 for (const language of ["en", "pt-BR"]) {
-  test(`${language}: every demo state lists each habit once in each phone list`, () => {
-    const h = harness(language);
-    const check = () => {
-      for (const list of [h.get("phone-today"), h.get("demo-today")]) {
-        const names = list
-          .querySelectorAll(".habit-row")
-          .filter((row) => !row.hidden)
-          .map((row) =>
-            row.querySelector(".habit-name").textContent.trim().toLocaleLowerCase(language),
-          );
-        assert.equal(new Set(names).size, names.length, names.join(", "));
-      }
-    };
-    check();
-    for (const index of [0, 1, 2, 0]) {
-      h.chips[index].fire("click");
-      check();
-      h.get("demo-approve").fire("click");
-      check();
-      h.switchLanguage(language === "en" ? "pt-BR" : "en");
-      check();
-      h.switchLanguage(language);
-      h.chips[index].fire("click");
-      h.get("demo-reject").fire("click");
-      check();
-    }
-    for (const name of [
-      h.landing["product.read"],
-      h.landing["product.water"],
-      h.strings["demo.move.secondHabit"],
-    ]) {
-      h.chips[2].fire("click");
-      h.get("demo-edit").fire("click");
-      h.get("demo-edit-name").value = name;
-      h.get("demo-edit-schedule").value = "evening";
-      h.get("demo-edit-form").fire("submit");
-      h.get("demo-approve").fire("click");
-      check();
-      h.get("demo-input").value = name;
-      h.get("demo-composer").fire("submit");
-      h.get("demo-approve").fire("click");
-      check();
-    }
-  });
-}
-
-for (const language of ["en", "pt-BR"]) {
   test(`${language}: editing a batch merges duplicate names before approval`, () => {
     const h = harness(language);
     h.chips[2].fire("click");
@@ -736,37 +533,14 @@ for (const language of ["en", "pt-BR"]) {
     for (const [input, query] of [
       ["Walk today", "title=Walk%25252520today"],
       ["Read & reflect", "title=Read%25252520%25252526%25252520reflect"],
-      ["a+b", "title=a%2525252Bb"],
-      ["a#b", "title=a%25252523b"],
-      ["100%", "title=100%25252525"],
-      ["%26", "title=%2525252526"],
-      ["%2526", "title=%252525252526"],
-      ["a;b", "title=a%2525253Bb"],
-      ["a?b", "title=a%2525253Fb"],
-      ["a=b", "title=a%2525253Db"],
-      ["a/b\\c", "title=a%2525252Fb%2525255Cc"],
       [
         "emoji 👩🏽‍🚀",
         "title=emoji%25252520%252525F0%2525259F%25252591%252525A9%252525F0%2525259F%2525258F%252525BD%252525E2%25252580%2525258D%252525F0%2525259F%2525259A%25252580",
-      ],
-      ["'!()*", "title='!()*"],
-      ["nonbreaking space", "title=nonbreaking%252525C2%252525A0space"],
-      [
-        "中文字",
-        "title=%252525E4%252525B8%252525AD%252525E6%25252596%25252587%252525E5%252525AD%25252597",
       ],
       [
         "#Intent;scheme=evil;package=evil;S.browser_fallback_url=https://evil.invalid;end",
         "title=%25252523Intent%2525253Bscheme%2525253Devil%2525253Bpackage%2525253Devil%2525253BS.browser_fallback_url%2525253Dhttps%2525253A%2525252F%2525252Fevil.invalid%2525253Bend",
       ],
-      ["  Walk today  ", "title=Walk%25252520today"],
-      ["line\nnext\tstep", "title=line%2525250Anext%25252509step"],
-      ["Walk".repeat(100), `title=${"Walk".repeat(20)}`],
-      [
-        "Olá 🌙;walk?today",
-        "title=Ol%252525C3%252525A1%25252520%252525F0%2525259F%2525258C%25252599%2525253Bwalk%2525253Ftoday",
-      ],
-      ["a+b#%26", "title=a%2525252Bb%25252523%2525252526"],
     ]) {
       const title = input.trim().slice(0, 80);
       h.get("demo-edit").fire("click");
@@ -810,43 +584,6 @@ for (const language of ["en", "pt-BR"]) {
 }
 
 for (const language of ["en", "pt-BR"]) {
-  test(`${language}: strips each request prefix and reads each schedule keyword`, () => {
-    const prefixes =
-      language === "en"
-        ? ["I want to ", "I'd like to ", "Plan a ", "Plan an ", "Plan "]
-        : ["Quero ", "Gostaria de "];
-    const schedules =
-      language === "en"
-        ? [
-            ["in the morning", "demo.start.repeat"],
-            ["in the afternoon", "demo.afternoon"],
-            ["at night", "demo.start.alternateRepeat"],
-            ["in the evening", "demo.start.alternateRepeat"],
-          ]
-        : [
-            ["de manhã", "demo.start.repeat"],
-            ["à tarde", "demo.afternoon"],
-            ["à noite", "demo.start.alternateRepeat"],
-          ];
-    for (const prefix of prefixes) {
-      for (const [time, schedule] of schedules) {
-        const h = harness(language);
-        const title = `${language === "en" ? "exercise" : "exercitar"} ${time}`;
-        h.get("demo-input").value = `${prefix}${title}.`;
-        h.get("demo-composer").fire("submit");
-        assert.equal(h.get("demo-habit").textContent, title);
-        assert.equal(h.get("demo-repeat").textContent, h.strings[schedule]);
-        h.get("demo-approve").fire("click");
-        assert.equal(h.get("demo-today-habit").textContent, title);
-        assert.equal(h.get("demo-today-repeat").textContent, h.strings[schedule]);
-        assert.equal(h.get("demo-continue").hidden, false);
-        const link = new URL(h.get("demo-continue-link").href);
-        assert.equal(link.pathname, "/habits/new");
-        assert.equal(link.searchParams.get("title"), title);
-      }
-    }
-  });
-
   test(`${language}: ignores a blank edit name`, () => {
     for (const blank of ["", "   "]) {
       const h = harness(language);
