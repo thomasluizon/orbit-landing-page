@@ -38,6 +38,10 @@ jobs:
           key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-${{ runner.os }}-
 
+      - name: Instruction budgets
+        if: ${{ !cancelled() }}
+        run: node tools/check-instructions.mjs
+
       - name: Install
         id: install
         run: npm ci
