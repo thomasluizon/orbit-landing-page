@@ -79,6 +79,28 @@ test("the Apple icon is the mascot at rest with both eyes, as the app icon draws
   for (const width of runs) assert.ok(width >= 2, `each eye is at least 2px wide, not ${width}px`);
 });
 
+for (const { path, row, from, to } of [
+  { path: "public/og-image.png", row: 554, from: 840, to: 960 },
+]) {
+  test(`${path} draws the mascot face with both eyes`, async () => {
+    const { data, info } = await sharp(path)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const runs = [];
+    let inEye = false;
+    for (let x = from; x < to; x++) {
+      const dark = data[(row * info.width + x) * 4] < 60;
+      if (dark && !inEye) runs.push(0);
+      if (dark) runs[runs.length - 1] += 1;
+      inEye = dark;
+    }
+    assert.equal(runs.length, 2, "the planet face holds two canvas-coloured eyes");
+    for (const width of runs)
+      assert.ok(width >= 2, `each eye is at least 2px wide, not ${width}px`);
+  });
+}
+
 test("larger public assets contain the canonical foreground and accent moon", async () => {
   for (const [path, width, height] of [
     ["public/favicon-32x32.png", 32, 32],
