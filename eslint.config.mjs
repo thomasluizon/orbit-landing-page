@@ -28,8 +28,7 @@ export default [
     rules: { "production/no-console": "error" },
   },
   {
-    // WHY: guard scripts use their own checks: https://github.com/thomasluizon/orbit-ui-mobile/blob/main/REBUILD.md
-    files: ["tools/**", ".claude/hooks/forbid-stale-text.mjs"],
+    files: ["tools/**"],
     rules: { "local/no-comments": "off" },
   },
 ];
