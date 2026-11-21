@@ -159,7 +159,7 @@ test("confirmation uses native hidden state for both response paths", async () =
     assert.equal(elements["confirmed-ok"].hidden, invalid);
     assert.equal(elements["confirmed-invalid"].hidden, !invalid);
     assert.deepEqual(visibleDestinations(ast, elements), [
-      invalid ? "/#downloads" : appDestination,
+      invalid ? (storeUrl ? "/#downloads" : "/#ios") : appDestination,
     ]);
   }
 });
@@ -281,11 +281,36 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
     structured[0]["@graph"].find((entry) => entry.operatingSystem === "Android").installUrl,
     expectedPlay,
   );
-  const retry = confirmed.find((node) => node.name === "a" && attrs(node).href === "/#downloads");
+  const retryHref = storeUrl ? "/#downloads" : "/#ios";
+  const retry = confirmed.find((node) => node.name === "a" && attrs(node).href === retryHref);
   assert.ok(retry);
   assert.ok(!Object.hasOwn(attrs(retry), "data-app-entry"));
   assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
 });
+
+for (const { build, url, retry } of [
+  { build: "waitlist", url: undefined, retry: "/#ios" },
+  { build: "App Store", url: "set", retry: "/#downloads" },
+]) {
+  test(
+    `the invalid confirmation retry link targets ${retry} in the ${build} build`,
+    {
+      skip: !!storeUrl !== !!url,
+    },
+    () => {
+      const page = readFileSync("dist/waitlist-confirmed/index.html", "utf8");
+      const invalid = page.match(/<div\b[^>]*id="confirmed-invalid"[\s\S]*?<\/div>/)[0];
+      assert.deepEqual(
+        [...invalid.matchAll(/<a\b[^>]*\shref="([^"]+)"/g)].map(([, href]) => href),
+        [retry],
+      );
+      assert.ok(
+        new RegExp(`id="${retry.slice(2)}"`).test(html),
+        `the home page has the ${retry} target`,
+      );
+    },
+  );
+}
 
 test("both built pages eagerly bind app entry and preserve consent-gated surface capture", () => {
   for (const file of ["dist/index.html", "dist/waitlist-confirmed/index.html"]) {
