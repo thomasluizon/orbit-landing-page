@@ -296,7 +296,7 @@ test("the downloads list leads with the visitor's system at startup, before an a
 const storePage = "https://apps.apple.com/us/app/orbit/id1234567890";
 
 test("only an HTTPS App Store product page counts as the App Store link", () => {
-  const { appStoreEntryUrl, appStoreUrl } = run("src/config/links.ts", {
+  const { appStoreEntryUrl, appStoreUrl } = run("src/config/app-store.ts", {
     environment: {},
     URL,
   });
@@ -320,7 +320,7 @@ test("only an HTTPS App Store product page counts as the App Store link", () => 
     "https://itunes.apple.com/us/app/orbit/id1234567890",
   ])
     assert.equal(appStoreEntryUrl(bad), undefined, String(bad));
-  const configured = run("src/config/links.ts", {
+  const configured = run("src/config/app-store.ts", {
     environment: { PUBLIC_IOS_APP_STORE_URL: storePage },
     URL,
   });
