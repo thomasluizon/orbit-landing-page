@@ -83,7 +83,7 @@ test("the application metadata describes Orbit as the AI without retired FAQ str
   const applications = structured[0]["@graph"].filter((entry) =>
     /Application$/.test(entry["@type"]),
   );
-  assert.equal(applications.length, 2);
+  assert.equal(applications.length, storeUrl ? 5 : 4);
   for (const app of applications) {
     assert.match(app.description, /^Tell Orbit what you want to do, and it turns that into habits/);
     assert.deepEqual(
@@ -636,5 +636,33 @@ test(`the iPhone surfaces and every fragment link follow the ${storeUrl ? "App S
     const fragments = [...page.matchAll(/\shref="(?:\/)?#([^"]+)"/g)].map(([, id]) => id);
     assert.ok(fragments.length > 0, file);
     for (const id of fragments) assert.ok(ids.has(id), `${file} links to the missing #${id}`);
+  }
+});
+
+test("the structured data names each platform that the page offers", () => {
+  const graph = structured[0]["@graph"];
+  const apps = graph.filter((entry) => entry.operatingSystem);
+  assert.deepEqual(
+    apps.map((entry) => entry.operatingSystem),
+    storeUrl
+      ? ["Web", "Android", "iOS", "macOS", "Windows"]
+      : ["Web", "Android", "macOS", "Windows"],
+  );
+  if (storeUrl) {
+    assert.equal(apps.find((entry) => entry.operatingSystem === "iOS").installUrl, storeUrl);
+  }
+  for (const [system, extension] of [
+    ["macOS", ".dmg"],
+    ["Windows", ".exe"],
+  ]) {
+    const url = apps.find((entry) => entry.operatingSystem === system).downloadUrl;
+    assert.match(
+      url,
+      new RegExp(
+        "^https://github\\.com/thomasluizon/orbit-ui-mobile/releases/download/desktop-production/orbit-.+\\" +
+          extension +
+          "$",
+      ),
+    );
   }
 });
