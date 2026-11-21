@@ -82,7 +82,7 @@ jobs:
 
       - name: Build
         id: build
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.changes.outputs.product == 'true' }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run build
         env:
           PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
