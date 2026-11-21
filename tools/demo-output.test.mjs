@@ -266,7 +266,10 @@ test("every habit toggle sits in the hero phone, whose demo binds it", () => {
 test("a guide Orbit blinks once when it arrives and never before", () => {
   const h = harness("en");
   const guides = nodes.filter((node) => "data-orbit-guide" in attributes(node));
-  assert.ok(guides.length >= 5, "the hero and each section guide an Orbit");
+  assert.ok(
+    guides.length >= (process.env.PUBLIC_IOS_APP_STORE_URL ? 4 : 5),
+    "the hero and each section guide an Orbit",
+  );
   assert.equal(h.watched().length, 0, "the demo module leaves the guides alone");
   h.load("./guide-blink");
   const watched = h.watched();

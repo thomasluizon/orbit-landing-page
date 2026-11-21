@@ -7,6 +7,7 @@ import qrcode from "qrcode-generator";
 import { scriptsFrom } from "../src/scripts/html.test-helper.mjs";
 
 const html = readFileSync("dist/index.html", "utf8");
+const storeUrl = process.env.PUBLIC_IOS_APP_STORE_URL;
 function scriptSource({ attributes, body }) {
   return attributes.src ? readFileSync(`dist${attributes.src}`, "utf8") : body;
 }
@@ -100,6 +101,7 @@ test("all built pages expose translated copy and stable waitlist controls", () =
     assert.match(page, /data-i18n="meta\./);
     assert.match(page, /viewport-fit=cover/);
   }
+  if (storeUrl) return;
   assert.match(html, /<label[^>]*for="waitlist-email"[^>]*data-i18n="ios.label"/);
   assert.match(html, /aria-describedby="waitlist-status waitlist-privacy"/);
   for (const id of ["form", "email", "submit", "submit-label", "status"]) {
@@ -156,7 +158,9 @@ test("confirmation uses native hidden state for both response paths", async () =
     });
     assert.equal(elements["confirmed-ok"].hidden, invalid);
     assert.equal(elements["confirmed-invalid"].hidden, !invalid);
-    assert.deepEqual(visibleDestinations(ast, elements), [invalid ? "/#ios" : appDestination]);
+    assert.deepEqual(visibleDestinations(ast, elements), [
+      invalid ? "/#downloads" : appDestination,
+    ]);
   }
 });
 
@@ -235,7 +239,7 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
     expectedPlay,
     `${expectedApp}/privacy`,
     `${expectedApp}/terms`,
-    "#ios",
+    storeUrl ? new URL(storeUrl).href : "#ios",
     "#features",
     "mailto:contact@useorbit.org",
   ]) {
@@ -277,7 +281,7 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
     structured[0]["@graph"].find((entry) => entry.operatingSystem === "Android").installUrl,
     expectedPlay,
   );
-  const retry = confirmed.find((node) => node.name === "a" && attrs(node).href === "/#ios");
+  const retry = confirmed.find((node) => node.name === "a" && attrs(node).href === "/#downloads");
   assert.ok(retry);
   assert.ok(!Object.hasOwn(attrs(retry), "data-app-entry"));
   assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
@@ -433,7 +437,7 @@ test("JSON-LD keeps script-closing copy inside one data element", async () => {
   }
 });
 
-test("the waitlist uses POST and caps the native email field", () => {
+test("the waitlist uses POST and caps the native email field", { skip: !!storeUrl }, () => {
   assert.match(html, /<form\b[^>]*id="waitlist-form"[^>]*method="post"/);
   assert.match(html, /<input\b[^>]*id="waitlist-email"[^>]*maxlength="254"/);
 });
@@ -487,5 +491,65 @@ test("built consent markup reflects the PostHog key and retains the privacy link
       attrs(privacy).href,
       `${process.env.PUBLIC_APP_URL || "https://app.useorbit.org"}/privacy`,
     );
+  }
+});
+
+const slice = (pattern) => html.match(pattern)?.[0] ?? "";
+const storeHref = storeUrl ? new URL(storeUrl).href : "";
+const iphoneSurfaces = [
+  {
+    surface: "the hero iPhone label",
+    text: slice(/<span\b[^>]*data-hero-download-label="iphone"[^>]*>[\s\S]*?<\/span>/),
+    store: ["Download on the App Store"],
+    waitlist: ["iPhone waitlist"],
+  },
+  {
+    surface: "the downloads iPhone entry",
+    text: slice(
+      /<a\b(?=[^>]*downloads-entry)(?=[^>]*data-download-target="iphone")[^>]*>[\s\S]*?<\/a>/,
+    ),
+    store: [
+      `href="${storeHref}"`,
+      'data-analytics-event="ios_install_clicked"',
+      "/badges/app-store-en.svg",
+      "/badges/app-store-pt-br.svg",
+    ],
+    waitlist: ['href="#ios"', "data-ios-trigger", "iPhone waitlist"],
+  },
+  {
+    surface: "the FAQ platforms answer",
+    text: slice(/id="faq-answer-platforms"[\s\S]*?<\/p>/),
+    store: ["On iPhone, iPad, Android, the web, Mac and Windows."],
+    waitlist: ["The iPhone app has a waitlist.", 'href="#ios"'],
+  },
+  {
+    surface: "the trust strip caption",
+    text: slice(/<section\b[^>]*data-section="trust"[^>]*>[\s\S]*?<\/section>/),
+    store: ["iPhone on the App Store"],
+    waitlist: ["iPhone waitlist open"],
+  },
+  {
+    surface: "the waitlist section",
+    text: html,
+    store: [],
+    waitlist: ['id="ios"', 'id="waitlist-form"'],
+  },
+];
+
+test(`the iPhone surfaces and every fragment link follow the ${storeUrl ? "App Store" : "waitlist"} build`, () => {
+  for (const { surface, text, store, waitlist } of iphoneSurfaces) {
+    const [shown, hidden] = storeUrl ? [store, waitlist] : [waitlist, store];
+    assert.ok(text, `${surface} is built`);
+    for (const fragment of shown)
+      assert.ok(text.includes(fragment), `${surface} shows ${fragment}`);
+    for (const fragment of hidden)
+      assert.ok(!text.includes(fragment), `${surface} hides ${fragment}`);
+  }
+  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map(([, id]) => id));
+  for (const file of ["dist/index.html", "dist/waitlist-confirmed/index.html"]) {
+    const page = readFileSync(file, "utf8");
+    const fragments = [...page.matchAll(/\shref="(?:\/)?#([^"]+)"/g)].map(([, id]) => id);
+    assert.ok(fragments.length > 0, file);
+    for (const id of fragments) assert.ok(ids.has(id), `${file} links to the missing #${id}`);
   }
 });
