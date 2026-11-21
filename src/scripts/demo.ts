@@ -199,9 +199,10 @@ function openEditor() {
 editForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!editName?.value.trim() || !editSchedule) return;
-  const nameChanged = editName.value.trim().slice(0, 80) !== habitTitle();
+  const name = editName.value.trim().slice(0, 80);
+  const nameChanged = name !== habitTitle();
   const timeChanged = editSchedule.value !== scheduleChoice();
-  title = editName.value.trim().slice(0, 80);
+  title = name;
   schedule =
     editSchedule.value === "evening"
       ? "demo.start.alternateRepeat"
@@ -212,13 +213,9 @@ editForm?.addEventListener("submit", (event) => {
   editForm.hidden = true;
   setCopy(
     "demo-announcement",
-    nameChanged && timeChanged
-      ? "demo.edited.both"
-      : nameChanged
-        ? "demo.edited.name"
-        : timeChanged
-          ? "demo.edited.time"
-          : "demo.edited.none",
+    nameChanged || timeChanged
+      ? `demo.edit.${nameChanged ? (timeChanged ? "both" : "name") : "time"}`
+      : "demo.rejected",
   );
   document.getElementById("demo-edit")?.focus({ preventScroll: true });
 });
