@@ -116,8 +116,8 @@ function harness(language = "en", threadHeight = 415) {
   }
   const document = element(ast);
   document.getElementById = (id) => elements.get(id) ?? null;
-  const chips = elements.get("astra-demo").querySelectorAll("[data-demo]");
-  const exchange = elements.get("astra-demo").querySelector(".demo-exchange");
+  const chips = elements.get("orbit-demo").querySelectorAll("[data-demo]");
+  const exchange = elements.get("orbit-demo").querySelector(".demo-exchange");
   const thread = elements.get("demo-preview").closest(".demo-thread");
   thread.clientHeight = threadHeight;
   thread.scrollHeight = threadHeight;

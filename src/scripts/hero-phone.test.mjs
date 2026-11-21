@@ -88,7 +88,7 @@ test("every phone screen shares the status, 56px app header and 16px content ins
     if (children[0]?.name === "OrbitDemo") {
       const ast = (await parse(source("OrbitDemo"))).ast;
       children = descendants(ast)
-        .find((node) => attributes(node).id === "astra-demo")
+        .find((node) => attributes(node).id === "orbit-demo")
         .children.filter((node) => node.name);
     }
     assert.equal(children[0]?.name, "PhoneHeader", attributes(slide)["data-phone-slide"]);

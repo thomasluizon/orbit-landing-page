@@ -11,7 +11,7 @@ type AcceptedPlan = {
   schedule: TranslationKey;
   showSecond: boolean;
 };
-const demo = document.getElementById("astra-demo");
+const demo = document.getElementById("orbit-demo");
 const preview = document.getElementById("demo-preview");
 const today = document.getElementById("demo-today");
 const result = document.getElementById("demo-result");
