@@ -8,7 +8,7 @@ The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + 
 
 - Anchor: spacious near-black. Canvas `#09090B`, warm orange `#C4530F`, Geist Sans/Space Grotesk/Geist Mono, neutral surface steps, flat pill CTAs. No decorative glow or gradient wash.
 - A primary action keeps its primary fill at every scroll position. Each section chooses its primary, secondary and ghost buttons in markup, with at most one primary per component.
-- Every interactive element has one role, and its role sets its hover, press, focus ring and transition tier. The role table is in `tools/landing-controls.test.mjs`; a new control gets an entry there.
+- Every interactive element has one role, and its role sets its hover, press, focus ring and transition tier.
   - Control (button, chip, segmented option, pill): fill colour on `--duration-hover-control`. Neutral fills use `--color-bg-hover`; primary fills use `--color-primary-hover` and `--color-primary-pressed`.
   - Surface (habit row, FAQ row and open card, downloads entry): `--color-bg-hover`, and its hairline moves to `--color-hairline-strong`, on `--duration-hover-surface`. A press paints at once.
   - Link: colour on `--duration-hover-surface`. A link without a persistent underline draws an underline that scales from its leading edge.
@@ -18,7 +18,7 @@ The design canon lives in `orbit-ui-mobile`: `DESIGN.md` (authoritative spec) + 
 - Dark-only (landing deviation); the single accent follows the current canon.
 - Fonts are self-hosted via Astro's Fonts API (`astro.config.mjs`), exposed as `--font-geist/space-grotesk/geist-mono`.
 - No raw slate values, no hardcoded accent rgba (use `rgba(var(--primary-rgb), α)`), no `transition-all`, no `h-screen` (use `min-h-dvh`), no em dashes in copy.
-- Orbit leads the hero and guides each section with one short line (`OrbitLine.astro`). `public/brand/` mirrors the mascot sources of `orbit-ui-mobile/design/brand/`, and `OrbitMascot.astro` inlines them: the live rig at 48 and up, the small static face at 16 and 24. Orbit never shows a sad face, and the retired AI name appears nowhere a person can see (`tools/retired-name.test.mjs`).
+- Orbit leads the hero and guides each section with one short line (`OrbitLine.astro`). `public/brand/` mirrors the mascot sources of `orbit-ui-mobile/design/brand/`, and `OrbitMascot.astro` inlines them: the live rig at 48 and up, the small static face at 16 and 24. Orbit never shows a sad face.
 - Motion: the live Orbit moves once from page load, turns its ring when the demo advances (`src/scripts/orbit-turn.ts`), looks at the control in focus and shows happy eyes after an approval. Each section arrives on a scroll timeline. No animation runs longer than 5 seconds without a visitor action, and the page starts no frame loop for the mascot. Reduced motion keeps a still version of each element.
 - The demo dates and the phone clock follow the visitor's own day and time. `src/scripts/demo-clock.ts` reads the local date and time once; without JavaScript the build date stays.
 

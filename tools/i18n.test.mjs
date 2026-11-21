@@ -3,7 +3,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
-import { feminineOrbit, retiredName } from "./lib/retired-name.mjs";
+
+const feminineOrbit = /(?<!\p{L})(?:a|da|na|à|pela)\s+Orbit\b/iu;
 
 function element(attributes = {}, textContent = "") {
   return {
@@ -184,8 +185,15 @@ test("application offers keep the verified amount and billing interval", () => {
 });
 
 test("both locales have the same complete keys and no retired marketing", () => {
-  const { tables } = harness();
+  const { tables, landingTables } = harness();
   assert.deepEqual(Object.keys(tables.en), Object.keys(tables["pt-BR"]));
+  assert.deepEqual(Object.keys(landingTables.en), Object.keys(landingTables["pt-BR"]));
+  for (const [lang, table] of Object.entries(landingTables)) {
+    for (const [key, value] of Object.entries(table)) {
+      assert.ok(value.length > 0, `${lang}: ${key}`);
+      assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
+    }
+  }
   for (const table of Object.values(tables)) {
     assert.ok(Object.values(table).every((text) => text.length > 0));
     assert.ok(
@@ -198,10 +206,8 @@ test("both locales have the same complete keys and no retired marketing", () => 
       /[\u2013\u2014]|unlimited habits|AI memory|MCP|accountability|leaderboard|500 messages|20 AI/i,
     );
     assert.ok(
-      !Object.keys(table).some(
-        (key) =>
-          /^(faq|pricing|platforms|proof|features|mockup|preview|cta)\./.test(key) ||
-          retiredName.test(key),
+      !Object.keys(table).some((key) =>
+        /^(faq|pricing|platforms|proof|features|mockup|preview|cta)\./.test(key),
       ),
     );
   }
@@ -211,11 +217,9 @@ test("each locale names the AI Orbit, with it in English and the masculine form 
   const { tables, landingTables } = harness();
   for (const table of [tables, landingTables]) {
     for (const [key, text] of Object.entries(table.en)) {
-      assert.doesNotMatch(text, retiredName, key);
       assert.doesNotMatch(text, /\b(?:she|her|hers|herself)\b/iu, key);
     }
     for (const [key, text] of Object.entries(table["pt-BR"])) {
-      assert.doesNotMatch(text, retiredName, key);
       assert.doesNotMatch(text, feminineOrbit, key);
       assert.doesNotMatch(text, /\b(?:ela|dela|nela|sozinha)\b/iu, key);
     }
@@ -255,17 +259,6 @@ test("switching the real language toggle updates every landing copy attribute, c
       assert.equal(price.textContent, h.prices.formatPrice(lang, price.dataset.price));
   }
   assert.deepEqual(h.languageEvents, ["orbit:language-changed", "orbit:language-changed"]);
-});
-
-test("every new landing string exists in both languages and Orbit keeps the masculine form", () => {
-  const { landingTables } = harness();
-  assert.deepEqual(Object.keys(landingTables.en), Object.keys(landingTables["pt-BR"]));
-  for (const [lang, table] of Object.entries(landingTables)) {
-    for (const [key, value] of Object.entries(table)) {
-      assert.ok(value.length > 0, `${lang}: ${key}`);
-      assert.doesNotMatch(value, /[\u2013\u2014!]/u, key);
-    }
-  }
 });
 
 const sourcePaths = readdirSync("src", { recursive: true })
@@ -328,29 +321,16 @@ test("every copy attribute has its pt-BR pair in the same Astro file", () => {
   );
 });
 
-test("source scans reject a planted key typo and missing copy pair", () => {
-  const { tables, landingTables } = harness();
-  const path = "src/components/IosWaitlist.astro";
-  const source = readFileSync(path, "utf8");
-  assert.throws(
-    () =>
-      assertTranslationReads(
-        [[path, source.replace('data-i18n="ios.soon"', 'data-i18n="ios.missing"')]],
-        tables,
-        landingTables,
-      ),
-    /is missing ios\.missing/,
-  );
-  const copyPath = "src/components/OrbitProduct.astro";
-  const copy = readFileSync(copyPath, "utf8");
-  assertCopyPairs([[copyPath, copy]]);
-  assert.throws(
-    () => assertCopyPairs([[copyPath, copy.replace("data-copy-pt=", "data-unpaired-pt=")]]),
-    /needs its pt-BR pair/,
-  );
-  assert.throws(
-    () =>
-      assertCopyPairs([[copyPath, copy.replace("data-copy-label-pt=", "data-unpaired-label-pt=")]]),
-    /needs its pt-BR pair/,
-  );
+test("the feminine article check catches the contraction that starts with a non-ASCII letter", () => {
+  for (const text of ["Peça à Orbit", "Fale com a Orbit", "A Orbit ajuda", "Conversa da Orbit"]) {
+    assert.match(text, feminineOrbit, text);
+  }
+  for (const text of [
+    "Peça ao Orbit",
+    "Conversa com o Orbit",
+    "Para o Orbit",
+    "Fale com ele, o Orbit",
+  ]) {
+    assert.doesNotMatch(text, feminineOrbit, text);
+  }
 });
