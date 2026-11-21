@@ -630,3 +630,17 @@ for (const language of ["en", "pt-BR"]) {
     }
   });
 }
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: an untouched time select keeps the schedule of the example`, () => {
+    const h = harness(language);
+    h.chips[1].fire("click");
+    assert.equal(h.get("demo-repeat").textContent, h.strings["demo.restart.repeat"]);
+    h.get("demo-edit").fire("click");
+    h.get("demo-edit-form").fire("submit");
+    assert.equal(h.get("demo-repeat").textContent, h.strings["demo.restart.repeat"]);
+    assert.equal(h.get("demo-announcement").textContent, h.strings["demo.rejected"]);
+    h.get("demo-approve").fire("click");
+    assert.equal(h.get("demo-today-repeat").textContent, h.strings["demo.restart.repeat"]);
+  });
+}

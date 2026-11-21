@@ -203,12 +203,14 @@ editForm?.addEventListener("submit", (event) => {
   const nameChanged = name !== habitTitle();
   const timeChanged = editSchedule.value !== scheduleChoice();
   title = name;
-  schedule =
-    editSchedule.value === "evening"
-      ? "demo.start.alternateRepeat"
-      : editSchedule.value === "afternoon"
-        ? "demo.afternoon"
-        : "demo.start.repeat";
+  if (timeChanged) {
+    schedule =
+      editSchedule.value === "evening"
+        ? "demo.start.alternateRepeat"
+        : editSchedule.value === "afternoon"
+          ? "demo.afternoon"
+          : "demo.start.repeat";
+  }
   renderPlan();
   editForm.hidden = true;
   setCopy(
