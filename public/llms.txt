@@ -14,7 +14,7 @@ Orbit also provides a Model Context Protocol (MCP) server for connecting compati
 
 ## Platforms
 
-Orbit runs on Android and the web. Install it from Google Play or open the web app to sign up. An iOS waitlist is available on the landing page.
+Orbit runs on Android, the web, Mac and Windows. Install it from Google Play, open the web app to sign up, or download the Mac or Windows app from the landing page. An iOS waitlist is available on the landing page.
 
 ## Pricing
 
