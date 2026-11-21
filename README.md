@@ -71,7 +71,7 @@ The Render static site definition in [`orbit-api/infra`](https://github.com/thom
 
 ## App entry and Android installation
 
-A link opts in to app entry with the `data-app-entry` attribute. Every opted-in link keeps an HTTPS app href in the delivered HTML, so desktop, iPhone and a visit without JavaScript use the web link. On Chrome for Android, a trusted and unmodified click opens the app through a package-bound Android intent. The intent carries the web link as its fallback.
+A link opts in to app entry with the `data-app-entry` attribute. Every opted-in link keeps an HTTPS app href in the delivered HTML, so desktop, iPhone and a visit without JavaScript use the web link. On Chrome for Android, a trusted and unmodified click opens the app through a package-bound Android intent. The intent carries the Play listing of `PUBLIC_ANDROID_INSTALL_URL` as its fallback.
 
 `PUBLIC_APP_URL` and `PUBLIC_ANDROID_INSTALL_URL` must name the same target, the production pair or the staging pair. A mismatched pair keeps the HTTPS navigation. `src/scripts/app-entry.test.mjs` tests this behaviour.
 
