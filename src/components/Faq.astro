@@ -3,6 +3,7 @@ import { ChevronDown } from "@lucide/astro";
 import Copy from "./Copy.astro";
 import OrbitLine from "./OrbitLine.astro";
 import { translations } from "../i18n/translations";
+import { appStoreUrl } from "../config/links";
 const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
 ---
 
@@ -24,8 +25,12 @@ const questions = ["what", "approval", "miss", "plans", "platforms"] as const;
                 </>
               </summary>
               <p id={`faq-answer-${key}`}>
-                <Copy name={`faq.${key}.a`} />
-                {key === "platforms" && (
+                <Copy
+                  name={
+                    key === "platforms" && appStoreUrl ? "faq.platforms.aStore" : `faq.${key}.a`
+                  }
+                />
+                {key === "platforms" && !appStoreUrl && (
                   <a
                     href="#ios"
                     data-ios-trigger

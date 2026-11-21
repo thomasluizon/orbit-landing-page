@@ -10,6 +10,7 @@ import DownloadsPanel from "./DownloadsPanel.astro";
 import PlatformMark from "./PlatformMark.astro";
 import Copy from "./Copy.astro";
 import { translations } from "../i18n/translations";
+import { appStoreUrl } from "../config/links";
 import { buildNow } from "../config/product-examples";
 import { clockText } from "../scripts/clock-format";
 import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight, ChevronDown } from "@lucide/astro";
@@ -51,7 +52,17 @@ const todayDate = clockText("today", buildNow);
           ><PlatformMark platform="windows" /><Copy name="hero.download.windows" /></span
         >
         <span data-hero-download-label="android" hidden><Copy name="footer.android" /></span>
-        <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">{en["hero.ios"]}</span>
+        {
+          appStoreUrl ? (
+            <span data-hero-download-label="iphone" hidden>
+              <Copy name="download.appStore" />
+            </span>
+          ) : (
+            <span data-hero-download-label="iphone" hidden data-i18n="hero.ios">
+              {en["hero.ios"]}
+            </span>
+          )
+        }
       </PillButton>
     </div>
     <div id="downloads" class="downloads-disclosure">
@@ -68,7 +79,7 @@ const todayDate = clockText("today", buildNow);
           ><ChevronDown size={16} /></span
         >
       </button>
-      <DownloadsPanel googlePlayUrl={googlePlayUrl} />
+      <DownloadsPanel googlePlayUrl={googlePlayUrl} appStoreUrl={appStoreUrl} />
     </div>
   </div>
   <div class="hero-pin-range">

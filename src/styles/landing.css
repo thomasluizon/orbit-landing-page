@@ -2465,6 +2465,20 @@ button.metric-bar-track:active .metric-bar {
 .downloads-entry .platform-mark {
   font-size: var(--fs-base);
 }
+.downloads-entry-badge {
+  min-block-size: 60px;
+}
+.downloads-badge {
+  inline-size: auto;
+  block-size: 40px;
+}
+.downloads-badge-pt,
+html[lang="pt-BR"] .downloads-badge-en {
+  display: none;
+}
+html[lang="pt-BR"] .downloads-badge-pt {
+  display: block;
+}
 .downloads-qr {
   display: grid;
   justify-items: center;
