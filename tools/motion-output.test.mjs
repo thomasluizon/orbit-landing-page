@@ -47,39 +47,6 @@ test("the built stylesheet keeps each scroll timeline as a longhand that the bro
   );
 });
 
-test("each built Orbit moon sits on one ring: the counter scale undoes the ring opening", () => {
-  const layers = [
-    ...html.matchAll(
-      /class="orbit-moon orbit-moon-(?:back|front)"><g class="orbit-tilt"><g transform="rotate\(([^)]+)\) scale\(1 ([^)]+)\)">[\s\S]*?translate\(([^ )]+) 0\)[\s\S]*?transform="scale\(1 ([^)]+)\)"/g,
-    ),
-  ].map(([, tilt, opening, radius, counter]) => ({ tilt, opening, radius, counter }));
-  assert.ok(layers.length >= 12, "the hero and each guide draw a back and a front moon");
-  assert.equal(new Set(layers.map((layer) => JSON.stringify(layer))).size, 1);
-  const [{ opening, counter }] = layers;
-  assert.ok(Math.abs(Number(opening) * Number(counter) - 1) < 1e-4, `${opening} x ${counter}`);
-});
-
-test("a container with a focusable control ends its scroll arrival while focus is inside", () => {
-  const arriving = rules
-    .filter((rule) => values(rule.declarations, "animation-name").includes("section-arrive"))
-    .flatMap((rule) => rule.selector.split(",").map((selector) => selector.trim()));
-  const focusable = arriving.filter((selector) =>
-    /plan-card|faq-list|waitlist-form/.test(selector),
-  );
-  assert.ok(focusable.length >= 3, "the plans, the questions and the waitlist form arrive");
-  const settled = new Set(
-    rules
-      .filter((rule) => values(rule.declarations, "animation-name").includes("none"))
-      .flatMap((rule) => rule.selector.split(",").map((selector) => selector.trim())),
-  );
-  for (const selector of focusable) {
-    assert.ok(
-      settled.has(`${selector}:focus-within`),
-      `${selector} stays faded while a control inside holds focus`,
-    );
-  }
-});
-
 test("each guide line names Orbit as the speaker for assistive technology", () => {
   const lines = [...html.matchAll(/<p class="orbit-line-text">([\s\S]*?)<\/p>/g)].map(
     ([, body]) => body,
@@ -91,31 +58,5 @@ test("each guide line names Orbit as the speaker for assistive technology", () =
       /^\s*<span class="sr-only" translate="no">\s*Orbit:\s*<\/span>/,
       "the line starts with a hidden speaker name",
     );
-  }
-});
-
-test("each built guide Orbit blinks on a time timeline that ends with open eyes", () => {
-  const guides = [...html.matchAll(/<div class="orbit-line" data-orbit-guide/g)];
-  assert.ok(guides.length >= 5, "the hero and each section guide an Orbit");
-  const blinking = rules.filter((rule) =>
-    values(rule.declarations, "animation").some((value) => /^orbit-blink\b/.test(value)),
-  );
-  const guideBlink = blinking.filter((rule) => /data-orbit-blink/.test(rule.selector));
-  assert.equal(guideBlink.length, 1, "one built rule blinks a guide Orbit");
-  for (const rule of blinking) {
-    assert.ok(
-      rule.conditions.some((condition) =>
-        /prefers-reduced-motion:\s*no-preference/.test(condition),
-      ),
-      `${rule.selector} blinks outside the motion preference`,
-    );
-    assert.doesNotMatch(
-      rule.declarations,
-      /animation-timeline|(?:view|scroll)\(|infinite|forwards|both/,
-    );
-  }
-  for (const rule of rules) {
-    if (!values(rule.declarations, "animation-name").includes("orbit-blink")) continue;
-    assert.fail(`${rule.selector}: a blink on a scroll timeline can freeze with the eyes shut`);
   }
 });

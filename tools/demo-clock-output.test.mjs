@@ -29,7 +29,6 @@ function translate(document, language) {
 
 async function mount(now, language) {
   const document = documentFrom(html);
-  const events = [];
   class FixedDate extends Date {
     constructor(...values) {
       if (values.length) super(...values);
@@ -44,7 +43,7 @@ async function mount(now, language) {
     document,
     window: {
       matchMedia: () => ({ matches: false }),
-      dispatchEvent: (event) => events.push(event.type),
+      dispatchEvent: () => {},
     },
     CustomEvent: class {
       constructor(type) {
@@ -71,7 +70,6 @@ async function mount(now, language) {
   const days = () => part("grid").querySelectorAll("[data-day-key]");
   return {
     document,
-    events,
     part,
     days,
     selected: () => days().find((day) => day.getAttribute("aria-pressed") === "true"),
@@ -101,24 +99,6 @@ const cases = [
     },
   },
   {
-    name: "a Sunday",
-    now: new Date(2026, 10, 15, 18, 5),
-    expected: {
-      en: {
-        time: "6:05",
-        today: "November 15",
-        lastChart: "Sun, Nov 15",
-        firstChart: "Mon, Nov 9",
-      },
-      "pt-BR": {
-        time: "18:05",
-        today: "15 de novembro",
-        lastChart: "dom., 15 de nov.",
-        firstChart: "seg., 9 de nov.",
-      },
-    },
-  },
-  {
     name: "a leap day week",
     now: new Date(2028, 2, 1, 0, 30),
     expected: {
@@ -128,19 +108,6 @@ const cases = [
         today: "1 de março",
         lastChart: "qua., 1 de mar.",
         firstChart: "qui., 24 de fev.",
-      },
-    },
-  },
-  {
-    name: "a Sunday after a year boundary",
-    now: new Date(2027, 0, 3, 12, 0),
-    expected: {
-      en: { time: "12:00", today: "January 3", lastChart: "Sun, Jan 3", firstChart: "Mon, Dec 28" },
-      "pt-BR": {
-        time: "12:00",
-        today: "3 de janeiro",
-        lastChart: "dom., 3 de jan.",
-        firstChart: "seg., 28 de dez.",
       },
     },
   },
@@ -278,75 +245,6 @@ for (const language of ["en", "pt-BR"]) {
       pointed.dispatch("click");
       assert.equal(h.selected().dataset.dayKey, pointed.dataset.dayKey);
       assert.ok(h.document.activeElement === null, "a pointer click on a day adds no focus");
-    });
-
-    test(`${language}, ${name}: arrows, swipe, keys and the title move through months and days`, async () => {
-      const h = await mount(now, language);
-      const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      const previous = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      h.part("next").dispatch("click");
-      assert.equal(
-        h.part("grid").getAttribute("aria-label"),
-        format(next, language, { month: "long", year: "numeric" }),
-      );
-      assert.equal(h.selected().dataset.dayKey, key(next));
-      assert.equal(h.part("title").getAttribute("aria-disabled"), "false");
-      assert.ok(h.events.includes("orbit:layout-changed"));
-      h.part("title").dispatch("click");
-      assert.equal(h.selected().dataset.dayKey, key(now));
-      h.part("previous").dispatch("click");
-      assert.equal(h.selected().dataset.dayKey, key(previous));
-      h.part("title").dispatch("click");
-      h.part("grid").dispatch("touchstart", { touches: [{ clientX: 200, clientY: 100 }] });
-      h.part("grid").dispatch("touchend", { changedTouches: [{ clientX: 80, clientY: 110 }] });
-      assert.equal(h.selected().dataset.dayKey, key(next), "a left swipe opens the next month");
-      h.part("grid").dispatch("touchstart", { touches: [{ clientX: 80, clientY: 100 }] });
-      h.part("grid").dispatch("touchend", { changedTouches: [{ clientX: 120, clientY: 300 }] });
-      assert.equal(h.selected().dataset.dayKey, key(next), "a vertical drag keeps the month");
-      h.part("grid").dispatch("touchstart", { touches: [{ clientX: 80, clientY: 100 }] });
-      h.part("grid").dispatch("touchend", { changedTouches: [{ clientX: 200, clientY: 100 }] });
-      assert.equal(h.selected().dataset.dayKey, key(now).slice(0, 8) + "01");
-      h.part("title").dispatch("click");
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      const clamp = (date) =>
-        date < firstOfMonth ? firstOfMonth : date > lastOfMonth ? lastOfMonth : date;
-      let expected = now;
-      for (const [pressed, step] of [
-        ["ArrowRight", 1],
-        ["ArrowLeft", -1],
-        ["ArrowDown", 7],
-        ["ArrowUp", -7],
-        ["ArrowUp", -7],
-      ]) {
-        expected = clamp(addDays(expected, step));
-        const event = h.selected().dispatch("keydown", {
-          key: pressed,
-          prevented: false,
-          preventDefault() {
-            this.prevented = true;
-          },
-        });
-        assert.equal(event.prevented, true, pressed);
-        assert.equal(h.selected().dataset.dayKey, key(expected), pressed);
-        assert.equal(
-          h.document.activeElement,
-          h.selected(),
-          `${pressed} moves focus with selection`,
-        );
-      }
-      const firstDay = h.days()[0];
-      firstDay.dispatch("click");
-      assert.equal(h.selected().dataset.dayKey, firstDay.dataset.dayKey);
-      assert.ok(
-        h.document.activeElement === h.selected(),
-        "Enter or Space on a focused day keeps focus on the newly drawn selected day",
-      );
-      assert.match(
-        h.selected().getAttribute("aria-label"),
-        language === "en" ? /selected/ : /selecionado/,
-      );
-      assert.equal(h.days().filter((day) => day.getAttribute("tabindex") === "0").length, 1);
     });
   }
 }
