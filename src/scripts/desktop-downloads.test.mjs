@@ -292,3 +292,81 @@ test("the downloads list leads with the visitor's system at startup, before an a
   });
   assert.deepEqual(root.order().slice(0, 2), ["windows-x86", "windows-arm"]);
 });
+
+const storePage = "https://apps.apple.com/us/app/orbit/id1234567890";
+
+test("only an HTTPS App Store product page counts as the App Store link", () => {
+  const { appStoreEntryUrl, appStoreUrl } = run("src/config/links.ts", {
+    environment: {},
+    URL,
+  });
+  assert.equal(appStoreUrl, undefined);
+  assert.equal(appStoreEntryUrl(storePage), storePage);
+  assert.equal(
+    appStoreEntryUrl("https://apps.apple.com/app/id1234567890"),
+    "https://apps.apple.com/app/id1234567890",
+  );
+  for (const bad of [
+    undefined,
+    "",
+    "not a url",
+    "http://apps.apple.com/us/app/orbit/id1234567890",
+    "https://apps.apple.com.example.com/us/app/orbit/id1234567890",
+    "https://user@apps.apple.com/us/app/orbit/id1234567890",
+    "https://apps.apple.com:8443/us/app/orbit/id1234567890",
+    "https://apps.apple.com/us/app/orbit/id1234567890#top",
+    "https://apps.apple.com/us/app/orbit/idabc",
+    "https://apps.apple.com/us/developer/orbit/id1234567890",
+    "https://itunes.apple.com/us/app/orbit/id1234567890",
+  ])
+    assert.equal(appStoreEntryUrl(bad), undefined, String(bad));
+  const configured = run("src/config/links.ts", {
+    environment: { PUBLIC_IOS_APP_STORE_URL: storePage },
+    URL,
+  });
+  assert.equal(configured.appStoreUrl, storePage);
+});
+
+test("an iPhone visitor leads with the App Store link once the listing is configured", async () => {
+  const root = landingPage();
+  const store = root.querySelector('[data-download-target="iphone"]');
+  Object.assign(store.dataset, {
+    analyticsEvent: "ios_install_clicked",
+    analyticsSurface: "footer",
+  });
+  delete store.dataset.iosTrigger;
+  store.getAttribute = (name) => (name === "href" ? storePage : null);
+  vm.runInNewContext(transpile("src/scripts/desktop-downloads.ts"), {
+    exports: {},
+    navigator: { userAgent: userAgents.iphone, maxTouchPoints: 5 },
+    document: root,
+  });
+  assert.deepEqual(root.hero(), {
+    href: storePage,
+    label: ["iphone"],
+    event: "ios_install_clicked",
+    surface: "hero_iphone",
+    iosTrigger: false,
+  });
+  assert.equal(root.order()[0], "iphone");
+});
+
+test("the App Store badge is Apple's own artwork, shown at 40px or more with the clear space around it", () => {
+  const panel = readFileSync("src/components/DownloadsPanel.astro", "utf8");
+  const css = readFileSync("src/styles/landing.css", "utf8");
+  for (const [file, locale] of [
+    ["app-store-en.svg", "US-UK"],
+    ["app-store-pt-br.svg", "PTBR"],
+  ]) {
+    const svg = readFileSync(`public/badges/${file}`, "utf8");
+    assert.match(svg, new RegExp(`<title>Download_on_the_App_Store_Badge_${locale}_RGB_blk_`));
+    assert.match(svg, /height="40"/);
+    assert.doesNotMatch(svg, /<script|href=|<style/i);
+    assert.ok(panel.includes(`/badges/${file}`), file);
+  }
+  const rule = (selector) =>
+    css.match(new RegExp(`${selector.replaceAll(".", "\\.")}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+  assert.match(rule(".downloads-badge"), /block-size:\s*40px/);
+  assert.match(rule(".downloads-entry-badge"), /min-block-size:\s*60px/);
+  assert.doesNotMatch(css, /\.downloads-badge[^{]*\{[^}]*(?:filter|transform|rotate|opacity)/);
+});

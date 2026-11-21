@@ -9,7 +9,7 @@ import FinalCta from "../components/FinalCta.astro";
 import Hero from "../components/Hero.astro";
 import IosWaitlist from "../components/IosWaitlist.astro";
 import { translations } from "../i18n/translations";
-import { appUrl, googlePlayUrl } from "../config/links";
+import { appStoreUrl, appUrl, googlePlayUrl } from "../config/links";
 ---
 
 <Layout withOrbitMascot>
@@ -20,7 +20,7 @@ import { appUrl, googlePlayUrl } from "../config/links";
       <Hero appUrl={appUrl} googlePlayUrl={googlePlayUrl} />
       <FeatureRows />
       <Pricing appUrl={appUrl} />
-      <IosWaitlist />
+      {!appStoreUrl && <IosWaitlist />}
       <Faq />
       <FinalCta appUrl={appUrl} />
     </main>
