@@ -365,7 +365,8 @@ for (const { build, url } of [
         const storeCopyNode = new RegExp(`data-copy-en="${en}"[^>]*data-copy-pt="${pt}"`);
         assert.equal(waitlistKey.test(area), !url, `${page} ${waitlist}`);
         assert.equal(storeCopyNode.test(area), !!url, `${page} ${en}`);
-        if (url) assert.doesNotMatch(area.replace(/<[^>]*>/g, ""), /waitlist|join the list/i);
+        const visibleText = [...area.matchAll(/>([^<]*)</g)].map((match) => match[1]).join(" ");
+        if (url) assert.doesNotMatch(visibleText, /waitlist|join the list/i);
       }
     },
   );
