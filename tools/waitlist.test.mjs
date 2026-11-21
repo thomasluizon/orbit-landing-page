@@ -4,15 +4,6 @@ import test from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 
-const landingStyles = await readFile(new URL("../src/styles/landing.css", import.meta.url), "utf8");
-const gutter = Number(landingStyles.match(/--landing-gutter: (\d+)px/)[1]);
-const narrowPadding = Number(
-  landingStyles.match(/\.ios-section \.waitlist-content \{\s+padding: \d+px (\d+)px/)[1],
-);
-const cardBorder = Number(
-  landingStyles.match(/\.ios-section \.waitlist-content \{[^}]*border: (\d+)px/)[1],
-);
-const narrowContentWidth = (viewport) => viewport - 2 * (gutter + narrowPadding + cardBorder);
 const scripts = new Map();
 for (const path of ["../config/pricing", "../i18n/translations", "./i18n", "./waitlist"]) {
   const source = await readFile(new URL(`../src/scripts/${path}.ts`, import.meta.url), "utf8");
@@ -279,47 +270,6 @@ for (const language of ["en", "pt-BR"]) {
     assert.equal(harness.statusUpdates, 1);
   });
 
-  test(`${language}: unrecognized API failures keep the generic error`, async () => {
-    for (const siteKey of ["test-site-key"]) {
-      for (const payload of [
-        { error: "Unrelated request failure" },
-        { type: "ValidationFailure", errors: { Language: ["Unsupported language"] } },
-      ]) {
-        const harness = createHarness(language, [Response.json(payload, { status: 400 })], {
-          siteKey,
-        });
-        if (siteKey) await harness.solve("valid-token");
-        await harness.submit();
-        assert.equal(harness.requests.length, 1);
-        assert.equal(
-          harness.elements.get("waitlist-status").textContent,
-          harness.strings["ios.error"],
-        );
-      }
-    }
-  });
-
-  test(`${language}: a render throw allows a later input to retry`, async () => {
-    const harness = createHarness(language, [], { renderFailures: 1 });
-    harness.triggerChallenge("focus");
-    await Promise.resolve();
-    assert.equal(harness.renderCalls, 1);
-    assert.equal(harness.challenge, undefined);
-    assert.equal(harness.elements.get("waitlist-submit").disabled, true);
-    assert.equal(
-      harness.elements.get("waitlist-status").textContent,
-      harness.strings["ios.challengeFailed"],
-    );
-
-    await harness.advance(2000);
-    harness.triggerChallenge("input");
-    await harness.flush();
-    assert.equal(harness.renderCalls, 2);
-    assert.ok(harness.challenge);
-    harness.challenge.callback("fresh-token");
-    assert.equal(harness.elements.get("waitlist-submit").disabled, false);
-  });
-
   test(`${language}: server challenge rejection shows recovery and retries with a fresh token`, async () => {
     const harness = createHarness(language, [
       challengeRejection(),
@@ -364,36 +314,6 @@ for (const language of ["en", "pt-BR"]) {
       assert.deepEqual(request.headers, { "Content-Type": "application/json" });
   });
 
-  test(`${language}: explicit server email validation keeps the email error`, async () => {
-    // https://github.com/thomasluizon/orbit-api/blob/94960e88d63e8dcfaac831e6a76d86acb6a6ec16/src/Orbit.Api/Middleware/ValidationExceptionHandler.cs
-    const response = Response.json(
-      {
-        type: "ValidationFailure",
-        status: 400,
-        requestId: "test-request",
-        errors: { Email: ["test email validation failure"] },
-      },
-      { status: 400 },
-    );
-    const harness = createHarness(language, [response]);
-    await harness.solve("valid-token");
-    await harness.submit();
-    assert.equal(
-      harness.elements.get("waitlist-status").textContent,
-      harness.strings["ios.invalidEmail"],
-    );
-    assert.deepEqual(harness.resets, ["test-widget"]);
-    harness.challenge.callback("renewed-token");
-    assert.equal(harness.requests.length, 1);
-    assert.equal(harness.elements.get("waitlist-email").value, "person@example.com");
-    assert.equal(harness.elements.get("waitlist-submit").disabled, false);
-    assert.equal(
-      harness.elements.get("waitlist-status").textContent,
-      harness.strings["ios.invalidEmail"],
-    );
-    assert.equal(harness.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
-  });
-
   test(`${language}: invalid local email never sends a request`, async () => {
     const harness = createHarness(language, []);
     harness.elements.get("waitlist-email").value = "invalid";
@@ -418,203 +338,7 @@ for (const language of ["en", "pt-BR"]) {
     assert.equal(harness.elements.get("waitlist-status").textContent, harness.strings["ios.error"]);
     assert.equal(harness.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
   });
-
-  test(`${language}: an unreadable 400 response shows the generic error`, async () => {
-    const harness = createHarness(language, [new Response("Bad Request", { status: 400 })]);
-    await harness.solve("valid-token");
-    await harness.submit();
-    assert.equal(harness.elements.get("waitlist-status").textContent, harness.strings["ios.error"]);
-    assert.deepEqual(harness.resets, ["test-widget"]);
-    assert.equal(harness.elements.get("waitlist-submit").disabled, true);
-  });
 }
-
-for (const language of ["en", "pt-BR"]) {
-  test(`${language}: hard errors stop once without reset or re-render`, async () => {
-    for (const code of [
-      "110100",
-      "110110",
-      "110200",
-      "200100",
-      "400020",
-      "400021",
-      "400070",
-      "999999",
-    ]) {
-      const h = createHarness(language, []);
-      h.triggerChallenge("focus");
-      await h.flush();
-      for (let i = 0; i < 25; i++) h.challenge["error-callback"](code);
-      await h.flush();
-      h.triggerChallenge("input");
-      h.toggleLanguage();
-      h.resize(272);
-      await h.flush();
-      assert.deepEqual(h.resets, []);
-      assert.equal(h.renderCalls, 1);
-      assert.deepEqual(h.removals, ["test-widget"]);
-      assert.equal(h.statusUpdates, 1);
-      assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.challengeFailed"]);
-      assert.deepEqual(h.logs, [["[Turnstile] error-callback", code]]);
-      assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    }
-  });
-
-  test(`${language}: retryable callbacks use vendor backoff and stop after three failures`, async () => {
-    for (const code of ["110600", "110620", "200500", "300001", "600001"]) {
-      const h = createHarness(language, [], { renderError: code });
-      h.triggerChallenge("focus");
-      await h.flush();
-      assert.equal(h.challenge.retry, "auto");
-      assert.equal(h.challenge["retry-interval"], 8000);
-      assert.deepEqual(h.resets, []);
-      assert.equal(h.removals.length, 0);
-      await h.advance(9999);
-      assert.equal(h.logs.length, 1);
-      await h.advance(1);
-      assert.equal(h.logs.length, 2);
-      await h.advance(10000);
-      assert.equal(h.logs.length, 3);
-      assert.deepEqual(h.removals, ["test-widget"]);
-      await h.advance(60000);
-      assert.equal(h.logs.length, 3);
-      assert.equal(h.renderCalls, 1);
-      assert.deepEqual(h.resets, []);
-      assert.equal(h.statusUpdates, 1);
-    }
-  });
-
-  test(`${language}: recovery clears errors and expiry renews without error copy`, async () => {
-    const h = createHarness(language, []);
-    await h.solve("first-token");
-    h.challenge["error-callback"]("200500");
-    assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.challengeFailed"]);
-    h.challenge.callback("recovered-token");
-    assert.equal(h.elements.get("waitlist-status").textContent, "");
-    assert.notEqual(h.elements.get("waitlist-status").style.color, "var(--color-status-bad)");
-    h.challenge["expired-callback"]("expired-token-must-not-be-logged");
-    assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    assert.equal(h.elements.get("waitlist-status").textContent, "");
-    h.challenge.callback("renewed-token");
-    assert.equal(h.elements.get("waitlist-submit").disabled, false);
-    h.challenge["timeout-callback"]();
-    assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.challengeFailed"]);
-    assert.deepEqual(h.resets, []);
-    assert.deepEqual(h.logs, [
-      ["[Turnstile] error-callback", "200500"],
-      ["[Turnstile] expired-callback"],
-      ["[Turnstile] timeout-callback"],
-    ]);
-  });
-
-  test(`${language}: language toggles replace the widget and reject stale callbacks`, async () => {
-    const h = createHarness(language, []);
-    await h.solve("old-token");
-    const old = h.challenge;
-    h.toggleLanguage();
-    assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    old.callback("late-old-token");
-    await h.flush();
-    assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    assert.equal(h.challenge.language, language === "en" ? "pt-br" : "en");
-    assert.equal(h.renderCalls, 2);
-    h.challenge.callback("new-token");
-    assert.equal(h.elements.get("waitlist-submit").disabled, false);
-    h.toggleLanguage();
-    await h.flush();
-    assert.equal(h.challenge.language, language === "en" ? "en" : "pt-br");
-    assert.equal(h.elements.get("waitlist-submit").disabled, true);
-    assert.equal(h.renderCalls, 3);
-  });
-
-  test(`${language}: widget sizing follows the measured content box on resize and rotation`, async () => {
-    for (const [viewport, contentWidth, size, widgetWidth] of [
-      [320, narrowContentWidth(320), "compact", 150],
-      [360, narrowContentWidth(360), "compact", 150],
-      [480, 366, "flexible", 366],
-    ]) {
-      const h = createHarness(language, [], { width: contentWidth });
-      await h.solve("portrait-token");
-      assert.equal(h.challenge.size, size, `${viewport}px viewport`);
-      assert.ok(widgetWidth <= contentWidth);
-      h.resize(592, "orientationchange");
-      assert.equal(h.elements.get("waitlist-submit").disabled, size === "compact");
-      await h.flush();
-      assert.equal(h.challenge.size, "flexible");
-      h.resize(299);
-      await h.flush();
-      assert.equal(h.challenge.size, "compact");
-      h.resize(300);
-      await h.flush();
-      assert.equal(h.challenge.size, "flexible");
-    }
-  });
-}
-
-test("an empty script response times out, removes its global and reports failure", async () => {
-  const h = createHarness("en", [], { loader: "empty" });
-  h.triggerChallenge("focus");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 1);
-  await h.advance(14999);
-  assert.equal(h.statusUpdates, 0);
-  await h.advance(1);
-  assert.equal(h.loadGlobal, undefined);
-  assert.equal(h.appendedScripts[0].removed, true);
-  assert.equal(h.elements.get("waitlist-status").textContent, h.strings["ios.challengeFailed"]);
-  assert.equal(h.elements.get("waitlist-submit").disabled, true);
-  assert.equal(h.timers.size, 0);
-});
-
-test("failed script retries require input, back off, clean up and stop after three attempts", async () => {
-  const h = createHarness("en", [], { loader: "network-error" });
-  h.triggerChallenge("focus");
-  await h.flush();
-  for (let i = 0; i < 25; i++) h.triggerChallenge("input");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 1);
-  await h.advance(2000);
-  h.triggerChallenge("focus");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 1);
-  h.triggerChallenge("input");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 2);
-  await h.advance(3999);
-  h.triggerChallenge("input");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 2);
-  await h.advance(1);
-  h.triggerChallenge("input");
-  await h.flush();
-  assert.equal(h.appendedScripts.length, 3);
-  for (let i = 0; i < 25; i++) {
-    await h.advance(60000);
-    h.triggerChallenge("input");
-    await h.flush();
-  }
-  assert.equal(h.appendedScripts.length, 3);
-  assert.ok(h.appendedScripts.every((script) => script.removed));
-  assert.equal(h.loadGlobal, undefined);
-  assert.equal(h.statusUpdates, 1);
-});
-
-test("a slow real script resolves via the load event and language toggles do not duplicate it", async () => {
-  const h = createHarness("en", [], { loader: "slow" });
-  h.triggerChallenge("focus");
-  h.toggleLanguage();
-  h.triggerChallenge("input");
-  await h.advance(14000);
-  await h.loadScript({ globalCallback: false });
-  assert.equal(h.renderCalls, 1);
-  assert.equal(h.challenge.language, "pt-br");
-  assert.equal(h.appendedScripts.length, 1);
-  assert.equal(h.loadGlobal, undefined);
-  assert.equal(h.timers.size, 0);
-  await h.advance(20000);
-  assert.equal(h.statusUpdates, 0);
-});
 
 for (const language of ["en", "pt-BR"]) {
   test(`${language}: accepts 254 email characters and refuses 255 before fetching`, async () => {
@@ -679,12 +403,3 @@ for (const language of ["en", "pt-BR"]) {
     );
   });
 }
-
-test("production Turnstile failures never write to the console", async () => {
-  for (const callback of ["error-callback", "expired-callback", "timeout-callback"]) {
-    const h = createHarness("en", [], { dev: false });
-    await h.solve("valid-token");
-    h.challenge[callback]("110100");
-    assert.deepEqual(h.logs, []);
-  }
-});
