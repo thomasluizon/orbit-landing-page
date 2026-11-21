@@ -178,24 +178,29 @@ function finish(accept: boolean) {
     ?.focus({ preventScroll: true });
 }
 
+function scheduleChoice() {
+  return schedule === "demo.afternoon"
+    ? "afternoon"
+    : schedule.endsWith("alternateRepeat") ||
+        schedule === "demo.move.repeat" ||
+        schedule === "demo.restart.repeat"
+      ? "evening"
+      : "morning";
+}
+
 function openEditor() {
   if (!editForm || !editName || !editSchedule) return;
   editForm.hidden = !editForm.hidden;
   editName.value = habitTitle();
-  editSchedule.value =
-    schedule === "demo.afternoon"
-      ? "afternoon"
-      : schedule.endsWith("alternateRepeat") ||
-          schedule === "demo.move.repeat" ||
-          schedule === "demo.restart.repeat"
-        ? "evening"
-        : "morning";
+  editSchedule.value = scheduleChoice();
   if (!editForm.hidden) editName.focus({ preventScroll: true });
 }
 
 editForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!editName?.value.trim() || !editSchedule) return;
+  const nameChanged = editName.value.trim().slice(0, 80) !== habitTitle();
+  const timeChanged = editSchedule.value !== scheduleChoice();
   title = editName.value.trim().slice(0, 80);
   schedule =
     editSchedule.value === "evening"
@@ -205,7 +210,16 @@ editForm?.addEventListener("submit", (event) => {
         : "demo.start.repeat";
   renderPlan();
   editForm.hidden = true;
-  setCopy("demo-announcement", "demo.edited");
+  setCopy(
+    "demo-announcement",
+    nameChanged && timeChanged
+      ? "demo.edited.both"
+      : nameChanged
+        ? "demo.edited.name"
+        : timeChanged
+          ? "demo.edited.time"
+          : "demo.edited.none",
+  );
   document.getElementById("demo-edit")?.focus({ preventScroll: true });
 });
 document.getElementById("demo-composer")?.addEventListener("submit", (event) => {

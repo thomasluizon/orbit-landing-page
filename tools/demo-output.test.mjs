@@ -611,3 +611,22 @@ for (const language of ["en", "pt-BR"]) {
     }
   });
 }
+
+for (const language of ["en", "pt-BR"]) {
+  test(`${language}: the edit announcement names only what the person changed`, () => {
+    const cases = [
+      ["Evening walk", "evening", "demo.edited.both"],
+      ["Evening walk", "morning", "demo.edited.name"],
+      [null, "evening", "demo.edited.time"],
+      [null, "morning", "demo.edited.none"],
+    ];
+    for (const [name, time, key] of cases) {
+      const h = harness(language);
+      h.get("demo-edit").fire("click");
+      if (name) h.get("demo-edit-name").value = name;
+      h.get("demo-edit-schedule").value = time;
+      h.get("demo-edit-form").fire("submit");
+      assert.equal(h.get("demo-announcement").textContent, h.strings[key]);
+    }
+  });
+}
