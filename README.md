@@ -1,54 +1,14 @@
 # Orbit Landing Page
 
-The landing page for **Orbit**, an AI that tracks habits. Orbit is the app, its AI and its mascot. It turns a plain request into a proposed routine change for the person to review.
+The landing page for **Orbit**, an AI that tracks habits. Orbit is the app, its AI and its mascot. It turns a plain request into a proposed routine change for the person to review. The site is a static Astro and Tailwind build.
 
 **Live:** [useorbit.org](https://useorbit.org) | **App:** [app.useorbit.org](https://app.useorbit.org) | **API:** [api.useorbit.org](https://api.useorbit.org)
 
-## Tech Stack
+See `CLAUDE.md` for the design rules and the code standards.
 
-| Layer      | Technology                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| Framework  | [Astro](https://astro.build)                                                                    |
-| Styling    | [Tailwind CSS v4](https://tailwindcss.com)                                                      |
-| Fonts      | Geist Sans / Space Grotesk / Geist Mono, self-hosted via Astro's Fonts API                      |
-| Icons      | [Lucide](https://lucide.dev) (`@lucide/astro`)                                                  |
-| Linting    | ESLint flat config (`eslint-plugin-astro`, `typescript-eslint`, `local/no-comments`) + Prettier |
-| Deployment | [Render](https://render.com) (static site)                                                      |
+## Run the site
 
-## Page
-
-Orbit the mascot leads the hero and guides each section with one short line. The hero phone shows the Orbit conversation and the Today screen.
-
-- Three example requests replay locally, with no model or network call. Each shows a proposed habit change; approval, edit and rejection labels are visual examples.
-- English and Brazilian Portuguese copy switches through `data-i18n` attributes with cookie persistence.
-- The iPhone waitlist is its own section at `/#ios`, with email confirmation and Turnstile.
-- Open Graph, Twitter metadata and application structured data describe Orbit and the supported platforms.
-
-## Design system
-
-The canon lives in `orbit-ui-mobile/DESIGN.md`. This repository mirrors its dark tokens in `src/styles/global.css`:
-
-| Token        | Value                                         |
-| ------------ | --------------------------------------------- |
-| Canvas       | `#09090B`                                     |
-| Primary      | `#C4530F`                                     |
-| Foregrounds  | `#F4F4F6` / `#C9C9CC` / `#8F8F93` / `#5D5D60` |
-| Card surface | `rgba(250,250,250,0.04)`                      |
-| Hairline     | `rgba(255,255,255,0.08)`                      |
-
-Type sizes step with viewport width. The Orbit proposal uses a tonal preview with approval controls. See `CLAUDE.md` for token rules and code standards.
-
-## Motion and checks
-
-The page scrolls through the hero, the trust strip, the feature rows, pricing, the iPhone waitlist, the questions and a closing invitation. The live Orbit moves once from page load, and each section arrives on a scroll timeline. No animation runs longer than 5 seconds without a visitor action. Lenis and GSAP load after paint and interaction. Reduced motion keeps a still version of each element and does not load the scroll driver.
-
-`npm test` runs the source and unit suites. `npm run build` runs the suites that read the built page in `dist/`. Lighthouse runs in CI on the built site.
-
-## Prerequisites
-
-- **Node.js**, the version in `.node-version`. CI and both Render sites build with this version. The `engines` range in `package.json` gives each Node.js version that can run the project.
-
-## Getting Started
+Use the Node.js version in `.node-version`. CI and both Render sites build with this version.
 
 ```bash
 npm install
@@ -56,55 +16,24 @@ npm install
 npm run dev
 ```
 
-The site runs at `http://localhost:4321`.
+The site runs at `http://localhost:4321`. `npm test` runs the source and unit suites. `npm run build` also runs the suites that read the built page in `dist/`.
 
-## Project Structure
+## Brand files
 
-```
-src/
-  pages/        # index, 404, waitlist-confirmed and the install QR endpoint
-  layouts/      # Layout.astro: HTML, metadata, fonts and application structured data
-  components/   # Header, Hero, OrbitDemo, OrbitMascot, OrbitLine, FeatureRows, Pricing, Faq, FinalCta and the rest
-  config/       # links, prices, example fixtures and the mascot rig reader
-  i18n/         # typed English and Brazilian Portuguese copy
-  scripts/      # client modules and their node tests
-  styles/       # global.css (the token mirror) and landing.css (the page, the mascot and the motion)
-public/         # files served at the site root: icons, brand sources, robots.txt, llms.txt, og-image.png
-tools/          # guards, the brand asset generator and the node suites
-eslint-rules/   # the comment policy rule, aligned with orbit-ui-mobile
-```
-
-### i18n Implementation
-
-Language switching is handled client-side with typed tables in `src/i18n/translations.ts`:
-
-- All translatable elements use `data-i18n="key"` attributes
-- `Record<TranslationKey, string>` makes a missing PT-BR key a compile error
-- Language state persisted in `orbit_lang` cookie (1 year, SameSite Lax)
-- Auto-detects browser language on first visit (`pt` prefix maps to `pt-BR`)
-- Toggle button in header switches between EN and PT
-
-## Scripts
-
-| Command           | Description                            |
-| ----------------- | -------------------------------------- |
-| `npm run dev`     | Start dev server at `localhost:4321`   |
-| `npm run build`   | Build static site to `./dist/`         |
-| `npm run preview` | Preview production build locally       |
-| `npm run lint`    | ESLint (`lint:fix` to autofix)         |
-| `npm run format`  | Prettier write (`format:check` for CI) |
-| `npm run check`   | `astro check` type checking            |
+- The SVG files in `public/brand/` are byte copies of `orbit-ui-mobile/design/brand/`. Copy them again when that folder changes.
+- `npm run brand:generate` writes the favicons, the ICO, the Apple icon and `logo.png` from these files only.
+- `public/og-image.png` (2400 by 1260) is a byte copy of `thomas-brain/orbit/web/og-image.png`. The generator does not write it.
 
 ## Deployment
 
-Deployed on Render as static sites for production and staging. Auto-deploy is disabled on both sites. Merges and pushes do not deploy them. Run the `Release landing` GitHub Actions workflow from `main` with an environment and branch. The `production` GitHub environment permits deployments only from `main`. Production accepts only the `main` branch; staging accepts the selected branch head.
+Render hosts a production static site and a staging static site. Auto-deploy is disabled on both sites. A merge does not deploy. Run the `Release landing` GitHub Actions workflow from `main`.
 
 ```sh
 gh workflow run release.yml --ref main -f environment=production
 gh workflow run release.yml --ref main -f environment=staging -f branch=<branch>
 ```
 
-**Domain:** `useorbit.org`
+Production accepts only the `main` branch. Staging accepts the head of the selected branch, and the `sha` input must hold the full 40-character commit. Production uses `sha` when it is set, or the commit of the dispatch when it is empty. The job checks out that exact commit and checks that the selected branch holds it.
 
 Render build contract:
 
@@ -115,7 +44,7 @@ Render build contract:
 | Publish directory | `dist`                                      |
 | Auto-deploy       | Disabled                                    |
 
-Render reads a `NODE_VERSION` variable before `.node-version`. Do not set `NODE_VERSION` on either site, so that CI and Render use the same version. The build log line `Using Node.js version <version> via <source>` shows the version and the source that Render read.
+Render reads a `NODE_VERSION` variable before `.node-version`. Do not set `NODE_VERSION` on either site. The build log line `Using Node.js version <version> via <source>` shows what Render read.
 
 Build-time variables on the Render static site:
 
@@ -127,16 +56,11 @@ Build-time variables on the Render static site:
 | `PUBLIC_POSTHOG_KEY`         | Enables consent-gated PostHog analytics through `/relay/`                       |
 | `PUBLIC_TURNSTILE_SITE_KEY`  | Enables the waitlist Turnstile widget                                           |
 
-Configure release credentials in GitHub Settings > Environments:
+`RENDER_API_KEY` is a secret of the `production` and `staging` GitHub environments. Keep it out of the repository secrets. Both environments permit deployments only from `main`. The repository variables `RENDER_LANDING_SERVICE_ID` and `RENDER_LANDING_STAGING_SERVICE_ID` hold the two Render service IDs.
 
-| Environment  | Secret           | Deployment branches |
-| ------------ | ---------------- | ------------------- |
-| `production` | `RENDER_API_KEY` | Selected: `main`    |
-| `staging`    | `RENDER_API_KEY` | Selected: `main`    |
+The job runs `.github/scripts/release-landing.mjs` from the dispatch commit on `main`, so a selected commit never changes the code that deploys it. The script uses the Render API to check that auto-deploy is disabled, deploy the selected commit and wait for it to go live. Then it checks that the public origin serves that commit through the `orbit-build` meta tag. A staging release first sets the tracked branch of the service to the selected branch.
 
-Use a selected deployment branch rule matching only `main` for both environments, with no required reviewers. Set the repository variables `RENDER_LANDING_SERVICE_ID` and `RENDER_LANDING_STAGING_SERVICE_ID` to their respective Render service IDs. Dispatch the workflow from `main` and choose the branch to deploy in its input. Supply the full 40-character commit in `sha` for staging. Production requires branch `main` and uses `sha` when supplied, or the dispatch's own commit when it is empty. The job checks out that exact commit and verifies it belongs to the selected branch; a branch moving while the run waits cannot change the release commit. Keep the Render API key out of repository secrets. Once both release paths have succeeded with their environment secrets, delete the old repository secret `RENDER_API_KEY` from GitHub Settings > Secrets and variables > Actions.
-
-The job runs `.github/scripts/release-landing.mjs` from the dispatch commit on `main`, with `RELEASE_ENVIRONMENT` set to the chosen environment, so a selected commit never changes the code that deploys it. The script uses the Render API to check that auto-deploy is disabled, deploy the selected commit, and wait for it to go live. It then checks once that the public origin serves that commit through the `orbit-build` meta tag, which `Layout.astro` fills from Render's `RENDER_GIT_COMMIT` build variable. The public origin is the Render service URL for staging and `https://useorbit.org/` for production. A staging release first sets the service's tracked branch to the selected branch. Before deploying, production reads the staging service URL from Render using `RENDER_LANDING_STAGING_SERVICE_ID` and requires an HTTP 200 response serving the selected build marker. A failed request, redirect, missing marker or different commit refuses production. The explicit `force_unstaged` boolean bypasses this admission check and is recorded with the selected SHA in the job summary. A missing or different marker fails the run. The script then records a GitHub Deployment with the public URL and prints `Deployed SHA: <sha>` in the job summary.
+Before a production deploy, the script requires staging to serve the selected build marker with HTTP 200. The `force_unstaged` input bypasses this check and the job summary records it. The script then records a GitHub Deployment with the public URL.
 
 The Render static site definition in [`orbit-api/infra`](https://github.com/thomasluizon/orbit-api/tree/main/infra) owns the delivery rules. Edit Terraform there for changes to:
 
@@ -147,28 +71,11 @@ The Render static site definition in [`orbit-api/infra`](https://github.com/thom
 
 ## App entry and Android installation
 
-The header, hero, Free and Pro pricing actions, accepted demo continuation, closing action, footer Open Orbit link and successful waitlist confirmation keep configured HTTPS app hrefs in delivered HTML. Their explicit `data-app-entry` opt-in loads through the shared pill module immediately, without waiting for motion or analytics. Desktop, iPhone, iPad, unknown devices, JavaScript-disabled and pre-hydration activation use those web links. Modified clicks, middle clicks, copied links, new tabs and context-menu actions retain normal anchor behavior. Legal, consent privacy, waitlist, contact and local/demo-edit controls do not opt in.
+A link opts in to app entry with the `data-app-entry` attribute. Every opted-in link keeps an HTTPS app href in the delivered HTML, so desktop, iPhone and a visit without JavaScript use the web link. On Chrome for Android, a trusted and unmodified click opens the app through a package-bound Android intent. The intent carries the Play listing of `PUBLIC_ANDROID_INSTALL_URL` as its fallback.
 
-On a trusted, unmodified Chrome for Android click or Enter activation, the handler uses [Chrome's documented Android intent mechanism](https://developer.chrome.com/docs/android/intents) synchronously, with one package-bound custom scheme and an independently encoded `S.browser_fallback_url`. The browser owns launch and fallback; a UA match or assigned location proves neither installation nor successful handoff. Chrome for Android is the documented acceptance target. Other Android browser signatures and known embedded-browser signatures retain web navigation. A browser can share Chrome’s signature, so physical verification is still required; universal support is not claimed. There are no launch timers, retries, installed-app probes, visibility checks or extra network requests.
+`PUBLIC_APP_URL` and `PUBLIC_ANDROID_INSTALL_URL` must name the same target, the production pair or the staging pair. A mismatched pair keeps the HTTPS navigation. `src/scripts/app-entry.test.mjs` tests this behaviour.
 
-The two existing build-time variables select a coherent target:
-
-| `PUBLIC_APP_URL`                   | `PUBLIC_ANDROID_INSTALL_URL`                                             | Scheme / package                             |
-| ---------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------- |
-| `https://app.useorbit.org`         | `https://play.google.com/store/apps/details?id=org.useorbit.app`         | `orbit` / `org.useorbit.app`                 |
-| `https://app-staging.useorbit.org` | `https://play.google.com/store/apps/details?id=org.useorbit.app.staging` | `orbit-staging` / `org.useorbit.app.staging` |
-
-The configured Play URL must use HTTPS, the Play details path and exactly one matching package id. Preview origins, malformed URLs, crossed pairs and unsupported destinations retain HTTPS navigation. Only root and `/upgrade` without query data, and `/habits/new?title=...` with exactly one title key and no extra query keys, qualify. Hashes and credentials are excluded. The handler reads the current href when activated, so approved demo edits replace the destination. The ordinary HTTPS href and demo producer stay unchanged.
-
-For the source-pinned Expo Router 57.0.24 receiver, the native adapter applies four `encodeURIComponent` layers to the decoded title alone. The receiver decodes through URLSearchParams during extraction, `safeDecodeURIComponent` before rebuilding the query, URLSearchParams during route parsing and `useLocalSearchParams` before the app consumes the title. This preserves Unicode, whitespace, delimiters and percent literals, including intent-looking text, as one complete title value. Root and Pro paths and the independently encoded Play fallback retain their existing serialization. This compatibility contract must be checked against the actual receiver sources when that interface changes.
-
-The explicit Install on Android entry and clickable QR in the hero downloads panel, the generated QR payload and the Android structured `installUrl` always use the configured Play URL, including on iPhone. Their analytics surfaces keep the `footer` and `footer_qr` names. The Play fallback opens the listing; it does not restore Pro or a demo draft after a new installation. Consent-gated CTA capture retains its existing `{surface}` shape; hero and closing actions share the generic app event with distinct hero/footer surfaces. No destination, title or install outcome is added to telemetry.
-
-Native interface evidence comes from UI commit `084495ce1398eed96199f674b4f3202bf8dab99a`: `apps/mobile/app.json`, `app.config.js`, `app/+native-intent.tsx`, `app/habits/new.tsx` and the existing upgrade route; installed Expo Router 57.0.24, Expo 57.0.26, expo-linking 57.0.11 and config-plugins 57.0.9 establish route parsing and BROWSABLE scheme production. Fixed native-query vectors guard the landing serializer. A separate source-pinned executable proof passes actual dispatched landing URIs through the installed extraction, generated static-route configuration, parser, validator and real React route context/local-params hook, for initial and resumed destinations in both schemes. This proves title delivery through that receiver slice; source and Node VM tests do not prove a generated manifest, mounted app navigator, installed binary, browser handoff or Play delivery.
-
-Release uses the existing GitHub Actions **Release landing** workflow: stage the carrying branch, then record the exact landing commit, browser/version, Android package/version, installed/absent state and observed root, Pro and demo paths in Chrome for Android. A separate Android emulator without a personal account can verify the browser and installed package; record repacked test binaries distinctly from Play delivery. Also verify desktop/iOS HTTPS navigation, manual web/store fallback, both languages, keyboard activation and the QR label at narrow/wide widths and 200% text. Browser/device and rendered evidence remain a release acceptance boundary. Production follows normal checks/review and the existing manual `main` release. No new variables, console changes, app release or infrastructure migration are required. Removing the targeted handler leaves the HTTPS anchors as the rollback path.
-
-## Related Repositories
+## Related repositories
 
 | Repo                                                               | Description                                                                        |
 | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |

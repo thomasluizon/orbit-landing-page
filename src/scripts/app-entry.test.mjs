@@ -369,3 +369,23 @@ test("dispatch preserves bubbling and a blocked assignment leaves the HTTPS defa
   assert.equal(h.click(h.anchor(production.PUBLIC_APP_URL)).defaultPrevented, false);
   assert.equal(h.assignments.length, 1, "no retry or timer follows refusal");
 });
+
+const readme = readFileSync(new URL("../../README.md", import.meta.url), "utf8");
+const appEntryParagraph = readme.split("\n\n").find((block) => block.includes("`data-app-entry`"));
+for (const [name, pattern, expected] of [
+  [
+    "names the Play listing as the intent fallback",
+    /intent carries the Play listing of `PUBLIC_ANDROID_INSTALL_URL` as its fallback/,
+    true,
+  ],
+  [
+    "does not name the web link as the intent fallback",
+    /intent carries the web link as its fallback/,
+    false,
+  ],
+]) {
+  test(`README app entry paragraph ${name}`, () => {
+    assert.ok(appEntryParagraph, "README holds the app entry paragraph");
+    assert.equal(pattern.test(appEntryParagraph), expected);
+  });
+}
