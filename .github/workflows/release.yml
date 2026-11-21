@@ -34,14 +34,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  production:
-    if: inputs.environment == 'production'
-    name: Release production landing
+  release:
+    name: Release ${{ inputs.environment }} landing
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment:
-      name: production
-      url: https://useorbit.org/
+    environment: ${{ inputs.environment }}
 
     steps:
       - name: Validate release selection
@@ -57,14 +54,17 @@ jobs:
             echo "Dispatch this workflow from main" >&2
             exit 1
           fi
-          if [[ "$RELEASE_ENVIRONMENT" != "production" || "$RELEASE_BRANCH" != "main" ]]; then
-            echo "Production releases must deploy main" >&2
+          if [[ "$RELEASE_ENVIRONMENT" == "production" ]]; then
+            if [[ "$RELEASE_BRANCH" != "main" ]]; then
+              echo "Production releases must deploy main" >&2
+              exit 1
+            fi
+            RELEASE_SHA="${RELEASE_SHA:-$DISPATCH_SHA}"
+          elif [[ -z "$RELEASE_BRANCH" || "$RELEASE_BRANCH" == refs/* ]]; then
+            echo "Select a staging branch name" >&2
             exit 1
           fi
           git check-ref-format "refs/heads/$RELEASE_BRANCH"
-          if [[ -z "$RELEASE_SHA" ]]; then
-            RELEASE_SHA="$DISPATCH_SHA"
-          fi
           if [[ ! "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
             echo "Select a full 40-character commit SHA" >&2
             exit 1
@@ -92,92 +92,21 @@ jobs:
             exit 1
           fi
 
-      # This job builds nothing: it calls the Render API, and the selected commit can predate .node-version.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
 
       - name: Deploy selected commit
-        # The release script comes from the dispatch commit on main, like this workflow, not from the selected commit.
         env:
-          RELEASE_ENVIRONMENT: production
+          RELEASE_ENVIRONMENT: ${{ inputs.environment }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_PRODUCTION_SERVICE_ID: ${{ vars.RENDER_LANDING_SERVICE_ID }}
-          RENDER_STAGING_SERVICE_ID: ${{ vars.RENDER_LANDING_STAGING_SERVICE_ID }}
-          RELEASE_SHA: ${{ steps.selection.outputs.sha }}
-          FORCE_UNSTAGED: ${{ inputs.force_unstaged }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          git show "$GITHUB_SHA:.github/scripts/release-landing.mjs" > "$RUNNER_TEMP/release-landing.mjs"
-          node "$RUNNER_TEMP/release-landing.mjs"
-
-  staging:
-    if: inputs.environment == 'staging'
-    name: Release staging landing
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: staging
-
-    steps:
-      - name: Validate release selection
-        id: selection
-        env:
-          RELEASE_BRANCH: ${{ inputs.branch }}
-          RELEASE_SHA: ${{ inputs.sha }}
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Dispatch this workflow from main" >&2
-            exit 1
-          fi
-          if [[ -z "$RELEASE_BRANCH" || "$RELEASE_BRANCH" == refs/* ]]; then
-            echo "Select a staging branch name" >&2
-            exit 1
-          fi
-          git check-ref-format "refs/heads/$RELEASE_BRANCH"
-          if [[ ! "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
-            echo "Select a full 40-character commit SHA; staging requires an explicit SHA" >&2
-            exit 1
-          fi
-          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ steps.selection.outputs.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Verify selected commit
-        env:
-          RELEASE_BRANCH: ${{ inputs.branch }}
-          RELEASE_SHA: ${{ steps.selection.outputs.sha }}
-        run: |
-          set -euo pipefail
-          if [[ "$(git rev-parse HEAD)" != "$RELEASE_SHA" ]]; then
-            echo "Checkout does not match the selected release SHA" >&2
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor "$RELEASE_SHA" "refs/remotes/origin/$RELEASE_BRANCH"; then
-            echo "The selected release SHA is not reachable from $RELEASE_BRANCH" >&2
-            exit 1
-          fi
-
-      # This job builds nothing: it calls the Render API, and the selected commit can predate .node-version.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-
-      - name: Deploy and verify selected commit
-        # The release script comes from the dispatch commit on main, like this workflow, not from the selected commit.
-        env:
-          RELEASE_ENVIRONMENT: staging
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_STAGING_SERVICE_ID: ${{ vars.RENDER_LANDING_STAGING_SERVICE_ID }}
           PUBLIC_APP_URL: https://app-staging.useorbit.org
           PUBLIC_ANDROID_INSTALL_URL: https://play.google.com/store/apps/details?id=org.useorbit.app.staging
           RELEASE_BRANCH: ${{ inputs.branch }}
           RELEASE_SHA: ${{ steps.selection.outputs.sha }}
+          FORCE_UNSTAGED: ${{ inputs.force_unstaged }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
