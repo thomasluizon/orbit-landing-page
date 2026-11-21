@@ -246,6 +246,15 @@ test("pt-BR demo repeat labels name every time of day with the same adverbial fo
   }
 });
 
+test("the demo editor asks each question in the person's words", () => {
+  const { tables } = harness();
+  for (const [lang, table] of Object.entries(tables)) {
+    for (const key of ["demo.name", "demo.schedule"]) {
+      assert.match(table[key], /\?$/u, `${lang}: ${key}`);
+    }
+  }
+});
+
 test("switching the real language toggle updates every landing copy attribute, chart name and configured price", () => {
   const h = harness();
   for (const lang of ["en", "pt-BR", "en"]) {
