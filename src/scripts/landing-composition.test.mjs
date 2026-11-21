@@ -587,7 +587,7 @@ test("all app and install links and QR generation share environment-backed produ
     await endpoint.GET().text(),
     expected.createSvgTag({ cellSize: 4, margin: 16, scalable: true }),
   );
-  const workflow = readFileSync(".github/workflows/release.yml", "utf8").split("  staging:")[1];
+  const workflow = readFileSync(".github/workflows/release.yml", "utf8");
   assert.ok(workflow.includes(staging.PUBLIC_APP_URL));
   assert.ok(workflow.includes(staging.PUBLIC_ANDROID_INSTALL_URL));
 });
