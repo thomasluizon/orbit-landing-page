@@ -128,6 +128,7 @@ test("confirmation uses native hidden state for both response paths", async () =
     Object.fromEntries((node.attributes ?? []).map(({ name, value }) => [name, value]));
   const hasCtaLabel = (node) =>
     attributes(node)["data-i18n"]?.startsWith("waitlistConfirmed.") ||
+    attributes(node)["data-copy-en"] === "Download Orbit" ||
     (node.children ?? []).some(hasCtaLabel);
   function visibleDestinations(node, states, inherited = false) {
     const attrs = attributes(node);
@@ -288,9 +289,9 @@ test("the built eight-entry inventory opts in only the intended HTTPS anchors", 
   assert.doesNotMatch(html, /hero_google_play_cta_clicked/);
 });
 
-for (const { build, url, retry } of [
-  { build: "waitlist", url: undefined, retry: "/#ios" },
-  { build: "App Store", url: "set", retry: "/#downloads" },
+for (const { build, url, retry, label } of [
+  { build: "waitlist", url: undefined, retry: "/#ios", label: "waitlistConfirmed.retry" },
+  { build: "App Store", url: "set", retry: "/#downloads", label: "Download Orbit" },
 ]) {
   test(
     `the invalid confirmation retry link targets ${retry} in the ${build} build`,
@@ -304,10 +305,68 @@ for (const { build, url, retry } of [
         [...invalid.matchAll(/<a\b[^>]*\shref="([^"]+)"/g)].map(([, href]) => href),
         [retry],
       );
+      assert.match(invalid, new RegExp(url ? `data-copy-en="${label}"` : `data-i18n="${label}"`));
       assert.ok(
         new RegExp(`id="${retry.slice(2)}"`).test(html),
         `the home page has the ${retry} target`,
       );
+    },
+  );
+}
+
+const storeCopy = [
+  {
+    page: "dist/waitlist-confirmed/index.html",
+    region: /<div\b[^>]*id="confirmed-ok"[\s\S]*?<\/div>/,
+    waitlist: "waitlistConfirmed.ok.body",
+    store: [
+      "Your email is confirmed. Orbit is on the App Store now.",
+      "Seu email está confirmado. O Orbit já está na App Store.",
+    ],
+  },
+  {
+    page: "dist/waitlist-confirmed/index.html",
+    region: /<div\b[^>]*id="confirmed-invalid"[\s\S]*?<\/div>/,
+    waitlist: "waitlistConfirmed.invalid.body",
+    store: [
+      "Your confirmation link is invalid or has expired. Orbit is on the App Store now, so you do not need a new link.",
+      "Seu link de confirmação é inválido ou expirou. O Orbit já está na App Store, então você não precisa de outro link.",
+    ],
+  },
+  {
+    page: "dist/waitlist-confirmed/index.html",
+    region: /<div\b[^>]*id="confirmed-invalid"[\s\S]*?<\/div>/,
+    waitlist: "waitlistConfirmed.retry",
+    store: ["Download Orbit", "Baixar o Orbit"],
+  },
+  {
+    page: "dist/404.html",
+    region: /<main\b[\s\S]*?<\/main>/,
+    waitlist: "notFound.body",
+    store: [
+      "This page does not exist. Return to Orbit to find the app.",
+      "Esta página não existe. Volte ao Orbit para encontrar o app.",
+    ],
+  },
+];
+
+for (const { build, url } of [
+  { build: "waitlist", url: undefined },
+  { build: "App Store", url: "set" },
+]) {
+  test(
+    `the secondary pages render ${build} copy in the ${build} build`,
+    { skip: !!storeUrl !== !!url },
+    () => {
+      for (const { page, region, waitlist, store } of storeCopy) {
+        const area = readFileSync(page, "utf8").match(region)[0];
+        const waitlistKey = new RegExp(`data-i18n="${waitlist.replace(".", "\\.")}"`);
+        const [en, pt] = store;
+        const storeCopyNode = new RegExp(`data-copy-en="${en}"[^>]*data-copy-pt="${pt}"`);
+        assert.equal(waitlistKey.test(area), !url, `${page} ${waitlist}`);
+        assert.equal(storeCopyNode.test(area), !!url, `${page} ${en}`);
+        if (url) assert.doesNotMatch(area.replace(/<[^>]*>/g, ""), /waitlist|join the list/i);
+      }
     },
   );
 }

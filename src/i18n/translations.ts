@@ -306,6 +306,11 @@ const landingEn = {
   "faq.platforms.q": "Where can I use Orbit?",
   "faq.platforms.a": "On Android, the web, Mac and Windows. The iPhone app has a waitlist.",
   "faq.platforms.aStore": "On iPhone, iPad, Android, the web, Mac and Windows.",
+  "waitlistConfirmed.ok.bodyStore": "Your email is confirmed. Orbit is on the App Store now.",
+  "waitlistConfirmed.invalid.bodyStore":
+    "Your confirmation link is invalid or has expired. Orbit is on the App Store now, so you do not need a new link.",
+  "waitlistConfirmed.retryStore": "Download Orbit",
+  "notFound.bodyStore": "This page does not exist. Return to Orbit to find the app.",
   "final.title": "One sentence is all Orbit needs.",
   "final.body": "Tell it what you want to start.",
   "final.cta": "Open Orbit",
@@ -446,6 +451,11 @@ const landingPt: Record<LandingKey, string> = {
   "faq.platforms.a":
     "No Android, na web, no Mac e no Windows. O app para iPhone tem lista de espera.",
   "faq.platforms.aStore": "No iPhone, no iPad, no Android, na web, no Mac e no Windows.",
+  "waitlistConfirmed.ok.bodyStore": "Seu email está confirmado. O Orbit já está na App Store.",
+  "waitlistConfirmed.invalid.bodyStore":
+    "Seu link de confirmação é inválido ou expirou. O Orbit já está na App Store, então você não precisa de outro link.",
+  "waitlistConfirmed.retryStore": "Baixar o Orbit",
+  "notFound.bodyStore": "Esta página não existe. Volte ao Orbit para encontrar o app.",
   "final.title": "Para o Orbit, uma frase basta.",
   "final.body": "Conte para ele o que você quer começar.",
   "final.cta": "Abrir Orbit",
