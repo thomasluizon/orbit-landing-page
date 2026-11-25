@@ -2,6 +2,8 @@ import { appendFileSync } from "node:fs";
 
 const buildMarkerPattern = /<meta name="orbit-build" content="([0-9a-f]{40})"/;
 const publicOrigin = "https://useorbit.org";
+const servedCommitReads = 36;
+const servedCommitInterval = 5_000;
 const failedDeployStatuses = [
   "build_failed",
   "update_failed",
@@ -52,6 +54,16 @@ async function readServedCommit(context, origin) {
   return { status: response.status, commit: html.match(buildMarkerPattern)?.[1] };
 }
 
+async function waitForServedCommit(context, origin) {
+  for (let read = 1; ; read++) {
+    const served = await readServedCommit(context, origin);
+    if ((served.status === 200 && served.commit === context.sha) || read === servedCommitReads) {
+      return served;
+    }
+    await context.sleep(servedCommitInterval);
+  }
+}
+
 async function admitStagedCommit(context) {
   const { env, sha } = context;
   context.appendFileSync(
@@ -72,7 +84,7 @@ async function admitStagedCommit(context) {
   );
   const stagingOrigin = stagingService.serviceDetails?.url;
   if (!stagingOrigin) throw new Error("Render did not return the staging landing service URL");
-  const { status, commit } = await readServedCommit(context, stagingOrigin);
+  const { status, commit } = await waitForServedCommit(context, stagingOrigin);
   if (status !== 200 || commit !== sha) {
     throw new Error(
       `Staging must serve ${sha} with HTTP 200 before production release; got HTTP ${status} serving ${commit ?? "no build marker"}; force_unstaged is the explicit override`,
@@ -175,7 +187,7 @@ async function recordDeployment(context, environmentUrl) {
 
 /**
  * Deploys `env.RELEASE_SHA` to the Render landing service of `env.RELEASE_ENVIRONMENT`, checks
- * the build marker of the public origin once, and records a GitHub Deployment. Every side effect
+ * polls the build marker of the public origin for about 3 minutes until it serves the SHA, and records a GitHub Deployment. Every side effect
  * goes through the dependencies, so a test can drive the whole release with fakes.
  */
 export async function release(dependencies) {
@@ -188,7 +200,7 @@ export async function release(dependencies) {
   context.log(`Render deploy ${deploy.id} for ${sha}`);
   await waitUntilLive(context, deploy.id);
   const origin = production ? publicOrigin : serviceOrigin;
-  const { status, commit } = await readServedCommit(context, origin);
+  const { status, commit } = await waitForServedCommit(context, origin);
   if (status !== 200 || commit !== sha) {
     throw new Error(
       `${origin}/ must serve ${sha} with HTTP 200; got HTTP ${status} serving ${commit ?? "no build marker"}`,
