@@ -21,8 +21,11 @@ const marker = (commit) =>
 
 function harness(
   environment,
-  { force = "false", staging = {}, variables, deployStatus, served } = {},
+  { force = "false", staging = {}, variables, deployStatus, served, staleReads = 0 } = {},
 ) {
+  let publicReads = 0;
+  let stagingReads = 0;
+  const sleeps = [];
   const deploys = [];
   const requests = [];
   const summaries = [];
@@ -45,11 +48,13 @@ function harness(
     requests.push({ url: new URL(url), options });
     if (origin === stagingOrigin && !deploys.length) {
       if (staging.error) throw staging.error;
+      if (stagingReads++ < (staging.staleReads ?? 0)) return new Response(marker(previousSha));
       return new Response(staging.html ?? marker(staging.commit ?? sha), {
         status: staging.status ?? 200,
       });
     }
     if (origin === stagingOrigin || origin === "https://useorbit.org") {
+      if (publicReads++ < staleReads) return new Response(marker(previousSha));
       return new Response(marker(served ?? deploys.at(-1).commitId));
     }
     if (hostname === "api.github.com") {
@@ -85,11 +90,14 @@ function harness(
     deploys,
     requests,
     summaries,
+    sleeps,
     run: () =>
       release({
         env,
         fetch,
-        sleep: async () => {},
+        sleep: async (milliseconds) => {
+          sleeps.push(milliseconds);
+        },
         appendFileSync: (path, content) => summaries.push(content),
         log() {},
       }),
@@ -129,6 +137,35 @@ for (const environment of ["staging", "production"]) {
     assert.ok(run.requests.every(({ url }) => url.hostname !== "api.github.com"));
   });
 }
+
+for (const environment of ["staging", "production"]) {
+  test(`${environment}: waits for the edge to serve the new build, then records the deployment`, async () => {
+    const run = harness(environment, { staleReads: 3 });
+    await run.run();
+    assert.deepEqual(run.sleeps, [5_000, 5_000, 5_000]);
+    const writes = run.requests.filter(({ url }) => url.hostname === "api.github.com");
+    assert.equal(JSON.parse(writes[0].options.body).ref, sha);
+    assert.match(run.summaries.join("\n"), new RegExp(`Deployed SHA: ${sha}`));
+  });
+
+  test(`${environment}: fails with the must serve message when the edge stays stale for the whole wait`, async () => {
+    const run = harness(environment, { staleReads: Infinity });
+    await assert.rejects(
+      run.run(),
+      new RegExp(`/ must serve ${sha} with HTTP 200; got HTTP 200 serving ${previousSha}`),
+    );
+    const waited = run.sleeps.reduce((total, milliseconds) => total + milliseconds, 0);
+    assert.ok(waited >= 170_000 && waited <= 190_000, `waited ${waited} ms`);
+    assert.ok(run.requests.every(({ url }) => url.hostname !== "api.github.com"));
+  });
+}
+
+test("production: waits for a stale staging edge before it admits the commit", async () => {
+  const run = harness("production", { staging: { staleReads: 2 } });
+  await run.run();
+  assert.deepEqual(run.deploys, [{ commitId: sha }]);
+  assert.match(run.summaries.join("\n"), new RegExp(`Staging served ${sha} with HTTP 200`));
+});
 
 for (const [reason, staging] of [
   ["a different commit", { commit: previousSha }],
