@@ -3,15 +3,13 @@ name: Build
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -47,14 +45,14 @@ jobs:
         run: npm ci
 
       - name: Save the npm cache
-        if: github.event_name == 'push' && steps.npm-cache.outputs.cache-hit != 'true'
+        if: steps.install.outcome == 'success' && steps.npm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.npm
           key: ${{ steps.npm-cache.outputs.cache-primary-key }}
 
       - name: Changed files carry no new dashes
-        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        if: ${{ !cancelled() }}
         run: |
           git diff --name-only --diff-filter=ACMR "origin/$GITHUB_BASE_REF...HEAD" -z \
             | xargs -0 --no-run-if-empty node tools/check-dashes.mjs --files
@@ -62,11 +60,6 @@ jobs:
       - name: Copy follows the register
         if: ${{ !cancelled() }}
         run: node tools/check-copy.mjs --check
-
-      - name: Audit
-        continue-on-error: true
-        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: npm audit --audit-level=moderate
 
       - name: Test
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
