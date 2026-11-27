@@ -43,11 +43,9 @@ import { appUrl, googlePlayUrl } from "../config/links";
   import { afterLoad } from "../scripts/task-queue";
 
   void afterLoad([
-    () => import("../scripts/pricing"),
     () => import("../scripts/back-to-top"),
     () => import("../scripts/scroll"),
     () => import("../scripts/header-scroll"),
-    () => import("../scripts/waitlist"),
     () => import("../scripts/waitlist-section"),
   ]);
 
@@ -69,6 +67,8 @@ import { appUrl, googlePlayUrl } from "../config/links";
           );
         if (target.matches("#orbit-demo")) void afterLoad([() => import("../scripts/demo")]);
         if (target.matches("#faq")) void afterLoad([() => import("../scripts/faq")]);
+        if (target.matches("#pricing")) void afterLoad([() => import("../scripts/pricing")]);
+        if (target.matches("#ios")) void afterLoad([() => import("../scripts/waitlist")]);
         if (target.matches("[data-orbit-guide]"))
           void afterLoad([() => import("../scripts/guide-blink")]);
         if (target.matches('[data-section="features"]')) {
@@ -85,7 +85,7 @@ import { appUrl, googlePlayUrl } from "../config/links";
   );
   document
     .querySelectorAll(
-      '.hero-fan, #orbit-demo, [data-week-card], [data-section="features"], #faq, [data-orbit-guide]',
+      '.hero-fan, #orbit-demo, [data-week-card], [data-section="features"], #faq, [data-orbit-guide], #pricing, #ios',
     )
     .forEach((surface) => previewObserver.observe(surface));
 </script>
