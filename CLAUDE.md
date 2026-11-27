@@ -20,10 +20,6 @@ Landing page for Orbit, an AI that tracks habits. Orbit is the app, its AI and i
 - Orbit leads the hero and guides each section with one short line (`src/components/OrbitLine.astro`).
 - `public/brand/` holds byte copies of the mascot files of `orbit-ui-mobile/design/brand/`. `src/components/OrbitMascot.astro` inlines them.
 
-## Code standards
-
-The code standards in `../orbit-ui-mobile/CLAUDE.md` apply here. This repository adds two rules. Use no `any`. Use no `console.*` in production (the `production/no-console` rule allows a DEV-gated call). The `local/no-comments` rule states the comment policy, and its autofix removes a banned comment.
-
 ## i18n
 
 Every user-facing string needs a key in both tables of `src/i18n/translations.ts`. "Orbit" stays untranslated.
