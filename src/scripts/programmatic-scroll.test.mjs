@@ -270,8 +270,6 @@ function page({ reduced = false, hash = "" } = {}) {
     gsap: { gsap },
     "gsap/ScrollTrigger": { ScrollTrigger },
     lenis,
-    "./hero-float": { mountHeroFloat: () => () => {} },
-    "./hero-carousel": { updateHeroCarousel() {} },
   };
   const load = (name) => {
     if (name in external) return external[name];

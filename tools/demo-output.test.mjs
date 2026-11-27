@@ -218,10 +218,10 @@ function harness(language = "en", threadHeight = 415) {
       return event;
     },
     chips,
-    phoneRows: () => elements.get("phone-today").querySelectorAll("[data-habit-toggle]"),
+    phoneRows: () => elements.get("demo-today").querySelectorAll("[data-habit-toggle]"),
     visibleRows: () =>
       elements
-        .get("phone-today")
+        .get("demo-today")
         .querySelectorAll("[data-habit-toggle]")
         .filter((row) => !row.hidden),
     events,
@@ -278,18 +278,24 @@ test("every habit toggle sits inside a surface for which the observer loads the 
   assert.equal(unbound.length, 0, `${unbound.length} of ${toggles.length} toggles have no trigger`);
 });
 
-test("the hero copy of the demo has no id, no app entry and no focus stop", () => {
-  const phone = nodes.find((node) =>
-    (attributes(node).class ?? "").split(/\s+/).includes("hero-device"),
+test("the hero phones are inert, hidden from assistive technology and hold no control", () => {
+  const fan = nodes.find((node) =>
+    (attributes(node).class ?? "").split(/\s+/).includes("hero-fan"),
   );
-  const copy = descendants(phone).find((node) => attributes(node).class === "inert-copy");
-  assert.ok(copy && Object.hasOwn(attributes(copy), "inert"));
-  for (const node of descendants(copy)) {
+  assert.ok(fan);
+  assert.ok(Object.hasOwn(attributes(fan), "inert"));
+  assert.equal(attributes(fan)["aria-hidden"], "true");
+  const grid = descendants(fan).find((node) => "data-calendar-grid" in attributes(node));
+  const inGrid = new Set(descendants(grid));
+  for (const node of descendants(fan)) {
     const own = attributes(node);
     assert.equal(own.id, undefined);
-    assert.equal(own.for, undefined);
     assert.equal(Object.hasOwn(own, "data-app-entry"), false);
     assert.equal(Object.hasOwn(own, "data-demo"), false);
+    assert.equal(Object.hasOwn(own, "data-habit-toggle"), false);
+    assert.equal(Object.hasOwn(own, "aria-live"), false);
+    assert.ok(!["a", "input", "select", "textarea", "form"].includes(node.name), node.name);
+    if (node.name === "button") assert.ok(inGrid.has(node), "a day cell is the only button");
   }
 });
 
@@ -382,9 +388,7 @@ for (const language of ["en", "pt-BR"]) {
     const rows = h.visibleRows();
     assert.deepEqual(
       rows.map((row) => row.querySelector(".habit-name").textContent.trim()),
-      ["product.stretch", "product.walk", "product.read", "product.run"]
-        .map((key) => h.landing[key])
-        .concat("Read & reflect"),
+      ["Read & reflect"],
     );
     assert.equal(
       rows.at(-1).querySelector(".product-caption").textContent.trim(),
@@ -412,6 +416,7 @@ for (const language of ["en", "pt-BR"]) {
   test(`${language}: examples propose the selected habits and rejection adds nothing`, () => {
     const h = harness(language);
     const originalRows = h.visibleRows();
+    assert.equal(originalRows.length, 1);
     for (const [index, name] of ["start", "restart", "move"].entries()) {
       h.chips[index].fire("click");
       assert.equal(h.get("demo-request").textContent, h.strings[`demo.${name}.request`]);
@@ -436,20 +441,14 @@ for (const language of ["en", "pt-BR"]) {
     orbit.onanimationend({ animationName: "orbit-spin", currentTarget: orbit });
     assert.equal(orbit.dataset.orbitTurn, "done");
   });
-  test(`${language}: single approvals replace the matching habit and retain the other rows in order`, () => {
+  test(`${language}: each approval shows its own habit as the one approved Today row`, () => {
     const h = harness(language);
-    const samples = h.visibleRows();
-    assert.equal(samples.length, 5);
     for (const index of [0, 1]) {
       const example = index === 0 ? "start" : "restart";
       h.chips[index].fire("click");
       h.get("demo-approve").fire("click");
       const rows = h.visibleRows();
-      const title = h.strings[`demo.${example}.habit`];
-      assert.deepEqual(
-        rows.slice(0, -1),
-        samples.filter((row) => row.querySelector(".habit-name").textContent.trim() !== title),
-      );
+      assert.equal(rows.length, 1);
       assert.equal(
         rows.at(-1).querySelector(".habit-name").textContent.trim(),
         h.strings[`demo.${example}.habit`],
@@ -458,14 +457,13 @@ for (const language of ["en", "pt-BR"]) {
         rows.at(-1).querySelector(".product-caption").textContent.trim(),
         h.strings[`demo.${example}.repeat`],
       );
-      assert.equal(rows.at(-1).attributes.class, samples[0].attributes.class);
+      assert.equal(rows.at(-1).attributes.class, "habit-row");
       assert.ok(rows.at(-1).querySelector(".habit-emoji"));
       assert.ok(rows.at(-1).querySelector(".status-ring"));
     }
   });
-  test(`${language}: edited batches replace all samples and resets reuse the approved rows`, () => {
+  test(`${language}: edited batches approve both rows and resets reuse the approved rows`, () => {
     const h = harness(language);
-    const samples = h.visibleRows();
     h.chips[2].fire("click");
     h.get("demo-edit").fire("click");
     h.get("demo-edit-name").value = "Evening walk";
@@ -477,7 +475,6 @@ for (const language of ["en", "pt-BR"]) {
       approved.map((row) => row.querySelector(".habit-name").textContent.trim()),
       ["Evening walk", h.strings["demo.move.secondHabit"]],
     );
-    assert.ok(samples.every((row) => row.hidden));
     for (const row of approved) {
       assert.equal(
         row.querySelector(".product-caption").textContent.trim(),
@@ -498,13 +495,7 @@ for (const language of ["en", "pt-BR"]) {
     );
     h.chips[0].fire("click");
     h.get("demo-approve").fire("click");
-    assert.deepEqual(h.visibleRows(), [
-      ...samples.filter(
-        (row) =>
-          row.querySelector(".habit-name").textContent.trim() !== h.strings["demo.start.habit"],
-      ),
-      approved[0],
-    ]);
+    assert.deepEqual(h.visibleRows(), [approved[0]]);
     assert.equal(approved[1].hidden, true);
     assert.equal(h.phoneRows().length, count);
   });

@@ -471,7 +471,9 @@ test("phone habit checks reserve only their visible square inside the full-row b
   assert.match(base, /\.habit-row\[data-habit-toggle\]\s*\{[^}]*min-block-size:\s*56px/);
   assert.match(base, /\.phone-slide \.habit-row\s*\{[^}]*min-block-size:\s*64px/);
   const row = readFileSync("src/components/HabitRow.astro", "utf8");
-  assert.match(row, /<button[^>]*class="habit-row"[^>]*data-habit-toggle/);
+  assert.match(row, /const Tag = isStatic \? "div" : "button";/);
+  assert.match(row, /\{ type: "button" as const, "data-habit-toggle": true, "aria-pressed"/);
+  assert.match(row, /<Tag \{\.\.\.attributes\} \{\.\.\.control\} class="habit-row">/);
   assert.match(row, /<span class="habit-check" aria-hidden="true"/);
 });
 
@@ -480,11 +482,9 @@ function harness(reduced = false) {
   const listeners = new Map();
   const preference = { matches: reduced };
   const result = { imports: 0, mounts: 0, disposals: 0 };
-  const floatResult = { imports: 0, mounts: 0, disposals: 0 };
   const imports = [];
-  const stage = {};
   const modules = new Map(
-    ["./landing-motion", "./hero-float"].map((name) => {
+    ["./landing-motion"].map((name) => {
       let resolve;
       let reject;
       const loaded = new Promise((done, fail) => {
@@ -509,21 +509,19 @@ function harness(reduced = false) {
     exports: {},
     window,
     document: {
-      getElementById(id) {
-        assert.equal(id, "hero-stage");
-        return stage;
+      getElementById() {
+        assert.fail("the scroll starter never reads the hero");
       },
     },
     require(name) {
       imports.push(name);
-      (name === "./hero-float" ? floatResult : result).imports++;
+      result.imports++;
       assert.ok(modules.has(name), `unexpected startup import: ${name}`);
       return modules.get(name).loaded;
     },
   });
   return {
     result,
-    floatResult,
     imports,
     preference,
     listeners,
@@ -548,11 +546,6 @@ function harness(reduced = false) {
           result.mounts++;
           return () => result.disposals++;
         },
-        mountHeroFloat(target) {
-          assert.equal(target, stage);
-          floatResult.mounts++;
-          return () => floatResult.disposals++;
-        },
       });
       await loaded;
       await Promise.resolve();
@@ -561,28 +554,13 @@ function harness(reduced = false) {
   };
 }
 
-test("hero float loads once after paint without interaction, with page lifecycle cleanup", async () => {
-  const h = harness();
-  assert.equal(h.floatResult.imports, 0);
-  h.paint();
-  await h.resolve("./hero-float");
-  assert.deepEqual(h.floatResult, { imports: 1, mounts: 1, disposals: 0 });
-  h.listeners.get("pagehide")();
-  assert.equal(h.floatResult.disposals, 1);
-  await h.listeners.get("pageshow")({ persisted: true });
-  await h.resolve("./hero-float");
-  assert.equal(h.floatResult.mounts, 2);
-});
-
 test("eager startup and unscrolled page restoration never import landing-motion", async () => {
   const h = harness();
   h.paint();
-  await h.resolve("./hero-float");
-  assert.deepEqual(h.imports, ["./hero-float"]);
+  assert.deepEqual(h.imports, []);
   h.listeners.get("pagehide")();
   await h.listeners.get("pageshow")({ persisted: true });
-  await h.resolve("./hero-float");
-  assert.ok(h.imports.every((name) => name === "./hero-float"));
+  assert.deepEqual(h.imports, []);
   assert.equal(h.result.mounts, 0);
 });
 
@@ -590,7 +568,6 @@ for (const interaction of ["scroll", "wheel", "touchstart", "keydown"]) {
   test(`landing motion loads once on ${interaction} and restores after pagehide`, async () => {
     const h = harness();
     h.paint();
-    await h.resolve("./hero-float");
     assert.equal(h.result.imports, 0);
     const pending = h.listeners.get(interaction)();
     h.listeners.get("scroll")();
@@ -598,7 +575,6 @@ for (const interaction of ["scroll", "wheel", "touchstart", "keydown"]) {
     await h.resolve();
     await pending;
     assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
-    assert.equal(h.floatResult.mounts, 1, "interaction must not mount the float again");
     for (const name of ["scroll", "wheel", "touchstart", "keydown"])
       assert.equal(h.listeners.has(name), false);
     h.listeners.get("pagehide")();
@@ -618,37 +594,35 @@ test("reduced motion still loads the pinned screen driver after interaction", as
   assert.deepEqual(h.result, { imports: 1, mounts: 1, disposals: 0 });
 });
 
-for (const name of ["./hero-float", "./landing-motion"]) {
-  test(`a page left during ${name} import cannot mount motion`, async () => {
-    const h = harness();
-    h.paint();
-    const pending = h.listeners.get("scroll")();
-    h.listeners.get("pagehide")();
-    await h.resolve(name);
-    await h.resolve();
-    await pending;
-    assert.equal(h.result.mounts, 0);
-    assert.equal(h.floatResult.mounts, 0);
-  });
+test("a page left during the landing motion import cannot mount motion", async () => {
+  const h = harness();
+  h.paint();
+  const pending = h.listeners.get("scroll")();
+  h.listeners.get("pagehide")();
+  await h.resolve();
+  await pending;
+  assert.equal(h.result.mounts, 0);
+});
 
-  test(`restoring a page during ${name} import mounts it only once`, async () => {
-    const h = harness();
-    h.paint();
-    h.listeners.get("scroll")();
-    h.listeners.get("pagehide")();
-    h.listeners.get("pageshow")({ persisted: true });
-    await h.resolve(name);
-    const mounted = name === "./hero-float" ? h.floatResult : h.result;
-    assert.equal(mounted.mounts, 1);
-  });
-}
+test("restoring a page during the landing motion import mounts it only once", async () => {
+  const h = harness();
+  h.paint();
+  h.listeners.get("scroll")();
+  h.listeners.get("pagehide")();
+  h.listeners.get("pageshow")({ persisted: true });
+  await h.resolve();
+  assert.equal(h.result.mounts, 1);
+});
 
-test("the Orbit conversation sits in a full phone with status chrome and a home indicator", () => {
+test("every hero phone is a full phone with status chrome and a home indicator", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
-  assert.match(hero, /class="device-status" aria-hidden="true"/);
-  assert.match(hero, /class="device-status-time"\s+data-mock\s+data-clock="time"/);
-  assert.match(hero, /class="device-home"/);
-  assert.match(hero, /class="device-screen"/);
+  const status = readFileSync("src/components/PhoneStatus.astro", "utf8");
+  assert.equal((hero.match(/<PhoneStatus \/>/g) ?? []).length, 3);
+  assert.match(status, /class="device-status" aria-hidden="true"/);
+  assert.match(status, /class="device-status-time"\s+data-mock\s+data-clock="time"/);
+  assert.match(status, /<Signal size=\{16\} \/><Wifi size=\{16\} \/><BatteryFull size=\{20\} \/>/);
+  assert.equal((hero.match(/class="device-home"/g) ?? []).length, 3);
+  assert.equal((hero.match(/class="device-screen phone-light"/g) ?? []).length, 3);
   assert.match(css, /\.hero-device\s*\{[^}]*aspect-ratio:\s*9 \/ 19\.5/);
   assert.match(css, /\.hero-device\s*\{[^}]*padding:\s*var\(--hero-device-bezel\)/);
   assert.match(css, /\.hero-device\s*\{[^}]*border-radius:\s*56px/);
@@ -656,7 +630,7 @@ test("the Orbit conversation sits in a full phone with status chrome and a home 
     css,
     /\.device-screen\s*\{[^}]*border-radius:\s*calc\(56px - var\(--hero-device-bezel\)\)/,
   );
-  assert.match(css, /\.device-speaker\s*\{[^}]*inline-size:\s*96px;\s*block-size:\s*28px/);
+  assert.doesNotMatch(css, /\.device-speaker/);
 });
 
 test("the FAQ is one compact list whose open item is one card", () => {
@@ -881,7 +855,7 @@ test("the phone derives its width from the pinned height at its real device rati
   const widths = stylesheetRules(css).filter((rule) =>
     /--hero-device-width:/.test(rule.declarations),
   );
-  assert.equal(widths.length, 2);
+  assert.equal(widths.length, 1);
   for (const { declarations } of widths) {
     assert.match(
       declarations,
@@ -890,7 +864,6 @@ test("the phone derives its width from the pinned height at its real device rati
     assert.match(declarations, /calc\(\(100svh - var\(--header-offset\) - 64px\) \* 9 \/ 19\.5\)/);
     assert.match(declarations, /calc\(100vw - 64px\)/);
   }
-  assert.match(widths[0].declarations, /calc\(\(100vw - 48px\) \/ 3\)/);
   for (const { declarations } of stylesheetRules(css).filter(
     (rule) => rule.selector === ".hero-device",
   ))
@@ -908,12 +881,7 @@ test("the phone derives its width from the pinned height at its real device rati
     [1920, 1080],
   ]) {
     const top = width <= 640 ? 96 : 112;
-    const deviceWidth = Math.min(
-      390,
-      ((height - top - 64) * 9) / 19.5,
-      width - 64,
-      width < 768 ? Infinity : (width - 48) / 3,
-    );
+    const deviceWidth = Math.min(390, ((height - top - 64) * 9) / 19.5, width - 64);
     const deviceHeight = (deviceWidth * 19.5) / 9;
     const scale = (deviceWidth - 2 * 4) / 390;
     assert.ok(scale > 0 && scale <= 1);
@@ -931,11 +899,13 @@ test("the phone derives its width from the pinned height at its real device rati
   }
 });
 
-test("mobile removes the floating cards and keeps both screens inside the phone", () => {
+test("the hero keeps three phones at phone width and holds no floating card, carousel or pager", () => {
   const hero = readFileSync("src/components/Hero.astro", "utf8");
-  assert.equal((hero.match(/data-phone-slide=/g) ?? []).length, 2);
-  assert.match(css, /@media \(width < 768px\)[\s\S]*?\.hero-products\s*\{\s*display:\s*none/);
-  assert.match(css, /\.carousel-segment\s*\{[^}]*inline-size:\s*36px;[^}]*block-size:\s*4px/);
+  assert.equal((hero.match(/class="hero-phone hero-phone-/g) ?? []).length, 3);
+  assert.doesNotMatch(
+    css,
+    /hero-products|\.hero-side(?![-\w])|hero-float|hero-pager|hero-phrase|carousel-segment|carousel-marker|data-hero-float/,
+  );
   assert.doesNotMatch(readFileSync("src/components/OrbitDemo.astro", "utf8"), /demo-playback/);
   assert.doesNotMatch(hero, /id="hero-playback"/);
 });
@@ -1112,74 +1082,16 @@ test("chat chips and composer occupy separate rows with their full targets in ve
   assert.match(css, /\.demo-preview\s*\{[^}]*padding:\s*24px;/);
 });
 
-test("side-card float budget preserves 24px clearance for every phase and entrance offset", () => {
-  const declarations = (selector) =>
-    [...css.matchAll(/([^{}]+)\{([^{}]+)\}/g)]
-      .filter(([, selectors]) => selectors.trim() === selector)
-      .map(([, , body]) => body)
-      .join("\n");
-  const stage = declarations(".hero-stage");
-  const side = declarations(".hero-side");
-  const reserve = Number(stage.match(/--hero-float-reserve:\s*(\d+)px;/)?.[1]);
-  const entry = Number(stage.match(/--hero-float-entry:\s*(\d+)px;/)?.[1]);
-  const amplitude = Number(
-    readFileSync("src/scripts/hero-float.ts", "utf8").match(/const amplitude = (\d+);/)?.[1],
-  );
-  assert.ok(reserve >= amplitude, "each card's motion envelope must reserve its full amplitude");
-  assert.ok(amplitude >= 12 && amplitude <= 17);
-  assert.match(side, /padding-inline:\s*var\(--hero-float-reserve\);/);
-  assert.match(
-    side,
-    /gap:\s*calc\(24px \+ 2 \* var\(--hero-float-reserve\) \+ var\(--hero-float-entry\)\);/,
-  );
-  assert.doesNotMatch(side, /gap:\s*\d+px;/, "short viewports retain the motion reserve");
-  assert.match(stage, /gap:\s*16px 24px;/);
-  assert.match(
-    stage,
-    /inline-size:\s*min\(calc\(var\(--landing-narrow\) - 48px\), calc\(100% - 96px\)\);/,
-  );
+test("the hero phones arrive on the scroll timeline with a 24px lift and no change of opacity", () => {
   const motion = readFileSync("src/scripts/landing-motion.ts", "utf8");
-  assert.equal(Number(motion.match(/\{ y: (\d+), opacity: 0 \}/)?.[1]), entry);
-  assert.match(
-    css,
-    /@media \(height < 720px\)\s*\{\s*\.float-reminder,\s*\.float-week\s*\{\s*display:\s*none;/,
+  const arrival = motion.slice(
+    motion.indexOf('".hero-phone .hero-device"'),
+    motion.indexOf("const rows ="),
   );
-  assert.match(css, /\.hero-side \.habit-name\s*\{[^}]*font-size:\s*var\(--fs-xs\);/);
-  for (let width = 768; width <= 1920; width++) {
-    const stageWidth = Math.min(896 - 48, width - 96);
-    const phoneWidth = Math.min(390, (width - 48) / 3);
-    const columnWidth = (stageWidth - phoneWidth - 48) / 2;
-    assert.ok(columnWidth - 2 * reserve >= 112, `compact cards fit at ${width}px`);
-    const outerInset = (width - stageWidth) / 2 + reserve;
-    for (const offset of [-amplitude, amplitude]) {
-      assert.ok(24 + reserve - offset >= 24, `phone clearance at ${width}px`);
-      assert.ok(outerInset + offset >= 24, `viewport clearance at ${width}px`);
-      for (const neighbourOffset of [-amplitude, amplitude]) {
-        for (const entranceDifference of [-entry, entry]) {
-          assert.ok(
-            24 + 2 * reserve + entry + neighbourOffset - offset + entranceDifference >= 24,
-            `sibling clearance at ${width}px; shared column parallax cancels`,
-          );
-        }
-      }
-    }
-  }
-});
-
-test("pager focus-visible follows the pill segment and its 44px target stays invisible", () => {
-  const segment = css.match(/\.carousel-segment\s*\{([^}]+)\}/)?.[1];
-  assert.match(segment, /inline-size:\s*36px\s*;/);
-  assert.match(segment, /block-size:\s*4px\s*;/);
-  assert.match(segment, /border-radius:\s*var\(--radius-full\)/);
-  assert.match(
-    css,
-    /\.carousel-segment::before\s*\{[^}]*inset-block:\s*-20px;[^}]*inset-inline:\s*-4px/,
-  );
-  assert.match(
-    css,
-    /\.carousel-segment:focus-visible\s*\{[^}]*outline:\s*2px solid var\(--color-primary\);[^}]*outline-offset:\s*2px/,
-  );
-  assert.doesNotMatch(css, /\.carousel-segment:focus(?!-visible)/);
+  assert.match(arrival, /\{ y: 24 \}/);
+  assert.match(arrival, /scrub: true/);
+  assert.doesNotMatch(arrival, /opacity/);
+  assert.doesNotMatch(motion, /data-hero-float|hero-carousel|updateHeroCarousel/);
 });
 
 test("habit names preserve word boundaries across every surface", () => {

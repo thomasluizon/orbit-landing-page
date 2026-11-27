@@ -41,7 +41,7 @@ function harness({
     },
   }));
   const targets = [
-    ".hero-device",
+    ".hero-fan",
     '[data-section="features"]',
     "[data-week-card]",
     "#faq",
@@ -212,7 +212,7 @@ for (const scheduler of [false, true]) {
 
   test(`the demo and the chart controls wait for load in separate tasks, the calendar does not (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
-    h.intersect(0);
+    h.intersect(5);
     h.intersect(1);
     await flush();
     assert.deepEqual(
@@ -230,21 +230,30 @@ for (const scheduler of [false, true]) {
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
   });
 
-  for (const [surface, index] of [
-    ["hero phone", 0],
-    ["features demo", 5],
-  ]) {
-    test(`the ${surface} loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
-      const h = harness({ scheduler });
-      h.intersect(index);
-      h.load();
-      await h.drain();
-      const names = h.bindings.map(({ name }) => name);
-      assert.ok(names.includes("demo"));
-      for (const name of ["product-metrics", ...demoViewModules])
-        assert.ok(!names.includes(name), name);
-    });
-  }
+  test(`the features demo loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(5);
+    h.load();
+    await h.drain();
+    const names = h.bindings.map(({ name }) => name);
+    assert.ok(names.includes("demo"));
+    for (const name of ["product-metrics", ...demoViewModules])
+      assert.ok(!names.includes(name), name);
+  });
+
+  test(`the hero phones load the calendar views at once and not the demo (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(0);
+    await flush();
+    assert.deepEqual(
+      h.bindings.map(({ name }) => name),
+      [...firstViewport.map(({ name }) => name), "demo-views"],
+    );
+    h.load();
+    await h.drain();
+    const names = h.bindings.map(({ name }) => name);
+    for (const name of ["demo", "product-metrics", "week"]) assert.ok(!names.includes(name), name);
+  });
 
   test(`a direct visit below the hero binds feature controls without loading the demo (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });

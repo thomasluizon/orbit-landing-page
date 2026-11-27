@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
@@ -75,5 +76,79 @@ test("primary labels keep AA contrast in rest, hover and pressed states", () => 
     assert.ok(fill, name);
     const contrast = (label + 0.05) / (luminance(fill) + 0.05);
     assert.ok(contrast >= 4.5, `${name}: ${contrast.toFixed(2)}:1`);
+  }
+});
+
+const lightScope = Object.fromEntries(
+  [
+    ...(css.match(/\.phone-light\s*\{([^}]*)\}/)?.[1] ?? "").matchAll(/(--[\w-]+):\s*([^;]+);/g),
+  ].map((m) => [m[1], m[2].trim()]),
+);
+const normalizeValue = (value) =>
+  value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/(\d+\.\d+)/g, (number) => String(Number(number)));
+
+test("the hero phone screens take the light tokens and the page stays dark", () => {
+  for (const [name, value] of Object.entries({
+    "--color-bg": "#fafafa",
+    "--color-bg-card": "#ffffff",
+    "--color-bg-well": "rgba(9, 9, 11, 0.04)",
+    "--color-bg-hover": "rgba(9, 9, 11, 0.11)",
+    "--color-hairline": "rgba(9, 9, 11, 0.08)",
+    "--color-border-control": "#89898d",
+    "--color-hairline-strong": "rgba(9, 9, 11, 0.16)",
+    "--color-fg-1": "#1a1a1d",
+    "--color-fg-2": "#424247",
+    "--color-fg-3": "#68686d",
+    "--color-fg-4": "#89898d",
+    "--color-track-empty": "#7e7e82",
+    "--color-primary": "#c4530f",
+    "--color-primary-soft": "#c15109",
+    "--color-primary-text": "#a63a00",
+    "--color-primary-dim": "#f4ddd3",
+    "--color-status-overdue": "#7d5700",
+    "--color-status-bad": "#e7000b",
+    "--color-status-bad-text": "#c00000",
+    "--color-status-done": "var(--color-fg-1)",
+    "--color-status-empty": "var(--color-track-empty)",
+    "--color-status-frozen": "var(--color-fg-2)",
+  })) {
+    assert.equal(lightScope[name], value, name);
+  }
+  assert.equal(tokens.get("--color-bg"), "#09090b");
+  assert.match(css, /html\s*\{\s*color-scheme:\s*dark;/);
+  assert.doesNotMatch(css, /body\s*\{[^}]*phone-light/);
+});
+
+test("every light value matches the Light mode list of DESIGN.md when the app repository sits beside this one", (t) => {
+  const path = ["../orbit-ui-mobile/DESIGN.md", "../../../orbit-ui-mobile/DESIGN.md"].find(
+    existsSync,
+  );
+  if (!path) return t.skip("DESIGN.md is not beside this repository");
+  const design = readFileSync(path, "utf8");
+  const section = design.slice(design.indexOf("### Light mode"));
+  const block = section.slice(
+    section.indexOf("```") + 3,
+    section.indexOf("```", section.indexOf("```") + 3),
+  );
+  const listed = new Map(
+    [...block.matchAll(/(--[\w-]+)\s+(#[0-9A-Fa-f]{6}\b|rgba\([^)]*\))/g)].map((m) => [m[1], m[2]]),
+  );
+  assert.ok(listed.size > 20, "the Light mode list was parsed");
+  for (const [name, value] of Object.entries(lightScope)) {
+    if (value.startsWith("var(")) continue;
+    const source = listed.get(name.replace("--color-", "--"));
+    assert.ok(source, `${name} is listed in DESIGN.md`);
+    assert.equal(normalizeValue(value), normalizeValue(source), name);
+  }
+  const defined = [...css.slice(0, css.indexOf("@utility")).matchAll(/(--color-[\w-]+):/g)].map(
+    (m) => m[1],
+  );
+  for (const [name] of listed) {
+    const mirror = name.replace("--", "--color-");
+    if (defined.includes(mirror) && !["--color-bg-hover-opaque"].includes(mirror))
+      assert.ok(mirror in lightScope, `${mirror} is in the light scope`);
   }
 });
