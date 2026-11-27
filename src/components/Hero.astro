@@ -1,10 +1,10 @@
 ---
-import OrbitDemo from "./OrbitDemo.astro";
-import InertCopy from "./InertCopy.astro";
 import PillButton from "./PillButton.astro";
-import ProductCard from "./ProductCard.astro";
 import PhoneHeader from "./PhoneHeader.astro";
+import PhoneStatus from "./PhoneStatus.astro";
 import HabitRow from "./HabitRow.astro";
+import AiBlock from "./AiBlock.astro";
+import OrbitProduct from "./OrbitProduct.astro";
 import OrbitMascot from "./OrbitMascot.astro";
 import TrustStrip from "./TrustStrip.astro";
 import DownloadsPanel from "./DownloadsPanel.astro";
@@ -14,14 +14,13 @@ import { translations } from "../i18n/translations";
 import { appStoreUrl } from "../config/app-store";
 import { buildNow } from "../config/product-examples";
 import { clockText } from "../scripts/clock-format";
-import { Signal, Wifi, BatteryFull, ChevronLeft, ChevronRight, ChevronDown } from "@lucide/astro";
+import { ArrowUp, ChevronLeft, ChevronRight, ChevronDown } from "@lucide/astro";
 interface Props {
   appUrl: string;
   googlePlayUrl: string;
 }
 const { appUrl, googlePlayUrl } = Astro.props;
 const en = translations.en;
-const statusTime = clockText("time", buildNow);
 const todayDate = clockText("today", buildNow);
 ---
 
@@ -85,122 +84,102 @@ const todayDate = clockText("today", buildNow);
   </div>
   <div class="hero-pin-range">
     <div class="hero-stage" id="hero-stage">
-      <div class="hero-phone">
-        <div class="hero-device">
-          <div class="device-screen">
-            <div class="phone-screen">
-              <div class="device-status" aria-hidden="true">
-                <span
-                  class="device-status-time"
-                  data-mock
-                  data-clock="time"
-                  data-copy-en={statusTime.en}
-                  data-copy-pt={statusTime["pt-BR"]}>{statusTime.en}</span
-                >
-                <span class="device-speaker"></span>
-                <span class="device-status-icons"
-                  ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
-                >
-              </div>
-              <div class="phone-carousel" data-phone-carousel>
-                <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
-                  <InertCopy><OrbitDemo appUrl={appUrl} /></InertCopy>
-                </div>
-                <div
-                  class="phone-slide"
-                  id="phone-today"
-                  data-phone-slide="today"
-                  data-product-screen
-                >
-                  <PhoneHeader>
-                    <div class="phone-today-pager">
-                      <span class="phone-day-chevron" aria-hidden="true"
-                        ><ChevronLeft size={20} /></span
-                      >
-                      <div class="phone-today-date">
-                        <h2><Copy name="product.today" /></h2>
-                        <p class="product-caption">
-                          <span
-                            data-clock="today"
-                            data-copy-en={todayDate.en}
-                            data-copy-pt={todayDate["pt-BR"]}>{todayDate.en}</span
-                          >
-                        </p>
+      <div class="hero-fan" aria-hidden="true" inert>
+        <div class="hero-phone hero-phone-left">
+          <div class="hero-device">
+            <div class="device-screen phone-light">
+              <div class="phone-screen">
+                <PhoneStatus />
+                <div class="phone-body">
+                  <div class="phone-slide">
+                    <PhoneHeader>
+                      <div class="phone-today-pager">
+                        <span class="phone-day-chevron"><ChevronLeft size={20} /></span>
+                        <div class="phone-today-date">
+                          <p class="phone-heading"><Copy name="product.today" /></p>
+                          <p class="product-caption">
+                            <span
+                              data-clock="today"
+                              data-copy-en={todayDate.en}
+                              data-copy-pt={todayDate["pt-BR"]}>{todayDate.en}</span
+                            >
+                          </p>
+                        </div>
+                        <span class="phone-day-chevron"><ChevronRight size={20} /></span>
                       </div>
-                      <span class="phone-day-chevron" aria-hidden="true"
-                        ><ChevronRight size={20} /></span
-                      >
-                    </div>
-                  </PhoneHeader>
-                  <div class="phone-content phone-today-content">
-                    <div class="proactive-line phone-today-orbit">
-                      <OrbitMascot size={16} />
-                      <p><Copy name="today.ai" /></p>
-                    </div>
-                    <div class="phone-today-habits">
-                      <HabitRow habit="water" timing="done" time="08:00" data-first-visible />
-                      <HabitRow habit="stretch" timing="done" />
-                      <HabitRow habit="walk" timing="todo" time="18:00" />
-                      <HabitRow habit="read" timing="todo" />
-                      <HabitRow habit="run" days={7} data-last-visible />
-                      <HabitRow habit="walk" timing="todo" data-demo-approved hidden>
-                        <span slot="name" data-approved-name></span>
-                        <span slot="repeat" data-approved-repeat></span>
-                      </HabitRow>
-                      <HabitRow habit="read" timing="todo" data-demo-approved-second hidden>
-                        <span slot="name" data-i18n="demo.move.secondHabit">
-                          {en["demo.move.secondHabit"]}
-                        </span>
-                        <span slot="repeat" data-approved-second-repeat></span>
-                      </HabitRow>
+                    </PhoneHeader>
+                    <div class="phone-content phone-today-content">
+                      <div class="proactive-line phone-today-orbit">
+                        <OrbitMascot size={16} />
+                        <p><Copy name="today.ai" /></p>
+                      </div>
+                      <div class="phone-today-habits">
+                        <HabitRow static habit="water" timing="done" time="08:00" />
+                        <HabitRow static habit="stretch" timing="done" />
+                        <HabitRow static habit="walk" timing="todo" time="18:00" />
+                        <HabitRow static habit="read" timing="todo" />
+                        <HabitRow static habit="run" days={7} />
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div class="device-home"></div>
               </div>
-              <div class="device-home" aria-hidden="true"></div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="hero-pager">
-        <div
-          class="carousel-segments"
-          role="group"
-          aria-label={en["carousel.label"]}
-          data-i18n-label="carousel.label"
-        >
-          {
-            (["chat", "today"] as const).map((screen, index) => (
-              <button
-                type="button"
-                class="carousel-segment"
-                data-carousel-segment={index}
-                aria-controls={`phone-${screen}`}
-                aria-current={index === 0 ? "true" : "false"}
-                aria-label={en[`carousel.${screen}`]}
-                data-i18n-label={`carousel.${screen}`}
-              >
-                <span class="carousel-marker" aria-hidden="true" />
-              </button>
-            ))
-          }
-        </div>
-      </div>
-      <div class="hero-products">
-        <div class="hero-side hero-left" data-hero-column>
-          <p class="hero-phrase phrase-start" data-hero-float>
-            <Copy name="phrase.start" />
-          </p>
-          <div class="hero-float float-reminder" data-hero-float>
-            <ProductCard kind="reminder" />
+        <div class="hero-phone hero-phone-center">
+          <div class="hero-device">
+            <div class="device-screen phone-light">
+              <div class="phone-screen">
+                <PhoneStatus />
+                <div class="phone-body">
+                  <div class="phone-slide">
+                    <PhoneHeader>
+                      <OrbitMascot size={16} />
+                      <p class="phone-heading" translate="no">Orbit</p>
+                    </PhoneHeader>
+                    <div class="phone-content hero-chat">
+                      <p class="demo-request t-body">
+                        <span class="demo-request-text"><Copy name="hero.week.request" /></span>
+                      </p>
+                      <AiBlock kind="metrics" />
+                    </div>
+                    <div class="demo-input-area">
+                      <div class="demo-composer hero-composer">
+                        <span class="demo-composer-field">
+                          <span class="hero-composer-text" data-i18n="demo.composer"
+                            >{en["demo.composer"]}</span
+                          >
+                        </span>
+                        <span class="demo-send"><ArrowUp size={20} /></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="device-home"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="hero-side hero-right" data-hero-column>
-          <div class="hero-float float-insight" data-hero-float>
-            <ProductCard kind="insight" />
-          </div>
-          <div class="hero-float float-week" data-hero-float>
-            <ProductCard kind="week" />
+        <div class="hero-phone hero-phone-right">
+          <div class="hero-device">
+            <div class="device-screen phone-light">
+              <div class="phone-screen">
+                <PhoneStatus />
+                <div class="phone-body">
+                  <div class="phone-slide">
+                    <PhoneHeader>
+                      <p class="phone-heading"><Copy name="product.calendar" /></p>
+                    </PhoneHeader>
+                    <div class="phone-content hero-calendar">
+                      <OrbitProduct kind="calendar" static />
+                    </div>
+                  </div>
+                </div>
+                <div class="device-home"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -211,6 +190,5 @@ const todayDate = clockText("today", buildNow);
 
 <script>
   import "../scripts/phone-screen";
-  import "../scripts/hero-carousel";
   import "../scripts/desktop-downloads";
 </script>

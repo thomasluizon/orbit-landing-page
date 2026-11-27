@@ -121,6 +121,41 @@
   border-radius: inherit;
 }
 
+.phone-light {
+  color-scheme: light;
+  --color-bg: #fafafa;
+  --color-bg-card: #ffffff;
+  --color-bg-field: #ffffff;
+  --color-bg-well: rgba(9, 9, 11, 0.04);
+  --color-bg-elev: #ffffff;
+  --color-bg-elev-2: #ffffff;
+  --color-bg-hover: rgba(9, 9, 11, 0.11);
+  --color-bg-sunk: rgba(9, 9, 11, 0.04);
+  --color-hairline: rgba(9, 9, 11, 0.08);
+  --color-border-control: #89898d;
+  --color-hairline-ghost: rgba(9, 9, 11, 0.1);
+  --color-hairline-strong: rgba(9, 9, 11, 0.16);
+  --color-fg-1: #1a1a1d;
+  --color-fg-2: #424247;
+  --color-fg-3: #68686d;
+  --color-fg-4: #89898d;
+  --color-track-empty: #7e7e82;
+  --color-primary-text: #a63a00;
+  --color-status-bad-text: #c00000;
+  --color-fg-on-primary: #ffffff;
+  --color-primary: #c4530f;
+  --color-primary-soft: #c15109;
+  --color-primary-dim: #f4ddd3;
+  --color-status-done: var(--color-fg-1);
+  --color-status-empty: var(--color-track-empty);
+  --color-status-frozen: var(--color-fg-2);
+  --color-status-overdue: #7d5700;
+  --color-status-bad: #e7000b;
+  --color-fg-on-bad: #ffffff;
+  --color-fg-on-overdue: #ffffff;
+  color: var(--color-fg-1);
+}
+
 html {
   color-scheme: dark;
   font-synthesis: none;
