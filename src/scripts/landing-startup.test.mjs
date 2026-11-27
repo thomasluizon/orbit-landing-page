@@ -46,10 +46,15 @@ function harness({
     "[data-week-card]",
     "#faq",
     "[data-orbit-guide]",
+    "#orbit-demo",
   ].map((selector) => ({
     selector,
     attributes: new Set(["data-clock-pending"]),
-    matches: (value) => value === selector,
+    matches: (value) =>
+      value
+        .split(",")
+        .map((part) => part.trim())
+        .includes(selector),
     removeAttribute(name) {
       this.attributes.delete(name);
     },
@@ -225,16 +230,21 @@ for (const scheduler of [false, true]) {
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
   });
 
-  test(`the phone preview loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
-    const h = harness({ scheduler });
-    h.intersect(0);
-    h.load();
-    await h.drain();
-    const names = h.bindings.map(({ name }) => name);
-    assert.ok(names.includes("demo"));
-    for (const name of ["product-metrics", ...demoViewModules])
-      assert.ok(!names.includes(name), name);
-  });
+  for (const [surface, index] of [
+    ["hero phone", 0],
+    ["features demo", 5],
+  ]) {
+    test(`the ${surface} loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
+      const h = harness({ scheduler });
+      h.intersect(index);
+      h.load();
+      await h.drain();
+      const names = h.bindings.map(({ name }) => name);
+      assert.ok(names.includes("demo"));
+      for (const name of ["product-metrics", ...demoViewModules])
+        assert.ok(!names.includes(name), name);
+    });
+  }
 
   test(`a direct visit below the hero binds feature controls without loading the demo (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });

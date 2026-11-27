@@ -1,5 +1,6 @@
 ---
 import OrbitDemo from "./OrbitDemo.astro";
+import InertCopy from "./InertCopy.astro";
 import PillButton from "./PillButton.astro";
 import ProductCard from "./ProductCard.astro";
 import PhoneHeader from "./PhoneHeader.astro";
@@ -103,7 +104,7 @@ const todayDate = clockText("today", buildNow);
               </div>
               <div class="phone-carousel" data-phone-carousel>
                 <div class="phone-slide" id="phone-chat" data-phone-slide="chat">
-                  <OrbitDemo appUrl={appUrl} />
+                  <InertCopy><OrbitDemo appUrl={appUrl} /></InertCopy>
                 </div>
                 <div
                   class="phone-slide"

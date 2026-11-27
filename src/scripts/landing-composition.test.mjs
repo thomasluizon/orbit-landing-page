@@ -53,7 +53,7 @@ test("the owning page follows Pierre's section order with Orbit product composit
   assert.doesNotMatch(readFileSync("src/pages/index.astro", "utf8"), /Connect/);
 });
 
-test("the feature section contains six alternating rows without a privacy product", () => {
+test("the feature section starts with the demo and the week, then six alternating rows, without a privacy product", () => {
   const features = sections.find((node) => attributes(node)["data-section"] === "features");
   assert.ok(features);
   const featureNodes = descendants(features);
@@ -61,6 +61,8 @@ test("the feature section contains six alternating rows without a privacy produc
   assert.deepEqual(
     rows.map((node) => [attributes(node)["data-example-row"], attributes(node)["data-card-side"]]),
     [
+      ["demo", "left"],
+      ["week", "right"],
       ["calendar", "left"],
       ["metrics", "right"],
       ["breakdown", "left"],
@@ -653,4 +655,58 @@ test("the downloads panel leaves the flow, moves only opacity and translate and 
   assert.doesNotMatch(downloads, /data-open/, "the toggle's aria-expanded is the one open state");
   assert.doesNotMatch(downloads, /#[0-9a-f]{3,8}\b|rgba?\(/i);
   assert.match(rule(".hero-controls"), /position:\s*relative/);
+});
+
+test("the live Orbit demo lives in the features section and the hero holds an inert copy", () => {
+  const features = sections.find((node) => attributes(node)["data-section"] === "features");
+  const hero = sections.find((node) => attributes(node)["data-section"] === "hero");
+  const demoId = (node) => /^(?:orbit-demo|demo-)/.test(attributes(node).id ?? "");
+  const live = descendants(features).filter(demoId);
+  assert.ok(live.some((node) => attributes(node).id === "orbit-demo"));
+  assert.equal(live.filter((node) => attributes(node).id === "orbit-demo").length, 1);
+  const inert = descendants(hero)
+    .filter((node) => node.name === "InertCopy")
+    .flatMap(descendants);
+  const inHero = descendants(hero).filter(demoId);
+  assert.ok(inHero.length > 0);
+  assert.ok(inHero.every((node) => inert.includes(node)));
+  const copy = readFileSync("src/components/InertCopy.astro", "utf8");
+  assert.match(copy, /<div class="inert-copy" inert /);
+  assert.match(copy, /\(\?:id\|for\|aria-labelledby\|data-demo\|data-app-url\)/);
+});
+
+test("the first two feature rows hold the interactive demo and the interactive week card", () => {
+  const features = sections.find((node) => attributes(node)["data-section"] === "features");
+  const [demo, week] = descendants(features).filter((node) =>
+    Object.hasOwn(attributes(node), "data-example-row"),
+  );
+  assert.ok(descendants(demo).some((node) => attributes(node).id === "demo-approve"));
+  assert.ok(
+    descendants(week).some(
+      (node) => node.name === "ProductCard" && attributes(node).kind === "week",
+    ),
+  );
+  for (const row of [demo, week]) {
+    const sentence = descendants(row).find((node) => attributes(node).class === "example-sentence");
+    assert.ok(sentence);
+  }
+});
+
+test("the page observes the hero phone and the features demo and loads the demo for each", () => {
+  const entry = readFileSync("src/pages/index.astro", "utf8");
+  assert.match(
+    entry,
+    /target\.matches\("\.hero-device, #orbit-demo"\)\)\s+void afterLoad\(\[\(\) => import\("\.\.\/scripts\/demo"\)\]\)/,
+  );
+  assert.match(entry, /'\.hero-device, #orbit-demo, \[data-week-card\]/);
+});
+
+test("the demo and week sentences exist in both tables without dashes", () => {
+  for (const language of ["en", "pt-BR"]) {
+    for (const key of ["example.demo", "example.week"]) {
+      const value = copyTables.landingCopy[language][key];
+      assert.ok(value, `${language} ${key}`);
+      assert.ok([...value].every((char) => ![8211, 8212].includes(char.charCodeAt(0))));
+    }
+  }
 });

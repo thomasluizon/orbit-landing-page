@@ -1,7 +1,6 @@
-const screen = document.querySelector<HTMLElement>(".device-screen");
-const layout = screen?.querySelector<HTMLElement>(".phone-screen");
-
-if (screen && layout) {
+document.querySelectorAll<HTMLElement>(".device-screen").forEach((screen) => {
+  const layout = screen.querySelector<HTMLElement>(".phone-screen");
+  if (!layout) return;
   const logicalWidth = layout.offsetWidth;
   const fit = (width: number) => {
     if (width <= 0) return;
@@ -9,6 +8,6 @@ if (screen && layout) {
   };
   fit(screen.getBoundingClientRect().width);
   new ResizeObserver(([entry]) => fit(entry.contentRect.width)).observe(screen);
-}
+});
 
 export {};

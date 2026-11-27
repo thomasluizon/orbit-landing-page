@@ -252,15 +252,51 @@ function harness(language = "en", threadHeight = 415) {
   };
 }
 
-test("every habit toggle sits in the hero phone, whose demo binds it", () => {
-  const isToggle = (node) => Object.hasOwn(attributes(node), "data-habit-toggle");
+test("every habit toggle sits inside a surface for which the observer loads the demo", () => {
+  const entry = readFileSync("src/pages/index.astro", "utf8");
+  const loading = entry.match(
+    /target\.matches\("([^"]+)"\)\)\s+void afterLoad\(\[\(\) => import\("\.\.\/scripts\/demo"\)\]\)/,
+  );
+  const observed = entry.match(/\.querySelectorAll\(\s*'([^']+)',?\s*\)\s*\.forEach\(\(surface\)/);
+  assert.ok(loading && observed);
+  const selectors = (list) => list.split(",").map((selector) => selector.trim());
+  const triggers = selectors(loading[1]).filter((selector) =>
+    selectors(observed[1]).includes(selector),
+  );
+  const matches = (node, selector) =>
+    selector.startsWith("#")
+      ? attributes(node).id === selector.slice(1)
+      : (attributes(node).class ?? "").split(/\s+/).includes(selector.slice(1));
+  const covered = new Set(
+    nodes
+      .filter((node) => triggers.some((selector) => matches(node, selector)))
+      .flatMap(descendants),
+  );
+  const toggles = nodes.filter((node) => Object.hasOwn(attributes(node), "data-habit-toggle"));
+  assert.ok(toggles.length > 0);
+  const unbound = toggles.filter((toggle) => !covered.has(toggle));
+  assert.equal(unbound.length, 0, `${unbound.length} of ${toggles.length} toggles have no trigger`);
+});
+
+test("the hero copy of the demo has no id, no app entry and no focus stop", () => {
   const phone = nodes.find((node) =>
     (attributes(node).class ?? "").split(/\s+/).includes("hero-device"),
   );
-  assert.ok(phone);
-  const toggles = nodes.filter(isToggle);
-  assert.ok(toggles.length > 0);
-  assert.equal(descendants(phone).filter(isToggle).length, toggles.length);
+  const copy = descendants(phone).find((node) => attributes(node).class === "inert-copy");
+  assert.ok(copy && Object.hasOwn(attributes(copy), "inert"));
+  for (const node of descendants(copy)) {
+    const own = attributes(node);
+    assert.equal(own.id, undefined);
+    assert.equal(own.for, undefined);
+    assert.equal(Object.hasOwn(own, "data-app-entry"), false);
+    assert.equal(Object.hasOwn(own, "data-demo"), false);
+  }
+});
+
+test("each demo id appears once in the built page", () => {
+  const ids = nodes.map((node) => attributes(node).id).filter(Boolean);
+  const duplicated = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepEqual(duplicated, []);
 });
 
 test("a guide Orbit blinks once when it arrives and never before", () => {

@@ -1,0 +1,19 @@
+---
+import { Signal, Wifi, BatteryFull } from "@lucide/astro";
+import { buildNow } from "../config/product-examples";
+import { clockText } from "../scripts/clock-format";
+const statusTime = clockText("time", buildNow);
+---
+
+<div class="device-status" aria-hidden="true">
+  <span
+    class="device-status-time"
+    data-mock
+    data-clock="time"
+    data-copy-en={statusTime.en}
+    data-copy-pt={statusTime["pt-BR"]}>{statusTime.en}</span
+  >
+  <span class="device-status-icons"
+    ><Signal size={16} /><Wifi size={16} /><BatteryFull size={20} /></span
+  >
+</div>

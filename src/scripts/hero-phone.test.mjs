@@ -85,6 +85,8 @@ test("every phone screen shares the status, 56px app header and 16px content ins
   assert.match(rules(".phone-content").join("\n"), /padding-block-start:\s*16px;/);
   for (const slide of slides) {
     let children = slide.children.filter((node) => node.name);
+    if (children[0]?.name === "InertCopy")
+      children = children[0].children.filter((node) => node.name);
     if (children[0]?.name === "OrbitDemo") {
       const ast = (await parse(source("OrbitDemo"))).ast;
       children = descendants(ast)
@@ -131,7 +133,7 @@ test("screen fitting follows fractional inner width and caps its scale at one", 
       }).outputText,
       {
         exports: {},
-        document: { querySelector: () => screen },
+        document: { querySelectorAll: () => [screen] },
         ResizeObserver: class {
           constructor(fn) {
             resized = fn;
