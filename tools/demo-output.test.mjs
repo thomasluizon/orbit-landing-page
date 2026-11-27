@@ -252,20 +252,30 @@ function harness(language = "en", threadHeight = 415) {
   };
 }
 
-test("every habit toggle sits in a phone, whose demo binds it", () => {
-  const isToggle = (node) => Object.hasOwn(attributes(node), "data-habit-toggle");
-  const phones = nodes.filter((node) =>
-    (attributes(node).class ?? "")
-      .split(/\s+/)
-      .some((name) => name === "hero-device" || name === "feature-phone"),
+test("every habit toggle sits inside a surface for which the observer loads the demo", () => {
+  const entry = readFileSync("src/pages/index.astro", "utf8");
+  const loading = entry.match(
+    /target\.matches\("([^"]+)"\)\)\s+void afterLoad\(\[\(\) => import\("\.\.\/scripts\/demo"\)\]\)/,
   );
-  assert.equal(phones.length, 2);
-  const toggles = nodes.filter(isToggle);
+  const observed = entry.match(/\.querySelectorAll\(\s*'([^']+)',?\s*\)\s*\.forEach\(\(surface\)/);
+  assert.ok(loading && observed);
+  const selectors = (list) => list.split(",").map((selector) => selector.trim());
+  const triggers = selectors(loading[1]).filter((selector) =>
+    selectors(observed[1]).includes(selector),
+  );
+  const matches = (node, selector) =>
+    selector.startsWith("#")
+      ? attributes(node).id === selector.slice(1)
+      : (attributes(node).class ?? "").split(/\s+/).includes(selector.slice(1));
+  const covered = new Set(
+    nodes
+      .filter((node) => triggers.some((selector) => matches(node, selector)))
+      .flatMap(descendants),
+  );
+  const toggles = nodes.filter((node) => Object.hasOwn(attributes(node), "data-habit-toggle"));
   assert.ok(toggles.length > 0);
-  assert.equal(
-    phones.flatMap((phone) => descendants(phone).filter(isToggle)).length,
-    toggles.length,
-  );
+  const unbound = toggles.filter((toggle) => !covered.has(toggle));
+  assert.equal(unbound.length, 0, `${unbound.length} of ${toggles.length} toggles have no trigger`);
 });
 
 test("the hero copy of the demo has no id, no app entry and no focus stop", () => {

@@ -692,10 +692,13 @@ test("the first two feature rows hold the interactive demo and the interactive w
   }
 });
 
-test("the page loads the demo for the features demo and no longer observes the hero device", () => {
+test("the page observes the hero phone and the features demo and loads the demo for each", () => {
   const entry = readFileSync("src/pages/index.astro", "utf8");
-  assert.match(entry, /target\.matches\("#orbit-demo"\)\) void afterLoad/);
-  assert.doesNotMatch(entry, /hero-device/);
+  assert.match(
+    entry,
+    /target\.matches\("\.hero-device, #orbit-demo"\)\)\s+void afterLoad\(\[\(\) => import\("\.\.\/scripts\/demo"\)\]\)/,
+  );
+  assert.match(entry, /'\.hero-device, #orbit-demo, \[data-week-card\]/);
 });
 
 test("the demo and week sentences exist in both tables without dashes", () => {
