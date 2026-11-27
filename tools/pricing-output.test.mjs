@@ -19,7 +19,7 @@ function interactive(element) {
   return element;
 }
 
-async function builtPricing(language) {
+async function builtPricing(language, { withPricing = true } = {}) {
   const document = documentFrom(readFileSync("dist/index.html", "utf8"));
   let cookie = `orbit_lang=${language}`;
   Object.defineProperty(document, "cookie", {
@@ -40,7 +40,7 @@ async function builtPricing(language) {
     configurable: true,
   });
   await runnerImport("/src/scripts/i18n.ts", viteOptions);
-  await runnerImport("/src/scripts/pricing.ts", viteOptions);
+  if (withPricing) await runnerImport("/src/scripts/pricing.ts", viteOptions);
   const toggle = interactive(document.getElementById("lang-toggle"));
   const options = document.querySelectorAll("[data-billing-period]").map(interactive);
   return {
@@ -118,5 +118,17 @@ test("every built billing period shows its configured daily price and actual bil
     assert.equal(field("data-plan-recommendation").hidden, false);
     page.options[0].click();
     assert.equal(field("data-plan-recommendation").hidden, false);
+  }
+});
+
+test("the built page paints every price the pricing script writes in the visitor's language without that script", async () => {
+  const { module: prices } = await runnerImport("/src/config/pricing-copy.ts", viteOptions);
+  for (const language of ["en", "pt-BR"]) {
+    const { document } = await builtPricing(language, { withPricing: false });
+    const yearly = prices.pricingFor(language, "yearly");
+    const field = (name) => document.querySelector(`[${name}]`);
+    assert.equal(field("data-pro-price").textContent, yearly.primary, language);
+    assert.equal(field("data-billed-total").textContent, yearly.billed, language);
+    assert.equal(field("data-billing-saving").textContent, yearly.savingShort, language);
   }
 });

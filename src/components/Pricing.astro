@@ -100,9 +100,22 @@ const { appUrl } = Astro.props;
         <p class="plan-description"><Copy name="pricing.pro.body" /></p>
         <div class="plan-cost" aria-live="polite" aria-atomic="true">
           <p class="plan-price">
-            <span class="price-value" data-pro-price>{pricingFor("en", "yearly").primary}</span>
+            <span
+              class="price-value"
+              data-pro-price
+              data-copy-en={pricingFor("en", "yearly").primary}
+              data-copy-pt={pricingFor("pt-BR", "yearly").primary}
+              >{pricingFor("en", "yearly").primary}</span
+            >
           </p>
-          <p class="plan-annual" data-billed-total>{pricingFor("en", "yearly").billed}</p>
+          <p
+            class="plan-annual"
+            data-billed-total
+            data-copy-en={pricingFor("en", "yearly").billed}
+            data-copy-pt={pricingFor("pt-BR", "yearly").billed}
+          >
+            {pricingFor("en", "yearly").billed}
+          </p>
         </div>
         <ul>
           {

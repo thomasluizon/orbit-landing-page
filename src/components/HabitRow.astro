@@ -8,18 +8,24 @@ interface Props extends HTMLAttributes<"button"> {
   timing?: "morning" | "done" | "todo";
   time?: string;
   days?: number;
+  static?: boolean;
 }
-const { habit, timing = "morning", time, days, ...attributes } = Astro.props;
+const {
+  habit,
+  timing = "morning",
+  time,
+  days,
+  static: isStatic = false,
+  ...attributes
+} = Astro.props;
+const Tag = isStatic ? "div" : "button";
+const control = isStatic
+  ? {}
+  : { type: "button" as const, "data-habit-toggle": true, "aria-pressed": timing === "done" };
 const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘", read: "📖" };
 ---
 
-<button
-  {...attributes}
-  type="button"
-  class="habit-row"
-  data-habit-toggle
-  aria-pressed={timing === "done"}
->
+<Tag {...attributes} {...control} class="habit-row">
   <span class="habit-emoji" aria-hidden="true">{emoji[habit]}</span>
   <span class="habit-copy">
     <span class="habit-name"><slot name="name"><Copy name={`product.${habit}`} /></slot></span>
@@ -49,4 +55,4 @@ const emoji = { walk: "🚶", water: "💧", run: "🏃", stretch: "🧘", read:
     ><span class:list={["status-ring", { "is-done": timing === "done" }]}><Check size={16} /></span
     ></span
   >
-</button>
+</Tag>

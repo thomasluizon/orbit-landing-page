@@ -6,13 +6,10 @@ import vm from "node:vm";
 import ts from "typescript";
 import { scriptsFrom } from "./html.test-helper.mjs";
 
-const deferred = [
-  "pricing",
-  "back-to-top",
-  "scroll",
-  "header-scroll",
-  "waitlist",
-  "waitlist-section",
+const deferred = ["back-to-top", "scroll", "header-scroll", "waitlist-section"];
+const sectionScripts = [
+  { name: "pricing", target: 6 },
+  { name: "waitlist", target: 7 },
 ];
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const firstViewport = [
@@ -41,12 +38,14 @@ function harness({
     },
   }));
   const targets = [
-    ".hero-device",
+    ".hero-fan",
     '[data-section="features"]',
     "[data-week-card]",
     "#faq",
     "[data-orbit-guide]",
     "#orbit-demo",
+    "#pricing",
+    "#ios",
   ].map((selector) => ({
     selector,
     attributes: new Set(["data-clock-pending"]),
@@ -212,7 +211,7 @@ for (const scheduler of [false, true]) {
 
   test(`the demo and the chart controls wait for load in separate tasks, the calendar does not (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
-    h.intersect(0);
+    h.intersect(5);
     h.intersect(1);
     await flush();
     assert.deepEqual(
@@ -230,21 +229,30 @@ for (const scheduler of [false, true]) {
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
   });
 
-  for (const [surface, index] of [
-    ["hero phone", 0],
-    ["features demo", 5],
-  ]) {
-    test(`the ${surface} loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
-      const h = harness({ scheduler });
-      h.intersect(index);
-      h.load();
-      await h.drain();
-      const names = h.bindings.map(({ name }) => name);
-      assert.ok(names.includes("demo"));
-      for (const name of ["product-metrics", ...demoViewModules])
-        assert.ok(!names.includes(name), name);
-    });
-  }
+  test(`the features demo loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(5);
+    h.load();
+    await h.drain();
+    const names = h.bindings.map(({ name }) => name);
+    assert.ok(names.includes("demo"));
+    for (const name of ["product-metrics", ...demoViewModules])
+      assert.ok(!names.includes(name), name);
+  });
+
+  test(`the hero phones load the calendar views at once and not the demo (scheduler: ${scheduler})`, async () => {
+    const h = harness({ scheduler });
+    h.intersect(0);
+    await flush();
+    assert.deepEqual(
+      h.bindings.map(({ name }) => name),
+      [...firstViewport.map(({ name }) => name), "demo-views"],
+    );
+    h.load();
+    await h.drain();
+    const names = h.bindings.map(({ name }) => name);
+    for (const name of ["demo", "product-metrics", "week"]) assert.ok(!names.includes(name), name);
+  });
 
   test(`a direct visit below the hero binds feature controls without loading the demo (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
@@ -297,6 +305,41 @@ test("the calendar and the chart labels load only when the features come near", 
   await h.drain();
   for (const name of ["demo-views", "product-metrics"]) assert.ok(names().includes(name), name);
   assert.deepEqual(h.mounts, [], "the week card mounts only when it comes into view");
+});
+
+test("a section script never loads after load until its section comes near", async () => {
+  const h = harness();
+  h.load();
+  await h.drain();
+  const names = () => h.bindings.map(({ name }) => name);
+  for (const { name } of sectionScripts) assert.ok(!names().includes(name), name);
+  for (const { name, target } of sectionScripts) {
+    for (const other of [0, 1, 2, 3, 4, 5]) h.intersect(other);
+    await h.drain();
+    assert.ok(!names().includes(name), `${name} waits for its own section`);
+    h.intersect(target);
+    await h.drain();
+    assert.ok(names().includes(name), `${name} loads when its section comes near`);
+  }
+});
+
+test("a direct visit to the pricing or the waitlist loads its script after load, not during startup", async () => {
+  for (const { name, target } of sectionScripts) {
+    const h = harness();
+    h.intersect(target);
+    await flush();
+    assert.deepEqual(h.bindings, firstViewport);
+    h.load();
+    await h.drain();
+    const bound = h.bindings.find((binding) => binding.name === name);
+    assert.ok(bound?.task > 0, `${name} waits for load in a later task`);
+  }
+});
+
+test("the page script observes the pricing and the waitlist sections", () => {
+  const source = scriptsFrom(readFileSync("src/pages/index.astro", "utf8"))[0].body;
+  assert.match(source, /#pricing/);
+  assert.match(source, /#ios/);
 });
 
 test("the FAQ disclosure loads only when the FAQ comes near", async () => {

@@ -5,15 +5,17 @@ Landing page for Orbit, an AI that tracks habits. Orbit is the app, its AI and i
 ## Design system (mirrored, not owned)
 
 - The canon is `orbit-ui-mobile/DESIGN.md` and `orbit-ui-mobile/design/canvas/`. This repository mirrors the dark tokens in `src/styles/global.css`. When `DESIGN.md` changes a token value, update the mirror in the same task.
-- Never invent a colour, a font or a radius. The page is dark only. Write no em dash in copy.
-- The landing copies the structure, motion and copy discipline of Pierre's long-scroll page (lp.pierre.finance/lp/converse) in Orbit's design: a centred hero with the device centred below it. Never a split hero (text on one side, a visual on the other).
+- Never invent a colour, a font or a radius. The page body is dark. Only the three hero phone screens use the light tokens, in the `.phone-light` scope of `src/styles/global.css`. Write no em dash in copy.
+- The landing copies the structure, motion and copy discipline of Pierre's long-scroll page (lp.pierre.finance/lp/converse) in Orbit's design: a centred hero with three phones side by side below it. Never a split hero (text on one side, a visual on the other).
+- The hero shows three static HTML phones: Hoje on the left, the Orbit conversation in the centre, and Calendário on the right. The centre phone stands upright in front. The side phones tilt away and sit behind it.
+- A hero phone has a generic frame. Draw no island, notch, sensor cutout or side button. A hero phone has no focus stop, no carousel, no pager and no moving card. The interactive demo and the Your week card live in the features section.
 - Use no raw slate value, no `transition-all` and no `h-screen` (use `min-h-dvh`).
 - Each interactive element has one role, and the role sets its hover, press, focus ring and transition tier:
   - Control (button, chip, pill): fill colour on `--duration-hover-control`. Neutral fills use `--color-bg-hover`. Primary fills use `--color-primary-hover` and `--color-primary-pressed`.
   - Surface (habit row, FAQ row, downloads entry): `--color-bg-hover` and `--color-hairline-strong` on `--duration-hover-surface`. A press paints at once.
   - Link: colour on `--duration-hover-surface`. A link without a persistent underline draws an underline that scales from its leading edge.
   - Text field (the Ask Orbit composer included): keeps its `--color-border-control` ring on hover, has no press fill and takes the inset 2px primary focus ring.
-  - Dense composite (carousel, bar chart, day cells): feedback paints only its own mark.
+  - Dense composite (bar chart, day cells): feedback paints only its own mark.
 - The press rule comes after the hover query, outside it. A disabled control shows no hover and no press. `--duration-fast` is for press movement and state changes. Habit toggling stays immediate.
 - A focus ring stays inside its control unless 8px of clearance stays outside it. A focus ring never repeats a state marker of its control.
 - No animation runs longer than 5 seconds without a visitor action. The page starts no frame loop for the mascot.

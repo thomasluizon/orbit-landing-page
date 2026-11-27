@@ -1,10 +1,8 @@
 ---
-import { Bell } from "@lucide/astro";
-import OrbitMascot from "./OrbitMascot.astro";
 import Copy from "./Copy.astro";
 import { landingCopy } from "../i18n/translations";
 interface Props {
-  kind: "week" | "reminder" | "insight";
+  kind: "week";
 }
 const { kind } = Astro.props;
 import { buildNow } from "../config/product-examples";
@@ -48,37 +46,6 @@ const week = copy ? weekHtml(buildNow, dayKey(buildNow), "en", copy) : undefined
           data-week-readouts
           set:html={week?.readouts}
         />
-      </>
-    )
-  }
-  {
-    kind === "reminder" && (
-      <>
-        <div class="product-top">
-          <>
-            <span class="product-icon">
-              <Bell size={20} />
-            </span>
-            <span class="product-caption">
-              <Copy name="product.reminder" />
-            </span>
-          </>
-        </div>
-        <h3>
-          <Copy name="product.ready" />
-        </h3>
-      </>
-    )
-  }
-  {
-    kind === "insight" && (
-      <>
-        <div class="product-top">
-          <OrbitMascot size={24} />
-        </div>
-        <p>
-          <Copy name="product.insight" />
-        </p>
       </>
     )
   }

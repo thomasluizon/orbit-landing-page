@@ -110,7 +110,6 @@ function syncHabitReaches(list: HTMLElement | null) {
 
 function updateToday(plan: AcceptedPlan) {
   const acceptedTitle = habitTitle(plan.example, plan.title);
-  const normalizedTitle = acceptedTitle.trim().toLocaleLowerCase(getLang());
   const identity = (
     plan.title ||
     translations.en[`demo.${plan.example === "custom" ? "start" : plan.example}.habit`]
@@ -126,35 +125,7 @@ function updateToday(plan: AcceptedPlan) {
   secondRow?.toggleAttribute("hidden", !plan.showSecond);
   if (secondRow)
     bindHabitCompletion(secondRow, translations.en["demo.move.secondHabit"].toLowerCase());
-  document.querySelectorAll<HTMLElement>("[data-demo-approved]").forEach((row) => {
-    row.hidden = false;
-    bindHabitCompletion(row, identity);
-    const name = row.querySelector<HTMLElement>("[data-approved-name]");
-    const repeat = row.querySelector<HTMLElement>("[data-approved-repeat]");
-    if (name) name.textContent = acceptedTitle;
-    if (repeat) repeat.textContent = translations[getLang()][plan.schedule];
-    const originals = row
-      .closest(".phone-today-habits")
-      ?.querySelectorAll<HTMLElement>(
-        "[data-habit-toggle]:not([data-demo-approved]):not([data-demo-approved-second])",
-      );
-    const matchesTitle = (habit: HTMLElement) =>
-      habit.querySelector(".habit-name")?.textContent?.trim().toLocaleLowerCase(getLang()) ===
-      normalizedTitle;
-    const replacesExisting = [...(originals ?? [])].some(matchesTitle);
-    originals?.forEach((habit, index) => {
-      habit.hidden =
-        plan.example === "move" || matchesTitle(habit) || (!replacesExisting && index === 0);
-    });
-  });
-  document.querySelectorAll<HTMLElement>("[data-demo-approved-second]").forEach((row) => {
-    row.hidden = !plan.showSecond;
-    bindHabitCompletion(row, translations.en["demo.move.secondHabit"].toLowerCase());
-    const repeat = row.querySelector("[data-approved-second-repeat]");
-    if (repeat) repeat.textContent = translations[getLang()][plan.schedule];
-  });
   syncHabitReaches(today);
-  document.querySelectorAll<HTMLElement>(".phone-today-habits").forEach(syncHabitReaches);
 }
 
 function finish(accept: boolean) {

@@ -21,7 +21,9 @@ const rules = (selector) =>
         selectors.split(",").some((s) => normalizeSelector(s) === selector),
     )
     .map(([, , declarations]) => declarations);
-const slides = descendants(hero).filter((node) => attributes(node)["data-phone-slide"]);
+const hasClass = (node, name) => (attributes(node).class ?? "").split(/\s+/).includes(name);
+const slides = descendants(hero).filter((node) => hasClass(node, "phone-slide"));
+const phones = descendants(hero).filter((node) => hasClass(node, "hero-phone"));
 
 for (const [kind, forbidden] of [
   ["relational", /:has\(/],
@@ -46,10 +48,7 @@ test("stretched phone slides contain layout, paint and style without intrinsic s
 
 test("phone habit reaches mark the visible boundaries before script loading", async () => {
   const demo = (await parse(source("OrbitDemo"))).ast;
-  const lists = [
-    descendants(hero).find((node) => attributes(node).class === "phone-today-habits"),
-    descendants(demo).find((node) => attributes(node).id === "demo-today"),
-  ];
+  const lists = [descendants(demo).find((node) => attributes(node).id === "demo-today")];
   for (const list of lists) {
     const rows = list.children.filter(
       (node) => node.name === "HabitRow" || attributes(node).class === "habit-row",
@@ -64,15 +63,17 @@ test("phone habit reaches mark the visible boundaries before script loading", as
 });
 
 test("every phone screen shares the status, 56px app header and 16px content inset", async () => {
-  const device = descendants(hero).find((node) => attributes(node).class === "phone-screen");
-  assert.ok(device, "the whole app shares one scaled screen");
-  assert.deepEqual(
-    device.children
-      .filter((node) => node.name)
-      .slice(0, 2)
-      .map((node) => attributes(node).class),
-    ["device-status", "phone-carousel"],
-  );
+  const screens = descendants(hero).filter((node) => hasClass(node, "phone-screen"));
+  assert.equal(screens.length, 3, "the whole app shares one scaled screen");
+  for (const device of screens) {
+    assert.deepEqual(
+      device.children
+        .filter((node) => node.name)
+        .slice(0, 2)
+        .map((node) => (node.name === "PhoneStatus" ? node.name : attributes(node).class)),
+      ["PhoneStatus", "phone-body"],
+    );
+  }
   assert.ok(existsSync("src/components/PhoneHeader.astro"), "one header owns phone spacing");
   assert.match(source("PhoneHeader"), /<header class="phone-app-header">/);
   const header = rules(".phone-app-header");
@@ -83,28 +84,24 @@ test("every phone screen shares the status, 56px app header and 16px content ins
   assert.match(header[0], /gap:\s*12px;/);
   assert.match(header[0], /padding-inline:\s*16px;/);
   assert.match(rules(".phone-content").join("\n"), /padding-block-start:\s*16px;/);
+  assert.equal(slides.length, 3);
   for (const slide of slides) {
-    let children = slide.children.filter((node) => node.name);
-    if (children[0]?.name === "InertCopy")
-      children = children[0].children.filter((node) => node.name);
-    if (children[0]?.name === "OrbitDemo") {
-      const ast = (await parse(source("OrbitDemo"))).ast;
-      children = descendants(ast)
-        .find((node) => attributes(node).id === "orbit-demo")
-        .children.filter((node) => node.name);
-    }
-    assert.equal(children[0]?.name, "PhoneHeader", attributes(slide)["data-phone-slide"]);
-    assert.ok(attributes(children[1]).class?.split(" ").includes("phone-content"));
+    const children = slide.children.filter((node) => node.name);
+    assert.equal(children[0]?.name, "PhoneHeader");
+    assert.ok(hasClass(children[1], "phone-content"));
   }
   assert.match(source("OrbitDemo"), /<PhoneHeader>\s*<OrbitMascot size=\{16\} \/>\s*<h2/);
 });
 
 test("one vector layout draws the whole phone at 390 by 845 logical pixels", () => {
-  const screen = descendants(hero).find((node) => attributes(node).class === "device-screen");
-  assert.deepEqual(
-    screen.children.filter((node) => node.name).map((node) => attributes(node).class),
-    ["phone-screen"],
-  );
+  const screens = descendants(hero).filter((node) => hasClass(node, "device-screen"));
+  assert.equal(screens.length, 3);
+  for (const screen of screens) {
+    assert.deepEqual(
+      screen.children.filter((node) => node.name).map((node) => attributes(node).class),
+      ["phone-screen"],
+    );
+  }
   const layout = rules(".phone-screen");
   assert.equal(layout.length, 1);
   assert.match(layout[0], /inline-size:\s*390px;/);
@@ -556,10 +553,7 @@ for (let pair = 0; pair < 2; pair++) {
 
 test("Today rows and the continuation keep bounded reaches clear of neighbours and the home area", () => {
   for (const scale of scales) {
-    for (const [container, gap] of [
-      [".phone-today-habits", 12],
-      [".demo-today", 16],
-    ]) {
+    for (const [container, gap] of [[".demo-today", 16]]) {
       const selector = `.phone-screen ${container} > .habit-row`;
       const targets = [0, 1, 2].map((index) =>
         reach(358, 64, scale, [
@@ -651,22 +645,28 @@ test("phone spacing keeps only the declarations that render", () => {
   }
 });
 
-test("the phone and its pager contain exactly chat and Today", () => {
+test("the hero draws three phones side by side: Hoje, the Orbit conversation and Calendário", () => {
   assert.deepEqual(
-    slides.map((node) => attributes(node)["data-phone-slide"]),
-    ["chat", "today"],
+    phones.map((node) => attributes(node).class),
+    ["hero-phone hero-phone-left", "hero-phone hero-phone-center", "hero-phone hero-phone-right"],
   );
-  assert.match(source("Hero"), /\(\["chat", "today"\] as const\)\.map/);
-  assert.doesNotMatch(source("Hero"), /<ProductCard kind="today"/);
+  const [left, center, right] = phones.map(descendants);
+  assert.ok(left.some((node) => attributes(node)["data-clock"] === "today"));
+  assert.ok(center.some((node) => node.name === "AiBlock" && attributes(node).kind === "metrics"));
+  assert.ok(
+    right.some((node) => node.name === "OrbitProduct" && attributes(node).kind === "calendar"),
+  );
+  assert.doesNotMatch(
+    source("Hero"),
+    /data-phone-carousel|data-phone-slide|hero-pager|hero-products|data-hero-float|data-hero-column|device-speaker|InertCopy|OrbitDemo|ProductCard/,
+  );
 });
 
-test("Today fills the screen with one Orbit line and five mixed-state habit rows", () => {
-  const today = slides.find((node) => attributes(node)["data-phone-slide"] === "today");
-  const nodes = descendants(today);
-  const rows = nodes.filter(
-    (node) => node.name === "HabitRow" && !Object.hasOwn(attributes(node), "hidden"),
-  );
+test("Hoje fills the screen with one Orbit line and five mixed-state static habit rows", () => {
+  const nodes = descendants(phones[0]);
+  const rows = nodes.filter((node) => node.name === "HabitRow");
   assert.equal(rows.length, 5);
+  assert.ok(rows.every((node) => Object.hasOwn(attributes(node), "static")));
   assert.ok(rows.some((node) => attributes(node).timing === "done"));
   assert.ok(rows.some((node) => attributes(node).timing === "todo"));
   assert.ok(rows.some((node) => attributes(node).time));
@@ -674,7 +674,6 @@ test("Today fills the screen with one Orbit line and five mixed-state habit rows
   assert.equal(nodes.filter((node) => node.name === "OrbitMascot").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronLeft").length, 1);
   assert.equal(nodes.filter((node) => node.name === "ChevronRight").length, 1);
-  assert.ok(nodes.some((node) => attributes(node)["data-clock"] === "today"));
   assert.match(rules(".phone-today-habits").join("\n"), /flex:\s*1;/);
   assert.match(
     rules(".phone-today-habits").join("\n"),
@@ -682,21 +681,19 @@ test("Today fills the screen with one Orbit line and five mixed-state habit rows
   );
 });
 
-test("side cards balance two items per column", () => {
-  const columns = descendants(hero).filter((node) =>
-    Object.hasOwn(attributes(node), "data-hero-column"),
-  );
-  assert.deepEqual(
-    columns.map(
-      (column) =>
-        descendants(column).filter((node) => Object.hasOwn(attributes(node), "data-hero-float"))
-          .length,
-    ),
-    [2, 2],
-  );
+test("the centre phone answers one request with the metrics block, no prose line and a static composer", () => {
+  const nodes = descendants(phones[1]);
+  const requests = nodes.filter((node) => hasClass(node, "demo-request"));
+  assert.equal(requests.length, 1);
+  assert.equal(nodes.filter((node) => node.name === "AiBlock").length, 1);
+  assert.ok(!nodes.some((node) => hasClass(node, "demo-message")));
+  const composer = nodes.find((node) => hasClass(node, "demo-composer"));
+  assert.ok(composer, "the composer sits at the bottom");
+  assert.ok(!descendants(composer).some((node) => ["input", "form", "button"].includes(node.name)));
+  assert.ok(nodes.every((node) => !Object.hasOwn(attributes(node), "aria-live")));
 });
 
-test("no side card repeats phone copy in either locale", async () => {
+test("the request of the centre phone reads the same in both languages as its key", () => {
   const copy = {};
   vm.runInNewContext(
     ts.transpileModule(readFileSync("src/i18n/translations.ts", "utf8"), {
@@ -704,47 +701,64 @@ test("no side card repeats phone copy in either locale", async () => {
     }).outputText,
     { exports: copy },
   );
-  const columns = descendants(hero).filter((node) =>
-    Object.hasOwn(attributes(node), "data-hero-column"),
+  assert.equal(copy.landingCopy.en["hero.week.request"], "How did my week go?");
+  assert.equal(copy.landingCopy["pt-BR"]["hero.week.request"], "Como foi minha semana?");
+  const request = descendants(phones[1]).find((node) => node.name === "Copy");
+  assert.equal(attributes(request).name, "hero.week.request");
+});
+
+test("each hero screen takes the light scope and the frame stays on the dark tokens", () => {
+  const screens = descendants(hero).filter((node) => hasClass(node, "device-screen"));
+  assert.ok(screens.every((node) => hasClass(node, "phone-light")));
+  const frames = descendants(hero).filter((node) => hasClass(node, "hero-device"));
+  assert.ok(frames.every((node) => !hasClass(node, "phone-light")));
+  assert.match(readFileSync("src/styles/global.css", "utf8"), /html\s*\{\s*color-scheme:\s*dark;/);
+});
+
+test("the fan puts the centre phone in front and tilts the side phones away behind it", () => {
+  assert.match(rules(".hero-phone-center").join("\n"), /z-index:\s*2;/);
+  for (const selector of [".hero-phone-left", ".hero-phone-right"])
+    assert.doesNotMatch(rules(selector).join("\n"), /z-index:/);
+  assert.match(rules(".hero-phone-left").join("\n"), /rotate:\s*-8deg;/);
+  assert.match(rules(".hero-phone-right").join("\n"), /(?<![-\d])rotate:\s*8deg;/);
+  assert.match(rules(".hero-phone").join("\n"), /transform-origin:\s*50% 100%;/);
+  assert.match(
+    rules(".hero-stage").join("\n"),
+    /--hero-side-width:\s*calc\(var\(--hero-device-width\) \* 0\.84\);/,
   );
-  const product = (await parse(source("ProductCard"))).ast;
-  const templates = new Map([["OrbitDemo", (await parse(source("OrbitDemo"))).ast]]);
-  async function texts(node, language) {
-    const attrs = attributes(node);
-    const table = copy.landingCopy[language];
-    if (node.name === "Copy") return [table[attrs.name]];
-    if (attrs["data-i18n"]) return [copy.translations[language][attrs["data-i18n"]]];
-    if (node.name === "HabitRow")
-      return [
-        table[`product.${attrs.habit}`],
-        table[`product.${attrs.timing ?? "morning"}`],
-      ].filter(Boolean);
-    if (node.name === "ProductCard") {
-      const branch = descendants(product).find(
-        (child) =>
-          child.type === "expression" &&
-          child.children?.some(
-            (part) => part.type === "text" && part.value.includes(`kind === "${attrs.kind}"`),
-          ),
-      );
-      assert.ok(branch, attrs.kind);
-      return (
-        await Promise.all((branch.children ?? []).map((child) => texts(child, language)))
-      ).flat();
-    }
-    const template = templates.get(node.name);
-    if (template) return texts(template, language);
-    return (await Promise.all((node.children ?? []).map((child) => texts(child, language)))).flat();
-  }
-  for (const language of ["en", "pt-BR"]) {
-    const phoneText = new Set(
-      (await Promise.all(slides.map((slide) => texts(slide, language)))).flat(),
+  assert.match(rules(".landing-shell").join("\n"), /overflow:\s*clip;/);
+});
+
+test("all three phones stay visible and inside the viewport from 1440 to 320 pixels", () => {
+  for (const [width, height] of [
+    [1440, 900],
+    [1024, 768],
+    [768, 1024],
+    [375, 812],
+    [320, 568],
+  ]) {
+    const center = viewportScale(width, height) * 390 + 8;
+    const side = center * 0.84;
+    const reach = Math.min(center * 0.78, (width - side) / 2 - 8);
+    assert.ok(reach + side / 2 <= width / 2 - 8 + 1e-8, `${width}: the side phone stays inside`);
+    assert.ok(
+      reach + side / 2 - center / 2 >= 16,
+      `${width}: the side phone shows past the centre`,
     );
-    for (const column of columns) {
-      for (const text of await texts(column, language))
-        assert.ok(!phoneText.has(text), `${language}: ${text}`);
-    }
   }
+});
+
+test("the hero phone frame draws no island, notch, sensor cutout or side button", () => {
+  assert.doesNotMatch(source("Hero") + css, /device-speaker|notch|island|sensor|side-button/);
+  assert.equal(rules(".hero-device::before").length + rules(".hero-device::after").length, 0);
+  assert.equal(rules(".hero-phone::before").length + rules(".hero-phone::after").length, 0);
+});
+
+test("the hero phones never float, tilt toward the pointer or run a frame loop", () => {
+  assert.doesNotMatch(source("Hero"), /data-hero-float|hero-float/);
+  assert.ok(!existsSync("src/scripts/hero-float.ts"));
+  assert.ok(!existsSync("src/scripts/hero-carousel.ts"));
+  assert.doesNotMatch(css, /\.hero-phone[^{]*\{[^}]*(?:animation|perspective)/);
 });
 
 for (const [width, height] of [
@@ -815,10 +829,7 @@ for (const [width, height] of [
         withInput(editor, 160, inputSeparation + padding(".demo-preview")),
         withInput(continuation, 48),
       ];
-      for (const [container, gap, count] of [
-        [".phone-today-habits", 12, 7],
-        [".demo-today", 16, 2],
-      ]) {
+      for (const [container, gap, count] of [[".demo-today", 16, 2]]) {
         const selector = `.phone-screen ${container} > .habit-row`;
         const habits = Array.from({ length: count }, (_, index) =>
           box(0, index * (64 + gap), 358, 64, [

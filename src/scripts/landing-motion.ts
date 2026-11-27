@@ -1,7 +1,6 @@
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import { updateHeroCarousel } from "./hero-carousel";
 import { resumeProgrammaticScroll, routeProgrammaticScroll } from "./programmatic-scroll";
 import { afterLoad } from "./task-queue";
 
@@ -118,8 +117,6 @@ export function mountLandingMotion() {
               : { start: "top bottom", end: "bottom top", pin: false }),
             scrub: true,
             invalidateOnRefresh: true,
-            onUpdate: (trigger) => updateHeroCarousel(trigger.progress),
-            onRefresh: (trigger) => updateHeroCarousel(trigger.progress),
           },
         });
         timeline.to({}, { duration: 1 });
@@ -130,11 +127,10 @@ export function mountLandingMotion() {
     const stage = document.getElementById("hero-stage");
     if (stage) {
       gsap.fromTo(
-        stage.querySelectorAll("[data-hero-float] > *"),
-        { y: 24, opacity: 0 },
+        stage.querySelectorAll(".hero-phone .hero-device"),
+        { y: 24 },
         {
           y: 0,
-          opacity: 1,
           stagger: 0.12,
           ease: "none",
           scrollTrigger: {
@@ -203,7 +199,7 @@ export function mountLandingMotion() {
   };
   document.fonts.ready.then(refresh);
   const deviceSize = new ResizeObserver(refresh);
-  const device = document.querySelector(".hero-device");
+  const device = document.querySelector(".hero-fan");
   if (device) deviceSize.observe(device);
   document.querySelectorAll(".example-card").forEach((card) => deviceSize.observe(card));
   document

@@ -53,8 +53,10 @@ async function mount(now, language) {
   });
   const { demoNow } = load("src/scripts/demo-clock.ts");
   const weekCard = document.querySelector("[data-week-card]");
-  const calendar = document.querySelector("[data-calendar]");
-  for (const view of [weekCard, calendar]) {
+  const calendars = document.querySelectorAll("[data-calendar]");
+  assert.equal(calendars.length, 2, "the hero phone and the features row each draw a calendar");
+  const [heroCalendar, calendar] = calendars;
+  for (const view of [weekCard, heroCalendar, calendar]) {
     assert.ok(
       view.hasAttribute("data-clock-pending"),
       "the build marks the view so its build dates stay hidden until it shows the visitor's day",
@@ -62,7 +64,7 @@ async function mount(now, language) {
   }
   load("src/scripts/week.ts").mountWeek(weekCard, demoNow);
   load("src/scripts/demo-views.ts");
-  for (const view of [weekCard, calendar]) {
+  for (const view of [weekCard, heroCalendar, calendar]) {
     assert.equal(view.hasAttribute("data-clock-pending"), false);
   }
   translate(document, language);
@@ -70,6 +72,7 @@ async function mount(now, language) {
   const days = () => part("grid").querySelectorAll("[data-day-key]");
   return {
     document,
+    heroCalendar,
     part,
     days,
     selected: () => days().find((day) => day.getAttribute("aria-pressed") === "true"),
@@ -122,7 +125,11 @@ for (const language of ["en", "pt-BR"]) {
       assert.equal(h.document.querySelector('[data-clock="time"]').textContent, literal.time);
       assert.equal(h.document.querySelector('[data-clock="today"]').textContent, literal.today);
       const chart = h.document.querySelectorAll('[data-clock="chart"]');
-      assert.equal(chart.length, 9, "seven readouts and the two axis dates");
+      assert.equal(
+        chart.length,
+        18,
+        "two metric blocks, each with seven readouts and two axis dates",
+      );
       for (const element of chart) {
         const offset = Number(element.dataset.clockOffset);
         assert.ok(offset >= -6 && offset <= 0);
@@ -139,6 +146,11 @@ for (const language of ["en", "pt-BR"]) {
             .startsWith(`${chartDate(addDays(now, index - 6), language)}, `),
           bar.getAttribute("aria-label"),
         ),
+      );
+      assert.equal(
+        h.heroCalendar.querySelector("[data-calendar-title]").textContent,
+        capitalize(format(now, language, { month: "long" })),
+        "the hero calendar follows the visitor's month",
       );
       for (const previous of [buildToday.dataset.copyEn, buildToday.dataset.copyPt]) {
         if (previous === literals.en.today || previous === literals["pt-BR"].today) continue;

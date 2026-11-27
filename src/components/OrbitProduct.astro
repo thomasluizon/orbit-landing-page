@@ -8,8 +8,11 @@ import { calendarView } from "../scripts/calendar-view";
 import { addMonths, dayKey } from "../scripts/demo-dates";
 interface Props {
   kind: "calendar" | "progress" | "achievements";
+  static?: boolean;
 }
-const { kind } = Astro.props;
+const { kind, static: isStatic = false } = Astro.props;
+const Control = isStatic ? "span" : "button";
+const control = isStatic ? {} : { type: "button" as const };
 const copy = kind === "calendar" ? demoCopy() : undefined;
 const calendar = copy
   ? calendarView(addMonths(buildNow, 0), dayKey(buildNow), buildNow, "en", copy)
@@ -32,32 +35,36 @@ const monthLabel = (name: "calendar.previousMonth" | "calendar.nextMonth") => ({
         data-demo-copy={JSON.stringify(copy)}
       >
         <div class="calendar-month-nav">
-          <button
-            type="button"
+          <Control
+            {...control}
             class="calendar-nav-button"
             data-calendar-previous
-            {...monthLabel("calendar.previousMonth")}
+            {...(isStatic ? {} : monthLabel("calendar.previousMonth"))}
           >
             <ChevronLeft size={20} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
+          </Control>
+          <Control
+            {...control}
             class="calendar-month-title"
             data-calendar-title
             aria-disabled={calendar.isToday ? "true" : "false"}
-            aria-label={calendar.labels.title.en}
-            data-copy-label-en={calendar.labels.title.en}
-            data-copy-label-pt={calendar.labels.title["pt-BR"]}
+            {...(isStatic
+              ? {}
+              : {
+                  "aria-label": calendar.labels.title.en,
+                  "data-copy-label-en": calendar.labels.title.en,
+                  "data-copy-label-pt": calendar.labels.title["pt-BR"],
+                })}
             set:html={calendar.title}
           />
-          <button
-            type="button"
+          <Control
+            {...control}
             class="calendar-nav-button"
             data-calendar-next
-            {...monthLabel("calendar.nextMonth")}
+            {...(isStatic ? {} : monthLabel("calendar.nextMonth"))}
           >
             <ChevronRight size={20} aria-hidden="true" />
-          </button>
+          </Control>
         </div>
         <div
           class="orbit-month-grid"
@@ -71,7 +78,7 @@ const monthLabel = (name: "calendar.previousMonth" | "calendar.nextMonth") => ({
         <section class="calendar-day-card" data-calendar-panel>
           <h3
             data-calendar-day-title
-            aria-live="polite"
+            aria-live={isStatic ? undefined : "polite"}
             data-copy-en={calendar.dayTitle.en}
             data-copy-pt={calendar.dayTitle["pt-BR"]}
           >
