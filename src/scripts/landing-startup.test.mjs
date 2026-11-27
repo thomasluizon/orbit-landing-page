@@ -41,7 +41,7 @@ function harness({
     },
   }));
   const targets = [
-    ".hero-device",
+    "#orbit-demo",
     '[data-section="features"]',
     "[data-week-card]",
     "#faq",
@@ -225,7 +225,7 @@ for (const scheduler of [false, true]) {
     for (const name of deferred) assert.ok(h.bindings.some((binding) => binding.name === name));
   });
 
-  test(`the phone preview loads the demo and nothing from the features (scheduler: ${scheduler})`, async () => {
+  test(`the features demo loads the demo and nothing else from the features (scheduler: ${scheduler})`, async () => {
     const h = harness({ scheduler });
     h.intersect(0);
     h.load();

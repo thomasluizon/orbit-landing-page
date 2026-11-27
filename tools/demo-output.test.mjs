@@ -252,15 +252,41 @@ function harness(language = "en", threadHeight = 415) {
   };
 }
 
-test("every habit toggle sits in the hero phone, whose demo binds it", () => {
+test("every habit toggle sits in a phone, whose demo binds it", () => {
   const isToggle = (node) => Object.hasOwn(attributes(node), "data-habit-toggle");
+  const phones = nodes.filter((node) =>
+    (attributes(node).class ?? "")
+      .split(/\s+/)
+      .some((name) => name === "hero-device" || name === "feature-phone"),
+  );
+  assert.equal(phones.length, 2);
+  const toggles = nodes.filter(isToggle);
+  assert.ok(toggles.length > 0);
+  assert.equal(
+    phones.flatMap((phone) => descendants(phone).filter(isToggle)).length,
+    toggles.length,
+  );
+});
+
+test("the hero copy of the demo has no id, no app entry and no focus stop", () => {
   const phone = nodes.find((node) =>
     (attributes(node).class ?? "").split(/\s+/).includes("hero-device"),
   );
-  assert.ok(phone);
-  const toggles = nodes.filter(isToggle);
-  assert.ok(toggles.length > 0);
-  assert.equal(descendants(phone).filter(isToggle).length, toggles.length);
+  const copy = descendants(phone).find((node) => attributes(node).class === "inert-copy");
+  assert.ok(copy && Object.hasOwn(attributes(copy), "inert"));
+  for (const node of descendants(copy)) {
+    const own = attributes(node);
+    assert.equal(own.id, undefined);
+    assert.equal(own.for, undefined);
+    assert.equal(Object.hasOwn(own, "data-app-entry"), false);
+    assert.equal(Object.hasOwn(own, "data-demo"), false);
+  }
+});
+
+test("each demo id appears once in the built page", () => {
+  const ids = nodes.map((node) => attributes(node).id).filter(Boolean);
+  const duplicated = ids.filter((id, index) => ids.indexOf(id) !== index);
+  assert.deepEqual(duplicated, []);
 });
 
 test("a guide Orbit blinks once when it arrives and never before", () => {

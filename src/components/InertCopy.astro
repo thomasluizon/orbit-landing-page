@@ -1,0 +1,8 @@
+---
+const html = await Astro.slots.render("default");
+const stripped = html
+  .replace(/\s(?:id|for|aria-labelledby|data-demo|data-app-url)="[^"]*"/g, "")
+  .replace(/\sdata-app-entry(?:="[^"]*")?(?=[\s>])/g, "");
+---
+
+<div class="inert-copy" inert set:html={stripped} />

@@ -4,6 +4,13 @@ import ExampleCard from "./ExampleCard.astro";
 import OrbitProduct from "./OrbitProduct.astro";
 import AiBlock from "./AiBlock.astro";
 import OrbitLine from "./OrbitLine.astro";
+import OrbitDemo from "./OrbitDemo.astro";
+import PhoneStatus from "./PhoneStatus.astro";
+import ProductCard from "./ProductCard.astro";
+interface Props {
+  appUrl: string;
+}
+const { appUrl } = Astro.props;
 ---
 
 <section id="features" class="section" data-section="features" aria-labelledby="features-title">
@@ -15,6 +22,26 @@ import OrbitLine from "./OrbitLine.astro";
       </h2>
     </div>
     <div class="example-rows">
+      <article class="example-row" data-example-row="demo" data-card-side="left">
+        <div class="feature-phone">
+          <div class="device-screen">
+            <div class="phone-screen">
+              <PhoneStatus />
+              <div class="phone-carousel">
+                <div class="phone-slide">
+                  <OrbitDemo appUrl={appUrl} />
+                </div>
+              </div>
+              <div class="device-home" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+        <h3 class="example-sentence"><Copy name="example.demo" accent="Orbit" /></h3>
+      </article>
+      <article class="example-row" data-example-row="week" data-card-side="right">
+        <ExampleCard><ProductCard kind="week" /></ExampleCard>
+        <h3 class="example-sentence"><Copy name="example.week" /></h3>
+      </article>
       <article class="example-row" data-example-row="calendar" data-card-side="left">
         <ExampleCard><OrbitProduct kind="calendar" /></ExampleCard>
         <h3 class="example-sentence"><Copy name="example.calendar" /></h3>

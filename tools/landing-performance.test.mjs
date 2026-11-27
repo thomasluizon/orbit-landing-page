@@ -75,7 +75,7 @@ test("phone resize consumes observed width without remeasuring a styled layout",
   };
   vm.runInNewContext(code("src/scripts/phone-screen.ts"), {
     exports: {},
-    document: { querySelector: () => screen },
+    document: { querySelectorAll: () => [screen] },
     ResizeObserver: class {
       constructor(fn) {
         callback = fn;
